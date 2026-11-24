@@ -1,0 +1,883 @@
+import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
+import {
+  DocumentProject,
+  Page,
+  PublisherElement,
+  PageMargins,
+  PageGuide,
+  TextElement,
+  ShapeElement,
+  ImageElement,
+  TableElement,
+  AccentElement,
+  LineElement,
+  ShapeType,
+} from '../types/publisher';
+import { TEMPLATES } from '../constants/templates';
+import { PAGE_SIZES } from '../constants/pageSizes';
+import { COLOR_SCHEMES } from '../constants/colorSchemes';
+
+interface PublisherContextType {
+  project: DocumentProject;
+  activePage: Page;
+  selectedElementIds: string[];
+  zoom: number;
+  pan: { x: number; y: number };
+  activeTab: 'home' | 'insert' | 'page-design' | 'mailings' | 'view';
+  isBackstageOpen: boolean;
+  isMailMergeOpen: boolean;
+  isWordArtModalOpen: boolean;
+  isBuildingBlocksModalOpen: boolean;
+  rulerVisible: boolean;
+  guidesVisible: boolean;
+  gridVisible: boolean;
+  snapToGuides: boolean;
+  snapToGrid: boolean;
+  canUndo: boolean;
+  canRedo: boolean;
+
+  // Setters & UI controls
+  setActiveTab: (tab: 'home' | 'insert' | 'page-design' | 'mailings' | 'view') => void;
+  setIsBackstageOpen: (open: boolean) => void;
+  setIsMailMergeOpen: (open: boolean) => void;
+  setIsWordArtModalOpen: (open: boolean) => void;
+  setIsBuildingBlocksModalOpen: (open: boolean) => void;
+  setRulerVisible: (visible: boolean) => void;
+  setGuidesVisible: (visible: boolean) => void;
+  setGridVisible: (visible: boolean) => void;
+  setSnapToGuides: (snap: boolean) => void;
+  setSnapToGrid: (snap: boolean) => void;
+
+  // History
+  undo: () => void;
+  redo: () => void;
+
+  // Document & Page actions
+  setProject: (newProject: DocumentProject) => void;
+  setActivePageIndex: (index: number) => void;
+  addPage: () => void;
+  duplicateActivePage: () => void;
+  deleteActivePage: () => void;
+  setPageSize: (sizeName: string) => void;
+  setPageOrientation: (orientation: 'portrait' | 'landscape') => void;
+  setPageMargins: (margins: PageMargins) => void;
+  setPageBackgroundColor: (color: string) => void;
+  setColorScheme: (schemeId: string) => void;
+  loadTemplate: (templateId: string) => void;
+
+  // Guides
+  addGuide: (orientation: 'horizontal' | 'vertical', position: number) => void;
+  removeGuide: (id: string) => void;
+
+  // Element actions
+  addElement: (element: PublisherElement) => void;
+  updateElement: (id: string, updates: Partial<PublisherElement>) => void;
+  updateSelectedElements: (updates: Partial<PublisherElement>) => void;
+  deleteSelectedElements: () => void;
+  duplicateSelectedElements: () => void;
+  selectElement: (id: string, multiSelect?: boolean) => void;
+  selectAll: () => void;
+  clearSelection: () => void;
+  bringForward: () => void;
+  sendBackward: () => void;
+  bringToFront: () => void;
+  sendToBack: () => void;
+  alignSelected: (alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => void;
+  distributeSelected: (axis: 'horizontal' | 'vertical') => void;
+
+  // Quick factory helpers
+  addTextBox: (options?: Partial<TextElement>) => void;
+  addShape: (shapeType: ShapeType, options?: Partial<ShapeElement>) => void;
+  addImage: (src: string, options?: Partial<ImageElement>) => void;
+  addTable: (rows: number, cols: number, options?: Partial<TableElement>) => void;
+  addAccent: (accentType: AccentElement['accentType'], options?: Partial<AccentElement>) => void;
+  addLine: (options?: Partial<LineElement>) => void;
+
+  // Zoom & Pan
+  setZoom: (zoom: number) => void;
+  setPan: (pan: { x: number; y: number }) => void;
+  zoomIn: () => void;
+  zoomOut: () => void;
+  zoomFit: () => void;
+  zoom100: () => void;
+}
+
+const PublisherContext = createContext<PublisherContextType | null>(null);
+
+export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Default to the first template (Corporate Trifold Brochure)
+  const [project, setProjectState] = useState<DocumentProject>(() => {
+    return JSON.parse(JSON.stringify(TEMPLATES[0].project));
+  });
+
+  const [historyPast, setHistoryPast] = useState<DocumentProject[]>([]);
+  const [historyFuture, setHistoryFuture] = useState<DocumentProject[]>([]);
+
+  const [selectedElementIds, setSelectedElementIds] = useState<string[]>([]);
+  const [zoom, setZoomState] = useState<number>(0.9);
+  const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  const [activeTab, setActiveTab] = useState<'home' | 'insert' | 'page-design' | 'mailings' | 'view'>('home');
+  const [isBackstageOpen, setIsBackstageOpen] = useState(false);
+  const [isMailMergeOpen, setIsMailMergeOpen] = useState(false);
+  const [isWordArtModalOpen, setIsWordArtModalOpen] = useState(false);
+  const [isBuildingBlocksModalOpen, setIsBuildingBlocksModalOpen] = useState(false);
+
+  const [rulerVisible, setRulerVisible] = useState(true);
+  const [guidesVisible, setGuidesVisible] = useState(true);
+  const [gridVisible, setGridVisible] = useState(false);
+  const [snapToGuides, setSnapToGuides] = useState(true);
+  const [snapToGrid, setSnapToGrid] = useState(false);
+
+  const activePage = project.pages[project.activePageIndex] || project.pages[0];
+
+  // Helper to commit a new project state with undo history
+  const commitProject = useCallback(
+    (newProject: DocumentProject) => {
+      setHistoryPast((past) => [...past.slice(-30), project]);
+      setHistoryFuture([]);
+      setProjectState(newProject);
+    },
+    [project]
+  );
+
+  const undo = useCallback(() => {
+    if (historyPast.length === 0) return;
+    const previous = historyPast[historyPast.length - 1];
+    setHistoryPast((past) => past.slice(0, past.length - 1));
+    setHistoryFuture((future) => [project, ...future]);
+    setProjectState(previous);
+  }, [historyPast, project]);
+
+  const redo = useCallback(() => {
+    if (historyFuture.length === 0) return;
+    const next = historyFuture[0];
+    setHistoryFuture((future) => future.slice(1));
+    setHistoryPast((past) => [...past, project]);
+    setProjectState(next);
+  }, [historyFuture, project]);
+
+  const setProject = useCallback((newProj: DocumentProject) => {
+    commitProject(newProj);
+    setSelectedElementIds([]);
+  }, [commitProject]);
+
+  const setActivePageIndex = useCallback((index: number) => {
+    setProjectState((p) => ({ ...p, activePageIndex: index }));
+    setSelectedElementIds([]);
+  }, []);
+
+  const addPage = useCallback(() => {
+    const pageNum = project.pages.length + 1;
+    const newPage: Page = {
+      id: `page-${Date.now()}`,
+      name: `Page ${pageNum}`,
+      width: activePage.width,
+      height: activePage.height,
+      orientation: activePage.orientation,
+      backgroundColor: '#ffffff',
+      margins: { ...activePage.margins },
+      guides: [],
+      elements: [],
+    };
+    commitProject({
+      ...project,
+      pages: [...project.pages, newPage],
+      activePageIndex: project.pages.length,
+    });
+    setSelectedElementIds([]);
+  }, [project, activePage, commitProject]);
+
+  const duplicateActivePage = useCallback(() => {
+    const clonedPage: Page = JSON.parse(JSON.stringify(activePage));
+    clonedPage.id = `page-${Date.now()}`;
+    clonedPage.name = `${activePage.name} (Copy)`;
+    // assign new IDs to elements
+    clonedPage.elements = clonedPage.elements.map((el) => ({
+      ...el,
+      id: `el-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+    }));
+
+    const newPages = [...project.pages];
+    newPages.splice(project.activePageIndex + 1, 0, clonedPage);
+
+    commitProject({
+      ...project,
+      pages: newPages,
+      activePageIndex: project.activePageIndex + 1,
+    });
+    setSelectedElementIds([]);
+  }, [project, activePage, commitProject]);
+
+  const deleteActivePage = useCallback(() => {
+    if (project.pages.length <= 1) return; // Keep at least one page
+    const newPages = project.pages.filter((_, idx) => idx !== project.activePageIndex);
+    const newIndex = Math.max(0, project.activePageIndex - 1);
+    commitProject({
+      ...project,
+      pages: newPages,
+      activePageIndex: newIndex,
+    });
+    setSelectedElementIds([]);
+  }, [project, commitProject]);
+
+  const setPageSize = useCallback(
+    (sizeName: string) => {
+      const def = PAGE_SIZES.find((s) => s.name === sizeName);
+      if (!def) return;
+      const newPages = project.pages.map((pg) => ({
+        ...pg,
+        width: def.width,
+        height: def.height,
+      }));
+      commitProject({
+        ...project,
+        pageSizeName: sizeName,
+        pages: newPages,
+      });
+    },
+    [project, commitProject]
+  );
+
+  const setPageOrientation = useCallback(
+    (orientation: 'portrait' | 'landscape') => {
+      const newPages = project.pages.map((pg) => {
+        if (pg.orientation === orientation) return pg;
+        const w = pg.width;
+        const h = pg.height;
+        return {
+          ...pg,
+          orientation,
+          width: h,
+          height: w,
+        };
+      });
+      commitProject({
+        ...project,
+        pages: newPages,
+      });
+    },
+    [project, commitProject]
+  );
+
+  const setPageMargins = useCallback(
+    (margins: PageMargins) => {
+      const newPages = project.pages.map((pg, idx) =>
+        idx === project.activePageIndex ? { ...pg, margins } : pg
+      );
+      commitProject({ ...project, pages: newPages });
+    },
+    [project, commitProject]
+  );
+
+  const setPageBackgroundColor = useCallback(
+    (backgroundColor: string) => {
+      const newPages = project.pages.map((pg, idx) =>
+        idx === project.activePageIndex ? { ...pg, backgroundColor } : pg
+      );
+      commitProject({ ...project, pages: newPages });
+    },
+    [project, commitProject]
+  );
+
+  const setColorScheme = useCallback(
+    (schemeId: string) => {
+      const scheme = COLOR_SCHEMES.find((s) => s.id === schemeId);
+      if (!scheme) return;
+      commitProject({
+        ...project,
+        colorScheme: schemeId,
+      });
+    },
+    [project, commitProject]
+  );
+
+  const loadTemplate = useCallback(
+    (templateId: string) => {
+      const tpl = TEMPLATES.find((t) => t.id === templateId);
+      if (!tpl) return;
+      const cloned: DocumentProject = JSON.parse(JSON.stringify(tpl.project));
+      commitProject(cloned);
+      setSelectedElementIds([]);
+      setIsBackstageOpen(false);
+    },
+    [commitProject]
+  );
+
+  // Guides
+  const addGuide = useCallback(
+    (orientation: 'horizontal' | 'vertical', position: number) => {
+      const newGuide: PageGuide = {
+        id: `guide-${Date.now()}`,
+        orientation,
+        position,
+      };
+      const updatedPage = {
+        ...activePage,
+        guides: [...activePage.guides, newGuide],
+      };
+      const newPages = project.pages.map((pg, idx) =>
+        idx === project.activePageIndex ? updatedPage : pg
+      );
+      commitProject({ ...project, pages: newPages });
+    },
+    [project, activePage, commitProject]
+  );
+
+  const removeGuide = useCallback(
+    (id: string) => {
+      const updatedPage = {
+        ...activePage,
+        guides: activePage.guides.filter((g) => g.id !== id),
+      };
+      const newPages = project.pages.map((pg, idx) =>
+        idx === project.activePageIndex ? updatedPage : pg
+      );
+      commitProject({ ...project, pages: newPages });
+    },
+    [project, activePage, commitProject]
+  );
+
+  // Element actions
+  const addElement = useCallback(
+    (element: PublisherElement) => {
+      const maxZ = activePage.elements.reduce((acc, el) => Math.max(acc, el.zIndex), 0);
+      const withZ = { ...element, zIndex: maxZ + 1 };
+      const updatedPage = {
+        ...activePage,
+        elements: [...activePage.elements, withZ],
+      };
+      const newPages = project.pages.map((pg, idx) =>
+        idx === project.activePageIndex ? updatedPage : pg
+      );
+      commitProject({ ...project, pages: newPages });
+      setSelectedElementIds([element.id]);
+    },
+    [project, activePage, commitProject]
+  );
+
+  const updateElement = useCallback(
+    (id: string, updates: Partial<PublisherElement>) => {
+      const updatedPage = {
+        ...activePage,
+        elements: activePage.elements.map((el) =>
+          el.id === id ? ({ ...el, ...updates } as PublisherElement) : el
+        ),
+      };
+      const newPages = project.pages.map((pg, idx) =>
+        idx === project.activePageIndex ? updatedPage : pg
+      );
+      commitProject({ ...project, pages: newPages });
+    },
+    [project, activePage, commitProject]
+  );
+
+  const updateSelectedElements = useCallback(
+    (updates: Partial<PublisherElement>) => {
+      if (selectedElementIds.length === 0) return;
+      const updatedPage = {
+        ...activePage,
+        elements: activePage.elements.map((el) =>
+          selectedElementIds.includes(el.id) ? ({ ...el, ...updates } as PublisherElement) : el
+        ),
+      };
+      const newPages = project.pages.map((pg, idx) =>
+        idx === project.activePageIndex ? updatedPage : pg
+      );
+      commitProject({ ...project, pages: newPages });
+    },
+    [project, activePage, selectedElementIds, commitProject]
+  );
+
+  const deleteSelectedElements = useCallback(() => {
+    if (selectedElementIds.length === 0) return;
+    const updatedPage = {
+      ...activePage,
+      elements: activePage.elements.filter((el) => !selectedElementIds.includes(el.id)),
+    };
+    const newPages = project.pages.map((pg, idx) =>
+      idx === project.activePageIndex ? updatedPage : pg
+    );
+    commitProject({ ...project, pages: newPages });
+    setSelectedElementIds([]);
+  }, [project, activePage, selectedElementIds, commitProject]);
+
+  const duplicateSelectedElements = useCallback(() => {
+    if (selectedElementIds.length === 0) return;
+    const duplicated: PublisherElement[] = [];
+    const newIds: string[] = [];
+
+    activePage.elements.forEach((el) => {
+      if (selectedElementIds.includes(el.id)) {
+        const newId = `el-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+        newIds.push(newId);
+        duplicated.push({
+          ...el,
+          id: newId,
+          x: el.x + 20,
+          y: el.y + 20,
+          zIndex: el.zIndex + 1,
+        });
+      }
+    });
+
+    const updatedPage = {
+      ...activePage,
+      elements: [...activePage.elements, ...duplicated],
+    };
+    const newPages = project.pages.map((pg, idx) =>
+      idx === project.activePageIndex ? updatedPage : pg
+    );
+    commitProject({ ...project, pages: newPages });
+    setSelectedElementIds(newIds);
+  }, [project, activePage, selectedElementIds, commitProject]);
+
+  const selectElement = useCallback((id: string, multiSelect = false) => {
+    setSelectedElementIds((prev) => {
+      if (multiSelect) {
+        return prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id];
+      }
+      return [id];
+    });
+  }, []);
+
+  const selectAll = useCallback(() => {
+    setSelectedElementIds(activePage.elements.map((el) => el.id));
+  }, [activePage]);
+
+  const clearSelection = useCallback(() => {
+    setSelectedElementIds([]);
+  }, []);
+
+  // Arrange / Z-Order
+  const bringToFront = useCallback(() => {
+    if (selectedElementIds.length === 0) return;
+    const maxZ = activePage.elements.reduce((acc, el) => Math.max(acc, el.zIndex), 0);
+    const updated = activePage.elements.map((el) =>
+      selectedElementIds.includes(el.id) ? { ...el, zIndex: maxZ + 1 } : el
+    );
+    const newPages = project.pages.map((pg, idx) =>
+      idx === project.activePageIndex ? { ...pg, elements: updated } : pg
+    );
+    commitProject({ ...project, pages: newPages });
+  }, [project, activePage, selectedElementIds, commitProject]);
+
+  const sendToBack = useCallback(() => {
+    if (selectedElementIds.length === 0) return;
+    const minZ = activePage.elements.reduce((acc, el) => Math.min(acc, el.zIndex), 0);
+    const updated = activePage.elements.map((el) =>
+      selectedElementIds.includes(el.id) ? { ...el, zIndex: Math.max(0, minZ - 1) } : el
+    );
+    const newPages = project.pages.map((pg, idx) =>
+      idx === project.activePageIndex ? { ...pg, elements: updated } : pg
+    );
+    commitProject({ ...project, pages: newPages });
+  }, [project, activePage, selectedElementIds, commitProject]);
+
+  const bringForward = useCallback(() => {
+    if (selectedElementIds.length === 0) return;
+    const updated = activePage.elements.map((el) =>
+      selectedElementIds.includes(el.id) ? { ...el, zIndex: el.zIndex + 1 } : el
+    );
+    const newPages = project.pages.map((pg, idx) =>
+      idx === project.activePageIndex ? { ...pg, elements: updated } : pg
+    );
+    commitProject({ ...project, pages: newPages });
+  }, [project, activePage, selectedElementIds, commitProject]);
+
+  const sendBackward = useCallback(() => {
+    if (selectedElementIds.length === 0) return;
+    const updated = activePage.elements.map((el) =>
+      selectedElementIds.includes(el.id) ? { ...el, zIndex: Math.max(0, el.zIndex - 1) } : el
+    );
+    const newPages = project.pages.map((pg, idx) =>
+      idx === project.activePageIndex ? { ...pg, elements: updated } : pg
+    );
+    commitProject({ ...project, pages: newPages });
+  }, [project, activePage, selectedElementIds, commitProject]);
+
+  // Alignment
+  const alignSelected = useCallback(
+    (alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => {
+      if (selectedElementIds.length === 0) return;
+
+      const selected = activePage.elements.filter((el) => selectedElementIds.includes(el.id));
+      if (selected.length === 0) return;
+
+      // If single element selected, align relative to page margins or page bounds!
+      if (selected.length === 1) {
+        const el = selected[0];
+        let newX = el.x;
+        let newY = el.y;
+
+        if (alignment === 'left') newX = activePage.margins.left;
+        else if (alignment === 'center') newX = (activePage.width - el.width) / 2;
+        else if (alignment === 'right') newX = activePage.width - activePage.margins.right - el.width;
+        else if (alignment === 'top') newY = activePage.margins.top;
+        else if (alignment === 'middle') newY = (activePage.height - el.height) / 2;
+        else if (alignment === 'bottom') newY = activePage.height - activePage.margins.bottom - el.height;
+
+        updateElement(el.id, { x: newX, y: newY });
+        return;
+      }
+
+      // If multiple elements selected, align relative to their bounding box
+      const minX = Math.min(...selected.map((el) => el.x));
+      const maxX = Math.max(...selected.map((el) => el.x + el.width));
+      const minY = Math.min(...selected.map((el) => el.y));
+      const maxY = Math.max(...selected.map((el) => el.y + el.height));
+      const centerX = (minX + maxX) / 2;
+      const centerY = (minY + maxY) / 2;
+
+      const updated = activePage.elements.map((el) => {
+        if (!selectedElementIds.includes(el.id)) return el;
+        if (alignment === 'left') return { ...el, x: minX };
+        if (alignment === 'center') return { ...el, x: centerX - el.width / 2 };
+        if (alignment === 'right') return { ...el, x: maxX - el.width };
+        if (alignment === 'top') return { ...el, y: minY };
+        if (alignment === 'middle') return { ...el, y: centerY - el.height / 2 };
+        if (alignment === 'bottom') return { ...el, y: maxY - el.height };
+        return el;
+      });
+
+      const newPages = project.pages.map((pg, idx) =>
+        idx === project.activePageIndex ? { ...pg, elements: updated } : pg
+      );
+      commitProject({ ...project, pages: newPages });
+    },
+    [project, activePage, selectedElementIds, commitProject, updateElement]
+  );
+
+  const distributeSelected = useCallback(
+    (axis: 'horizontal' | 'vertical') => {
+      const selected = activePage.elements.filter((el) => selectedElementIds.includes(el.id));
+      if (selected.length < 3) return;
+
+      if (axis === 'horizontal') {
+        const sorted = [...selected].sort((a, b) => a.x - b.x);
+        const minX = sorted[0].x;
+        const last = sorted[sorted.length - 1];
+        const maxX = last.x + last.width;
+        const totalElementsWidth = sorted.reduce((sum, el) => sum + el.width, 0);
+        const gap = (maxX - minX - totalElementsWidth) / (sorted.length - 1);
+
+        let currentX = minX;
+        const idToX: Record<string, number> = {};
+        sorted.forEach((el) => {
+          idToX[el.id] = currentX;
+          currentX += el.width + gap;
+        });
+
+        const updated = activePage.elements.map((el) =>
+          idToX[el.id] !== undefined ? { ...el, x: idToX[el.id] } : el
+        );
+        const newPages = project.pages.map((pg, idx) =>
+          idx === project.activePageIndex ? { ...pg, elements: updated } : pg
+        );
+        commitProject({ ...project, pages: newPages });
+      } else {
+        const sorted = [...selected].sort((a, b) => a.y - b.y);
+        const minY = sorted[0].y;
+        const last = sorted[sorted.length - 1];
+        const maxY = last.y + last.height;
+        const totalElementsHeight = sorted.reduce((sum, el) => sum + el.height, 0);
+        const gap = (maxY - minY - totalElementsHeight) / (sorted.length - 1);
+
+        let currentY = minY;
+        const idToY: Record<string, number> = {};
+        sorted.forEach((el) => {
+          idToY[el.id] = currentY;
+          currentY += el.height + gap;
+        });
+
+        const updated = activePage.elements.map((el) =>
+          idToY[el.id] !== undefined ? { ...el, y: idToY[el.id] } : el
+        );
+        const newPages = project.pages.map((pg, idx) =>
+          idx === project.activePageIndex ? { ...pg, elements: updated } : pg
+        );
+        commitProject({ ...project, pages: newPages });
+      }
+    },
+    [project, activePage, selectedElementIds, commitProject]
+  );
+
+  // Quick factory helpers
+  const addTextBox = useCallback(
+    (options?: Partial<TextElement>) => {
+      const defaultText: TextElement = {
+        id: `txt-${Date.now()}`,
+        type: 'text',
+        x: activePage.margins.left + 50,
+        y: activePage.margins.top + 50,
+        width: 320,
+        height: 120,
+        rotation: 0,
+        zIndex: 10,
+        text: 'Click here and enter your publication text. Customize font, size, columns and styles from the ribbon above.',
+        fontFamily: 'Segoe UI',
+        fontSize: 16,
+        fontWeight: 'normal',
+        fontStyle: 'normal',
+        textDecoration: 'none',
+        color: '#1e293b',
+        textAlign: 'left',
+        verticalAlign: 'top',
+        columns: 1,
+        columnGap: 12,
+        lineHeight: 1.4,
+        padding: 8,
+        ...options,
+      };
+      addElement(defaultText);
+    },
+    [activePage, addElement]
+  );
+
+  const addShape = useCallback(
+    (shapeType: ShapeType, options?: Partial<ShapeElement>) => {
+      const defaultShape: ShapeElement = {
+        id: `shp-${Date.now()}`,
+        type: 'shape',
+        shapeType,
+        x: activePage.margins.left + 60,
+        y: activePage.margins.top + 60,
+        width: 160,
+        height: 120,
+        rotation: 0,
+        zIndex: 5,
+        fillColor: '#0f6b4e',
+        strokeColor: '#084834',
+        strokeWidth: 2,
+        cornerRadius: shapeType === 'rounded-rect' ? 12 : 0,
+        ...options,
+      };
+      addElement(defaultShape);
+    },
+    [activePage, addElement]
+  );
+
+  const addImage = useCallback(
+    (src: string, options?: Partial<ImageElement>) => {
+      const defaultImg: ImageElement = {
+        id: `img-${Date.now()}`,
+        type: 'image',
+        src,
+        x: activePage.margins.left + 40,
+        y: activePage.margins.top + 40,
+        width: 260,
+        height: 180,
+        rotation: 0,
+        zIndex: 8,
+        aspectRatioLocked: true,
+        borderColor: '#cbd5e1',
+        borderWidth: 1,
+        maskShape: 'none',
+        ...options,
+      };
+      addElement(defaultImg);
+    },
+    [activePage, addElement]
+  );
+
+  const addTable = useCallback(
+    (rows: number, cols: number, options?: Partial<TableElement>) => {
+      const data: string[][] = [];
+      for (let r = 0; r < rows; r++) {
+        const row: string[] = [];
+        for (let c = 0; c < cols; c++) {
+          row.push(r === 0 ? `Header ${c + 1}` : `Data ${r},${c + 1}`);
+        }
+        data.push(row);
+      }
+      const defaultTable: TableElement = {
+        id: `tbl-${Date.now()}`,
+        type: 'table',
+        x: activePage.margins.left + 30,
+        y: activePage.margins.top + 30,
+        width: 420,
+        height: rows * 36,
+        rotation: 0,
+        zIndex: 9,
+        rows,
+        cols,
+        data,
+        headerBg: '#0f6b4e',
+        headerColor: '#ffffff',
+        cellBg: '#f8fafc',
+        cellColor: '#1e293b',
+        borderColor: '#cbd5e1',
+        borderWidth: 1,
+        ...options,
+      };
+      addElement(defaultTable);
+    },
+    [activePage, addElement]
+  );
+
+  const addAccent = useCallback(
+    (accentType: AccentElement['accentType'], options?: Partial<AccentElement>) => {
+      const defaultAccent: AccentElement = {
+        id: `acc-${Date.now()}`,
+        type: 'accent',
+        accentType,
+        x: activePage.margins.left + 40,
+        y: activePage.margins.top + 80,
+        width: accentType === 'coupon' ? 320 : 400,
+        height: accentType === 'coupon' ? 180 : 100,
+        rotation: 0,
+        zIndex: 10,
+        title: accentType === 'coupon' ? 'SPECIAL SAVINGS COUPON' : 'PULL QUOTE HIGHLIGHT',
+        subtitle: accentType === 'coupon' ? 'Save 25% on your next order' : '— Publication Editor',
+        text: 'This is an authentic MS Publisher style accent building block for highlights, coupons and mastheads.',
+        badgeText: 'LIMITED EDITION',
+        accentColor: '#0f6b4e',
+        ...options,
+      };
+      addElement(defaultAccent);
+    },
+    [activePage, addElement]
+  );
+
+  const addLine = useCallback(
+    (options?: Partial<LineElement>) => {
+      const defaultLine: LineElement = {
+        id: `line-${Date.now()}`,
+        type: 'line',
+        x: activePage.margins.left + 50,
+        y: activePage.margins.top + 100,
+        width: 300,
+        height: 2,
+        rotation: 0,
+        zIndex: 6,
+        strokeColor: '#0f6b4e',
+        strokeWidth: 2,
+        strokeDash: 'solid',
+        ...options,
+      };
+      addElement(defaultLine);
+    },
+    [activePage, addElement]
+  );
+
+  // Zoom
+  const setZoom = useCallback((newZoom: number) => {
+    setZoomState(Math.min(3.0, Math.max(0.2, newZoom)));
+  }, []);
+
+  const zoomIn = useCallback(() => {
+    setZoomState((z) => Math.min(3.0, Number((z + 0.1).toFixed(2))));
+  }, []);
+
+  const zoomOut = useCallback(() => {
+    setZoomState((z) => Math.max(0.2, Number((z - 0.1).toFixed(2))));
+  }, []);
+
+  const zoom100 = useCallback(() => {
+    setZoomState(1.0);
+    setPan({ x: 0, y: 0 });
+  }, []);
+
+  const zoomFit = useCallback(() => {
+    // Fits standard page nicely in viewport
+    const containerW = window.innerWidth - 380;
+    const containerH = window.innerHeight - 240;
+    const scaleX = containerW / activePage.width;
+    const scaleY = containerH / activePage.height;
+    const fitScale = Math.min(scaleX, scaleY, 1.2) * 0.9;
+    setZoomState(Number(fitScale.toFixed(2)));
+    setPan({ x: 0, y: 0 });
+  }, [activePage]);
+
+  return (
+    <PublisherContext.Provider
+      value={{
+        project,
+        activePage,
+        selectedElementIds,
+        zoom,
+        pan,
+        activeTab,
+        isBackstageOpen,
+        isMailMergeOpen,
+        isWordArtModalOpen,
+        isBuildingBlocksModalOpen,
+        rulerVisible,
+        guidesVisible,
+        gridVisible,
+        snapToGuides,
+        snapToGrid,
+        canUndo: historyPast.length > 0,
+        canRedo: historyFuture.length > 0,
+
+        setActiveTab,
+        setIsBackstageOpen,
+        setIsMailMergeOpen,
+        setIsWordArtModalOpen,
+        setIsBuildingBlocksModalOpen,
+        setRulerVisible,
+        setGuidesVisible,
+        setGridVisible,
+        setSnapToGuides,
+        setSnapToGrid,
+
+        undo,
+        redo,
+
+        setProject,
+        setActivePageIndex,
+        addPage,
+        duplicateActivePage,
+        deleteActivePage,
+        setPageSize,
+        setPageOrientation,
+        setPageMargins,
+        setPageBackgroundColor,
+        setColorScheme,
+        loadTemplate,
+
+        addGuide,
+        removeGuide,
+
+        addElement,
+        updateElement,
+        updateSelectedElements,
+        deleteSelectedElements,
+        duplicateSelectedElements,
+        selectElement,
+        selectAll,
+        clearSelection,
+        bringForward,
+        sendBackward,
+        bringToFront,
+        sendToBack,
+        alignSelected,
+        distributeSelected,
+
+        addTextBox,
+        addShape,
+        addImage,
+        addTable,
+        addAccent,
+        addLine,
+
+        setZoom,
+        setPan,
+        zoomIn,
+        zoomOut,
+        zoomFit,
+        zoom100,
+      }}
+    >
+      {children}
+    </PublisherContext.Provider>
+  );
+};
+
+export const usePublisher = () => {
+  const context = useContext(PublisherContext);
+  if (!context) {
+    throw new Error('usePublisher must be used within a PublisherProvider');
+  }
+  return context;
+};

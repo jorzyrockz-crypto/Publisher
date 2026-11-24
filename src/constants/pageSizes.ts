@@ -1,0 +1,81 @@
+import { PageSizeDefinition } from '../types/publisher';
+
+export const PAGE_SIZES: PageSizeDefinition[] = [
+  {
+    name: 'letter',
+    displayName: 'Letter (8.5 × 11 in)',
+    width: 816,
+    height: 1056,
+    category: 'Standard',
+  },
+  {
+    name: 'a4',
+    displayName: 'A4 (210 × 297 mm)',
+    width: 794,
+    height: 1123,
+    category: 'Standard',
+  },
+  {
+    name: 'tabloid',
+    displayName: 'Tabloid (11 × 17 in)',
+    width: 1056,
+    height: 1632,
+    category: 'Standard',
+  },
+  {
+    name: 'a3',
+    displayName: 'A3 (297 × 420 mm)',
+    width: 1123,
+    height: 1587,
+    category: 'Standard',
+  },
+  {
+    name: 'trifold',
+    displayName: 'Trifold Brochure (11 × 8.5 in)',
+    width: 1056,
+    height: 816,
+    category: 'Marketing',
+  },
+  {
+    name: 'flyer',
+    displayName: 'Marketing Flyer (8.5 × 11 in)',
+    width: 816,
+    height: 1056,
+    category: 'Marketing',
+  },
+  {
+    name: 'poster',
+    displayName: 'Event Poster (12 × 18 in)',
+    width: 1152,
+    height: 1728,
+    category: 'Marketing',
+  },
+  {
+    name: 'certificate',
+    displayName: 'Award Certificate (11 × 8.5 in)',
+    width: 1056,
+    height: 816,
+    category: 'Card & Social',
+  },
+  {
+    name: 'business-card',
+    displayName: 'Business Card (3.5 × 2 in)',
+    width: 336,
+    height: 192,
+    category: 'Card & Social',
+  },
+  {
+    name: 'postcard',
+    displayName: 'Postcard (6 × 4 in)',
+    width: 576,
+    height: 384,
+    category: 'Card & Social',
+  },
+  {
+    name: 'greeting-card',
+    displayName: 'Greeting Card (5 × 7 in)',
+    width: 480,
+    height: 672,
+    category: 'Card & Social',
+  },
+];
