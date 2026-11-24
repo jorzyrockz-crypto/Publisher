@@ -18,7 +18,7 @@ import {
   FileDown,
   Image as ImageIcon,
   Info,
-  CheckCircle,
+  Sparkles,
 } from 'lucide-react';
 
 export const BackstageModal: React.FC = () => {
@@ -42,96 +42,112 @@ export const BackstageModal: React.FC = () => {
   return (
     <div className="fixed inset-0 bg-white z-50 flex select-none text-slate-800 animate-in fade-in duration-150">
       {/* Left Backstage Green Navigation Bar */}
-      <div className="w-56 bg-[#0f6b4e] text-white flex flex-col justify-between p-4 flex-shrink-0">
-        <div className="space-y-4">
+      <div className="w-60 bg-gradient-to-b from-[#064e3b] via-[#047857] to-[#065f46] text-white flex flex-col justify-between p-5 flex-shrink-0 shadow-lg">
+        <div className="space-y-6">
           {/* Back button */}
           <button
             onClick={() => setIsBackstageOpen(false)}
-            className="flex items-center gap-2 p-2 rounded-full hover:bg-white/20 transition text-white w-fit"
-            title="Return to Document"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 transition-all text-white text-xs font-semibold w-fit border border-white/20 shadow-xs"
+            title="Return to Canvas"
           >
-            <ArrowLeft size={20} />
+            <ArrowLeft size={16} />
+            <span>Back to Canvas</span>
           </button>
 
           {/* Navigation Items */}
-          <nav className="space-y-1 pt-2">
-            <button
-              onClick={() => setActiveSection('info')}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded text-xs font-semibold tracking-wide transition ${
-                activeSection === 'info' ? 'bg-[#0b533c] text-white shadow-sm' : 'hover:bg-white/10 text-white/90'
-              }`}
-            >
-              <Info size={16} />
-              <span>Info</span>
-            </button>
-
+          <nav className="space-y-1.5 pt-1">
             <button
               onClick={() => setActiveSection('new')}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded text-xs font-semibold tracking-wide transition ${
-                activeSection === 'new' ? 'bg-[#0b533c] text-white shadow-sm' : 'hover:bg-white/10 text-white/90'
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all ${
+                activeSection === 'new'
+                  ? 'bg-white/20 text-white shadow-xs border border-white/25'
+                  : 'hover:bg-white/10 text-white/80'
               }`}
             >
-              <FilePlus size={16} />
+              <FilePlus size={16} className="text-emerald-300" />
               <span>New</span>
             </button>
 
             <button
               onClick={() => setActiveSection('open')}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded text-xs font-semibold tracking-wide transition ${
-                activeSection === 'open' ? 'bg-[#0b533c] text-white shadow-sm' : 'hover:bg-white/10 text-white/90'
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all ${
+                activeSection === 'open'
+                  ? 'bg-white/20 text-white shadow-xs border border-white/25'
+                  : 'hover:bg-white/10 text-white/80'
               }`}
             >
-              <FolderOpen size={16} />
+              <FolderOpen size={16} className="text-emerald-300" />
               <span>Open</span>
             </button>
 
             <button
               onClick={() => setActiveSection('save')}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded text-xs font-semibold tracking-wide transition ${
-                activeSection === 'save' ? 'bg-[#0b533c] text-white shadow-sm' : 'hover:bg-white/10 text-white/90'
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all ${
+                activeSection === 'save'
+                  ? 'bg-white/20 text-white shadow-xs border border-white/25'
+                  : 'hover:bg-white/10 text-white/80'
               }`}
             >
-              <Save size={16} />
+              <Save size={16} className="text-emerald-300" />
               <span>Save As</span>
             </button>
 
             <button
               onClick={() => setActiveSection('print')}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded text-xs font-semibold tracking-wide transition ${
-                activeSection === 'print' ? 'bg-[#0b533c] text-white shadow-sm' : 'hover:bg-white/10 text-white/90'
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all ${
+                activeSection === 'print'
+                  ? 'bg-white/20 text-white shadow-xs border border-white/25'
+                  : 'hover:bg-white/10 text-white/80'
               }`}
             >
-              <Printer size={16} />
+              <Printer size={16} className="text-emerald-300" />
               <span>Print</span>
             </button>
 
             <button
               onClick={() => setActiveSection('export')}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded text-xs font-semibold tracking-wide transition ${
-                activeSection === 'export' ? 'bg-[#0b533c] text-white shadow-sm' : 'hover:bg-white/10 text-white/90'
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all ${
+                activeSection === 'export'
+                  ? 'bg-white/20 text-white shadow-xs border border-white/25'
+                  : 'hover:bg-white/10 text-white/80'
               }`}
             >
-              <FileDown size={16} />
+              <FileDown size={16} className="text-emerald-300" />
               <span>Export</span>
+            </button>
+
+            <button
+              onClick={() => setActiveSection('info')}
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all ${
+                activeSection === 'info'
+                  ? 'bg-white/20 text-white shadow-xs border border-white/25'
+                  : 'hover:bg-white/10 text-white/80'
+              }`}
+            >
+              <Info size={16} className="text-emerald-300" />
+              <span>Info</span>
             </button>
           </nav>
         </div>
 
-        <div className="text-[11px] text-white/60">
-          <p className="font-semibold text-white/80">Microsoft Publisher</p>
-          <p>Version 2026 Clone Edition</p>
+        <div className="text-[11px] text-white/70 space-y-1">
+          <div className="flex items-center gap-1.5 font-bold text-white">
+            <Sparkles size={12} className="text-amber-300" />
+            <span>Microsoft Publisher</span>
+          </div>
+          <p className="text-[10px] text-emerald-200/80">365 Modern Web Edition</p>
         </div>
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto p-10 bg-[#f8fafc]">
+      <div className="flex-1 overflow-y-auto p-12 bg-slate-50">
         {/* SECTION: NEW TEMPLATES */}
         {activeSection === 'new' && (
           <div className="max-w-5xl mx-auto space-y-6">
             <div>
-              <h1 className="text-2xl font-light text-slate-800">Featured Templates</h1>
-              <p className="text-xs text-slate-500 mt-1">
-                Choose from professionally designed publication templates or start from scratch.
+              <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Templates Gallery</h1>
+              <p className="text-xs text-slate-500 mt-1.5">
+                Start from a designer-crafted publication layout or a clean blank canvas.
               </p>
             </div>
 
@@ -143,34 +159,38 @@ export const BackstageModal: React.FC = () => {
                     loadTemplate(tpl.id);
                     confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
                   }}
-                  className="bg-white border border-slate-200 rounded-lg p-4 shadow-sm hover:shadow-md hover:border-[#0f6b4e] cursor-pointer transition group flex flex-col justify-between"
+                  className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm hover:shadow-xl hover:border-emerald-500 cursor-pointer transition-all hover:-translate-y-1 group flex flex-col justify-between"
                 >
                   <div>
                     {/* Visual Card Banner */}
                     <div
-                      className="w-full h-36 rounded-md mb-3 flex items-center justify-center text-white font-bold p-3 relative overflow-hidden"
+                      className="w-full h-40 rounded-xl mb-3.5 flex items-center justify-center text-white font-bold p-4 relative overflow-hidden shadow-inner"
                       style={{ backgroundColor: tpl.thumbnailColor }}
                     >
-                      <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:12px_12px]" />
-                      <span className="text-center text-base drop-shadow z-10">{tpl.name}</span>
+                      <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#fff_1.5px,transparent_1.5px)] [background-size:16px_16px]" />
+                      <span className="text-center text-base drop-shadow-md z-10 font-bold px-2">
+                        {tpl.name}
+                      </span>
                     </div>
 
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-emerald-50 text-[#0f6b4e]">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/60">
                         {tpl.category}
                       </span>
-                      <span className="text-[11px] text-slate-400">
+                      <span className="text-[11px] font-medium text-slate-400">
                         {tpl.project.pages.length} {tpl.project.pages.length === 1 ? 'Page' : 'Pages'}
                       </span>
                     </div>
 
-                    <h3 className="font-semibold text-sm text-slate-800 group-hover:text-[#0f6b4e] transition">
+                    <h3 className="font-bold text-sm text-slate-800 group-hover:text-emerald-700 transition">
                       {tpl.name}
                     </h3>
-                    <p className="text-xs text-slate-500 mt-1 line-clamp-2">{tpl.description}</p>
+                    <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
+                      {tpl.description}
+                    </p>
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-[#0f6b4e]">
+                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-emerald-700">
                     <span>Create Publication</span>
                     <span className="group-hover:translate-x-1 transition-transform">→</span>
                   </div>
@@ -183,11 +203,13 @@ export const BackstageModal: React.FC = () => {
         {/* SECTION: OPEN */}
         {activeSection === 'open' && (
           <div className="max-w-2xl mx-auto space-y-6">
-            <h1 className="text-2xl font-light text-slate-800">Open Publication</h1>
-            <div className="bg-white p-8 rounded-lg border border-slate-200 shadow-sm text-center space-y-4">
-              <FolderOpen size={48} className="mx-auto text-[#0f6b4e]" />
+            <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Open Publication</h1>
+            <div className="bg-white p-10 rounded-2xl border border-slate-200/80 shadow-sm text-center space-y-4">
+              <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center mx-auto shadow-xs">
+                <FolderOpen size={32} />
+              </div>
               <div>
-                <h3 className="font-semibold text-base text-slate-800">Open from your computer</h3>
+                <h3 className="font-bold text-base text-slate-800">Open from your device</h3>
                 <p className="text-xs text-slate-500 mt-1">
                   Select a saved Microsoft Publisher project file (.pub)
                 </p>
@@ -215,7 +237,7 @@ export const BackstageModal: React.FC = () => {
 
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="px-6 py-2 bg-[#0f6b4e] text-white rounded font-medium text-xs hover:bg-[#0c533c] transition shadow-sm"
+                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-semibold text-xs transition shadow-sm"
               >
                 Browse Files...
               </button>
@@ -226,17 +248,17 @@ export const BackstageModal: React.FC = () => {
         {/* SECTION: SAVE AS */}
         {activeSection === 'save' && (
           <div className="max-w-2xl mx-auto space-y-6">
-            <h1 className="text-2xl font-light text-slate-800">Save Publication</h1>
-            <div className="bg-white p-8 rounded-lg border border-slate-200 shadow-sm space-y-6">
+            <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Save Publication</h1>
+            <div className="bg-white p-8 rounded-2xl border border-slate-200/80 shadow-sm space-y-6">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">
-                  Publication File Name
+                <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+                  File Name
                 </label>
                 <input
                   type="text"
                   value={project.name}
                   onChange={(e) => (project.name = e.target.value)}
-                  className="w-full border border-slate-300 rounded px-3 py-2 text-sm outline-none focus:border-[#0f6b4e]"
+                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-medium"
                 />
               </div>
 
@@ -246,7 +268,7 @@ export const BackstageModal: React.FC = () => {
                     saveProjectToFile(project);
                     setIsBackstageOpen(false);
                   }}
-                  className="px-6 py-2 bg-[#0f6b4e] text-white rounded font-medium text-xs hover:bg-[#0c533c] transition shadow-sm flex items-center gap-2"
+                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-semibold text-xs transition shadow-sm flex items-center gap-2"
                 >
                   <Save size={14} />
                   <span>Download .pub File</span>
@@ -259,37 +281,40 @@ export const BackstageModal: React.FC = () => {
         {/* SECTION: PRINT */}
         {activeSection === 'print' && (
           <div className="max-w-3xl mx-auto space-y-6">
-            <h1 className="text-2xl font-light text-slate-800">Print Publication</h1>
-            <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm flex flex-col md:flex-row gap-6">
-              <div className="w-full md:w-64 space-y-4">
+            <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Print Publication</h1>
+            <div className="bg-white p-8 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row gap-8">
+              <div className="w-full md:w-64 space-y-5">
                 <button
                   onClick={() => {
                     setIsBackstageOpen(false);
                     setTimeout(triggerPrint, 300);
                   }}
-                  className="w-full py-3 bg-[#0f6b4e] text-white rounded font-semibold text-sm hover:bg-[#0c533c] transition shadow flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-bold text-sm transition shadow-md flex items-center justify-center gap-2"
                 >
                   <Printer size={18} />
-                  <span>Print Now</span>
+                  <span>Print Document</span>
                 </button>
 
-                <div className="text-xs space-y-2 text-slate-600 border-t border-slate-200 pt-3">
-                  <div>
-                    <span className="font-semibold">Pages:</span> {project.pages.length}
+                <div className="text-xs space-y-2.5 text-slate-600 border-t border-slate-100 pt-4 font-medium">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Pages:</span>
+                    <span className="font-bold text-slate-800">{project.pages.length}</span>
                   </div>
-                  <div>
-                    <span className="font-semibold">Paper Size:</span> {project.pageSizeName}
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Paper Size:</span>
+                    <span className="font-bold text-slate-800 capitalize">{project.pageSizeName}</span>
                   </div>
-                  <div>
-                    <span className="font-semibold">Orientation:</span> {activePage.orientation}
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Orientation:</span>
+                    <span className="font-bold text-slate-800 capitalize">{activePage.orientation}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="flex-1 bg-slate-100 rounded p-4 flex items-center justify-center border border-dashed border-slate-300">
+              <div className="flex-1 bg-slate-50 rounded-2xl p-6 flex items-center justify-center border border-dashed border-slate-300">
                 <div className="text-center text-slate-400 text-xs">
-                  <Printer size={32} className="mx-auto mb-2 text-slate-400" />
-                  <span>Print preview prepared for {activePage.name}</span>
+                  <Printer size={36} className="mx-auto mb-2.5 text-slate-400" />
+                  <span>Ready to print: {activePage.name}</span>
                 </div>
               </div>
             </div>
@@ -298,64 +323,70 @@ export const BackstageModal: React.FC = () => {
 
         {/* SECTION: EXPORT */}
         {activeSection === 'export' && (
-          <div className="max-w-3xl mx-auto space-y-6">
-            <h1 className="text-2xl font-light text-slate-800">Export & Publish</h1>
+          <div className="max-w-4xl mx-auto space-y-6">
+            <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Export & Publish</h1>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* PDF */}
-              <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm flex flex-col justify-between">
+              <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition flex flex-col justify-between">
                 <div>
-                  <FileDown size={32} className="text-red-600 mb-2" />
-                  <h3 className="font-semibold text-sm text-slate-800">PDF Document</h3>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Export high-resolution vector PDF with all pages ready for commercial printing.
+                  <div className="w-12 h-12 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mb-3">
+                    <FileDown size={24} />
+                  </div>
+                  <h3 className="font-bold text-sm text-slate-800">Commercial PDF</h3>
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                    Export high-resolution multi-page PDF document ready for commercial printing.
                   </p>
                 </div>
                 <button
                   onClick={async () => {
                     await exportToPdf(project);
-                    confetti({ particleCount: 30 });
+                    confetti({ particleCount: 35 });
                   }}
-                  className="mt-6 w-full py-2 bg-red-600 text-white rounded text-xs font-semibold hover:bg-red-700 transition"
+                  className="mt-6 w-full py-2 bg-red-600 hover:bg-red-700 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-xs"
                 >
                   Create PDF
                 </button>
               </div>
 
               {/* PNG */}
-              <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm flex flex-col justify-between">
+              <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition flex flex-col justify-between">
                 <div>
-                  <ImageIcon size={32} className="text-blue-600 mb-2" />
-                  <h3 className="font-semibold text-sm text-slate-800">PNG Image (300 DPI)</h3>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Export current active page as lossless high-definition raster PNG.
+                  <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3">
+                    <ImageIcon size={24} />
+                  </div>
+                  <h3 className="font-bold text-sm text-slate-800">PNG Image (300 DPI)</h3>
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                    Lossless high-definition raster image of the currently selected page.
                   </p>
                 </div>
                 <button
                   onClick={async () => {
                     await exportToImage(activePage, 'png', activePage.name);
-                    confetti({ particleCount: 30 });
+                    confetti({ particleCount: 35 });
                   }}
-                  className="mt-6 w-full py-2 bg-blue-600 text-white rounded text-xs font-semibold hover:bg-blue-700 transition"
+                  className="mt-6 w-full py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-xs"
                 >
                   Export PNG
                 </button>
               </div>
 
               {/* JPEG */}
-              <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm flex flex-col justify-between">
+              <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition flex flex-col justify-between">
                 <div>
-                  <ImageIcon size={32} className="text-amber-600 mb-2" />
-                  <h3 className="font-semibold text-sm text-slate-800">JPEG Photo</h3>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Optimized web JPEG image ideal for social media sharing and email.
+                  <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-3">
+                    <ImageIcon size={24} />
+                  </div>
+                  <h3 className="font-bold text-sm text-slate-800">JPEG Graphic</h3>
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                    Compressed web-ready image format optimal for email newsletters and websites.
                   </p>
                 </div>
                 <button
                   onClick={async () => {
                     await exportToImage(activePage, 'jpeg', activePage.name);
-                    confetti({ particleCount: 30 });
+                    confetti({ particleCount: 35 });
                   }}
-                  className="mt-6 w-full py-2 bg-amber-600 text-white rounded text-xs font-semibold hover:bg-amber-700 transition"
+                  className="mt-6 w-full py-2 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-xs"
                 >
                   Export JPEG
                 </button>
@@ -367,25 +398,25 @@ export const BackstageModal: React.FC = () => {
         {/* SECTION: INFO */}
         {activeSection === 'info' && (
           <div className="max-w-2xl mx-auto space-y-6">
-            <h1 className="text-2xl font-light text-slate-800">Document Information</h1>
-            <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm space-y-4 text-xs">
+            <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Document Details</h1>
+            <div className="bg-white p-8 rounded-2xl border border-slate-200/80 shadow-sm space-y-4 text-xs font-medium">
               <div className="flex justify-between py-2 border-b border-slate-100">
-                <span className="font-semibold text-slate-600">Publication Name:</span>
-                <span className="text-slate-800">{project.name}</span>
+                <span className="text-slate-500">Publication Title:</span>
+                <span className="font-bold text-slate-800">{project.name}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-slate-100">
-                <span className="font-semibold text-slate-600">Pages Count:</span>
-                <span className="text-slate-800">{project.pages.length}</span>
+                <span className="text-slate-500">Page Count:</span>
+                <span className="font-bold text-slate-800">{project.pages.length}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-slate-100">
-                <span className="font-semibold text-slate-600">Page Dimensions:</span>
-                <span className="text-slate-800">
+                <span className="text-slate-500">Canvas Dimensions:</span>
+                <span className="font-mono font-bold text-slate-800">
                   {activePage.width} × {activePage.height} px
                 </span>
               </div>
               <div className="flex justify-between py-2 border-b border-slate-100">
-                <span className="font-semibold text-slate-600">Color Palette:</span>
-                <span className="text-slate-800 capitalize">{project.colorScheme}</span>
+                <span className="text-slate-500">Active Theme:</span>
+                <span className="font-bold text-slate-800 capitalize">{project.colorScheme}</span>
               </div>
             </div>
           </div>

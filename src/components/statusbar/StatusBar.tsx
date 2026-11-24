@@ -1,6 +1,6 @@
 import React from 'react';
 import { usePublisher } from '../../context/PublisherContext';
-import { ZoomIn, ZoomOut, Maximize } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize, FileText, CheckCircle2 } from 'lucide-react';
 
 export const StatusBar: React.FC = () => {
   const {
@@ -20,26 +20,26 @@ export const StatusBar: React.FC = () => {
       : null;
 
   return (
-    <div className="h-6 bg-[#0f6b4e] text-white flex items-center justify-between px-3 text-[11px] select-none z-30 flex-shrink-0">
-      {/* Left: Page count & selection geometry */}
-      <div className="flex items-center gap-4">
-        <span className="font-medium">
+    <div className="h-6 bg-[#064e3b] text-emerald-100 flex items-center justify-between px-3 text-[11px] select-none z-30 flex-shrink-0 border-t border-emerald-900/50 shadow-inner">
+      {/* Left: Page Info & Element Geometry */}
+      <div className="flex items-center gap-3">
+        <span className="flex items-center gap-1 font-semibold text-white">
+          <FileText size={11} className="text-emerald-300" />
           Page {project.activePageIndex + 1} of {project.pages.length}
         </span>
 
-        <span className="text-white/60">|</span>
+        <span className="text-emerald-400/40">|</span>
 
-        <span className="text-white/80">
+        <span className="text-emerald-200/80">
           {(activePage.width / 96).toFixed(1)}" × {(activePage.height / 96).toFixed(1)}" (
           {activePage.orientation})
         </span>
 
         {selectedElement && (
           <>
-            <span className="text-white/60">|</span>
-            <span className="font-mono text-emerald-200">
-              Pos: ({Math.round(selectedElement.x)}, {Math.round(selectedElement.y)}) Size: (
-              {Math.round(selectedElement.width)} × {Math.round(selectedElement.height)})
+            <span className="text-emerald-400/40">|</span>
+            <span className="font-mono text-emerald-300 bg-emerald-900/50 px-1.5 py-0.2 rounded text-[10px]">
+              Pos: {Math.round(selectedElement.x)}, {Math.round(selectedElement.y)} • Size: {Math.round(selectedElement.width)}×{Math.round(selectedElement.height)}
             </span>
           </>
         )}
@@ -49,18 +49,18 @@ export const StatusBar: React.FC = () => {
       <div className="flex items-center gap-2">
         <button
           onClick={zoomFit}
-          className="hover:text-amber-300 p-0.5 rounded transition"
+          className="hover:text-white p-0.5 rounded transition text-emerald-200"
           title="Fit Page in Window"
         >
-          <Maximize size={12} />
+          <Maximize size={11} />
         </button>
 
         <button
           onClick={zoomOut}
-          className="hover:text-amber-300 p-0.5 rounded transition"
+          className="hover:text-white p-0.5 rounded transition text-emerald-200"
           title="Zoom Out"
         >
-          <ZoomOut size={12} />
+          <ZoomOut size={11} />
         </button>
 
         <input
@@ -69,18 +69,18 @@ export const StatusBar: React.FC = () => {
           max={250}
           value={Math.round(zoom * 100)}
           onChange={(e) => setZoom(Number(e.target.value) / 100)}
-          className="w-20 h-1 accent-amber-300 cursor-pointer"
+          className="w-20 h-1 accent-emerald-400 cursor-pointer"
         />
 
         <button
           onClick={zoomIn}
-          className="hover:text-amber-300 p-0.5 rounded transition"
+          className="hover:text-white p-0.5 rounded transition text-emerald-200"
           title="Zoom In"
         >
-          <ZoomIn size={12} />
+          <ZoomIn size={11} />
         </button>
 
-        <span className="w-10 text-right font-mono font-semibold">
+        <span className="w-9 text-right font-mono font-semibold text-white">
           {Math.round(zoom * 100)}%
         </span>
       </div>

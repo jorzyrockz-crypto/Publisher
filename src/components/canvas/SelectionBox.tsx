@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PublisherElement } from '../../types/publisher';
+import type { PublisherElement } from '../../types/publisher';
 import { RotateCw } from 'lucide-react';
 
 interface SelectionBoxProps {
@@ -80,13 +80,7 @@ export const SelectionBox: React.FC<SelectionBoxProps> = ({
     e.preventDefault();
     setIsRotating(true);
 
-    const boxCenter = {
-      x: element.x + element.width / 2,
-      y: element.y + element.height / 2,
-    };
-
     const handleMouseMove = (moveEvent: MouseEvent) => {
-      // Find element center in viewport coordinates
       const elDom = document.getElementById(`element-${element.id}`);
       if (!elDom) return;
       const rect = elDom.getBoundingClientRect();
@@ -124,57 +118,59 @@ export const SelectionBox: React.FC<SelectionBoxProps> = ({
         top: 0,
         width: '100%',
         height: '100%',
-        border: '1.5px solid #0078d4',
+        border: '1.5px solid #059669',
+        boxShadow: '0 0 0 1px rgba(255,255,255,0.8), 0 0 8px rgba(5,150,105,0.25)',
       }}
     >
-      {/* 8 Resize Handles */}
+      {/* 8 Modern Circular Resize Handles */}
       <div
-        className="resize-handle pointer-events-auto -top-1.5 -left-1.5 cursor-nwse-resize"
+        className="resize-handle-modern pointer-events-auto -top-1.5 -left-1.5 cursor-nwse-resize"
         onMouseDown={(e) => handleResizeMouseDown('nw', e)}
       />
       <div
-        className="resize-handle pointer-events-auto -top-1.5 left-1/2 -translate-x-1/2 cursor-ns-resize"
+        className="resize-handle-modern pointer-events-auto -top-1.5 left-1/2 -translate-x-1/2 cursor-ns-resize"
         onMouseDown={(e) => handleResizeMouseDown('n', e)}
       />
       <div
-        className="resize-handle pointer-events-auto -top-1.5 -right-1.5 cursor-nesw-resize"
+        className="resize-handle-modern pointer-events-auto -top-1.5 -right-1.5 cursor-nesw-resize"
         onMouseDown={(e) => handleResizeMouseDown('ne', e)}
       />
       <div
-        className="resize-handle pointer-events-auto top-1/2 -right-1.5 -translate-y-1/2 cursor-ew-resize"
+        className="resize-handle-modern pointer-events-auto top-1/2 -right-1.5 -translate-y-1/2 cursor-ew-resize"
         onMouseDown={(e) => handleResizeMouseDown('e', e)}
       />
       <div
-        className="resize-handle pointer-events-auto -bottom-1.5 -right-1.5 cursor-nwse-resize"
+        className="resize-handle-modern pointer-events-auto -bottom-1.5 -right-1.5 cursor-nwse-resize"
         onMouseDown={(e) => handleResizeMouseDown('se', e)}
       />
       <div
-        className="resize-handle pointer-events-auto -bottom-1.5 left-1/2 -translate-x-1/2 cursor-ns-resize"
+        className="resize-handle-modern pointer-events-auto -bottom-1.5 left-1/2 -translate-x-1/2 cursor-ns-resize"
         onMouseDown={(e) => handleResizeMouseDown('s', e)}
       />
       <div
-        className="resize-handle pointer-events-auto -bottom-1.5 -left-1.5 cursor-nesw-resize"
+        className="resize-handle-modern pointer-events-auto -bottom-1.5 -left-1.5 cursor-nesw-resize"
         onMouseDown={(e) => handleResizeMouseDown('sw', e)}
       />
       <div
-        className="resize-handle pointer-events-auto top-1/2 -left-1.5 -translate-y-1/2 cursor-ew-resize"
+        className="resize-handle-modern pointer-events-auto top-1/2 -left-1.5 -translate-y-1/2 cursor-ew-resize"
         onMouseDown={(e) => handleResizeMouseDown('w', e)}
       />
 
-      {/* Rotation Handle with stem line */}
-      <div className="absolute left-1/2 -top-6 -translate-x-1/2 flex flex-col items-center pointer-events-auto cursor-grab active:cursor-grabbing">
+      {/* Rotation Control with stem line */}
+      <div className="absolute left-1/2 -top-7 -translate-x-1/2 flex flex-col items-center pointer-events-auto cursor-grab active:cursor-grabbing">
         <div
-          className="w-4 h-4 bg-white border border-[#0078d4] rounded-full flex items-center justify-center hover:bg-[#0078d4] group"
+          className="w-5 h-5 bg-white border border-emerald-600 rounded-full flex items-center justify-center hover:bg-emerald-600 shadow-md group transition-all active:scale-95"
           onMouseDown={handleRotateMouseDown}
+          title="Drag to Rotate"
         >
-          <RotateCw size={10} className="text-[#0078d4] group-hover:text-white" />
+          <RotateCw size={10} className="text-emerald-700 group-hover:text-white" />
         </div>
-        <div className="w-[1.5px] h-2 bg-[#0078d4]" />
+        <div className="w-[1.5px] h-2 bg-emerald-600" />
       </div>
 
-      {/* Angle tooltip during rotation */}
+      {/* Floating Dimension or Angle Tooltip */}
       {isRotating && (
-        <div className="absolute -top-11 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-2 py-0.5 rounded shadow pointer-events-none">
+        <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white text-[10px] font-mono font-medium px-2 py-0.5 rounded-full shadow-lg pointer-events-none">
           {rotationAngle}°
         </div>
       )}

@@ -4,9 +4,6 @@ import {
   ZoomIn,
   ZoomOut,
   Maximize,
-  CheckSquare,
-  Square,
-  BookOpen,
   File,
 } from 'lucide-react';
 
@@ -26,100 +23,100 @@ export const ViewTab: React.FC = () => {
   } = usePublisher();
 
   return (
-    <div className="flex items-center h-24 px-2 py-1 gap-2 text-xs text-slate-700 overflow-x-auto select-none">
-      {/* 1. Show / Hide Group */}
-      <div className="flex flex-col justify-between h-full px-2 border-r border-slate-300 flex-shrink-0">
-        <div className="space-y-1 my-auto">
-          <label className="flex items-center gap-1.5 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={rulerVisible}
-              onChange={(e) => setRulerVisible(e.target.checked)}
-              className="w-3.5 h-3.5 accent-[#0f6b4e]"
-            />
-            <span className="text-[11px]">Rulers</span>
-          </label>
-          <label className="flex items-center gap-1.5 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={guidesVisible}
-              onChange={(e) => setGuidesVisible(e.target.checked)}
-              className="w-3.5 h-3.5 accent-[#0f6b4e]"
-            />
-            <span className="text-[11px]">Guides</span>
-          </label>
-          <label className="flex items-center gap-1.5 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={gridVisible}
-              onChange={(e) => setGridVisible(e.target.checked)}
-              className="w-3.5 h-3.5 accent-[#0f6b4e]"
-            />
-            <span className="text-[11px]">Gridlines</span>
-          </label>
+    <div className="flex items-center h-24 px-3 py-1 gap-3 text-xs text-slate-700 overflow-x-auto select-none">
+      {/* 1. Show / Hide Group with modern switches */}
+      <div className="flex flex-col justify-between h-full py-1 pr-3 border-r border-slate-200 flex-shrink-0 min-w-[130px]">
+        <div className="space-y-1.5 my-auto">
+          <div
+            onClick={() => setRulerVisible(!rulerVisible)}
+            className="flex items-center justify-between gap-2 cursor-pointer hover:opacity-90"
+          >
+            <span className="text-[11px] font-medium text-slate-600">Rulers</span>
+            <div className={`fluent-switch ${rulerVisible ? 'active' : ''}`}>
+              <div className="fluent-switch-knob" />
+            </div>
+          </div>
+          <div
+            onClick={() => setGuidesVisible(!guidesVisible)}
+            className="flex items-center justify-between gap-2 cursor-pointer hover:opacity-90"
+          >
+            <span className="text-[11px] font-medium text-slate-600">Guides</span>
+            <div className={`fluent-switch ${guidesVisible ? 'active' : ''}`}>
+              <div className="fluent-switch-knob" />
+            </div>
+          </div>
+          <div
+            onClick={() => setGridVisible(!gridVisible)}
+            className="flex items-center justify-between gap-2 cursor-pointer hover:opacity-90"
+          >
+            <span className="text-[11px] font-medium text-slate-600">Gridlines</span>
+            <div className={`fluent-switch ${gridVisible ? 'active' : ''}`}>
+              <div className="fluent-switch-knob" />
+            </div>
+          </div>
         </div>
-        <span className="text-[10px] text-slate-400 font-medium text-center">Show</span>
+        <span className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider text-center">Display</span>
       </div>
 
-      {/* 2. Zoom Group */}
-      <div className="flex flex-col justify-between h-full px-2 border-r border-slate-300 flex-shrink-0">
-        <div className="flex items-center gap-1.5 my-auto">
+      {/* 2. Zoom Controls */}
+      <div className="flex flex-col justify-between h-full py-1 px-3 border-r border-slate-200 flex-shrink-0">
+        <div className="flex items-center gap-2 my-auto">
           <button
             onClick={zoom100}
-            className="flex flex-col items-center p-1.5 hover:bg-slate-200 rounded transition"
+            className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
             title="100% Actual Size"
           >
-            <div className="w-8 h-8 rounded bg-slate-100 flex items-center justify-center font-bold text-xs text-slate-700">
+            <div className="w-8 h-8 rounded-xl bg-slate-100 font-bold text-xs text-slate-700 flex items-center justify-center group-hover:bg-slate-200 transition-all shadow-xs">
               100%
             </div>
-            <span className="text-[10px] mt-0.5">100%</span>
+            <span className="text-[10px] font-medium mt-1 text-slate-600">Actual</span>
           </button>
 
           <button
             onClick={zoomFit}
-            className="flex flex-col items-center p-1.5 hover:bg-slate-200 rounded transition group"
+            className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
             title="Fit Whole Page to Window"
           >
-            <div className="w-8 h-8 rounded bg-emerald-50 border border-[#0f6b4e] flex items-center justify-center group-hover:bg-[#0f6b4e] group-hover:text-white transition text-[#0f6b4e]">
-              <Maximize size={18} />
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-xs">
+              <Maximize size={16} />
             </div>
-            <span className="text-[10px] mt-0.5 font-medium">Whole Page</span>
+            <span className="text-[10px] font-medium mt-1 text-slate-600">Fit Page</span>
           </button>
 
           <div className="flex flex-col gap-1">
             <button
               onClick={zoomIn}
-              className="p-1 rounded border border-slate-300 hover:bg-slate-100"
+              className="p-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition shadow-2xs"
               title="Zoom In"
             >
-              <ZoomIn size={14} />
+              <ZoomIn size={13} className="text-slate-600" />
             </button>
             <button
               onClick={zoomOut}
-              className="p-1 rounded border border-slate-300 hover:bg-slate-100"
+              className="p-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition shadow-2xs"
               title="Zoom Out"
             >
-              <ZoomOut size={14} />
+              <ZoomOut size={13} className="text-slate-600" />
             </button>
           </div>
         </div>
-        <span className="text-[10px] text-slate-400 font-medium text-center">
+        <span className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider text-center">
           Zoom ({Math.round(zoom * 100)}%)
         </span>
       </div>
 
       {/* 3. Views */}
-      <div className="flex flex-col justify-between h-full px-2 flex-shrink-0">
+      <div className="flex flex-col justify-between h-full py-1 px-3 flex-shrink-0">
         <div className="flex items-center gap-1.5 my-auto">
           <button
-            className="flex flex-col items-center p-1.5 bg-emerald-50 border border-[#0f6b4e] rounded text-[#0f6b4e]"
+            className="flex flex-col items-center p-1.5 bg-emerald-50 border border-emerald-300 rounded-xl text-emerald-800 shadow-xs"
             title="Single Page View"
           >
             <File size={16} />
-            <span className="text-[10px] mt-0.5 font-semibold">Single Page</span>
+            <span className="text-[10px] font-semibold mt-1">Single</span>
           </button>
         </div>
-        <span className="text-[10px] text-slate-400 font-medium text-center">Views</span>
+        <span className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider text-center">View</span>
       </div>
     </div>
   );

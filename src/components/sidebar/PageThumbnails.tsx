@@ -13,24 +13,27 @@ export const PageThumbnails: React.FC = () => {
   } = usePublisher();
 
   return (
-    <div className="w-48 bg-[#f8fafc] border-r border-slate-300 flex flex-col h-full select-none flex-shrink-0 z-20">
+    <div className="w-52 bg-white/95 backdrop-blur-md border-r border-slate-200 flex flex-col h-full select-none flex-shrink-0 z-20 shadow-2xs">
       {/* Header bar */}
-      <div className="h-8 bg-[#f1f5f9] border-b border-slate-300 px-3 flex items-center justify-between text-xs font-semibold text-slate-700">
-        <span className="flex items-center gap-1.5">
-          <Layers size={13} className="text-[#0f6b4e]" />
-          Pages ({project.pages.length})
+      <div className="h-9 px-3.5 flex items-center justify-between border-b border-slate-200/80 bg-slate-50/70">
+        <span className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+          <Layers size={14} className="text-emerald-700" />
+          <span>Pages</span>
+          <span className="text-[10px] bg-slate-200/80 text-slate-600 px-1.5 py-0.2 rounded-full font-mono">
+            {project.pages.length}
+          </span>
         </span>
         <button
           onClick={addPage}
-          className="p-1 hover:bg-slate-200 rounded text-slate-700 hover:text-[#0f6b4e] transition"
-          title="Insert New Blank Page"
+          className="p-1 hover:bg-emerald-100 hover:text-emerald-800 text-slate-600 rounded-lg transition active:scale-95"
+          title="Add Blank Page"
         >
-          <Plus size={14} />
+          <Plus size={15} />
         </button>
       </div>
 
       {/* Thumbnails list */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-4">
+      <div className="flex-1 overflow-y-auto p-3 space-y-3.5">
         {project.pages.map((page, idx) => {
           const isActive = idx === project.activePageIndex;
           const aspectRatio = page.width / page.height;
@@ -39,25 +42,25 @@ export const PageThumbnails: React.FC = () => {
             <div
               key={page.id}
               onClick={() => setActivePageIndex(idx)}
-              className={`group flex flex-col items-center cursor-pointer p-1.5 rounded-md transition ${
+              className={`group flex flex-col items-center cursor-pointer p-2 rounded-2xl transition-all ${
                 isActive
-                  ? 'bg-emerald-50 ring-2 ring-[#0f6b4e]'
-                  : 'hover:bg-slate-200/60'
+                  ? 'bg-emerald-50/60 ring-2 ring-emerald-600 shadow-xs'
+                  : 'hover:bg-slate-100/70'
               }`}
             >
               {/* Scaled Mini Thumbnail Canvas */}
               <div
-                className="w-28 bg-white border border-slate-300 shadow-sm rounded-sm relative overflow-hidden flex items-center justify-center transition-transform group-hover:scale-[1.02]"
+                className="w-32 bg-white border border-slate-200/90 shadow-sm rounded-lg relative overflow-hidden flex items-center justify-center transition-all group-hover:scale-[1.02]"
                 style={{
-                  height: `${28 / aspectRatio}rem`,
-                  maxHeight: '140px',
+                  height: `${32 / aspectRatio}rem`,
+                  maxHeight: '145px',
                   backgroundColor: page.backgroundColor,
                 }}
               >
-                {/* Simplified visual representation of elements inside thumbnail */}
+                {/* Visual miniature representation */}
                 {page.elements.map((el) => {
-                  const scaleW = 112 / page.width; // 28rem ~ 112px in thumbnail
-                  const scaleH = (112 / aspectRatio) / page.height;
+                  const scaleW = 128 / page.width; // 32rem ~ 128px
+                  const scaleH = (128 / aspectRatio) / page.height;
 
                   return (
                     <div
@@ -74,61 +77,60 @@ export const PageThumbnails: React.FC = () => {
                             : el.type === 'text'
                             ? el.color
                             : '#94a3b8',
-                        borderRadius: el.type === 'shape' && el.shapeType === 'circle' ? '50%' : '1px',
+                        borderRadius:
+                          el.type === 'shape' && el.shapeType === 'circle' ? '50%' : '1px',
                       }}
                     />
                   );
                 })}
 
-                {/* Page Number Watermark */}
-                <span className="text-[10px] font-bold text-slate-400/40 select-none pointer-events-none">
+                {/* Page Number Badge */}
+                <div className="absolute bottom-1 right-1 bg-slate-900/60 backdrop-blur-xs text-white text-[9px] font-mono font-bold px-1.5 py-0.2 rounded-full pointer-events-none">
                   {idx + 1}
-                </span>
+                </div>
               </div>
 
               {/* Page Title & Controls */}
-              <div className="flex items-center justify-between w-full mt-1.5 px-1 text-[11px] text-slate-600">
-                <span className={`truncate font-medium ${isActive ? 'text-[#0f6b4e] font-bold' : ''}`}>
+              <div className="flex items-center justify-between w-full mt-2 px-1 text-xs text-slate-600">
+                <span className={`truncate font-medium text-[11px] ${isActive ? 'text-emerald-800 font-bold' : ''}`}>
                   {page.name || `Page ${idx + 1}`}
                 </span>
 
-                {isActive && (
-                  <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100">
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      duplicateActivePage();
+                    }}
+                    className="p-1 hover:bg-slate-200/80 rounded-md text-slate-600 hover:text-emerald-700 transition"
+                    title="Duplicate Page"
+                  >
+                    <Copy size={11} />
+                  </button>
+                  {project.pages.length > 1 && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        duplicateActivePage();
+                        deleteActivePage();
                       }}
-                      className="hover:text-[#0f6b4e] p-0.5"
-                      title="Duplicate Page"
+                      className="p-1 hover:bg-red-50 rounded-md text-slate-500 hover:text-red-600 transition"
+                      title="Delete Page"
                     >
-                      <Copy size={11} />
+                      <Trash2 size={11} />
                     </button>
-                    {project.pages.length > 1 && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteActivePage();
-                        }}
-                        className="hover:text-red-600 p-0.5"
-                        title="Delete Page"
-                      >
-                        <Trash2 size={11} />
-                      </button>
-                    )}
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* Bottom Master Page Indicator */}
-      <div className="p-2 border-t border-slate-200 bg-slate-100/60 text-[11px] text-slate-500 flex items-center justify-between">
-        <span className="flex items-center gap-1 text-[10px]">
-          <span className="w-2 h-2 rounded-full bg-emerald-600" />
-          Master Page Active
+      {/* Bottom Footer Info */}
+      <div className="p-2.5 border-t border-slate-200/80 bg-slate-50/60 text-[11px] text-slate-500 flex items-center justify-between">
+        <span className="flex items-center gap-1.5 text-[10px] font-medium">
+          <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+          Master Active
         </span>
         <span className="text-[10px] font-mono text-slate-400">
           {Math.round(activePage.width)}×{Math.round(activePage.height)}
