@@ -398,6 +398,12 @@ export const PropertiesPanel: React.FC = () => {
                 <option value="rainbow">Rainbow Gradient</option>
                 <option value="outline">Cyan Bold Outline</option>
                 <option value="retro">Retro Pop 3D</option>
+                <option value="neon-glow">Neon Cyber Glow</option>
+                <option value="chrome">Chrome Metallic</option>
+                <option value="fire">Blazing Fire</option>
+                <option value="comic-pop">Comic Pop Art</option>
+                <option value="emerald-3d">Emerald 3D Block</option>
+                <option value="sunset-gradient">Sunset Vibe</option>
               </select>
             </div>
           </div>

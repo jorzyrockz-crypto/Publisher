@@ -99,6 +99,18 @@ const TextRenderer: React.FC<{
         return 'wordart-outline';
       case 'retro':
         return 'wordart-retro';
+      case 'neon-glow':
+        return 'wordart-neon-glow';
+      case 'chrome':
+        return 'wordart-chrome';
+      case 'fire':
+        return 'wordart-fire';
+      case 'comic-pop':
+        return 'wordart-comic-pop';
+      case 'emerald-3d':
+        return 'wordart-emerald-3d';
+      case 'sunset-gradient':
+        return 'wordart-sunset-gradient';
       default:
         return '';
     }

@@ -88,6 +88,49 @@
   text-shadow: 3px 3px 0px #06b6d4, 5px 5px 0px #3b82f6;
 }
 
+.wordart-neon-glow {
+  color: #e0f2fe;
+  font-weight: 900;
+  text-shadow: 0 0 6px #38bdf8, 0 0 14px #0284c7, 0 0 28px #ec4899;
+}
+
+.wordart-chrome {
+  background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 45%, #475569 52%, #e2e8f0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 900;
+  filter: drop-shadow(0 2px 3px rgba(15, 23, 42, 0.45));
+}
+
+.wordart-fire {
+  background: linear-gradient(180deg, #fef08a 0%, #f97316 55%, #dc2626 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 900;
+  filter: drop-shadow(0 3px 8px rgba(239, 68, 68, 0.55));
+}
+
+.wordart-comic-pop {
+  color: #facc15;
+  -webkit-text-stroke: 2px #0f172a;
+  font-weight: 900;
+  text-shadow: 4px 4px 0px #0f172a;
+}
+
+.wordart-emerald-3d {
+  color: #10b981;
+  font-weight: 900;
+  text-shadow: 1px 1px 0 #065f46, 2px 2px 0 #064e3b, 3px 3px 0 #022c22, 4px 5px 8px rgba(0, 0, 0, 0.35);
+}
+
+.wordart-sunset-gradient {
+  background: linear-gradient(135deg, #ec4899 0%, #f97316 55%, #facc15 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 900;
+  filter: drop-shadow(0 2px 4px rgba(236, 72, 153, 0.3));
+}
+
 /* Fluent modern toggle switch */
 .fluent-switch {
   position: relative;

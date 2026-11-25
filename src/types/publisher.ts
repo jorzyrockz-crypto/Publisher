@@ -15,7 +15,19 @@ export type ShapeType =
   | 'hexagon'
   | 'badge-burst';
 
-export type WordArtStyle = 'none' | 'rainbow' | 'gold3d' | 'outline' | 'retro' | 'gradient-blue';
+export type WordArtStyle =
+  | 'none'
+  | 'rainbow'
+  | 'gold3d'
+  | 'outline'
+  | 'retro'
+  | 'gradient-blue'
+  | 'neon-glow'
+  | 'chrome'
+  | 'fire'
+  | 'comic-pop'
+  | 'emerald-3d'
+  | 'sunset-gradient';
 
 export type BorderArtStyle =
   | 'none'

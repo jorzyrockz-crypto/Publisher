@@ -10,11 +10,17 @@ export const WordArtPickerModal: React.FC = () => {
 
   if (!isWordArtModalOpen) return null;
 
-  const styles: { id: WordArtStyle; name: string; previewClass: string }[] = [
+  const styles: { id: WordArtStyle; name: string; previewClass: string; darkBg?: boolean }[] = [
     { id: 'gold3d', name: 'Gold 3D Extrusion', previewClass: 'wordart-gold3d' },
     { id: 'rainbow', name: 'Rainbow Gradient', previewClass: 'wordart-rainbow' },
     { id: 'outline', name: 'Cyan Outlined 3D', previewClass: 'wordart-outline' },
     { id: 'retro', name: 'Retro Pop Shadow', previewClass: 'wordart-retro' },
+    { id: 'neon-glow', name: 'Neon Cyber Glow', previewClass: 'wordart-neon-glow', darkBg: true },
+    { id: 'chrome', name: 'Chrome Metallic', previewClass: 'wordart-chrome' },
+    { id: 'fire', name: 'Blazing Fire', previewClass: 'wordart-fire' },
+    { id: 'comic-pop', name: 'Comic Pop Art', previewClass: 'wordart-comic-pop' },
+    { id: 'emerald-3d', name: 'Emerald 3D Block', previewClass: 'wordart-emerald-3d' },
+    { id: 'sunset-gradient', name: 'Sunset Vibe', previewClass: 'wordart-sunset-gradient' },
   ];
 
   const handleInsert = () => {
@@ -66,21 +72,29 @@ export const WordArtPickerModal: React.FC = () => {
             <label className="block text-xs font-semibold text-slate-600 mb-2">
               Select Style Preset
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 max-h-72 overflow-y-auto pr-1">
               {styles.map((s) => (
                 <div
                   key={s.id}
                   onClick={() => setSelectedStyle(s.id)}
-                  className={`p-4 rounded-2xl border cursor-pointer text-center flex flex-col items-center justify-center h-28 transition-all hover:scale-[1.02] ${
+                  className={`p-3 rounded-2xl border cursor-pointer text-center flex flex-col items-center justify-center h-24 transition-all hover:scale-[1.02] ${
+                    s.darkBg ? 'bg-slate-900' : 'bg-slate-50/60'
+                  } ${
                     selectedStyle === s.id
-                      ? 'border-emerald-600 ring-2 ring-emerald-600 bg-emerald-50/40 shadow-xs'
-                      : 'border-slate-200/80 hover:border-slate-300 bg-slate-50/60'
+                      ? 'border-emerald-600 ring-2 ring-emerald-600 shadow-xs'
+                      : 'border-slate-200/80 hover:border-slate-300'
                   }`}
                 >
                   <span className={`text-xl font-black ${s.previewClass} truncate max-w-full`}>
                     WordArt
                   </span>
-                  <span className="text-[10px] font-semibold text-slate-500 mt-2.5">{s.name}</span>
+                  <span
+                    className={`text-[10px] font-semibold mt-2 ${
+                      s.darkBg ? 'text-slate-300' : 'text-slate-500'
+                    }`}
+                  >
+                    {s.name}
+                  </span>
                 </div>
               ))}
             </div>
