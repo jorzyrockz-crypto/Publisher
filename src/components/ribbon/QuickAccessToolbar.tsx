@@ -26,6 +26,10 @@ export const QuickAccessToolbar: React.FC = () => {
     setActiveTab,
     addTextBox,
     addShape,
+    addQRCode,
+    addPageNumberToken,
+    isEditingMaster,
+    setIsEditingMaster,
     setIsMailMergeOpen,
     setIsWordArtModalOpen,
   } = usePublisher();
@@ -36,6 +40,9 @@ export const QuickAccessToolbar: React.FC = () => {
   const quickActions = [
     { label: 'Add Text Box', icon: 'T', action: () => addTextBox() },
     { label: 'Insert Shape', icon: '◻', action: () => addShape('rounded-rect') },
+    { label: 'Insert QR Code', icon: '⊞', action: () => addQRCode() },
+    { label: 'Insert Page Number', icon: '#', action: () => addPageNumberToken() },
+    { label: isEditingMaster ? 'Exit Master Page' : 'Edit Master Page', icon: '◫', action: () => setIsEditingMaster(!isEditingMaster) },
     { label: 'Mail Merge', icon: '✉', action: () => setIsMailMergeOpen(true) },
     { label: 'WordArt Gallery', icon: '✨', action: () => setIsWordArtModalOpen(true) },
     { label: 'Export to PDF', icon: '📄', action: () => exportToPdf(project) },

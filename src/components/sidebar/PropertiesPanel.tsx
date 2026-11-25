@@ -5,6 +5,7 @@ import {
   ShapeElement,
   ImageElement,
   TableElement,
+  QRElement,
   WordArtStyle,
   BorderArtStyle,
   ShapeType,
@@ -25,13 +26,19 @@ import {
   Sparkles,
   Sliders,
   Upload,
+  QrCode,
+  Lock,
+  Unlock,
 } from 'lucide-react';
 
 export const PropertiesPanel: React.FC = () => {
   const {
+    project,
     activePage,
+    isEditingMaster,
     selectedElementIds,
     updateElement,
+    toggleElementLock,
     setPageSize,
     setPageOrientation,
     setPageMargins,
@@ -40,9 +47,13 @@ export const PropertiesPanel: React.FC = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const elementsPool = isEditingMaster
+    ? project.masterPage?.elements || []
+    : activePage.elements;
+
   const selectedElement =
     selectedElementIds.length === 1
-      ? activePage.elements.find((el) => el.id === selectedElementIds[0])
+      ? elementsPool.find((el) => el.id === selectedElementIds[0])
       : null;
 
   return (
@@ -717,11 +728,116 @@ export const PropertiesPanel: React.FC = () => {
           </div>
         )}
 
-        {/* Selected Geometry Details */}
+        {/* Case 6: QR Code Properties */}
+        {selectedElement && selectedElement.type === 'qr' && (
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3.5 shadow-2xs">
+            <div className="font-bold text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-100">
+              <QrCode size={14} className="text-emerald-700" />
+              <span>QR Code Generator</span>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-500 mb-1.5">
+                URL or Text Content
+              </label>
+              <textarea
+                rows={3}
+                value={(selectedElement as QRElement).value}
+                onChange={(e) =>
+                  updateElement(selectedElement.id, { value: e.target.value })
+                }
+                placeholder="https://example.com"
+                className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-medium"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-500 mb-1.5">
+                  Foreground
+                </label>
+                <input
+                  type="color"
+                  value={(selectedElement as QRElement).fgColor}
+                  onChange={(e) =>
+                    updateElement(selectedElement.id, { fgColor: e.target.value })
+                  }
+                  className="w-7 h-7 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0 shadow-2xs"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-500 mb-1.5">
+                  Background
+                </label>
+                <input
+                  type="color"
+                  value={(selectedElement as QRElement).bgColor}
+                  onChange={(e) =>
+                    updateElement(selectedElement.id, { bgColor: e.target.value })
+                  }
+                  className="w-7 h-7 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0 shadow-2xs"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Selected Geometry, Opacity, Rotation & Lock */}
         {selectedElement && (
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-3 shadow-2xs space-y-1.5">
-            <div className="font-bold text-slate-700 text-[11px] mb-1">Dimensions</div>
-            <div className="grid grid-cols-2 gap-2 text-[11px]">
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 shadow-2xs space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="font-bold text-slate-700 text-[11px]">Transform & Opacity</div>
+              <button
+                onClick={() => toggleElementLock(selectedElement.id)}
+                className={`flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold border transition ${
+                  selectedElement.locked
+                    ? 'bg-amber-50 border-amber-300 text-amber-700'
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                {selectedElement.locked ? <Lock size={10} /> : <Unlock size={10} />}
+                <span>{selectedElement.locked ? 'Locked' : 'Lock'}</span>
+              </button>
+            </div>
+
+            {/* Opacity Slider */}
+            <div>
+              <div className="flex justify-between text-[10px] text-slate-500 font-medium mb-1">
+                <span>Opacity</span>
+                <span>{Math.round((selectedElement.opacity ?? 1) * 100)}%</span>
+              </div>
+              <input
+                type="range"
+                min={10}
+                max={100}
+                value={Math.round((selectedElement.opacity ?? 1) * 100)}
+                onChange={(e) =>
+                  updateElement(selectedElement.id, {
+                    opacity: Number(e.target.value) / 100,
+                  })
+                }
+                className="w-full accent-emerald-600 cursor-pointer"
+              />
+            </div>
+
+            {/* Rotation Input */}
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-slate-500 font-medium">Rotation (°)</span>
+              <input
+                type="number"
+                min={0}
+                max={360}
+                value={Math.round(selectedElement.rotation)}
+                onChange={(e) =>
+                  updateElement(selectedElement.id, {
+                    rotation: Number(e.target.value) % 360,
+                  })
+                }
+                className="w-16 bg-slate-50 border border-slate-200 rounded-xl px-2 py-1 text-xs outline-none text-center font-mono font-bold"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-[11px] pt-1 border-t border-slate-100">
               <div className="bg-slate-50 px-2 py-1 rounded-lg">
                 <span className="text-slate-400">X:</span>{' '}
                 <span className="font-mono font-bold text-slate-700">{Math.round(selectedElement.x)}px</span>

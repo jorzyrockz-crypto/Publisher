@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import QRCode from 'qrcode';
 import {
   PublisherElement,
   TextElement,
@@ -7,12 +8,15 @@ import {
   TableElement,
   AccentElement,
   LineElement,
+  QRElement,
 } from '../../types/publisher';
-import { Scissors, Quote, Award } from 'lucide-react';
+import { Scissors, Quote, Award, QrCode } from 'lucide-react';
 
 interface ElementRendererProps {
   element: PublisherElement;
   isSelected: boolean;
+  pageNumber?: number;
+  totalPages?: number;
   onTextChange?: (newText: string) => void;
   onTableCellChange?: (row: number, col: number, value: string) => void;
 }
@@ -20,12 +24,22 @@ interface ElementRendererProps {
 export const ElementRenderer: React.FC<ElementRendererProps> = ({
   element,
   isSelected,
+  pageNumber = 1,
+  totalPages = 1,
   onTextChange,
   onTableCellChange,
 }) => {
   switch (element.type) {
     case 'text':
-      return <TextRenderer element={element} isSelected={isSelected} onTextChange={onTextChange} />;
+      return (
+        <TextRenderer
+          element={element}
+          isSelected={isSelected}
+          pageNumber={pageNumber}
+          totalPages={totalPages}
+          onTextChange={onTextChange}
+        />
+      );
     case 'shape':
       return <ShapeRenderer element={element} />;
     case 'image':
@@ -42,6 +56,8 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({
       return <AccentRenderer element={element} />;
     case 'line':
       return <LineRenderer element={element} />;
+    case 'qr':
+      return <QRRenderer element={element} />;
     default:
       return null;
   }
@@ -50,8 +66,10 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({
 const TextRenderer: React.FC<{
   element: TextElement;
   isSelected: boolean;
+  pageNumber: number;
+  totalPages: number;
   onTextChange?: (t: string) => void;
-}> = ({ element, isSelected, onTextChange }) => {
+}> = ({ element, isSelected, pageNumber, totalPages, onTextChange }) => {
   const getWordArtClass = () => {
     if (!element.isWordArt) return '';
     switch (element.wordArtStyle) {
@@ -70,9 +88,15 @@ const TextRenderer: React.FC<{
 
   // Render drop cap if requested and text starts with a letter
   const renderTextContent = () => {
-    if (element.dropCap && element.text && element.text.length > 0) {
-      const firstLetter = element.text[0];
-      const rest = element.text.slice(1);
+    const resolvedText = isSelected
+      ? element.text
+      : element.text
+          .replace(/{{PageNumber}}/gi, String(pageNumber))
+          .replace(/{{TotalPages}}/gi, String(totalPages));
+
+    if (element.dropCap && resolvedText && resolvedText.length > 0) {
+      const firstLetter = resolvedText[0];
+      const rest = resolvedText.slice(1);
       return (
         <span>
           <span
@@ -93,7 +117,7 @@ const TextRenderer: React.FC<{
         </span>
       );
     }
-    return element.text;
+    return resolvedText;
   };
 
   return (
@@ -638,6 +662,51 @@ const LineRenderer: React.FC<{ element: LineElement }> = ({ element }) => {
               : undefined,
         }}
       />
+    </div>
+  );
+};
+
+const QRRenderer: React.FC<{ element: QRElement }> = ({ element }) => {
+  const [dataUrl, setDataUrl] = useState<string>('');
+
+  useEffect(() => {
+    let active = true;
+    QRCode.toDataURL(element.value || 'https://www.microsoft.com', {
+      margin: 1,
+      width: 256,
+      color: {
+        dark: element.fgColor || '#0f172a',
+        light: element.bgColor || '#ffffff',
+      },
+    })
+      .then((url) => {
+        if (active) setDataUrl(url);
+      })
+      .catch(() => {
+        if (active) setDataUrl('');
+      });
+    return () => {
+      active = false;
+    };
+  }, [element.value, element.fgColor, element.bgColor]);
+
+  return (
+    <div
+      className="w-full h-full flex items-center justify-center rounded-lg overflow-hidden border border-slate-200/80 shadow-2xs"
+      style={{ backgroundColor: element.bgColor || '#ffffff' }}
+    >
+      {dataUrl ? (
+        <img
+          src={dataUrl}
+          alt="QR Code"
+          className="w-full h-full object-contain pointer-events-none"
+        />
+      ) : (
+        <div className="flex flex-col items-center justify-center text-slate-400">
+          <QrCode size={32} />
+          <span className="text-[10px] mt-1">QR Code</span>
+        </div>
+      )}
     </div>
   );
 };

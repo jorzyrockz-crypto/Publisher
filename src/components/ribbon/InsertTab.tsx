@@ -11,6 +11,8 @@ import {
   Quote,
   Layout,
   Minus,
+  QrCode,
+  Hash,
 } from 'lucide-react';
 
 export const InsertTab: React.FC = () => {
@@ -22,6 +24,8 @@ export const InsertTab: React.FC = () => {
     addTable,
     addAccent,
     addLine,
+    addQRCode,
+    addPageNumberToken,
     setIsWordArtModalOpen,
   } = usePublisher();
 
@@ -229,8 +233,32 @@ export const InsertTab: React.FC = () => {
             </div>
             <span className="text-[10px] font-medium mt-1 text-slate-600">WordArt</span>
           </button>
+
+          {/* QR Code */}
+          <button
+            onClick={() => addQRCode()}
+            className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
+            title="Insert Scannable QR Code"
+          >
+            <div className="w-8 h-8 rounded-xl bg-slate-100 border border-slate-300 flex items-center justify-center group-hover:bg-slate-800 group-hover:text-white transition-all text-slate-800 shadow-xs">
+              <QrCode size={16} />
+            </div>
+            <span className="text-[10px] font-medium mt-1 text-slate-600">QR Code</span>
+          </button>
+
+          {/* Page Number */}
+          <button
+            onClick={addPageNumberToken}
+            className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
+            title="Insert Dynamic Page Number"
+          >
+            <div className="w-8 h-8 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all text-slate-700 shadow-xs">
+              <Hash size={16} />
+            </div>
+            <span className="text-[10px] font-medium mt-1 text-slate-600">Page #</span>
+          </button>
         </div>
-        <span className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider text-center">Styles</span>
+        <span className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider text-center">Smart Tools</span>
       </div>
     </div>
   );

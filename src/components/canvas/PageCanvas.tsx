@@ -4,6 +4,18 @@ import { ElementRenderer } from './ElementRenderer';
 import { SelectionBox } from './SelectionBox';
 import { calculateSnap } from '../../utils/snapping';
 import { PublisherElement } from '../../types/publisher';
+import {
+  Copy,
+  Clipboard,
+  Trash2,
+  Lock,
+  Unlock,
+  BringToFront,
+  SendToBack,
+  Type,
+  QrCode,
+  Layers,
+} from 'lucide-react';
 
 interface PageCanvasProps {
   cursorX?: number;
@@ -13,8 +25,12 @@ interface PageCanvasProps {
 
 export const PageCanvas: React.FC<PageCanvasProps> = ({ onCursorMove }) => {
   const {
+    project,
     activePage,
     selectedElementIds,
+    isEditingMaster,
+    setIsEditingMaster,
+    hasClipboard,
     zoom,
     guidesVisible,
     gridVisible,
@@ -24,12 +40,24 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({ onCursorMove }) => {
     updateElement,
     deleteSelectedElements,
     duplicateSelectedElements,
+    copySelectedElements,
+    pasteElements,
+    toggleElementLock,
+    bringToFront,
+    sendToBack,
+    addTextBox,
+    addQRCode,
     selectAll,
     undo,
     redo,
-    addGuide,
     removeGuide,
   } = usePublisher();
+
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    elementId?: string;
+  } | null>(null);
 
   const [activeAlignGuideH, setActiveAlignGuideH] = useState<number | undefined>();
   const [activeAlignGuideV, setActiveAlignGuideV] = useState<number | undefined>();
@@ -65,6 +93,14 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({ onCursorMove }) => {
       } else if (e.ctrlKey && e.key.toLowerCase() === 'a') {
         e.preventDefault();
         selectAll();
+      } else if (e.ctrlKey && e.key.toLowerCase() === 'c') {
+        if (selectedElementIds.length > 0) {
+          e.preventDefault();
+          copySelectedElements();
+        }
+      } else if (e.ctrlKey && e.key.toLowerCase() === 'v') {
+        e.preventDefault();
+        pasteElements();
       } else if (e.ctrlKey && e.key.toLowerCase() === 'd') {
         e.preventDefault();
         duplicateSelectedElements();
@@ -104,6 +140,8 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({ onCursorMove }) => {
     duplicateSelectedElements,
     undo,
     redo,
+    copySelectedElements,
+    pasteElements,
     updateElement,
   ]);
 
@@ -162,11 +200,14 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({ onCursorMove }) => {
 
   const handleElementMouseDown = (element: PublisherElement, e: React.MouseEvent) => {
     e.stopPropagation();
+    setContextMenu(null);
 
     const isMulti = e.shiftKey || e.ctrlKey;
     if (!selectedElementIds.includes(element.id)) {
       selectElement(element.id, isMulti);
     }
+
+    if (element.locked) return;
 
     const startClientX = e.clientX;
     const startClientY = e.clientY;
@@ -224,22 +265,54 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({ onCursorMove }) => {
     window.addEventListener('mouseup', handleWindowMouseUp);
   };
 
+  const displayedElements = isEditingMaster
+    ? project.masterPage?.elements || []
+    : activePage.elements;
+
+  const masterElements =
+    !isEditingMaster && project.masterPage?.showOnAllPages
+      ? project.masterPage.elements
+      : [];
+
   return (
-    <div
-      id={`print-page-${activePage.id}`}
-      ref={canvasRef}
-      className="relative select-none print-page transition-shadow duration-150"
-      style={{
-        width: `${activePage.width}px`,
-        height: `${activePage.height}px`,
-        backgroundColor: activePage.backgroundColor,
-        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-        transform: `scale(${zoom})`,
-        transformOrigin: 'top left',
-      }}
-      onMouseMove={handleCanvasMouseMove}
-      onMouseDown={handleCanvasMouseDown}
-    >
+    <>
+      <div
+        id={`print-page-${activePage.id}`}
+        ref={canvasRef}
+        className={`relative select-none print-page transition-shadow duration-150 ${
+          isEditingMaster ? 'ring-4 ring-amber-400/70' : ''
+        }`}
+        style={{
+          width: `${activePage.width}px`,
+          height: `${activePage.height}px`,
+          backgroundColor: activePage.backgroundColor,
+          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+          transform: `scale(${zoom})`,
+          transformOrigin: 'top left',
+        }}
+        onMouseMove={handleCanvasMouseMove}
+        onMouseDown={(e) => {
+          setContextMenu(null);
+          handleCanvasMouseDown(e);
+        }}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          setContextMenu({ x: e.clientX, y: e.clientY });
+        }}
+      >
+        {/* Master Page Mode Banner */}
+        {isEditingMaster && (
+          <div className="no-print absolute -top-7 left-0 bg-amber-500 text-white text-[11px] font-bold px-3 py-0.5 rounded-t-lg shadow flex items-center gap-2 z-50">
+            <Layers size={12} />
+            <span>EDITING MASTER PAGE (Applies to all pages)</span>
+            <button
+              onClick={() => setIsEditingMaster(false)}
+              className="ml-2 underline text-amber-100 hover:text-white"
+            >
+              Exit Master
+            </button>
+          </div>
+        )}
       {/* Optional Grid Overlay */}
       {gridVisible && (
         <div
@@ -313,15 +386,44 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({ onCursorMove }) => {
         />
       )}
 
+      {/* Render Master Page Elements behind regular page elements */}
+      {masterElements
+        .filter((el) => el.visible !== false)
+        .map((element) => (
+          <div
+            key={`master-${element.id}`}
+            className="absolute pointer-events-none"
+            style={{
+              left: `${element.x}px`,
+              top: `${element.y}px`,
+              width: `${element.width}px`,
+              height: `${element.height}px`,
+              transform: `rotate(${element.rotation}deg)`,
+              transformOrigin: 'center center',
+              zIndex: element.zIndex,
+              opacity: element.opacity !== undefined ? element.opacity : 1,
+            }}
+          >
+            <ElementRenderer
+              element={element}
+              isSelected={false}
+              pageNumber={project.activePageIndex + 1}
+              totalPages={project.pages.length}
+            />
+          </div>
+        ))}
+
       {/* Render Document Elements */}
-      {activePage.elements.map((element) => {
+      {displayedElements
+        .filter((el) => el.visible !== false)
+        .map((element) => {
         const isSelected = selectedElementIds.includes(element.id);
 
         return (
           <div
             key={element.id}
             id={`element-${element.id}`}
-            className="absolute cursor-move"
+            className={`absolute ${element.locked ? 'cursor-not-allowed' : 'cursor-move'}`}
             style={{
               left: `${element.x}px`,
               top: `${element.y}px`,
@@ -333,10 +435,20 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({ onCursorMove }) => {
               opacity: element.opacity !== undefined ? element.opacity : 1,
             }}
             onMouseDown={(e) => handleElementMouseDown(element, e)}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (!selectedElementIds.includes(element.id)) {
+                selectElement(element.id, false);
+              }
+              setContextMenu({ x: e.clientX, y: e.clientY, elementId: element.id });
+            }}
           >
             <ElementRenderer
               element={element}
-              isSelected={isSelected}
+              isSelected={isSelected && !element.locked}
+              pageNumber={project.activePageIndex + 1}
+              totalPages={project.pages.length}
               onTextChange={(newText) => updateElement(element.id, { text: newText })}
               onTableCellChange={(row, col, val) => {
                 if (element.type === 'table') {
@@ -349,7 +461,7 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({ onCursorMove }) => {
             />
 
             {/* Transform Controls & Handles when Selected */}
-            {isSelected && (
+            {isSelected && !element.locked && (
               <SelectionBox
                 element={element}
                 zoom={zoom}
@@ -359,9 +471,147 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({ onCursorMove }) => {
                 onRotate={(nrot) => updateElement(element.id, { rotation: nrot })}
               />
             )}
+
+            {/* Locked Badge when Selected */}
+            {isSelected && element.locked && (
+              <div className="absolute inset-0 border-2 border-amber-500/80 pointer-events-none flex items-start justify-end p-1">
+                <span className="bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow">
+                  <Lock size={9} /> Locked
+                </span>
+              </div>
+            )}
           </div>
         );
       })}
     </div>
+
+    {/* Right-Click Context Menu */}
+    {contextMenu && (
+      <div
+        className="fixed z-50 bg-white/95 backdrop-blur-md border border-slate-200 shadow-2xl rounded-2xl p-1.5 w-48 text-xs text-slate-700 animate-in fade-in zoom-in-95 duration-100"
+        style={{
+          left: Math.min(contextMenu.x, window.innerWidth - 200),
+          top: Math.min(contextMenu.y, window.innerHeight - 280),
+        }}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        {contextMenu.elementId ? (
+          <>
+            <button
+              onClick={() => {
+                copySelectedElements();
+                setContextMenu(null);
+              }}
+              className="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 hover:text-emerald-800 rounded-xl flex items-center gap-2 transition"
+            >
+              <Copy size={13} /> <span>Copy</span>
+              <span className="ml-auto text-[10px] text-slate-400">Ctrl+C</span>
+            </button>
+            <button
+              onClick={() => {
+                duplicateSelectedElements();
+                setContextMenu(null);
+              }}
+              className="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 hover:text-emerald-800 rounded-xl flex items-center gap-2 transition"
+            >
+              <Copy size={13} /> <span>Duplicate</span>
+              <span className="ml-auto text-[10px] text-slate-400">Ctrl+D</span>
+            </button>
+            <div className="border-t border-slate-100 my-1" />
+            <button
+              onClick={() => {
+                bringToFront();
+                setContextMenu(null);
+              }}
+              className="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 hover:text-emerald-800 rounded-xl flex items-center gap-2 transition"
+            >
+              <BringToFront size={13} /> <span>Bring to Front</span>
+            </button>
+            <button
+              onClick={() => {
+                sendToBack();
+                setContextMenu(null);
+              }}
+              className="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 hover:text-emerald-800 rounded-xl flex items-center gap-2 transition"
+            >
+              <SendToBack size={13} /> <span>Send to Back</span>
+            </button>
+            <button
+              onClick={() => {
+                if (contextMenu.elementId) toggleElementLock(contextMenu.elementId);
+                setContextMenu(null);
+              }}
+              className="w-full text-left px-2.5 py-1.5 hover:bg-amber-50 hover:text-amber-800 rounded-xl flex items-center gap-2 transition"
+            >
+              {displayedElements.find((el) => el.id === contextMenu.elementId)?.locked ? (
+                <>
+                  <Unlock size={13} /> <span>Unlock Object</span>
+                </>
+              ) : (
+                <>
+                  <Lock size={13} /> <span>Lock Object</span>
+                </>
+              )}
+            </button>
+            <div className="border-t border-slate-100 my-1" />
+            <button
+              onClick={() => {
+                deleteSelectedElements();
+                setContextMenu(null);
+              }}
+              className="w-full text-left px-2.5 py-1.5 hover:bg-red-50 text-red-600 rounded-xl flex items-center gap-2 transition"
+            >
+              <Trash2 size={13} /> <span>Delete</span>
+              <span className="ml-auto text-[10px] text-red-300">Del</span>
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              disabled={!hasClipboard}
+              onClick={() => {
+                pasteElements();
+                setContextMenu(null);
+              }}
+              className="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 hover:text-emerald-800 rounded-xl flex items-center gap-2 disabled:opacity-40 transition"
+            >
+              <Clipboard size={13} /> <span>Paste</span>
+              <span className="ml-auto text-[10px] text-slate-400">Ctrl+V</span>
+            </button>
+            <div className="border-t border-slate-100 my-1" />
+            <button
+              onClick={() => {
+                addTextBox();
+                setContextMenu(null);
+              }}
+              className="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 hover:text-emerald-800 rounded-xl flex items-center gap-2 transition"
+            >
+              <Type size={13} /> <span>Insert Text Box</span>
+            </button>
+            <button
+              onClick={() => {
+                addQRCode();
+                setContextMenu(null);
+              }}
+              className="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 hover:text-emerald-800 rounded-xl flex items-center gap-2 transition"
+            >
+              <QrCode size={13} /> <span>Insert QR Code</span>
+            </button>
+            <div className="border-t border-slate-100 my-1" />
+            <button
+              onClick={() => {
+                setIsEditingMaster(!isEditingMaster);
+                setContextMenu(null);
+              }}
+              className="w-full text-left px-2.5 py-1.5 hover:bg-amber-50 hover:text-amber-800 rounded-xl flex items-center gap-2 transition"
+            >
+              <Layers size={13} />{' '}
+              <span>{isEditingMaster ? 'Exit Master Page' : 'Edit Master Page'}</span>
+            </button>
+          </>
+        )}
+      </div>
+    )}
+    </>
   );
 };

@@ -1,4 +1,4 @@
-export type ElementType = 'text' | 'shape' | 'image' | 'table' | 'accent' | 'line';
+export type ElementType = 'text' | 'shape' | 'image' | 'table' | 'accent' | 'line' | 'qr';
 
 export type ShapeType =
   | 'rectangle'
@@ -27,6 +27,7 @@ export type BorderArtStyle =
 export interface BaseElement {
   id: string;
   type: ElementType;
+  name?: string;
   x: number;
   y: number;
   width: number;
@@ -34,6 +35,7 @@ export interface BaseElement {
   rotation: number; // in degrees
   zIndex: number;
   locked?: boolean;
+  visible?: boolean;
   opacity?: number;
 }
 
@@ -127,13 +129,21 @@ export interface LineElement extends BaseElement {
   arrowEnd?: boolean;
 }
 
+export interface QRElement extends BaseElement {
+  type: 'qr';
+  value: string;
+  fgColor: string;
+  bgColor: string;
+}
+
 export type PublisherElement =
   | TextElement
   | ShapeElement
   | ImageElement
   | TableElement
   | AccentElement
-  | LineElement;
+  | LineElement
+  | QRElement;
 
 export interface PageGuide {
   id: string;

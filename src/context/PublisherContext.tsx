@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import {
   DocumentProject,
   Page,
@@ -11,6 +11,7 @@ import {
   TableElement,
   AccentElement,
   LineElement,
+  QRElement,
   ShapeType,
 } from '../types/publisher';
 import { TEMPLATES } from '../constants/templates';
@@ -35,8 +36,12 @@ interface PublisherContextType {
   snapToGrid: boolean;
   canUndo: boolean;
   canRedo: boolean;
+  isEditingMaster: boolean;
+  hasClipboard: boolean;
 
   // Setters & UI controls
+  setIsEditingMaster: (editing: boolean) => void;
+  toggleMasterPageVisibility: () => void;
   setActiveTab: (tab: 'home' | 'insert' | 'page-design' | 'mailings' | 'view') => void;
   setIsBackstageOpen: (open: boolean) => void;
   setIsMailMergeOpen: (open: boolean) => void;
@@ -75,6 +80,10 @@ interface PublisherContextType {
   updateSelectedElements: (updates: Partial<PublisherElement>) => void;
   deleteSelectedElements: () => void;
   duplicateSelectedElements: () => void;
+  copySelectedElements: () => void;
+  pasteElements: () => void;
+  toggleElementLock: (id: string) => void;
+  toggleElementVisibility: (id: string) => void;
   selectElement: (id: string, multiSelect?: boolean) => void;
   selectAll: () => void;
   clearSelection: () => void;
@@ -92,6 +101,8 @@ interface PublisherContextType {
   addTable: (rows: number, cols: number, options?: Partial<TableElement>) => void;
   addAccent: (accentType: AccentElement['accentType'], options?: Partial<AccentElement>) => void;
   addLine: (options?: Partial<LineElement>) => void;
+  addQRCode: (value?: string, options?: Partial<QRElement>) => void;
+  addPageNumberToken: () => void;
 
   // Zoom & Pan
   setZoom: (zoom: number) => void;
@@ -104,16 +115,40 @@ interface PublisherContextType {
 
 const PublisherContext = createContext<PublisherContextType | null>(null);
 
+const AUTOSAVE_KEY = 'ms_publisher_clone_autosave_v1';
+
 export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Default to the first template (Corporate Trifold Brochure)
+  // Load from localStorage autosave if available, otherwise default to Corporate Trifold Brochure
   const [project, setProjectState] = useState<DocumentProject>(() => {
+    try {
+      const saved = localStorage.getItem(AUTOSAVE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && Array.isArray(parsed.pages) && parsed.pages.length > 0) {
+          return parsed;
+        }
+      }
+    } catch {
+      // ignore storage errors
+    }
     return JSON.parse(JSON.stringify(TEMPLATES[0].project));
   });
+
+  // Auto-save project to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(project));
+    } catch {
+      // ignore quota errors
+    }
+  }, [project]);
 
   const [historyPast, setHistoryPast] = useState<DocumentProject[]>([]);
   const [historyFuture, setHistoryFuture] = useState<DocumentProject[]>([]);
 
   const [selectedElementIds, setSelectedElementIds] = useState<string[]>([]);
+  const [copiedElements, setCopiedElements] = useState<PublisherElement[]>([]);
+  const [isEditingMaster, setIsEditingMasterState] = useState<boolean>(false);
   const [zoom, setZoomState] = useState<number>(0.9);
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
@@ -130,6 +165,22 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [snapToGrid, setSnapToGrid] = useState(false);
 
   const activePage = project.pages[project.activePageIndex] || project.pages[0];
+
+  const setIsEditingMaster = useCallback((editing: boolean) => {
+    setIsEditingMasterState(editing);
+    setSelectedElementIds([]);
+  }, []);
+
+  const toggleMasterPageVisibility = useCallback(() => {
+    const current = project.masterPage || { elements: [], showOnAllPages: true };
+    setProjectState((prev) => ({
+      ...prev,
+      masterPage: {
+        ...current,
+        showOnAllPages: !current.showOnAllPages,
+      },
+    }));
+  }, [project.masterPage]);
 
   // Helper to commit a new project state with undo history
   const commitProject = useCallback(
@@ -338,76 +389,75 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     [project, activePage, commitProject]
   );
 
+  // Helper to get/update elements on either Master Page or Active Page
+  const currentElements = isEditingMaster
+    ? project.masterPage?.elements || []
+    : activePage.elements;
+
+  const commitCurrentElements = useCallback(
+    (nextElements: PublisherElement[]) => {
+      if (isEditingMaster) {
+        const currentMaster = project.masterPage || { elements: [], showOnAllPages: true };
+        commitProject({
+          ...project,
+          masterPage: { ...currentMaster, elements: nextElements },
+        });
+      } else {
+        const updatedPage = { ...activePage, elements: nextElements };
+        const newPages = project.pages.map((pg, idx) =>
+          idx === project.activePageIndex ? updatedPage : pg
+        );
+        commitProject({ ...project, pages: newPages });
+      }
+    },
+    [isEditingMaster, project, activePage, commitProject]
+  );
+
   // Element actions
   const addElement = useCallback(
     (element: PublisherElement) => {
-      const maxZ = activePage.elements.reduce((acc, el) => Math.max(acc, el.zIndex), 0);
+      const maxZ = currentElements.reduce((acc, el) => Math.max(acc, el.zIndex), 0);
       const withZ = { ...element, zIndex: maxZ + 1 };
-      const updatedPage = {
-        ...activePage,
-        elements: [...activePage.elements, withZ],
-      };
-      const newPages = project.pages.map((pg, idx) =>
-        idx === project.activePageIndex ? updatedPage : pg
-      );
-      commitProject({ ...project, pages: newPages });
+      commitCurrentElements([...currentElements, withZ]);
       setSelectedElementIds([element.id]);
     },
-    [project, activePage, commitProject]
+    [currentElements, commitCurrentElements]
   );
 
   const updateElement = useCallback(
     (id: string, updates: Partial<PublisherElement>) => {
-      const updatedPage = {
-        ...activePage,
-        elements: activePage.elements.map((el) =>
-          el.id === id ? ({ ...el, ...updates } as PublisherElement) : el
-        ),
-      };
-      const newPages = project.pages.map((pg, idx) =>
-        idx === project.activePageIndex ? updatedPage : pg
+      const updated = currentElements.map((el) =>
+        el.id === id ? ({ ...el, ...updates } as PublisherElement) : el
       );
-      commitProject({ ...project, pages: newPages });
+      commitCurrentElements(updated);
     },
-    [project, activePage, commitProject]
+    [currentElements, commitCurrentElements]
   );
 
   const updateSelectedElements = useCallback(
     (updates: Partial<PublisherElement>) => {
       if (selectedElementIds.length === 0) return;
-      const updatedPage = {
-        ...activePage,
-        elements: activePage.elements.map((el) =>
-          selectedElementIds.includes(el.id) ? ({ ...el, ...updates } as PublisherElement) : el
-        ),
-      };
-      const newPages = project.pages.map((pg, idx) =>
-        idx === project.activePageIndex ? updatedPage : pg
+      const updated = currentElements.map((el) =>
+        selectedElementIds.includes(el.id) ? ({ ...el, ...updates } as PublisherElement) : el
       );
-      commitProject({ ...project, pages: newPages });
+      commitCurrentElements(updated);
     },
-    [project, activePage, selectedElementIds, commitProject]
+    [currentElements, selectedElementIds, commitCurrentElements]
   );
 
   const deleteSelectedElements = useCallback(() => {
     if (selectedElementIds.length === 0) return;
-    const updatedPage = {
-      ...activePage,
-      elements: activePage.elements.filter((el) => !selectedElementIds.includes(el.id)),
-    };
-    const newPages = project.pages.map((pg, idx) =>
-      idx === project.activePageIndex ? updatedPage : pg
-    );
-    commitProject({ ...project, pages: newPages });
+    const updated = currentElements.filter((el) => !selectedElementIds.includes(el.id));
+    commitCurrentElements(updated);
     setSelectedElementIds([]);
-  }, [project, activePage, selectedElementIds, commitProject]);
+  }, [currentElements, selectedElementIds, commitCurrentElements]);
 
   const duplicateSelectedElements = useCallback(() => {
     if (selectedElementIds.length === 0) return;
     const duplicated: PublisherElement[] = [];
     const newIds: string[] = [];
 
-    activePage.elements.forEach((el) => {
+    currentElements.forEach((el) => {
       if (selectedElementIds.includes(el.id)) {
         const newId = `el-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
         newIds.push(newId);
@@ -421,16 +471,55 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
     });
 
-    const updatedPage = {
-      ...activePage,
-      elements: [...activePage.elements, ...duplicated],
-    };
-    const newPages = project.pages.map((pg, idx) =>
-      idx === project.activePageIndex ? updatedPage : pg
-    );
-    commitProject({ ...project, pages: newPages });
+    commitCurrentElements([...currentElements, ...duplicated]);
     setSelectedElementIds(newIds);
-  }, [project, activePage, selectedElementIds, commitProject]);
+  }, [currentElements, selectedElementIds, commitCurrentElements]);
+
+  const copySelectedElements = useCallback(() => {
+    if (selectedElementIds.length === 0) return;
+    const toCopy = currentElements.filter((el) => selectedElementIds.includes(el.id));
+    setCopiedElements(JSON.parse(JSON.stringify(toCopy)));
+  }, [currentElements, selectedElementIds]);
+
+  const pasteElements = useCallback(() => {
+    if (copiedElements.length === 0) return;
+    const maxZ = currentElements.reduce((acc, el) => Math.max(acc, el.zIndex), 0);
+    const pasted: PublisherElement[] = [];
+    const newIds: string[] = [];
+
+    copiedElements.forEach((el, idx) => {
+      const newId = `el-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+      newIds.push(newId);
+      pasted.push({
+        ...el,
+        id: newId,
+        x: el.x + 24,
+        y: el.y + 24,
+        zIndex: maxZ + idx + 1,
+      });
+    });
+
+    commitCurrentElements([...currentElements, ...pasted]);
+    setSelectedElementIds(newIds);
+  }, [copiedElements, currentElements, commitCurrentElements]);
+
+  const toggleElementLock = useCallback(
+    (id: string) => {
+      const target = currentElements.find((el) => el.id === id);
+      if (!target) return;
+      updateElement(id, { locked: !target.locked });
+    },
+    [currentElements, updateElement]
+  );
+
+  const toggleElementVisibility = useCallback(
+    (id: string) => {
+      const target = currentElements.find((el) => el.id === id);
+      if (!target) return;
+      updateElement(id, { visible: target.visible === false ? true : false });
+    },
+    [currentElements, updateElement]
+  );
 
   const selectElement = useCallback((id: string, multiSelect = false) => {
     setSelectedElementIds((prev) => {
@@ -442,8 +531,8 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, []);
 
   const selectAll = useCallback(() => {
-    setSelectedElementIds(activePage.elements.map((el) => el.id));
-  }, [activePage]);
+    setSelectedElementIds(currentElements.map((el) => el.id));
+  }, [currentElements]);
 
   const clearSelection = useCallback(() => {
     setSelectedElementIds([]);
@@ -452,49 +541,37 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Arrange / Z-Order
   const bringToFront = useCallback(() => {
     if (selectedElementIds.length === 0) return;
-    const maxZ = activePage.elements.reduce((acc, el) => Math.max(acc, el.zIndex), 0);
-    const updated = activePage.elements.map((el) =>
+    const maxZ = currentElements.reduce((acc, el) => Math.max(acc, el.zIndex), 0);
+    const updated = currentElements.map((el) =>
       selectedElementIds.includes(el.id) ? { ...el, zIndex: maxZ + 1 } : el
     );
-    const newPages = project.pages.map((pg, idx) =>
-      idx === project.activePageIndex ? { ...pg, elements: updated } : pg
-    );
-    commitProject({ ...project, pages: newPages });
-  }, [project, activePage, selectedElementIds, commitProject]);
+    commitCurrentElements(updated);
+  }, [currentElements, selectedElementIds, commitCurrentElements]);
 
   const sendToBack = useCallback(() => {
     if (selectedElementIds.length === 0) return;
-    const minZ = activePage.elements.reduce((acc, el) => Math.min(acc, el.zIndex), 0);
-    const updated = activePage.elements.map((el) =>
+    const minZ = currentElements.reduce((acc, el) => Math.min(acc, el.zIndex), 0);
+    const updated = currentElements.map((el) =>
       selectedElementIds.includes(el.id) ? { ...el, zIndex: Math.max(0, minZ - 1) } : el
     );
-    const newPages = project.pages.map((pg, idx) =>
-      idx === project.activePageIndex ? { ...pg, elements: updated } : pg
-    );
-    commitProject({ ...project, pages: newPages });
-  }, [project, activePage, selectedElementIds, commitProject]);
+    commitCurrentElements(updated);
+  }, [currentElements, selectedElementIds, commitCurrentElements]);
 
   const bringForward = useCallback(() => {
     if (selectedElementIds.length === 0) return;
-    const updated = activePage.elements.map((el) =>
+    const updated = currentElements.map((el) =>
       selectedElementIds.includes(el.id) ? { ...el, zIndex: el.zIndex + 1 } : el
     );
-    const newPages = project.pages.map((pg, idx) =>
-      idx === project.activePageIndex ? { ...pg, elements: updated } : pg
-    );
-    commitProject({ ...project, pages: newPages });
-  }, [project, activePage, selectedElementIds, commitProject]);
+    commitCurrentElements(updated);
+  }, [currentElements, selectedElementIds, commitCurrentElements]);
 
   const sendBackward = useCallback(() => {
     if (selectedElementIds.length === 0) return;
-    const updated = activePage.elements.map((el) =>
+    const updated = currentElements.map((el) =>
       selectedElementIds.includes(el.id) ? { ...el, zIndex: Math.max(0, el.zIndex - 1) } : el
     );
-    const newPages = project.pages.map((pg, idx) =>
-      idx === project.activePageIndex ? { ...pg, elements: updated } : pg
-    );
-    commitProject({ ...project, pages: newPages });
-  }, [project, activePage, selectedElementIds, commitProject]);
+    commitCurrentElements(updated);
+  }, [currentElements, selectedElementIds, commitCurrentElements]);
 
   // Alignment
   const alignSelected = useCallback(
@@ -760,6 +837,43 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     [activePage, addElement]
   );
 
+  const addQRCode = useCallback(
+    (value = 'https://www.microsoft.com/publisher', options?: Partial<QRElement>) => {
+      const defaultQR: QRElement = {
+        id: `qr-${Date.now()}`,
+        type: 'qr',
+        name: 'QR Code',
+        x: activePage.margins.left + 60,
+        y: activePage.margins.top + 60,
+        width: 140,
+        height: 140,
+        rotation: 0,
+        zIndex: 10,
+        value,
+        fgColor: '#0f172a',
+        bgColor: '#ffffff',
+        ...options,
+      };
+      addElement(defaultQR);
+    },
+    [activePage, addElement]
+  );
+
+  const addPageNumberToken = useCallback(() => {
+    addTextBox({
+      name: 'Page Number',
+      text: 'Page {{PageNumber}} of {{TotalPages}}',
+      x: activePage.width / 2 - 80,
+      y: activePage.height - activePage.margins.bottom - 30,
+      width: 160,
+      height: 30,
+      fontSize: 11,
+      color: '#64748b',
+      textAlign: 'center',
+      fontWeight: '600',
+    });
+  }, [activePage, addTextBox]);
+
   // Zoom
   const setZoom = useCallback((newZoom: number) => {
     setZoomState(Math.min(3.0, Math.max(0.2, newZoom)));
@@ -809,7 +923,11 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         snapToGrid,
         canUndo: historyPast.length > 0,
         canRedo: historyFuture.length > 0,
+        isEditingMaster,
+        hasClipboard: copiedElements.length > 0,
 
+        setIsEditingMaster,
+        toggleMasterPageVisibility,
         setActiveTab,
         setIsBackstageOpen,
         setIsMailMergeOpen,
@@ -844,6 +962,10 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         updateSelectedElements,
         deleteSelectedElements,
         duplicateSelectedElements,
+        copySelectedElements,
+        pasteElements,
+        toggleElementLock,
+        toggleElementVisibility,
         selectElement,
         selectAll,
         clearSelection,
@@ -860,6 +982,8 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         addTable,
         addAccent,
         addLine,
+        addQRCode,
+        addPageNumberToken,
 
         setZoom,
         setPan,
