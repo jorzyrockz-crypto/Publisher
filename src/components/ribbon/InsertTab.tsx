@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
 import { SAMPLE_GRAPHICS } from '../../constants/sampleGraphics';
+import { FloatingDropdown } from '../common/FloatingDropdown';
 import {
   FilePlus,
   Copy,
@@ -32,6 +33,8 @@ export const InsertTab: React.FC = () => {
   } = usePublisher();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const tableBtnRef = useRef<HTMLButtonElement>(null);
+  const stockBtnRef = useRef<HTMLButtonElement>(null);
   const [tableGridHover, setTableGridHover] = useState<{ r: number; c: number }>({ r: 3, c: 3 });
   const [isTableDropdownOpen, setIsTableDropdownOpen] = useState(false);
   const [isStockOpen, setIsStockOpen] = useState(false);
@@ -70,6 +73,7 @@ export const InsertTab: React.FC = () => {
       <div className="flex flex-col justify-between h-full py-1 px-3 border-r border-slate-200 flex-shrink-0 relative">
         <div className="my-auto">
           <button
+            ref={tableBtnRef}
             onClick={() => setIsTableDropdownOpen(!isTableDropdownOpen)}
             className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
             title="Insert Table"
@@ -80,44 +84,47 @@ export const InsertTab: React.FC = () => {
             <span className="text-[10px] font-medium mt-1 text-slate-600">Table</span>
           </button>
 
-          {isTableDropdownOpen && (
-            <div className="absolute top-full left-0 mt-2 bg-white border border-slate-200 shadow-2xl rounded-2xl p-3 z-50 w-48 animate-in fade-in zoom-in-95 duration-100">
-              <div className="text-[11px] font-semibold text-slate-700 mb-2">
-                Insert Table ({tableGridHover.r} × {tableGridHover.c})
-              </div>
-              <div className="grid grid-cols-5 gap-1.5 mb-2.5">
-                {Array.from({ length: 5 }).map((_, r) =>
-                  Array.from({ length: 5 }).map((_, c) => {
-                    const isHighlighted = r < tableGridHover.r && c < tableGridHover.c;
-                    return (
-                      <div
-                        key={`${r}-${c}`}
-                        onMouseEnter={() => setTableGridHover({ r: r + 1, c: c + 1 })}
-                        onClick={() => {
-                          addTable(tableGridHover.r, tableGridHover.c);
-                          setIsTableDropdownOpen(false);
-                        }}
-                        className={`w-5 h-5 border rounded cursor-pointer transition ${
-                          isHighlighted
-                            ? 'bg-emerald-500 border-emerald-600 shadow-2xs'
-                            : 'bg-slate-50 border-slate-200 hover:bg-emerald-100'
-                        }`}
-                      />
-                    );
-                  })
-                )}
-              </div>
-              <button
-                onClick={() => {
-                  addTable(3, 3);
-                  setIsTableDropdownOpen(false);
-                }}
-                className="w-full text-center py-1.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-800 rounded-lg text-xs font-medium text-slate-700 transition"
-              >
-                Insert 3×3 Grid
-              </button>
+          <FloatingDropdown
+            isOpen={isTableDropdownOpen}
+            onClose={() => setIsTableDropdownOpen(false)}
+            anchorRef={tableBtnRef}
+            className="p-3 w-48"
+          >
+            <div className="text-[11px] font-semibold text-slate-700 mb-2">
+              Insert Table ({tableGridHover.r} × {tableGridHover.c})
             </div>
-          )}
+            <div className="grid grid-cols-5 gap-1.5 mb-2.5">
+              {Array.from({ length: 5 }).map((_, r) =>
+                Array.from({ length: 5 }).map((_, c) => {
+                  const isHighlighted = r < tableGridHover.r && c < tableGridHover.c;
+                  return (
+                    <div
+                      key={`${r}-${c}`}
+                      onMouseEnter={() => setTableGridHover({ r: r + 1, c: c + 1 })}
+                      onClick={() => {
+                        addTable(tableGridHover.r, tableGridHover.c);
+                        setIsTableDropdownOpen(false);
+                      }}
+                      className={`w-5 h-5 border rounded cursor-pointer transition ${
+                        isHighlighted
+                          ? 'bg-emerald-500 border-emerald-600 shadow-2xs'
+                          : 'bg-slate-50 border-slate-200 hover:bg-emerald-100'
+                      }`}
+                    />
+                  );
+                })
+              )}
+            </div>
+            <button
+              onClick={() => {
+                addTable(3, 3);
+                setIsTableDropdownOpen(false);
+              }}
+              className="w-full text-center py-1.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-800 rounded-lg text-xs font-medium text-slate-700 transition"
+            >
+              Insert 3×3 Grid
+            </button>
+          </FloatingDropdown>
         </div>
         <span className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider text-center">Tables</span>
       </div>
@@ -156,6 +163,7 @@ export const InsertTab: React.FC = () => {
           {/* Stock Graphics Picker */}
           <div className="relative">
             <button
+              ref={stockBtnRef}
               onClick={() => setIsStockOpen(!isStockOpen)}
               className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
               title="Insert Built-in Stock Graphics"
@@ -166,29 +174,32 @@ export const InsertTab: React.FC = () => {
               <span className="text-[10px] font-medium mt-1 text-slate-600">Stock Art</span>
             </button>
 
-            {isStockOpen && (
-              <div className="absolute top-full left-0 mt-2 bg-white border border-slate-200 shadow-2xl rounded-2xl p-2.5 z-50 w-60 grid grid-cols-2 gap-2 animate-in fade-in zoom-in-95 duration-100">
-                {SAMPLE_GRAPHICS.map((g) => (
-                  <button
-                    key={g.id}
-                    onClick={() => {
-                      addImage(g.src, { name: g.name });
-                      setIsStockOpen(false);
-                    }}
-                    className="group/item flex flex-col items-center p-1.5 rounded-xl border border-slate-200/80 hover:border-emerald-500 hover:bg-emerald-50/40 transition"
-                  >
-                    <img
-                      src={g.src}
-                      alt={g.name}
-                      className="w-full h-14 object-cover rounded-lg mb-1"
-                    />
-                    <span className="text-[10px] font-semibold text-slate-700 truncate w-full text-center">
-                      {g.name}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
+            <FloatingDropdown
+              isOpen={isStockOpen}
+              onClose={() => setIsStockOpen(false)}
+              anchorRef={stockBtnRef}
+              className="p-2.5 w-60 grid grid-cols-2 gap-2"
+            >
+              {SAMPLE_GRAPHICS.map((g) => (
+                <button
+                  key={g.id}
+                  onClick={() => {
+                    addImage(g.src, { name: g.name });
+                    setIsStockOpen(false);
+                  }}
+                  className="group/item flex flex-col items-center p-1.5 rounded-xl border border-slate-200/80 hover:border-emerald-500 hover:bg-emerald-50/40 transition"
+                >
+                  <img
+                    src={g.src}
+                    alt={g.name}
+                    className="w-full h-14 object-cover rounded-lg mb-1"
+                  />
+                  <span className="text-[10px] font-semibold text-slate-700 truncate w-full text-center">
+                    {g.name}
+                  </span>
+                </button>
+              ))}
+            </FloatingDropdown>
           </div>
 
           {/* Quick Shapes */}

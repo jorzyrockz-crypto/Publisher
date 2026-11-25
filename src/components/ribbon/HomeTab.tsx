@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
 import { TextElement, ShapeType } from '../../types/publisher';
+import { FloatingDropdown } from '../common/FloatingDropdown';
 import {
   Copy,
   Trash2,
@@ -39,6 +40,8 @@ export const HomeTab: React.FC = () => {
   } = usePublisher();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const shapesBtnRef = useRef<HTMLButtonElement>(null);
+  const alignBtnRef = useRef<HTMLButtonElement>(null);
   const [isShapesOpen, setIsShapesOpen] = useState(false);
   const [isAlignOpen, setIsAlignOpen] = useState(false);
 
@@ -270,6 +273,7 @@ export const HomeTab: React.FC = () => {
           {/* Shapes Dropdown */}
           <div className="relative">
             <button
+              ref={shapesBtnRef}
               onClick={() => setIsShapesOpen(!isShapesOpen)}
               className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
               title="Insert Shapes"
@@ -282,39 +286,42 @@ export const HomeTab: React.FC = () => {
               </span>
             </button>
 
-            {isShapesOpen && (
-              <div className="absolute top-full left-0 mt-2 bg-white border border-slate-200 shadow-2xl rounded-2xl p-2.5 z-50 grid grid-cols-4 gap-1.5 w-64 animate-in fade-in zoom-in-95 duration-100">
-                {(
-                  [
-                    'rectangle',
-                    'rounded-rect',
-                    'circle',
-                    'triangle',
-                    'star',
-                    'badge-burst',
-                    'hexagon',
-                    'diamond',
-                    'heart',
-                    'banner',
-                    'callout',
-                    'arrow-right',
-                    'arrow-double',
-                  ] as ShapeType[]
-                ).map((shape) => (
-                  <button
-                    key={shape}
-                    onClick={() => {
-                      addShape(shape);
-                      setIsShapesOpen(false);
-                    }}
-                    className="p-2 hover:bg-emerald-50 rounded-xl text-center text-[10px] capitalize font-medium text-slate-700 flex flex-col items-center gap-1 transition"
-                  >
-                    <Square size={16} className="text-emerald-700" />
-                    <span className="truncate w-full">{shape.replace('-', ' ')}</span>
-                  </button>
-                ))}
-              </div>
-            )}
+            <FloatingDropdown
+              isOpen={isShapesOpen}
+              onClose={() => setIsShapesOpen(false)}
+              anchorRef={shapesBtnRef}
+              className="p-2.5 grid grid-cols-4 gap-1.5 w-64"
+            >
+              {(
+                [
+                  'rectangle',
+                  'rounded-rect',
+                  'circle',
+                  'triangle',
+                  'star',
+                  'badge-burst',
+                  'hexagon',
+                  'diamond',
+                  'heart',
+                  'banner',
+                  'callout',
+                  'arrow-right',
+                  'arrow-double',
+                ] as ShapeType[]
+              ).map((shape) => (
+                <button
+                  key={shape}
+                  onClick={() => {
+                    addShape(shape);
+                    setIsShapesOpen(false);
+                  }}
+                  className="p-2 hover:bg-emerald-50 rounded-xl text-center text-[10px] capitalize font-medium text-slate-700 flex flex-col items-center gap-1 transition"
+                >
+                  <Square size={16} className="text-emerald-700" />
+                  <span className="truncate w-full">{shape.replace('-', ' ')}</span>
+                </button>
+              ))}
+            </FloatingDropdown>
           </div>
 
           {/* Picture Upload */}
@@ -374,6 +381,7 @@ export const HomeTab: React.FC = () => {
 
           <div className="flex items-center gap-1 relative">
             <button
+              ref={alignBtnRef}
               onClick={() => setIsAlignOpen(!isAlignOpen)}
               disabled={selectedElementIds.length === 0}
               className="flex items-center justify-between w-full px-2.5 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-[11px] font-medium disabled:opacity-40 transition shadow-2xs"
@@ -382,43 +390,46 @@ export const HomeTab: React.FC = () => {
               <ChevronDown size={11} className="text-slate-400" />
             </button>
 
-            {isAlignOpen && (
-              <div className="absolute top-full left-0 mt-2 bg-white border border-slate-200 shadow-2xl rounded-xl p-1.5 z-50 w-40 space-y-0.5 animate-in fade-in zoom-in-95 duration-100">
-                {(['left', 'center', 'right', 'top', 'middle', 'bottom'] as const).map(
-                  (alignment) => (
-                    <button
-                      key={alignment}
-                      onClick={() => {
-                        alignSelected(alignment);
-                        setIsAlignOpen(false);
-                      }}
-                      className="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 hover:text-emerald-800 rounded-lg text-xs capitalize transition"
-                    >
-                      Align {alignment}
-                    </button>
-                  )
-                )}
-                <div className="border-t border-slate-100 my-1" />
-                <button
-                  onClick={() => {
-                    distributeSelected('horizontal');
-                    setIsAlignOpen(false);
-                  }}
-                  className="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 hover:text-emerald-800 rounded-lg text-xs transition"
-                >
-                  Distribute Horizontally
-                </button>
-                <button
-                  onClick={() => {
-                    distributeSelected('vertical');
-                    setIsAlignOpen(false);
-                  }}
-                  className="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 hover:text-emerald-800 rounded-lg text-xs transition"
-                >
-                  Distribute Vertically
-                </button>
-              </div>
-            )}
+            <FloatingDropdown
+              isOpen={isAlignOpen}
+              onClose={() => setIsAlignOpen(false)}
+              anchorRef={alignBtnRef}
+              className="p-1.5 w-44 space-y-0.5 text-xs text-slate-700"
+            >
+              {(['left', 'center', 'right', 'top', 'middle', 'bottom'] as const).map(
+                (alignment) => (
+                  <button
+                    key={alignment}
+                    onClick={() => {
+                      alignSelected(alignment);
+                      setIsAlignOpen(false);
+                    }}
+                    className="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 hover:text-emerald-800 rounded-lg text-xs capitalize transition"
+                  >
+                    Align {alignment}
+                  </button>
+                )
+              )}
+              <div className="border-t border-slate-100 my-1" />
+              <button
+                onClick={() => {
+                  distributeSelected('horizontal');
+                  setIsAlignOpen(false);
+                }}
+                className="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 hover:text-emerald-800 rounded-lg text-xs transition"
+              >
+                Distribute Horizontally
+              </button>
+              <button
+                onClick={() => {
+                  distributeSelected('vertical');
+                  setIsAlignOpen(false);
+                }}
+                className="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 hover:text-emerald-800 rounded-lg text-xs transition"
+              >
+                Distribute Vertically
+              </button>
+            </FloatingDropdown>
           </div>
         </div>
         <span className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider text-center">Arrange</span>

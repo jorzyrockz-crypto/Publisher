@@ -3,7 +3,7 @@ import { usePublisher } from '../../context/PublisherContext';
 import { ElementRenderer } from './ElementRenderer';
 import { SelectionBox } from './SelectionBox';
 import { calculateSnap } from '../../utils/snapping';
-import { PublisherElement } from '../../types/publisher';
+import { PublisherElement, Page } from '../../types/publisher';
 import {
   Copy,
   Clipboard,
@@ -18,15 +18,22 @@ import {
 } from 'lucide-react';
 
 interface PageCanvasProps {
+  page?: Page;
+  pageIndex?: number;
   cursorX?: number;
   cursorY?: number;
   onCursorMove?: (x: number, y: number) => void;
 }
 
-export const PageCanvas: React.FC<PageCanvasProps> = ({ onCursorMove }) => {
+export const PageCanvas: React.FC<PageCanvasProps> = ({
+  page,
+  pageIndex,
+  onCursorMove,
+}) => {
   const {
     project,
     activePage,
+    setActivePageIndex,
     selectedElementIds,
     isEditingMaster,
     setIsEditingMaster,
@@ -68,10 +75,15 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({ onCursorMove }) => {
     currentY: number;
   } | null>(null);
 
+  const targetPage = page || activePage;
+  const targetPageIndex = pageIndex !== undefined ? pageIndex : project.activePageIndex;
+  const isActivePage = targetPageIndex === project.activePageIndex;
+
   const canvasRef = useRef<HTMLDivElement>(null);
 
   // Global keyboard shortcuts (Arrows to nudge, Delete to remove, Ctrl+D duplicate, etc.)
   useEffect(() => {
+    if (!isActivePage) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't intercept if user is typing in an active contentEditable or input
       const target = e.target as HTMLElement;
@@ -115,7 +127,7 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({ onCursorMove }) => {
           e.preventDefault();
           const step = e.shiftKey ? 10 : 1;
           selectedElementIds.forEach((id) => {
-            const el = activePage.elements.find((item) => item.id === id);
+            const el = targetPage.elements.find((item) => item.id === id);
             if (!el) return;
             let nx = el.x;
             let ny = el.y;
@@ -132,8 +144,9 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({ onCursorMove }) => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [
+    isActivePage,
     selectedElementIds,
-    activePage,
+    targetPage,
     deleteSelectedElements,
     clearSelection,
     selectAll,
@@ -178,7 +191,7 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({ onCursorMove }) => {
 
             // Select all elements intersecting marquee
             if (maxX - minX > 5 && maxY - minY > 5) {
-              const intersecting = activePage.elements.filter((el) => {
+              const intersecting = targetPage.elements.filter((el) => {
                 return (
                   el.x < maxX &&
                   el.x + el.width > minX &&
@@ -202,6 +215,10 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({ onCursorMove }) => {
     e.stopPropagation();
     setContextMenu(null);
 
+    if (!isActivePage && !isEditingMaster) {
+      setActivePageIndex(targetPageIndex);
+    }
+
     const isMulti = e.shiftKey || e.ctrlKey;
     if (!selectedElementIds.includes(element.id)) {
       selectElement(element.id, isMulti);
@@ -211,14 +228,12 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({ onCursorMove }) => {
 
     const startClientX = e.clientX;
     const startClientY = e.clientY;
-    const initialElementsPos = activePage.elements
+    const pool = isEditingMaster ? project.masterPage?.elements || [] : targetPage.elements;
+    const initialElementsPos = pool
       .filter((el) => selectedElementIds.includes(el.id) || el.id === element.id)
       .map((el) => ({ id: el.id, startX: el.x, startY: el.y, width: el.width, height: el.height }));
 
-    let hasMoved = false;
-
     const handleWindowMouseMove = (moveEvent: MouseEvent) => {
-      hasMoved = true;
       const deltaX = (moveEvent.clientX - startClientX) / zoom;
       const deltaY = (moveEvent.clientY - startClientY) / zoom;
 
@@ -235,7 +250,7 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({ onCursorMove }) => {
         rawNextY,
         primary.width,
         primary.height,
-        activePage,
+        targetPage,
         snapToGuides,
         true
       );
@@ -267,7 +282,7 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({ onCursorMove }) => {
 
   const displayedElements = isEditingMaster
     ? project.masterPage?.elements || []
-    : activePage.elements;
+    : targetPage.elements;
 
   const masterElements =
     !isEditingMaster && project.masterPage?.showOnAllPages
@@ -275,17 +290,28 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({ onCursorMove }) => {
       : [];
 
   return (
-    <>
+    <div
+      style={{
+        width: `${targetPage.width * zoom}px`,
+        height: `${targetPage.height * zoom}px`,
+        position: 'relative',
+        flexShrink: 0,
+      }}
+    >
       <div
-        id={`print-page-${activePage.id}`}
+        id={`print-page-${targetPage.id}`}
         ref={canvasRef}
         className={`relative select-none print-page transition-shadow duration-150 ${
-          isEditingMaster ? 'ring-4 ring-amber-400/70' : ''
+          isEditingMaster
+            ? 'ring-4 ring-amber-400/70'
+            : isActivePage
+            ? 'ring-2 ring-emerald-500/70'
+            : 'hover:ring-2 hover:ring-slate-300'
         }`}
         style={{
-          width: `${activePage.width}px`,
-          height: `${activePage.height}px`,
-          backgroundColor: activePage.backgroundColor,
+          width: `${targetPage.width}px`,
+          height: `${targetPage.height}px`,
+          backgroundColor: targetPage.backgroundColor,
           boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
           transform: `scale(${zoom})`,
           transformOrigin: 'top left',
@@ -293,10 +319,16 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({ onCursorMove }) => {
         onMouseMove={handleCanvasMouseMove}
         onMouseDown={(e) => {
           setContextMenu(null);
+          if (!isActivePage && !isEditingMaster) {
+            setActivePageIndex(targetPageIndex);
+          }
           handleCanvasMouseDown(e);
         }}
         onContextMenu={(e) => {
           e.preventDefault();
+          if (!isActivePage && !isEditingMaster) {
+            setActivePageIndex(targetPageIndex);
+          }
           setContextMenu({ x: e.clientX, y: e.clientY });
         }}
       >
@@ -329,16 +361,16 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({ onCursorMove }) => {
       <div
         className="absolute pointer-events-none no-print border border-dashed border-[#0078d4]/40"
         style={{
-          top: `${activePage.margins.top}px`,
-          left: `${activePage.margins.left}px`,
-          right: `${activePage.margins.right}px`,
-          bottom: `${activePage.margins.bottom}px`,
+          top: `${targetPage.margins.top}px`,
+          left: `${targetPage.margins.left}px`,
+          right: `${targetPage.margins.right}px`,
+          bottom: `${targetPage.margins.bottom}px`,
         }}
       />
 
       {/* User Guides */}
       {guidesVisible &&
-        activePage.guides?.map((guide) => (
+        targetPage.guides?.map((guide) => (
           <div
             key={guide.id}
             className={`absolute no-print z-40 group ${
@@ -407,7 +439,7 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({ onCursorMove }) => {
             <ElementRenderer
               element={element}
               isSelected={false}
-              pageNumber={project.activePageIndex + 1}
+              pageNumber={targetPageIndex + 1}
               totalPages={project.pages.length}
             />
           </div>
@@ -446,8 +478,8 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({ onCursorMove }) => {
           >
             <ElementRenderer
               element={element}
-              isSelected={isSelected && !element.locked}
-              pageNumber={project.activePageIndex + 1}
+              isSelected={isSelected && isActivePage && !element.locked}
+              pageNumber={targetPageIndex + 1}
               totalPages={project.pages.length}
               onTextChange={(newText) => updateElement(element.id, { text: newText })}
               onTableCellChange={(row, col, val) => {
@@ -461,7 +493,7 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({ onCursorMove }) => {
             />
 
             {/* Transform Controls & Handles when Selected */}
-            {isSelected && !element.locked && (
+            {isSelected && isActivePage && !element.locked && (
               <SelectionBox
                 element={element}
                 zoom={zoom}
@@ -612,6 +644,6 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({ onCursorMove }) => {
         )}
       </div>
     )}
-    </>
+    </div>
   );
 };

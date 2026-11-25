@@ -5,6 +5,8 @@ import {
   ZoomOut,
   Maximize,
   File,
+  Files,
+  BookOpen,
 } from 'lucide-react';
 
 export const ViewTab: React.FC = () => {
@@ -14,6 +16,8 @@ export const ViewTab: React.FC = () => {
     zoomOut,
     zoom100,
     zoomFit,
+    viewMode,
+    setViewMode,
     rulerVisible,
     setRulerVisible,
     guidesVisible,
@@ -109,14 +113,45 @@ export const ViewTab: React.FC = () => {
       <div className="flex flex-col justify-between h-full py-1 px-3 flex-shrink-0">
         <div className="flex items-center gap-1.5 my-auto">
           <button
-            className="flex flex-col items-center p-1.5 bg-emerald-50 border border-emerald-300 rounded-xl text-emerald-800 shadow-xs"
+            onClick={() => setViewMode('single')}
+            className={`flex flex-col items-center p-1.5 rounded-xl border transition-all ${
+              viewMode === 'single'
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-800 shadow-xs'
+                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+            }`}
             title="Single Page View"
           >
             <File size={16} />
             <span className="text-[10px] font-semibold mt-1">Single</span>
           </button>
+
+          <button
+            onClick={() => setViewMode('continuous')}
+            className={`flex flex-col items-center p-1.5 rounded-xl border transition-all ${
+              viewMode === 'continuous'
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-800 shadow-xs'
+                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+            }`}
+            title="All Pages Vertical Scroll"
+          >
+            <Files size={16} />
+            <span className="text-[10px] font-semibold mt-1">All Pages</span>
+          </button>
+
+          <button
+            onClick={() => setViewMode('spread')}
+            className={`flex flex-col items-center p-1.5 rounded-xl border transition-all ${
+              viewMode === 'spread'
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-800 shadow-xs'
+                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+            }`}
+            title="Two-Page Spread View"
+          >
+            <BookOpen size={16} />
+            <span className="text-[10px] font-semibold mt-1">2-Page</span>
+          </button>
         </div>
-        <span className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider text-center">View</span>
+        <span className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider text-center">Page View</span>
       </div>
     </div>
   );

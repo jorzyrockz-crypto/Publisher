@@ -38,8 +38,10 @@ interface PublisherContextType {
   canRedo: boolean;
   isEditingMaster: boolean;
   hasClipboard: boolean;
+  viewMode: 'single' | 'continuous' | 'spread';
 
   // Setters & UI controls
+  setViewMode: (mode: 'single' | 'continuous' | 'spread') => void;
   setIsEditingMaster: (editing: boolean) => void;
   toggleMasterPageVisibility: () => void;
   setActiveTab: (tab: 'home' | 'insert' | 'page-design' | 'mailings' | 'view') => void;
@@ -149,7 +151,8 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [selectedElementIds, setSelectedElementIds] = useState<string[]>([]);
   const [copiedElements, setCopiedElements] = useState<PublisherElement[]>([]);
   const [isEditingMaster, setIsEditingMasterState] = useState<boolean>(false);
-  const [zoom, setZoomState] = useState<number>(0.9);
+  const [viewMode, setViewMode] = useState<'single' | 'continuous' | 'spread'>('continuous');
+  const [zoom, setZoomState] = useState<number>(0.8);
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
   const [activeTab, setActiveTab] = useState<'home' | 'insert' | 'page-design' | 'mailings' | 'view'>('home');
@@ -426,12 +429,32 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const updateElement = useCallback(
     (id: string, updates: Partial<PublisherElement>) => {
-      const updated = currentElements.map((el) =>
-        el.id === id ? ({ ...el, ...updates } as PublisherElement) : el
+      if (isEditingMaster) {
+        const updated = currentElements.map((el) =>
+          el.id === id ? ({ ...el, ...updates } as PublisherElement) : el
+        );
+        commitCurrentElements(updated);
+        return;
+      }
+
+      const targetPageIdx = project.pages.findIndex((pg) =>
+        pg.elements.some((el) => el.id === id)
       );
-      commitCurrentElements(updated);
+      if (targetPageIdx === -1) return;
+
+      const newPages = project.pages.map((pg, idx) =>
+        idx === targetPageIdx
+          ? {
+              ...pg,
+              elements: pg.elements.map((el) =>
+                el.id === id ? ({ ...el, ...updates } as PublisherElement) : el
+              ),
+            }
+          : pg
+      );
+      commitProject({ ...project, pages: newPages, activePageIndex: targetPageIdx });
     },
-    [currentElements, commitCurrentElements]
+    [isEditingMaster, currentElements, commitCurrentElements, project, commitProject]
   );
 
   const updateSelectedElements = useCallback(
@@ -925,7 +948,9 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         canRedo: historyFuture.length > 0,
         isEditingMaster,
         hasClipboard: copiedElements.length > 0,
+        viewMode,
 
+        setViewMode,
         setIsEditingMaster,
         toggleMasterPageVisibility,
         setActiveTab,
