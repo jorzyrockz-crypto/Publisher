@@ -206,6 +206,8 @@ export interface PageMargins {
 export interface Page {
   id: string;
   name: string;
+  x?: number; // artboard x on freeform canvas
+  y?: number; // artboard y on freeform canvas
   width: number; // pixels
   height: number; // pixels
   orientation: 'portrait' | 'landscape';

@@ -12,6 +12,8 @@ import {
   BookOpen,
   Hand,
   MousePointer2,
+  LayoutDashboard,
+  GripVertical,
 } from 'lucide-react';
 
 export const CanvasArea: React.FC = () => {
@@ -26,6 +28,7 @@ export const CanvasArea: React.FC = () => {
     isRightPanelOpen,
     addPage,
     setActivePageIndex,
+    updatePagePosition,
     zoom,
     setZoom,
     zoomIn,
@@ -96,9 +99,10 @@ export const CanvasArea: React.FC = () => {
 
     const target = e.target as HTMLElement;
     const clickedInsidePage = Boolean(target.closest('.print-page'));
+    const clickedArtboardHandle = Boolean(target.closest('.artboard-drag-handle'));
     const clickedButton = Boolean(target.closest('button'));
 
-    if (clickedButton) return;
+    if (clickedButton || clickedArtboardHandle) return;
 
     // Pan when: Hand tool active, Spacebar held, Middle-click (button === 1), or dragging on pasteboard outside pages
     const shouldPan = effectivePanMode || e.button === 1 || !clickedInsidePage;
@@ -130,6 +134,59 @@ export const CanvasArea: React.FC = () => {
     window.addEventListener('mouseup', handleMouseUp);
   };
 
+  // Helper to compute artboard default coordinates for pages without explicit x/y
+  const getArtboardCoords = (idx: number) => {
+    const pg = project.pages[idx];
+    if (pg.x !== undefined && pg.y !== undefined) {
+      return { x: pg.x, y: pg.y };
+    }
+    let autoX = 80;
+    for (let i = 0; i < idx; i++) {
+      const prev = project.pages[i];
+      const prevX = prev.x ?? autoX;
+      autoX = prevX + prev.width + 80;
+    }
+    return { x: autoX, y: 80 };
+  };
+
+  // Dragging a paper / artboard anywhere (left, right, top, bottom)
+  const handleArtboardDragStart = (pageIndex: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setActivePageIndex(pageIndex);
+
+    const initial = getArtboardCoords(pageIndex);
+    const startClientX = e.clientX;
+    const startClientY = e.clientY;
+
+    const onMove = (me: MouseEvent) => {
+      const dx = (me.clientX - startClientX) / zoom;
+      const dy = (me.clientY - startClientY) / zoom;
+      updatePagePosition(
+        pageIndex,
+        Math.max(20, initial.x + dx),
+        Math.max(36, initial.y + dy)
+      );
+    };
+
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  };
+
+  // Compute artboard canvas bounds
+  let artboardMaxRight = 2400;
+  let artboardMaxBottom = 1600;
+  project.pages.forEach((pg, idx) => {
+    const coords = getArtboardCoords(idx);
+    artboardMaxRight = Math.max(artboardMaxRight, coords.x + pg.width + 600);
+    artboardMaxBottom = Math.max(artboardMaxBottom, coords.y + pg.height + 500);
+  });
+
   // Group pages into pairs for 2-Page Spread view
   const spreadGroups: { page: typeof activePage; index: number }[][] = [];
   for (let i = 0; i < project.pages.length; i += 2) {
@@ -145,11 +202,9 @@ export const CanvasArea: React.FC = () => {
       {/* Top Header Strip: Corner + Top Ruler */}
       {rulerVisible && (
         <div className="flex h-5 w-full bg-white/90 border-b border-slate-200 z-20 flex-shrink-0 shadow-2xs">
-          {/* Corner 0,0 box */}
           <div className="w-5 h-5 border-r border-slate-200 flex items-center justify-center bg-slate-50 text-[8px] font-mono font-medium text-slate-400 flex-shrink-0">
             in
           </div>
-          {/* Horizontal Ruler */}
           <div className="flex-1 overflow-hidden relative">
             <div style={{ marginLeft: '40px' }}>
               <HorizontalRuler
@@ -165,7 +220,6 @@ export const CanvasArea: React.FC = () => {
 
       {/* Main Workspace Area: Left Ruler + Scrollable Pasteboard Canvas */}
       <div className="flex flex-1 w-full h-full overflow-hidden relative">
-        {/* Vertical Left Ruler */}
         {rulerVisible && (
           <div className="w-5 bg-white/90 border-r border-slate-200 z-10 flex-shrink-0 overflow-hidden relative shadow-2xs">
             <div style={{ marginTop: '40px' }}>
@@ -184,7 +238,11 @@ export const CanvasArea: React.FC = () => {
           ref={containerRef}
           onWheel={handleWheel}
           onMouseDown={handleWorkspaceMouseDown}
-          className={`flex-1 h-full overflow-auto px-32 py-16 flex flex-col items-center relative ${
+          className={`flex-1 h-full overflow-auto relative ${
+            viewMode !== 'artboard' || isEditingMaster
+              ? 'px-32 py-16 flex flex-col items-center'
+              : ''
+          } ${
             isPanning
               ? 'cursor-grabbing'
               : effectivePanMode
@@ -196,6 +254,83 @@ export const CanvasArea: React.FC = () => {
           {(isEditingMaster || viewMode === 'single') && (
             <div className="flex flex-col items-center pb-36">
               <PageCanvas onCursorMove={handleCursorMove} />
+            </div>
+          )}
+
+          {/* Freeform Adobe-style Artboard Canvas (Move papers left/right/top/bottom + Mixed paper sizes!) */}
+          {!isEditingMaster && viewMode === 'artboard' && (
+            <div
+              className="relative flex-shrink-0"
+              style={{
+                width: `${artboardMaxRight * zoom}px`,
+                height: `${artboardMaxBottom * zoom}px`,
+              }}
+            >
+              {project.pages.map((pg, idx) => {
+                const isActive = idx === project.activePageIndex;
+                const coords = getArtboardCoords(idx);
+
+                return (
+                  <div
+                    key={pg.id}
+                    style={{
+                      position: 'absolute',
+                      left: `${coords.x * zoom}px`,
+                      top: `${coords.y * zoom}px`,
+                    }}
+                    className="flex flex-col items-start"
+                  >
+                    {/* Draggable Artboard Handle Pill (Grab to move paper anywhere!) */}
+                    <div
+                      onMouseDown={(e) => handleArtboardDragStart(idx, e)}
+                      className={`artboard-drag-handle mb-1.5 flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold cursor-grab active:cursor-grabbing transition shadow-xs ${
+                        isActive
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-white/90 text-slate-600 border border-slate-200 hover:bg-white hover:border-emerald-400'
+                      }`}
+                      title="Drag to move this paper anywhere on the canvas"
+                    >
+                      <GripVertical size={11} className="opacity-75" />
+                      <span>Page {idx + 1}</span>
+                      {pg.name && <span className="opacity-80">• {pg.name}</span>}
+                      <span
+                        className={`ml-1 text-[9.5px] font-mono px-1.5 py-0.2 rounded-full ${
+                          isActive ? 'bg-emerald-700/80 text-emerald-100' : 'bg-slate-100 text-slate-500'
+                        }`}
+                      >
+                        {(pg.width / 96).toFixed(1)}"×{(pg.height / 96).toFixed(1)}"
+                      </span>
+                    </div>
+
+                    <PageCanvas
+                      page={pg}
+                      pageIndex={idx}
+                      onCursorMove={handleCursorMove}
+                    />
+                  </div>
+                );
+              })}
+
+              {/* Quick + Add Artboard button positioned near last page */}
+              {(() => {
+                const lastIdx = project.pages.length - 1;
+                const lastPg = project.pages[lastIdx];
+                const lastCoords = getArtboardCoords(lastIdx);
+                return (
+                  <button
+                    onClick={addPage}
+                    style={{
+                      position: 'absolute',
+                      left: `${(lastCoords.x + lastPg.width + 60) * zoom}px`,
+                      top: `${(lastCoords.y + 36) * zoom}px`,
+                    }}
+                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl border-2 border-dashed border-slate-300 bg-white/80 hover:bg-white hover:border-emerald-500 text-slate-600 hover:text-emerald-700 font-semibold text-xs transition-all shadow-xs active:scale-95"
+                  >
+                    <Plus size={15} />
+                    <span>Add Artboard</span>
+                  </button>
+                );
+              })()}
             </div>
           )}
 
@@ -226,7 +361,6 @@ export const CanvasArea: React.FC = () => {
                 );
               })}
 
-              {/* Quick Add Page Button at Bottom of Canvas */}
               <button
                 onClick={addPage}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-2xl border-2 border-dashed border-slate-300 bg-white/70 hover:bg-white hover:border-emerald-500 text-slate-600 hover:text-emerald-700 font-semibold text-xs transition-all shadow-2xs active:scale-95"
@@ -314,6 +448,17 @@ export const CanvasArea: React.FC = () => {
             {/* Multi-page view mode switcher */}
             <div className="flex items-center bg-slate-100 p-0.5 rounded-full mr-1">
               <button
+                onClick={() => setViewMode('artboard')}
+                className={`p-1 rounded-full transition ${
+                  viewMode === 'artboard'
+                    ? 'bg-white text-emerald-700 shadow-2xs'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+                title="Freeform Artboards (Move papers & mix sizes)"
+              >
+                <LayoutDashboard size={12} />
+              </button>
+              <button
                 onClick={() => setViewMode('single')}
                 className={`p-1 rounded-full transition ${
                   viewMode === 'single'
@@ -331,7 +476,7 @@ export const CanvasArea: React.FC = () => {
                     ? 'bg-white text-emerald-700 shadow-2xs'
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
-                title="All Pages View"
+                title="All Pages Vertical Scroll"
               >
                 <Files size={12} />
               </button>

@@ -7,6 +7,7 @@ import {
   File,
   Files,
   BookOpen,
+  LayoutDashboard,
 } from 'lucide-react';
 
 export const ViewTab: React.FC = () => {
@@ -112,6 +113,19 @@ export const ViewTab: React.FC = () => {
       {/* 3. Views */}
       <div className="flex flex-col justify-between h-full py-1 px-3 flex-shrink-0">
         <div className="flex items-center gap-1.5 my-auto">
+          <button
+            onClick={() => setViewMode('artboard')}
+            className={`flex flex-col items-center p-1.5 rounded-xl border transition-all ${
+              viewMode === 'artboard'
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-800 shadow-xs'
+                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+            }`}
+            title="Freeform Artboards (Move papers & mix sizes)"
+          >
+            <LayoutDashboard size={16} />
+            <span className="text-[10px] font-semibold mt-1">Artboard</span>
+          </button>
+
           <button
             onClick={() => setViewMode('single')}
             className={`flex flex-col items-center p-1.5 rounded-xl border transition-all ${

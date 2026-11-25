@@ -38,13 +38,13 @@ interface PublisherContextType {
   canRedo: boolean;
   isEditingMaster: boolean;
   hasClipboard: boolean;
-  viewMode: 'single' | 'continuous' | 'spread';
+  viewMode: 'artboard' | 'single' | 'continuous' | 'spread';
   toolMode: 'select' | 'pan';
   isLeftPanelOpen: boolean;
   isRightPanelOpen: boolean;
 
   // Setters & UI controls
-  setViewMode: (mode: 'single' | 'continuous' | 'spread') => void;
+  setViewMode: (mode: 'artboard' | 'single' | 'continuous' | 'spread') => void;
   setToolMode: (mode: 'select' | 'pan') => void;
   setIsLeftPanelOpen: (open: boolean) => void;
   setIsRightPanelOpen: (open: boolean) => void;
@@ -73,6 +73,7 @@ interface PublisherContextType {
   deleteActivePage: () => void;
   setPageSize: (sizeName: string) => void;
   setPageOrientation: (orientation: 'portrait' | 'landscape') => void;
+  updatePagePosition: (pageIndex: number, x: number, y: number) => void;
   setPageMargins: (margins: PageMargins) => void;
   setPageBackgroundColor: (color: string) => void;
   setColorScheme: (schemeId: string) => void;
@@ -157,7 +158,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [selectedElementIds, setSelectedElementIds] = useState<string[]>([]);
   const [copiedElements, setCopiedElements] = useState<PublisherElement[]>([]);
   const [isEditingMaster, setIsEditingMasterState] = useState<boolean>(false);
-  const [viewMode, setViewMode] = useState<'single' | 'continuous' | 'spread'>('continuous');
+  const [viewMode, setViewMode] = useState<'artboard' | 'single' | 'continuous' | 'spread'>('artboard');
   const [toolMode, setToolMode] = useState<'select' | 'pan'>('select');
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
@@ -232,9 +233,18 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const addPage = useCallback(() => {
     const pageNum = project.pages.length + 1;
+    // Place new artboard to the right of the rightmost existing page
+    let nextX = 80;
+    project.pages.forEach((pg, idx) => {
+      const px = pg.x ?? 80 + idx * (pg.width + 80);
+      nextX = Math.max(nextX, px + pg.width + 80);
+    });
+
     const newPage: Page = {
       id: `page-${Date.now()}`,
       name: `Page ${pageNum}`,
+      x: nextX,
+      y: activePage.y ?? 80,
       width: activePage.width,
       height: activePage.height,
       orientation: activePage.orientation,
@@ -255,6 +265,8 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const clonedPage: Page = JSON.parse(JSON.stringify(activePage));
     clonedPage.id = `page-${Date.now()}`;
     clonedPage.name = `${activePage.name} (Copy)`;
+    clonedPage.x = (activePage.x ?? 80) + activePage.width + 80;
+    clonedPage.y = activePage.y ?? 80;
     // assign new IDs to elements
     clonedPage.elements = clonedPage.elements.map((el) => ({
       ...el,
@@ -288,11 +300,18 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     (sizeName: string) => {
       const def = PAGE_SIZES.find((s) => s.name === sizeName);
       if (!def) return;
-      const newPages = project.pages.map((pg) => ({
-        ...pg,
-        width: def.width,
-        height: def.height,
-      }));
+      const newPages = project.pages.map((pg, idx) =>
+        idx === project.activePageIndex
+          ? {
+              ...pg,
+              width: def.width,
+              height: def.height,
+              orientation: (def.width > def.height ? 'landscape' : 'portrait') as
+                | 'portrait'
+                | 'landscape',
+            }
+          : pg
+      );
       commitProject({
         ...project,
         pageSizeName: sizeName,
@@ -304,8 +323,8 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const setPageOrientation = useCallback(
     (orientation: 'portrait' | 'landscape') => {
-      const newPages = project.pages.map((pg) => {
-        if (pg.orientation === orientation) return pg;
+      const newPages = project.pages.map((pg, idx) => {
+        if (idx !== project.activePageIndex || pg.orientation === orientation) return pg;
         const w = pg.width;
         const h = pg.height;
         return {
@@ -321,6 +340,18 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       });
     },
     [project, commitProject]
+  );
+
+  const updatePagePosition = useCallback(
+    (pageIndex: number, x: number, y: number) => {
+      setProjectState((prev) => ({
+        ...prev,
+        pages: prev.pages.map((pg, idx) =>
+          idx === pageIndex ? { ...pg, x: Math.round(x), y: Math.round(y) } : pg
+        ),
+      }));
+    },
+    []
   );
 
   const setPageMargins = useCallback(
@@ -1070,6 +1101,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         deleteActivePage,
         setPageSize,
         setPageOrientation,
+        updatePagePosition,
         setPageMargins,
         setPageBackgroundColor,
         setColorScheme,

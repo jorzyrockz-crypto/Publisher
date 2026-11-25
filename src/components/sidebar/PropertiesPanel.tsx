@@ -108,9 +108,14 @@ export const PropertiesPanel: React.FC = () => {
         {!selectedElement && (
           <div className="space-y-4">
             <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3.5 shadow-2xs">
-              <div className="font-bold text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-100">
-                <Square size={14} className="text-emerald-700" />
-                <span>Page Layout</span>
+              <div className="font-bold text-slate-800 flex items-center justify-between pb-2 border-b border-slate-100">
+                <div className="flex items-center gap-1.5">
+                  <Square size={14} className="text-emerald-700" />
+                  <span>Page {project.activePageIndex + 1} Setup</span>
+                </div>
+                <span className="text-[10px] font-mono text-slate-400">
+                  {(activePage.width / 96).toFixed(1)}"×{(activePage.height / 96).toFixed(1)}"
+                </span>
               </div>
 
               {/* Page Size */}
