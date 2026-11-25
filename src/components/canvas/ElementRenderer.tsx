@@ -563,6 +563,11 @@ const TableRenderer: React.FC<{
   isSelected: boolean;
   onTableCellChange?: (row: number, col: number, val: string) => void;
 }> = ({ element, isSelected, onTableCellChange }) => {
+  const showHeader = element.showHeaderRow !== false;
+  const banded = element.bandedRows !== false;
+  const pad = element.cellPadding ?? 8;
+  const baseFontSize = element.fontSize ?? 12;
+
   return (
     <div
       style={{
@@ -570,25 +575,33 @@ const TableRenderer: React.FC<{
         height: '100%',
         overflow: 'auto',
         border: `${element.borderWidth}px solid ${element.borderColor}`,
-        backgroundColor: '#ffffff',
+        backgroundColor: element.cellBg || '#ffffff',
+        borderRadius: '6px',
       }}
     >
       <table style={{ width: '100%', height: '100%', borderCollapse: 'collapse' }}>
         <tbody>
-          {element.data.map((row, rIdx) => (
-            <tr key={rIdx}>
-              {row.map((cellText, cIdx) => {
-                const isHeader = rIdx === 0;
-                return (
+          {element.data.map((row, rIdx) => {
+            const isHeader = showHeader && rIdx === 0;
+            const isAlt = !isHeader && banded && rIdx % 2 === 0;
+            const rowBg = isHeader
+              ? element.headerBg
+              : isAlt && element.altRowBg
+              ? element.altRowBg
+              : element.cellBg;
+
+            return (
+              <tr key={rIdx}>
+                {row.map((cellText, cIdx) => (
                   <td
                     key={cIdx}
                     style={{
                       border: `${element.borderWidth}px solid ${element.borderColor}`,
-                      backgroundColor: isHeader ? element.headerBg : element.cellBg,
+                      backgroundColor: rowBg,
                       color: isHeader ? element.headerColor : element.cellColor,
                       fontWeight: isHeader ? 'bold' : 'normal',
-                      padding: '6px 10px',
-                      fontSize: isHeader ? '13px' : '12px',
+                      padding: `${pad}px ${pad + 4}px`,
+                      fontSize: `${isHeader ? baseFontSize + 1 : baseFontSize}px`,
                     }}
                     contentEditable={isSelected}
                     suppressContentEditableWarning
@@ -600,10 +613,10 @@ const TableRenderer: React.FC<{
                   >
                     {cellText}
                   </td>
-                );
-              })}
-            </tr>
-          ))}
+                ))}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

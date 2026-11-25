@@ -11,6 +11,7 @@ import {
   ShapeType,
 } from '../../types/publisher';
 import { PAGE_SIZES } from '../../constants/pageSizes';
+import { TABLE_THEMES } from '../../constants/tableThemes';
 import {
   Type,
   Square,
@@ -938,19 +939,138 @@ export const PropertiesPanel: React.FC = () => {
           </div>
         )}
 
-        {/* Case 5: Table Properties */}
+        {/* Case 5: Table Properties & Themes */}
         {selectedElement && selectedElement.type === 'table' && (
           <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3.5 shadow-2xs">
             <div className="font-bold text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-100">
               <TableIcon size={14} className="text-emerald-700" />
-              <span>Table Tools</span>
+              <span>Table Design & Themes</span>
             </div>
 
+            {/* Table Theme Swatches */}
             <div>
               <label className="block text-[11px] font-semibold text-slate-500 mb-1.5">
-                Header Fill Color
+                Table Themes
               </label>
-              <div className="flex items-center gap-2">
+              <div className="grid grid-cols-2 gap-1.5">
+                {TABLE_THEMES.map((theme) => {
+                  const isActive = (selectedElement as TableElement).themeId === theme.id;
+                  return (
+                    <button
+                      key={theme.id}
+                      onClick={() =>
+                        updateElement(selectedElement.id, {
+                          themeId: theme.id,
+                          headerBg: theme.headerBg,
+                          headerColor: theme.headerColor,
+                          cellBg: theme.cellBg,
+                          altRowBg: theme.altRowBg,
+                          cellColor: theme.cellColor,
+                          borderColor: theme.borderColor,
+                          borderWidth: theme.borderWidth,
+                          bandedRows: true,
+                          showHeaderRow: true,
+                        })
+                      }
+                      className={`p-1.5 rounded-xl border text-left transition-all hover:scale-[1.02] ${
+                        isActive
+                          ? 'border-emerald-600 ring-2 ring-emerald-500/30 bg-emerald-50/40'
+                          : 'border-slate-200 hover:border-slate-300 bg-slate-50/60'
+                      }`}
+                    >
+                      <div className="w-full h-5 rounded-md overflow-hidden border border-slate-200/70 flex flex-col mb-1">
+                        <div className="h-2 w-full" style={{ backgroundColor: theme.headerBg }} />
+                        <div className="h-1.5 w-full" style={{ backgroundColor: theme.cellBg }} />
+                        <div className="h-1.5 w-full" style={{ backgroundColor: theme.altRowBg }} />
+                      </div>
+                      <span className="text-[10px] font-semibold text-slate-700 truncate block">
+                        {theme.name}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Header Row & Banded Rows Toggles */}
+            <div className="space-y-2 pt-2 border-t border-slate-100">
+              <div
+                onClick={() =>
+                  updateElement(selectedElement.id, {
+                    showHeaderRow: (selectedElement as TableElement).showHeaderRow === false,
+                  })
+                }
+                className="flex items-center justify-between cursor-pointer"
+              >
+                <span className="text-[11px] font-semibold text-slate-700">Header Row</span>
+                <div
+                  className={`fluent-switch ${
+                    (selectedElement as TableElement).showHeaderRow !== false ? 'active' : ''
+                  }`}
+                >
+                  <div className="fluent-switch-knob" />
+                </div>
+              </div>
+
+              <div
+                onClick={() =>
+                  updateElement(selectedElement.id, {
+                    bandedRows: (selectedElement as TableElement).bandedRows === false,
+                  })
+                }
+                className="flex items-center justify-between cursor-pointer"
+              >
+                <span className="text-[11px] font-semibold text-slate-700">Banded Rows</span>
+                <div
+                  className={`fluent-switch ${
+                    (selectedElement as TableElement).bandedRows !== false ? 'active' : ''
+                  }`}
+                >
+                  <div className="fluent-switch-knob" />
+                </div>
+              </div>
+            </div>
+
+            {/* Add / Remove Rows & Columns */}
+            <div className="grid grid-cols-2 gap-1.5 pt-2 border-t border-slate-100">
+              <button
+                onClick={() => {
+                  const tbl = selectedElement as TableElement;
+                  const newRow = Array.from({ length: tbl.cols }, (_, c) => `Data ${tbl.rows},${c + 1}`);
+                  updateElement(tbl.id, {
+                    rows: tbl.rows + 1,
+                    data: [...tbl.data, newRow],
+                    height: tbl.height + 36,
+                  });
+                }}
+                className="py-1 px-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-800 text-[10px] font-semibold transition"
+              >
+                + Add Row
+              </button>
+              <button
+                onClick={() => {
+                  const tbl = selectedElement as TableElement;
+                  const newData = tbl.data.map((r, idx) => [
+                    ...r,
+                    idx === 0 ? `Header ${tbl.cols + 1}` : `Data ${idx},${tbl.cols + 1}`,
+                  ]);
+                  updateElement(tbl.id, {
+                    cols: tbl.cols + 1,
+                    data: newData,
+                  });
+                }}
+                className="py-1 px-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-800 text-[10px] font-semibold transition"
+              >
+                + Add Col
+              </button>
+            </div>
+
+            {/* Custom Colors & Border */}
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+              <div>
+                <label className="block text-[10px] font-semibold text-slate-500 mb-1">
+                  Header Fill
+                </label>
                 <input
                   type="color"
                   value={(selectedElement as TableElement).headerBg}
@@ -959,9 +1079,19 @@ export const PropertiesPanel: React.FC = () => {
                   }
                   className="w-7 h-7 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0 shadow-2xs"
                 />
-                <span className="font-mono text-[11px] text-slate-600 font-semibold">
-                  {(selectedElement as TableElement).headerBg}
-                </span>
+              </div>
+              <div>
+                <label className="block text-[10px] font-semibold text-slate-500 mb-1">
+                  Alt Row Fill
+                </label>
+                <input
+                  type="color"
+                  value={(selectedElement as TableElement).altRowBg || '#f1f5f9'}
+                  onChange={(e) =>
+                    updateElement(selectedElement.id, { altRowBg: e.target.value })
+                  }
+                  className="w-7 h-7 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0 shadow-2xs"
+                />
               </div>
             </div>
 
@@ -980,7 +1110,7 @@ export const PropertiesPanel: React.FC = () => {
                 />
                 <input
                   type="number"
-                  min={1}
+                  min={0}
                   max={6}
                   value={(selectedElement as TableElement).borderWidth}
                   onChange={(e) =>

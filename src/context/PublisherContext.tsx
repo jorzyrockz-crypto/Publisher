@@ -805,12 +805,16 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         rows,
         cols,
         data,
+        themeId: 'emerald-office',
         headerBg: '#0f6b4e',
         headerColor: '#ffffff',
-        cellBg: '#f8fafc',
+        cellBg: '#ffffff',
+        altRowBg: '#ecfdf5',
         cellColor: '#1e293b',
-        borderColor: '#cbd5e1',
+        borderColor: '#a7f3d0',
         borderWidth: 1,
+        bandedRows: true,
+        showHeaderRow: true,
         ...options,
       };
       addElement(defaultTable);

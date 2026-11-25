@@ -119,12 +119,18 @@ export interface TableElement extends BaseElement {
   rows: number;
   cols: number;
   data: string[][];
+  themeId?: string;
   headerBg: string;
   headerColor: string;
   cellBg: string;
+  altRowBg?: string;
   cellColor: string;
   borderColor: string;
   borderWidth: number;
+  bandedRows?: boolean;
+  showHeaderRow?: boolean;
+  cellPadding?: number;
+  fontSize?: number;
 }
 
 export interface AccentElement extends BaseElement {
