@@ -17,6 +17,8 @@ import {
   QrCode,
   Sparkles,
   Minus,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import { PublisherElement } from '../../types/publisher';
 import { ElementRenderer } from '../canvas/ElementRenderer';
@@ -26,6 +28,8 @@ export const PageThumbnails: React.FC = () => {
     project,
     activePage,
     selectedElementIds,
+    isLeftPanelOpen,
+    setIsLeftPanelOpen,
     isEditingMaster,
     setIsEditingMaster,
     toggleMasterPageVisibility,
@@ -85,44 +89,73 @@ export const PageThumbnails: React.FC = () => {
     }
   };
 
+  if (!isLeftPanelOpen) {
+    return (
+      <div className="w-9 bg-white/95 backdrop-blur-md border-r border-slate-200 flex flex-col items-center py-2.5 gap-3 h-full select-none flex-shrink-0 z-20 shadow-2xs">
+        <button
+          onClick={() => setIsLeftPanelOpen(true)}
+          className="p-1.5 rounded-lg text-slate-600 hover:text-emerald-800 hover:bg-emerald-50 transition"
+          title="Expand Pages & Layers Panel"
+        >
+          <PanelLeftOpen size={15} />
+        </button>
+        <div
+          onClick={() => setIsLeftPanelOpen(true)}
+          className="text-[10px] font-bold tracking-widest text-slate-400 uppercase cursor-pointer hover:text-emerald-700 transition"
+          style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+        >
+          Pages & Layers
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="w-56 bg-white/95 backdrop-blur-md border-r border-slate-200 flex flex-col h-full select-none flex-shrink-0 z-20 shadow-2xs">
+    <div className="w-56 bg-white/95 backdrop-blur-md border-r border-slate-200 flex flex-col h-full select-none flex-shrink-0 z-20 shadow-2xs transition-all">
       {/* Segmented Header Tabs: Pages | Layers */}
-      <div className="p-2 border-b border-slate-200/80 bg-slate-50/70 flex items-center gap-1.5">
+      <div className="p-2 border-b border-slate-200/80 bg-slate-50/70 flex items-center gap-1">
         <div className="flex-1 grid grid-cols-2 bg-slate-200/70 p-0.5 rounded-xl">
           <button
             onClick={() => setSidebarTab('pages')}
-            className={`flex items-center justify-center gap-1 py-1 rounded-lg text-[11px] font-bold transition-all ${
+            className={`flex items-center justify-center gap-1 py-1 rounded-lg text-[10.5px] font-bold transition-all ${
               sidebarTab === 'pages'
                 ? 'bg-white text-emerald-800 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <FileText size={12} />
-            <span>Pages ({project.pages.length})</span>
+            <FileText size={11} />
+            <span>Pages</span>
           </button>
           <button
             onClick={() => setSidebarTab('layers')}
-            className={`flex items-center justify-center gap-1 py-1 rounded-lg text-[11px] font-bold transition-all ${
+            className={`flex items-center justify-center gap-1 py-1 rounded-lg text-[10.5px] font-bold transition-all ${
               sidebarTab === 'layers'
                 ? 'bg-white text-emerald-800 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <Layers size={12} />
-            <span>Layers ({currentElements.length})</span>
+            <Layers size={11} />
+            <span>Layers</span>
           </button>
         </div>
 
         {sidebarTab === 'pages' && (
           <button
             onClick={addPage}
-            className="p-1.5 hover:bg-emerald-100 hover:text-emerald-800 text-slate-600 rounded-lg transition active:scale-95"
+            className="p-1 hover:bg-emerald-100 hover:text-emerald-800 text-slate-600 rounded-lg transition active:scale-95"
             title="Add Blank Page"
           >
             <Plus size={14} />
           </button>
         )}
+
+        <button
+          onClick={() => setIsLeftPanelOpen(false)}
+          className="p-1 hover:bg-slate-200/70 text-slate-400 hover:text-slate-700 rounded-lg transition"
+          title="Collapse Left Panel"
+        >
+          <PanelLeftClose size={14} />
+        </button>
       </div>
 
       {/* Tab 1: Pages Thumbnails */}

@@ -23,6 +23,7 @@ export const CanvasArea: React.FC = () => {
     setViewMode,
     toolMode,
     setToolMode,
+    isRightPanelOpen,
     addPage,
     setActivePageIndex,
     zoom,
@@ -279,7 +280,11 @@ export const CanvasArea: React.FC = () => {
           )}
 
           {/* Modern Floating Viewport, Tool Mode, Page View & Zoom Pill */}
-          <div className="fixed bottom-10 right-76 z-30 flex items-center gap-1 bg-white/95 backdrop-blur-md px-2.5 py-1.5 rounded-full border border-slate-200/90 shadow-lg text-xs text-slate-700">
+          <div
+            className={`fixed bottom-10 z-30 flex items-center gap-1 bg-white/95 backdrop-blur-md px-2.5 py-1.5 rounded-full border border-slate-200/90 shadow-lg text-xs text-slate-700 transition-all ${
+              isRightPanelOpen ? 'right-76' : 'right-14'
+            }`}
+          >
             {/* Select vs Hand/Pan Tool Switcher */}
             <div className="flex items-center bg-slate-100 p-0.5 rounded-full mr-0.5">
               <button

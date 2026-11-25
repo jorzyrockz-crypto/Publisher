@@ -34,6 +34,8 @@ import {
   FlipHorizontal2,
   FlipVertical2,
   RotateCcw,
+  PanelRightClose,
+  PanelRightOpen,
 } from 'lucide-react';
 
 export const PropertiesPanel: React.FC = () => {
@@ -41,6 +43,8 @@ export const PropertiesPanel: React.FC = () => {
     project,
     activePage,
     isEditingMaster,
+    isRightPanelOpen,
+    setIsRightPanelOpen,
     selectedElementIds,
     updateElement,
     toggleElementLock,
@@ -61,12 +65,42 @@ export const PropertiesPanel: React.FC = () => {
       ? elementsPool.find((el) => el.id === selectedElementIds[0])
       : null;
 
+  if (!isRightPanelOpen) {
+    return (
+      <div className="w-9 bg-white/95 backdrop-blur-md border-l border-slate-200 flex flex-col items-center py-2.5 gap-3 h-full select-none flex-shrink-0 z-20 shadow-2xs">
+        <button
+          onClick={() => setIsRightPanelOpen(true)}
+          className="p-1.5 rounded-lg text-slate-600 hover:text-emerald-800 hover:bg-emerald-50 transition"
+          title="Expand Inspector Panel"
+        >
+          <PanelRightOpen size={15} />
+        </button>
+        <div
+          onClick={() => setIsRightPanelOpen(true)}
+          className="text-[10px] font-bold tracking-widest text-slate-400 uppercase cursor-pointer hover:text-emerald-700 transition"
+          style={{ writingMode: 'vertical-rl' }}
+        >
+          Inspector
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="w-72 bg-white/95 backdrop-blur-md border-l border-slate-200 flex flex-col h-full select-none flex-shrink-0 z-20 text-xs text-slate-700 overflow-y-auto shadow-2xs">
+    <div className="w-72 bg-white/95 backdrop-blur-md border-l border-slate-200 flex flex-col h-full select-none flex-shrink-0 z-20 text-xs text-slate-700 overflow-y-auto shadow-2xs transition-all">
       {/* Header */}
-      <div className="h-9 px-3.5 flex items-center gap-2 font-bold text-xs text-slate-700 border-b border-slate-200/80 bg-slate-50/70">
-        <Sliders size={14} className="text-emerald-700" />
-        <span>Inspector</span>
+      <div className="h-9 px-3.5 flex items-center justify-between font-bold text-xs text-slate-700 border-b border-slate-200/80 bg-slate-50/70">
+        <div className="flex items-center gap-2">
+          <Sliders size={14} className="text-emerald-700" />
+          <span>Inspector</span>
+        </div>
+        <button
+          onClick={() => setIsRightPanelOpen(false)}
+          className="p-1 hover:bg-slate-200/70 text-slate-400 hover:text-slate-700 rounded-lg transition"
+          title="Collapse Right Panel"
+        >
+          <PanelRightClose size={14} />
+        </button>
       </div>
 
       <div className="p-3.5 space-y-4">

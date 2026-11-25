@@ -40,10 +40,14 @@ interface PublisherContextType {
   hasClipboard: boolean;
   viewMode: 'single' | 'continuous' | 'spread';
   toolMode: 'select' | 'pan';
+  isLeftPanelOpen: boolean;
+  isRightPanelOpen: boolean;
 
   // Setters & UI controls
   setViewMode: (mode: 'single' | 'continuous' | 'spread') => void;
   setToolMode: (mode: 'select' | 'pan') => void;
+  setIsLeftPanelOpen: (open: boolean) => void;
+  setIsRightPanelOpen: (open: boolean) => void;
   setIsEditingMaster: (editing: boolean) => void;
   toggleMasterPageVisibility: () => void;
   setActiveTab: (tab: 'home' | 'insert' | 'page-design' | 'mailings' | 'view') => void;
@@ -155,6 +159,8 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [isEditingMaster, setIsEditingMasterState] = useState<boolean>(false);
   const [viewMode, setViewMode] = useState<'single' | 'continuous' | 'spread'>('continuous');
   const [toolMode, setToolMode] = useState<'select' | 'pan'>('select');
+  const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
+  const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
   const [zoom, setZoomState] = useState<number>(0.8);
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
@@ -1034,9 +1040,13 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         hasClipboard: copiedElements.length > 0,
         viewMode,
         toolMode,
+        isLeftPanelOpen,
+        isRightPanelOpen,
 
         setViewMode,
         setToolMode,
+        setIsLeftPanelOpen,
+        setIsRightPanelOpen,
         setIsEditingMaster,
         toggleMasterPageVisibility,
         setActiveTab,
