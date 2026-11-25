@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
-import { SAMPLE_GRAPHICS } from '../../constants/sampleGraphics';
+import { SAMPLE_GRAPHICS, StockCategory } from '../../constants/sampleGraphics';
 import { FloatingDropdown } from '../common/FloatingDropdown';
 import {
   FilePlus,
@@ -38,6 +38,7 @@ export const InsertTab: React.FC = () => {
   const [tableGridHover, setTableGridHover] = useState<{ r: number; c: number }>({ r: 3, c: 3 });
   const [isTableDropdownOpen, setIsTableDropdownOpen] = useState(false);
   const [isStockOpen, setIsStockOpen] = useState(false);
+  const [stockCategory, setStockCategory] = useState<'All' | StockCategory>('All');
 
   return (
     <div className="flex items-center h-24 px-3 py-1 gap-3 text-xs text-slate-700 overflow-x-auto select-none">
@@ -178,27 +179,51 @@ export const InsertTab: React.FC = () => {
               isOpen={isStockOpen}
               onClose={() => setIsStockOpen(false)}
               anchorRef={stockBtnRef}
-              className="p-2.5 w-60 grid grid-cols-2 gap-2"
+              className="p-3 w-80"
             >
-              {SAMPLE_GRAPHICS.map((g) => (
-                <button
-                  key={g.id}
-                  onClick={() => {
-                    addImage(g.src, { name: g.name });
-                    setIsStockOpen(false);
-                  }}
-                  className="group/item flex flex-col items-center p-1.5 rounded-xl border border-slate-200/80 hover:border-emerald-500 hover:bg-emerald-50/40 transition"
-                >
-                  <img
-                    src={g.src}
-                    alt={g.name}
-                    className="w-full h-14 object-cover rounded-lg mb-1"
-                  />
-                  <span className="text-[10px] font-semibold text-slate-700 truncate w-full text-center">
-                    {g.name}
-                  </span>
-                </button>
-              ))}
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold text-slate-700">
+                  Stock Art & Clipart ({SAMPLE_GRAPHICS.length})
+                </span>
+              </div>
+              <div className="flex items-center gap-1 mb-2.5 flex-wrap">
+                {(['All', 'Nature', 'Abstract', 'Business', 'Badges'] as const).map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setStockCategory(cat)}
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-semibold transition ${
+                      stockCategory === cat
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+              <div className="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto pr-1">
+                {SAMPLE_GRAPHICS.filter(
+                  (g) => stockCategory === 'All' || g.category === stockCategory
+                ).map((g) => (
+                  <button
+                    key={g.id}
+                    onClick={() => {
+                      addImage(g.src, { name: g.name });
+                      setIsStockOpen(false);
+                    }}
+                    className="group/item flex flex-col items-center p-1.5 rounded-xl border border-slate-200/80 hover:border-emerald-500 hover:bg-emerald-50/40 transition"
+                  >
+                    <img
+                      src={g.src}
+                      alt={g.name}
+                      className="w-full h-14 object-cover rounded-lg mb-1"
+                    />
+                    <span className="text-[10px] font-semibold text-slate-700 truncate w-full text-center">
+                      {g.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </FloatingDropdown>
           </div>
 
