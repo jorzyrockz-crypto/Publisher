@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import {
   PublisherElement,
@@ -88,6 +88,17 @@ const TextRenderer: React.FC<{
   totalPages: number;
   onTextChange?: (t: string) => void;
 }> = ({ element, isSelected, pageNumber, totalPages, onTextChange }) => {
+  const editorRef = useRef<HTMLDivElement>(null);
+
+  // Sync element.text into the contentEditable DOM only when entering edit mode or when not focused
+  useEffect(() => {
+    if (isSelected && editorRef.current) {
+      if (document.activeElement !== editorRef.current) {
+        editorRef.current.innerText = element.text;
+      }
+    }
+  }, [isSelected, element.id, element.text]);
+
   const getWordArtClass = () => {
     if (!element.isWordArt) return '';
     switch (element.wordArtStyle) {
@@ -150,53 +161,63 @@ const TextRenderer: React.FC<{
     return resolvedText;
   };
 
+  const sharedStyle: React.CSSProperties = {
+    width: '100%',
+    height: '100%',
+    backgroundColor: element.backgroundColor || 'transparent',
+    border: element.borderWidth
+      ? `${element.borderWidth}px ${element.borderStyle || 'solid'} ${element.borderColor || '#000'}`
+      : 'none',
+    borderRadius: element.borderRadius ? `${element.borderRadius}px` : undefined,
+    padding: `${element.padding}px`,
+    color: element.color,
+    fontFamily: element.fontFamily,
+    fontSize: `${element.fontSize}px`,
+    fontWeight: element.fontWeight,
+    fontStyle: element.fontStyle,
+    textDecoration: element.textDecoration,
+    textAlign: element.textAlign,
+    lineHeight: element.lineHeight,
+    columnCount: element.columns,
+    columnGap: `${element.columnGap}px`,
+    columnRule: element.columns > 1 ? '1px solid #e2e8f0' : 'none',
+    overflow: 'hidden',
+    whiteSpace: 'pre-wrap',
+    wordBreak: 'break-word',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent:
+      element.verticalAlign === 'middle'
+        ? 'center'
+        : element.verticalAlign === 'bottom'
+        ? 'flex-end'
+        : 'flex-start',
+    userSelect: isSelected ? 'text' : 'none',
+    WebkitUserSelect: isSelected ? 'text' : 'none',
+    cursor: isSelected ? 'text' : 'inherit',
+    outline: 'none',
+  };
+
+  if (isSelected) {
+    return (
+      <div
+        ref={editorRef}
+        style={sharedStyle}
+        className={getWordArtClass()}
+        contentEditable
+        suppressContentEditableWarning
+        onBlur={(e) => {
+          const next = e.currentTarget.innerText;
+          if (onTextChange && next !== element.text) {
+            onTextChange(next);
+          }
+        }}
+      />
+    );
+  }
+
   return (
-    <div
-      style={{
-        width: '100%',
-        height: '100%',
-        backgroundColor: element.backgroundColor || 'transparent',
-        border: element.borderWidth
-          ? `${element.borderWidth}px ${element.borderStyle || 'solid'} ${element.borderColor || '#000'}`
-          : 'none',
-        borderRadius: element.borderRadius ? `${element.borderRadius}px` : undefined,
-        padding: `${element.padding}px`,
-        color: element.color,
-        fontFamily: element.fontFamily,
-        fontSize: `${element.fontSize}px`,
-        fontWeight: element.fontWeight,
-        fontStyle: element.fontStyle,
-        textDecoration: element.textDecoration,
-        textAlign: element.textAlign,
-        lineHeight: element.lineHeight,
-        columnCount: element.columns,
-        columnGap: `${element.columnGap}px`,
-        columnRule: element.columns > 1 ? '1px solid #e2e8f0' : 'none',
-        overflow: 'hidden',
-        whiteSpace: 'pre-wrap',
-        wordBreak: 'break-word',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent:
-          element.verticalAlign === 'middle'
-            ? 'center'
-            : element.verticalAlign === 'bottom'
-            ? 'flex-end'
-            : 'flex-start',
-        userSelect: isSelected ? 'text' : 'none',
-        WebkitUserSelect: isSelected ? 'text' : 'none',
-        cursor: isSelected ? 'text' : 'inherit',
-        outline: 'none',
-      }}
-      className={getWordArtClass()}
-      contentEditable={isSelected}
-      suppressContentEditableWarning
-      onBlur={(e) => {
-        if (onTextChange) {
-          onTextChange(e.currentTarget.innerText);
-        }
-      }}
-    >
+    <div style={sharedStyle} className={getWordArtClass()}>
       {renderTextContent()}
     </div>
   );
