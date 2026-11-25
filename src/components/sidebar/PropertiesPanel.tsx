@@ -442,9 +442,76 @@ export const PropertiesPanel: React.FC = () => {
                 <option value="callout">Speech Callout</option>
                 <option value="arrow-right">Block Arrow</option>
                 <option value="arrow-double">Double Arrow</option>
+                <option value="parallelogram">Parallelogram</option>
+                <option value="trapezoid">Trapezoid</option>
+                <option value="pentagon">Pentagon</option>
+                <option value="cross">Cross / Plus</option>
+                <option value="cloud">Cloud</option>
                 <option value="diamond">Diamond</option>
                 <option value="heart">Heart</option>
               </select>
+            </div>
+
+            {/* PowerPoint Quick Shape Styles */}
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-500 mb-1.5">
+                Quick Shape Styles
+              </label>
+              <div className="grid grid-cols-3 gap-1.5">
+                {[
+                  {
+                    name: 'Outline',
+                    bg: 'transparent',
+                    border: '#0f6b4e',
+                    apply: { fillType: 'solid' as const, fillColor: 'transparent', strokeColor: '#0f6b4e', strokeWidth: 2.5, shadow: false, glow: false },
+                  },
+                  {
+                    name: 'Emerald',
+                    bg: '#0f6b4e',
+                    border: '#064e3b',
+                    apply: { fillType: 'solid' as const, fillColor: '#0f6b4e', strokeColor: '#064e3b', strokeWidth: 2, shadow: true, glow: false },
+                  },
+                  {
+                    name: 'Gradient',
+                    bg: 'linear-gradient(135deg, #0284c7, #38bdf8)',
+                    border: '#0369a1',
+                    apply: { fillType: 'linear-gradient' as const, fillColor: '#0284c7', gradientColor2: '#38bdf8', gradientAngle: 135, strokeColor: '#0369a1', strokeWidth: 1.5, shadow: true, glow: false },
+                  },
+                  {
+                    name: 'Sunset',
+                    bg: 'linear-gradient(135deg, #ec4899, #f59e0b)',
+                    border: '#be185d',
+                    apply: { fillType: 'linear-gradient' as const, fillColor: '#ec4899', gradientColor2: '#f59e0b', gradientAngle: 135, strokeColor: '#be185d', strokeWidth: 1.5, shadow: true, glow: false },
+                  },
+                  {
+                    name: 'Neon Glow',
+                    bg: '#0f172a',
+                    border: '#38bdf8',
+                    apply: { fillType: 'solid' as const, fillColor: '#0f172a', strokeColor: '#38bdf8', strokeWidth: 2, shadow: false, glow: true, glowColor: '#38bdf8', glowSize: 14 },
+                  },
+                  {
+                    name: 'Gold Seal',
+                    bg: 'linear-gradient(135deg, #facc15, #b45309)',
+                    border: '#92400e',
+                    apply: { fillType: 'linear-gradient' as const, fillColor: '#facc15', gradientColor2: '#b45309', gradientAngle: 135, strokeColor: '#92400e', strokeWidth: 2, shadow: true, glow: false },
+                  },
+                ].map((preset) => (
+                  <button
+                    key={preset.name}
+                    onClick={() => updateElement(selectedElement.id, preset.apply)}
+                    className="p-1.5 rounded-xl border border-slate-200 hover:border-emerald-500 bg-slate-50/70 flex flex-col items-center gap-1 transition"
+                  >
+                    <div
+                      className="w-full h-4 rounded-md"
+                      style={{
+                        background: preset.bg,
+                        border: `2px solid ${preset.border}`,
+                      }}
+                    />
+                    <span className="text-[9.5px] font-semibold text-slate-700">{preset.name}</span>
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Fill Mode: Solid vs Linear Gradient */}
@@ -638,6 +705,54 @@ export const PropertiesPanel: React.FC = () => {
               >
                 <div className="fluent-switch-knob" />
               </div>
+            </div>
+
+            {/* Outer Glow Switch & Color */}
+            <div className="space-y-2 pt-1">
+              <div
+                onClick={() =>
+                  updateElement(selectedElement.id, {
+                    glow: !(selectedElement as ShapeElement).glow,
+                    glowColor: (selectedElement as ShapeElement).glowColor || '#38bdf8',
+                  })
+                }
+                className="flex items-center justify-between cursor-pointer hover:opacity-90"
+              >
+                <div>
+                  <span className="font-semibold text-slate-800">Outer Glow</span>
+                  <p className="text-[10px] text-slate-400">PowerPoint aura effect</p>
+                </div>
+                <div
+                  className={`fluent-switch ${
+                    (selectedElement as ShapeElement).glow ? 'active' : ''
+                  }`}
+                >
+                  <div className="fluent-switch-knob" />
+                </div>
+              </div>
+
+              {(selectedElement as ShapeElement).glow && (
+                <div className="flex items-center gap-2 pl-1">
+                  <input
+                    type="color"
+                    value={(selectedElement as ShapeElement).glowColor || '#38bdf8'}
+                    onChange={(e) =>
+                      updateElement(selectedElement.id, { glowColor: e.target.value })
+                    }
+                    className="w-6 h-6 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0"
+                  />
+                  <input
+                    type="range"
+                    min={4}
+                    max={30}
+                    value={(selectedElement as ShapeElement).glowSize || 12}
+                    onChange={(e) =>
+                      updateElement(selectedElement.id, { glowSize: Number(e.target.value) })
+                    }
+                    className="flex-1 accent-emerald-600 cursor-pointer"
+                  />
+                </div>
+              )}
             </div>
 
             {/* Shape Label */}

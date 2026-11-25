@@ -299,6 +299,11 @@ export const HomeTab: React.FC = () => {
                   'callout',
                   'arrow-right',
                   'arrow-double',
+                  'parallelogram',
+                  'trapezoid',
+                  'pentagon',
+                  'cross',
+                  'cloud',
                 ] as ShapeType[]
               ).map((shape) => (
                 <button

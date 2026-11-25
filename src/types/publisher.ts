@@ -13,7 +13,12 @@ export type ShapeType =
   | 'heart'
   | 'diamond'
   | 'hexagon'
-  | 'badge-burst';
+  | 'badge-burst'
+  | 'parallelogram'
+  | 'trapezoid'
+  | 'pentagon'
+  | 'cross'
+  | 'cloud';
 
 export type WordArtStyle =
   | 'none'
@@ -93,9 +98,13 @@ export interface ShapeElement extends BaseElement {
   strokeWidth: number;
   strokeDash?: 'solid' | 'dashed' | 'dotted';
   cornerRadius?: number;
+  adjustValue?: number; // PowerPoint yellow handle morph parameter (0 to 1)
   shadow?: boolean;
   shadowColor?: string;
   shadowBlur?: number;
+  glow?: boolean;
+  glowColor?: string;
+  glowSize?: number;
   label?: string;
   labelColor?: string;
   labelFontSize?: number;

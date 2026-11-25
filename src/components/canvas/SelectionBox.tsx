@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { PublisherElement } from '../../types/publisher';
+import type { PublisherElement, ShapeElement } from '../../types/publisher';
 import { RotateCw } from 'lucide-react';
 
 interface SelectionBoxProps {
@@ -8,6 +8,7 @@ interface SelectionBoxProps {
   onResize: (newX: number, newY: number, newWidth: number, newHeight: number) => void;
   onRotate: (newRotation: number) => void;
   onMoveMouseDown?: (e: React.MouseEvent) => void;
+  onAdjustShape?: (adjustValue: number) => void;
 }
 
 export const SelectionBox: React.FC<SelectionBoxProps> = ({
@@ -16,8 +17,10 @@ export const SelectionBox: React.FC<SelectionBoxProps> = ({
   onResize,
   onRotate,
   onMoveMouseDown,
+  onAdjustShape,
 }) => {
   const [isRotating, setIsRotating] = useState(false);
+  const [isAdjusting, setIsAdjusting] = useState(false);
   const [rotationAngle, setRotationAngle] = useState(element.rotation);
 
   useEffect(() => {
@@ -65,6 +68,20 @@ export const SelectionBox: React.FC<SelectionBoxProps> = ({
         }
       }
 
+      // Shift-key locks aspect ratio (1:1 or original ratio) on corner handles
+      if (moveEvent.shiftKey && handle.length === 2) {
+        const ratio = startW / Math.max(1, startH);
+        if (Math.abs(nextW - startW) > Math.abs(nextH - startH) * ratio) {
+          const lockedH = Math.max(20, nextW / ratio);
+          if (handle.includes('n')) nextY = startY + (startH - lockedH);
+          nextH = lockedH;
+        } else {
+          const lockedW = Math.max(20, nextH * ratio);
+          if (handle.includes('w')) nextX = startX + (startW - lockedW);
+          nextW = lockedW;
+        }
+      }
+
       onResize(Math.round(nextX), Math.round(nextY), Math.round(nextW), Math.round(nextH));
     };
 
@@ -93,8 +110,10 @@ export const SelectionBox: React.FC<SelectionBoxProps> = ({
       let deg = Math.round(rad * (180 / Math.PI)) + 90;
       if (deg < 0) deg += 360;
 
-      // Snap to 0, 45, 90, 180, 270 if close
-      if (Math.abs(deg % 45) < 3 || Math.abs((deg % 45) - 45) < 3) {
+      // Snap to 15° increments when Shift is held, or 45° when close
+      if (moveEvent.shiftKey) {
+        deg = Math.round(deg / 15) * 15;
+      } else if (Math.abs(deg % 45) < 3 || Math.abs((deg % 45) - 45) < 3) {
         deg = Math.round(deg / 45) * 45;
       }
 
@@ -202,6 +221,109 @@ export const SelectionBox: React.FC<SelectionBoxProps> = ({
           {rotationAngle}°
         </div>
       )}
+
+      {/* PowerPoint-style Yellow Diamond Adjustment Handle for Morphable Shapes */}
+      {element.type === 'shape' &&
+        onAdjustShape &&
+        [
+          'rounded-rect',
+          'star',
+          'badge-burst',
+          'arrow-right',
+          'arrow-double',
+          'banner',
+          'triangle',
+          'parallelogram',
+          'trapezoid',
+          'cross',
+        ].includes((element as ShapeElement).shapeType) && (() => {
+          const shp = element as ShapeElement;
+          const defaults: Record<string, { def: number; min: number; max: number }> = {
+            'rounded-rect': { def: 0.25, min: 0, max: 1 },
+            star: { def: 0.45, min: 0.15, max: 0.85 },
+            'badge-burst': { def: 0.78, min: 0.4, max: 0.92 },
+            'arrow-right': { def: 0.32, min: 0.1, max: 0.75 },
+            'arrow-double': { def: 0.25, min: 0.1, max: 0.45 },
+            banner: { def: 0.12, min: 0.02, max: 0.4 },
+            triangle: { def: 0.5, min: 0.05, max: 0.95 },
+            parallelogram: { def: 0.2, min: 0.02, max: 0.45 },
+            trapezoid: { def: 0.18, min: 0.02, max: 0.45 },
+            cross: { def: 0.35, min: 0.12, max: 0.75 },
+          };
+          const cfg = defaults[shp.shapeType];
+          const val = shp.adjustValue ?? cfg.def;
+
+          let handleLeft = '50%';
+          let handleTop = '0px';
+
+          if (shp.shapeType === 'rounded-rect') {
+            const maxR = Math.min(shp.width, shp.height) / 2;
+            handleLeft = `${Math.max(8, val * maxR)}px`;
+            handleTop = '4px';
+          } else if (shp.shapeType === 'star' || shp.shapeType === 'badge-burst') {
+            handleLeft = `${50 + val * 30}%`;
+            handleTop = '16%';
+          } else if (shp.shapeType === 'arrow-right') {
+            handleLeft = `${(1 - val) * 100}%`;
+            handleTop = '22%';
+          } else if (shp.shapeType === 'arrow-double') {
+            handleLeft = `${val * 100}%`;
+            handleTop = '22%';
+          } else if (shp.shapeType === 'banner') {
+            handleLeft = `${val * 100}%`;
+            handleTop = '50%';
+          } else if (shp.shapeType === 'triangle') {
+            handleLeft = `${val * 100}%`;
+            handleTop = '2px';
+          } else if (shp.shapeType === 'parallelogram' || shp.shapeType === 'trapezoid') {
+            handleLeft = `${val * 100}%`;
+            handleTop = '2px';
+          } else if (shp.shapeType === 'cross') {
+            handleLeft = `${50 - (val * 50)}%`;
+            handleTop = '6px';
+          }
+
+          const handleAdjustMouseDown = (e: React.MouseEvent) => {
+            e.stopPropagation();
+            e.preventDefault();
+            setIsAdjusting(true);
+            const startX = e.clientX;
+            const startVal = val;
+
+            const onMove = (me: MouseEvent) => {
+              const dx = (me.clientX - startX) / (zoom * Math.max(40, shp.width));
+              const direction =
+                shp.shapeType === 'arrow-right' || shp.shapeType === 'cross' ? -1 : 1;
+              const nextVal = Math.min(
+                cfg.max,
+                Math.max(cfg.min, Number((startVal + dx * direction * 1.5).toFixed(3)))
+              );
+              onAdjustShape(nextVal);
+            };
+            const onUp = () => {
+              setIsAdjusting(false);
+              window.removeEventListener('mousemove', onMove);
+              window.removeEventListener('mouseup', onUp);
+            };
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onUp);
+          };
+
+          return (
+            <div
+              onMouseDown={handleAdjustMouseDown}
+              style={{ left: handleLeft, top: handleTop }}
+              className="absolute -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-yellow-400 border border-amber-700 rotate-45 cursor-ew-resize pointer-events-auto shadow-sm hover:scale-125 transition-transform z-50"
+              title="Drag yellow handle to morph shape geometry"
+            >
+              {isAdjusting && (
+                <div className="absolute -top-7 left-1/2 -translate-x-1/2 -rotate-45 bg-slate-900 text-white text-[9px] font-mono px-1.5 py-0.5 rounded shadow pointer-events-none">
+                  {Math.round(val * 100)}%
+                </div>
+              )}
+            </div>
+          );
+        })()}
     </div>
   );
 };

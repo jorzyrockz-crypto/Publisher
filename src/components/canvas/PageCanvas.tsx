@@ -543,6 +543,9 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
                   updateElement(element.id, { x: nx, y: ny, width: nw, height: nh })
                 }
                 onRotate={(nrot) => updateElement(element.id, { rotation: nrot })}
+                onAdjustShape={(adjustValue) =>
+                  updateElement(element.id, { adjustValue })
+                }
               />
             )}
 

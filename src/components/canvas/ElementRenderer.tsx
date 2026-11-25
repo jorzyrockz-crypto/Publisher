@@ -229,9 +229,18 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
   const dashArray =
     strokeDash === 'dashed' ? '8 4' : strokeDash === 'dotted' ? '3 3' : undefined;
 
-  const shadowFilter = element.shadow
-    ? `drop-shadow(3px 4px ${element.shadowBlur || 6}px ${element.shadowColor || 'rgba(0,0,0,0.3)'})`
-    : undefined;
+  const filters: string[] = [];
+  if (element.shadow) {
+    filters.push(
+      `drop-shadow(3px 4px ${element.shadowBlur || 6}px ${element.shadowColor || 'rgba(0,0,0,0.3)'})`
+    );
+  }
+  if (element.glow) {
+    filters.push(
+      `drop-shadow(0 0 ${element.glowSize || 12}px ${element.glowColor || '#38bdf8'})`
+    );
+  }
+  const shadowFilter = filters.length > 0 ? filters.join(' ') : undefined;
 
   const gradId = `grad-${element.id}`;
   const effectiveFill =
@@ -252,20 +261,24 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
             strokeDasharray={dashArray}
           />
         );
-      case 'rounded-rect':
+      case 'rounded-rect': {
+        const maxR = Math.min(width, height) / 2;
+        const rxVal =
+          element.adjustValue !== undefined ? element.adjustValue * maxR : cornerRadius ?? 12;
         return (
           <rect
             x={strokeWidth / 2}
             y={strokeWidth / 2}
             width={width - strokeWidth}
             height={height - strokeWidth}
-            rx={cornerRadius ?? 12}
+            rx={rxVal}
             fill={effectiveFill}
             stroke={strokeColor}
             strokeWidth={strokeWidth}
             strokeDasharray={dashArray}
           />
         );
+      }
       case 'circle':
         return (
           <ellipse
@@ -273,38 +286,39 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
             cy={height / 2}
             rx={(width - strokeWidth) / 2}
             ry={(height - strokeWidth) / 2}
-            fill={fillColor}
+            fill={effectiveFill}
             stroke={strokeColor}
             strokeWidth={strokeWidth}
             strokeDasharray={dashArray}
           />
         );
-      case 'triangle':
+      case 'triangle': {
+        const apexX = width * (element.adjustValue ?? 0.5);
         return (
           <polygon
-            points={`${width / 2},${strokeWidth} ${width - strokeWidth},${height - strokeWidth} ${strokeWidth},${height - strokeWidth}`}
-            fill={fillColor}
+            points={`${apexX},${strokeWidth} ${width - strokeWidth},${height - strokeWidth} ${strokeWidth},${height - strokeWidth}`}
+            fill={effectiveFill}
             stroke={strokeColor}
             strokeWidth={strokeWidth}
             strokeDasharray={dashArray}
           />
         );
+      }
       case 'diamond':
         return (
           <polygon
             points={`${width / 2},${strokeWidth} ${width - strokeWidth},${height / 2} ${width / 2},${height - strokeWidth} ${strokeWidth},${height / 2}`}
-            fill={fillColor}
+            fill={effectiveFill}
             stroke={strokeColor}
             strokeWidth={strokeWidth}
             strokeDasharray={dashArray}
           />
         );
       case 'star': {
-        // 5-point star
         const cx = width / 2;
         const cy = height / 2;
         const outerR = Math.min(cx, cy) - strokeWidth;
-        const innerR = outerR * 0.45;
+        const innerR = outerR * (element.adjustValue ?? 0.45);
         const points: string[] = [];
         for (let i = 0; i < 10; i++) {
           const r = i % 2 === 0 ? outerR : innerR;
@@ -314,23 +328,25 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
         return (
           <polygon
             points={points.join(' ')}
-            fill={fillColor}
+            fill={effectiveFill}
             stroke={strokeColor}
             strokeWidth={strokeWidth}
             strokeDasharray={dashArray}
           />
         );
       }
-      case 'banner':
+      case 'banner': {
+        const notch = width * (element.adjustValue ?? 0.12);
         return (
           <path
-            d={`M 0 0 L ${width} 0 L ${width - 25} ${height / 2} L ${width} ${height} L 0 ${height} L 25 ${height / 2} Z`}
-            fill={fillColor}
+            d={`M 0 0 L ${width} 0 L ${width - notch} ${height / 2} L ${width} ${height} L 0 ${height} L ${notch} ${height / 2} Z`}
+            fill={effectiveFill}
             stroke={strokeColor}
             strokeWidth={strokeWidth}
             strokeDasharray={dashArray}
           />
         );
+      }
       case 'callout':
         return (
           <path
@@ -346,20 +362,20 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
                 A 10 10 0 0 1 0 ${height - 30} 
                 V 20 
                 A 10 10 0 0 1 10 10 Z`}
-            fill={fillColor}
+            fill={effectiveFill}
             stroke={strokeColor}
             strokeWidth={strokeWidth}
             strokeDasharray={dashArray}
           />
         );
       case 'arrow-right': {
-        const arrowHeadW = Math.min(width * 0.35, 45);
+        const arrowHeadW = width * (element.adjustValue ?? 0.32);
         const shaftH = height * 0.5;
         const shaftY = (height - shaftH) / 2;
         return (
           <polygon
             points={`0,${shaftY} ${width - arrowHeadW},${shaftY} ${width - arrowHeadW},0 ${width},${height / 2} ${width - arrowHeadW},${height} ${width - arrowHeadW},${shaftY + shaftH} 0,${shaftY + shaftH}`}
-            fill={fillColor}
+            fill={effectiveFill}
             stroke={strokeColor}
             strokeWidth={strokeWidth}
             strokeDasharray={dashArray}
@@ -383,7 +399,7 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
           />
         );
       case 'arrow-double': {
-        const headW = Math.min(width * 0.25, 36);
+        const headW = width * (element.adjustValue ?? 0.25);
         const shaftH = height * 0.45;
         const shaftY = (height - shaftH) / 2;
         return (
@@ -419,7 +435,7 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
         const cx = width / 2;
         const cy = height / 2;
         const outerR = Math.min(cx, cy) - strokeWidth;
-        const innerR = outerR * 0.78;
+        const innerR = outerR * (element.adjustValue ?? 0.78);
         const pts: string[] = [];
         for (let i = 0; i < 24; i++) {
           const r = i % 2 === 0 ? outerR : innerR;
@@ -436,6 +452,78 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
           />
         );
       }
+      case 'parallelogram': {
+        const skew = width * (element.adjustValue ?? 0.2);
+        return (
+          <polygon
+            points={`${skew},${strokeWidth} ${width - strokeWidth},${strokeWidth} ${width - skew},${height - strokeWidth} ${strokeWidth},${height - strokeWidth}`}
+            fill={effectiveFill}
+            stroke={strokeColor}
+            strokeWidth={strokeWidth}
+            strokeDasharray={dashArray}
+          />
+        );
+      }
+      case 'trapezoid': {
+        const inset = width * (element.adjustValue ?? 0.18);
+        return (
+          <polygon
+            points={`${inset},${strokeWidth} ${width - inset},${strokeWidth} ${width - strokeWidth},${height - strokeWidth} ${strokeWidth},${height - strokeWidth}`}
+            fill={effectiveFill}
+            stroke={strokeColor}
+            strokeWidth={strokeWidth}
+            strokeDasharray={dashArray}
+          />
+        );
+      }
+      case 'pentagon': {
+        const cx = width / 2;
+        const cy = height / 2;
+        const r = Math.min(cx, cy) - strokeWidth;
+        const pts = Array.from({ length: 5 }, (_, i) => {
+          const a = (i * 2 * Math.PI) / 5 - Math.PI / 2;
+          return `${cx + r * Math.cos(a)},${cy + r * Math.sin(a)}`;
+        });
+        return (
+          <polygon
+            points={pts.join(' ')}
+            fill={effectiveFill}
+            stroke={strokeColor}
+            strokeWidth={strokeWidth}
+            strokeDasharray={dashArray}
+          />
+        );
+      }
+      case 'cross': {
+        const arm = element.adjustValue ?? 0.35;
+        const x1 = width * ((1 - arm) / 2);
+        const x2 = width * ((1 + arm) / 2);
+        const y1 = height * ((1 - arm) / 2);
+        const y2 = height * ((1 + arm) / 2);
+        return (
+          <polygon
+            points={`${x1},${strokeWidth} ${x2},${strokeWidth} ${x2},${y1} ${width - strokeWidth},${y1} ${width - strokeWidth},${y2} ${x2},${y2} ${x2},${height - strokeWidth} ${x1},${height - strokeWidth} ${x1},${y2} ${strokeWidth},${y2} ${strokeWidth},${y1} ${x1},${y1}`}
+            fill={effectiveFill}
+            stroke={strokeColor}
+            strokeWidth={strokeWidth}
+            strokeDasharray={dashArray}
+          />
+        );
+      }
+      case 'cloud':
+        return (
+          <path
+            d={`M ${width * 0.25} ${height * 0.8}
+                C ${width * 0.08} ${height * 0.8}, ${width * 0.04} ${height * 0.55}, ${width * 0.18} ${height * 0.45}
+                C ${width * 0.16} ${height * 0.22}, ${width * 0.38} ${height * 0.12}, ${width * 0.52} ${height * 0.24}
+                C ${width * 0.64} ${height * 0.1}, ${width * 0.88} ${height * 0.2}, ${width * 0.84} ${height * 0.44}
+                C ${width * 0.96} ${height * 0.52}, ${width * 0.94} ${height * 0.8}, ${width * 0.75} ${height * 0.8} Z`}
+            fill={effectiveFill}
+            stroke={strokeColor}
+            strokeWidth={strokeWidth}
+            strokeDasharray={dashArray}
+          />
+        );
       default:
         return null;
     }
