@@ -69,6 +69,7 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
 
   const [activeAlignGuideH, setActiveAlignGuideH] = useState<number | undefined>();
   const [activeAlignGuideV, setActiveAlignGuideV] = useState<number | undefined>();
+  const [editingTextId, setEditingTextId] = useState<string | null>(null);
   const [marquee, setMarquee] = useState<{
     startX: number;
     startY: number;
@@ -174,6 +175,7 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     // Clicked directly on background canvas
     if (e.target === canvasRef.current || (e.target as HTMLElement).classList.contains('canvas-bg')) {
+      setEditingTextId(null);
       clearSelection();
 
       if (!canvasRef.current) return;
@@ -453,12 +455,22 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
         .filter((el) => el.visible !== false)
         .map((element) => {
         const isSelected = selectedElementIds.includes(element.id);
+        const isEditingThisText =
+          element.type === 'text' && isSelected && isActivePage && !element.locked && editingTextId === element.id;
 
         return (
           <div
             key={element.id}
             id={`element-${element.id}`}
-            className={`absolute ${element.locked ? 'cursor-not-allowed' : 'cursor-move'}`}
+            className={`absolute ${
+              element.locked
+                ? 'cursor-not-allowed'
+                : isEditingThisText
+                ? 'cursor-text'
+                : element.type === 'text' && isSelected && isActivePage
+                ? 'cursor-text'
+                : 'cursor-move'
+            }`}
             style={{
               left: `${element.x}px`,
               top: `${element.y}px`,
@@ -469,7 +481,30 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
               zIndex: element.zIndex,
               opacity: element.opacity !== undefined ? element.opacity : 1,
             }}
-            onMouseDown={(e) => handleElementMouseDown(element, e)}
+            onDoubleClick={(e) => {
+              if (element.type === 'text' && !element.locked) {
+                e.stopPropagation();
+                if (!isActivePage && !isEditingMaster) {
+                  setActivePageIndex(targetPageIndex);
+                }
+                selectElement(element.id, false);
+                setEditingTextId(element.id);
+              }
+            }}
+            onMouseDown={(e) => {
+              // If already selected text box or in text edit mode, allow native I-beam caret & text selection!
+              if (
+                element.type === 'text' &&
+                !element.locked &&
+                (editingTextId === element.id || (isSelected && isActivePage && e.button === 0))
+              ) {
+                setEditingTextId(element.id);
+                e.stopPropagation();
+                return;
+              }
+              setEditingTextId(null);
+              handleElementMouseDown(element, e);
+            }}
             onContextMenu={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -500,6 +535,10 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
               <SelectionBox
                 element={element}
                 zoom={zoom}
+                onMoveMouseDown={(e) => {
+                  setEditingTextId(null);
+                  handleElementMouseDown(element, e);
+                }}
                 onResize={(nx, ny, nw, nh) =>
                   updateElement(element.id, { x: nx, y: ny, width: nw, height: nh })
                 }

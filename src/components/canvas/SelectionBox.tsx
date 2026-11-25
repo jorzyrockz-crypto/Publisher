@@ -7,6 +7,7 @@ interface SelectionBoxProps {
   zoom: number;
   onResize: (newX: number, newY: number, newWidth: number, newHeight: number) => void;
   onRotate: (newRotation: number) => void;
+  onMoveMouseDown?: (e: React.MouseEvent) => void;
 }
 
 export const SelectionBox: React.FC<SelectionBoxProps> = ({
@@ -14,6 +15,7 @@ export const SelectionBox: React.FC<SelectionBoxProps> = ({
   zoom,
   onResize,
   onRotate,
+  onMoveMouseDown,
 }) => {
   const [isRotating, setIsRotating] = useState(false);
   const [rotationAngle, setRotationAngle] = useState(element.rotation);
@@ -122,6 +124,32 @@ export const SelectionBox: React.FC<SelectionBoxProps> = ({
         boxShadow: '0 0 0 1px rgba(255,255,255,0.8), 0 0 8px rgba(5,150,105,0.25)',
       }}
     >
+      {/* 4 Edge Drag Strips so you can always drag the border even while editing text */}
+      {onMoveMouseDown && (
+        <>
+          <div
+            className="absolute -top-1.5 left-2 right-2 h-3 cursor-move pointer-events-auto"
+            onMouseDown={onMoveMouseDown}
+            title="Drag border to move"
+          />
+          <div
+            className="absolute -bottom-1.5 left-2 right-2 h-3 cursor-move pointer-events-auto"
+            onMouseDown={onMoveMouseDown}
+            title="Drag border to move"
+          />
+          <div
+            className="absolute top-2 bottom-2 -left-1.5 w-3 cursor-move pointer-events-auto"
+            onMouseDown={onMoveMouseDown}
+            title="Drag border to move"
+          />
+          <div
+            className="absolute top-2 bottom-2 -right-1.5 w-3 cursor-move pointer-events-auto"
+            onMouseDown={onMoveMouseDown}
+            title="Drag border to move"
+          />
+        </>
+      )}
+
       {/* 8 Modern Circular Resize Handles */}
       <div
         className="resize-handle-modern pointer-events-auto -top-1.5 -left-1.5 cursor-nwse-resize"

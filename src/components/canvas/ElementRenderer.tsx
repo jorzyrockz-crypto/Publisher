@@ -183,6 +183,10 @@ const TextRenderer: React.FC<{
             : element.verticalAlign === 'bottom'
             ? 'flex-end'
             : 'flex-start',
+        userSelect: isSelected ? 'text' : 'none',
+        WebkitUserSelect: isSelected ? 'text' : 'none',
+        cursor: isSelected ? 'text' : 'inherit',
+        outline: 'none',
       }}
       className={getWordArtClass()}
       contentEditable={isSelected}
