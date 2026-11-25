@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
 import { PageCanvas } from './PageCanvas';
 import { HorizontalRuler, VerticalRuler } from './Ruler';
@@ -10,6 +10,8 @@ import {
   File,
   Files,
   BookOpen,
+  Hand,
+  MousePointer2,
 } from 'lucide-react';
 
 export const CanvasArea: React.FC = () => {
@@ -19,6 +21,8 @@ export const CanvasArea: React.FC = () => {
     isEditingMaster,
     viewMode,
     setViewMode,
+    toolMode,
+    setToolMode,
     addPage,
     setActivePageIndex,
     zoom,
@@ -31,7 +35,48 @@ export const CanvasArea: React.FC = () => {
   } = usePublisher();
 
   const [cursorPos, setCursorPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [isSpaceHeld, setIsSpaceHeld] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Spacebar hold for temporary Hand/Pan tool, plus H (Hand) and V (Select) shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target.isContentEditable ||
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.tagName === 'SELECT'
+      ) {
+        return;
+      }
+
+      if (e.code === 'Space' && !e.repeat) {
+        e.preventDefault();
+        setIsSpaceHeld(true);
+      } else if (e.key.toLowerCase() === 'h' && !e.ctrlKey && !e.metaKey) {
+        setToolMode('pan');
+      } else if (e.key.toLowerCase() === 'v' && !e.ctrlKey && !e.metaKey) {
+        setToolMode('select');
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        setIsSpaceHeld(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [setToolMode]);
+
+  const effectivePanMode = toolMode === 'pan' || isSpaceHeld;
 
   const handleCursorMove = (x: number, y: number) => {
     setCursorPos({ x, y });
@@ -43,6 +88,45 @@ export const CanvasArea: React.FC = () => {
       const delta = e.deltaY < 0 ? 0.08 : -0.08;
       setZoom(Number((zoom + delta).toFixed(2)));
     }
+  };
+
+  const handleWorkspaceMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!containerRef.current) return;
+
+    const target = e.target as HTMLElement;
+    const clickedInsidePage = Boolean(target.closest('.print-page'));
+    const clickedButton = Boolean(target.closest('button'));
+
+    if (clickedButton) return;
+
+    // Pan when: Hand tool active, Spacebar held, Middle-click (button === 1), or dragging on pasteboard outside pages
+    const shouldPan = effectivePanMode || e.button === 1 || !clickedInsidePage;
+    if (!shouldPan) return;
+
+    e.preventDefault();
+    setIsPanning(true);
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startScrollLeft = containerRef.current.scrollLeft;
+    const startScrollTop = containerRef.current.scrollTop;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!containerRef.current) return;
+      const dx = moveEvent.clientX - startX;
+      const dy = moveEvent.clientY - startY;
+      containerRef.current.scrollLeft = startScrollLeft - dx;
+      containerRef.current.scrollTop = startScrollTop - dy;
+    };
+
+    const handleMouseUp = () => {
+      setIsPanning(false);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
   };
 
   // Group pages into pairs for 2-Page Spread view
@@ -98,7 +182,14 @@ export const CanvasArea: React.FC = () => {
         <div
           ref={containerRef}
           onWheel={handleWheel}
-          className="flex-1 h-full overflow-auto p-10 flex flex-col items-center relative"
+          onMouseDown={handleWorkspaceMouseDown}
+          className={`flex-1 h-full overflow-auto px-32 py-16 flex flex-col items-center relative ${
+            isPanning
+              ? 'cursor-grabbing'
+              : effectivePanMode
+              ? 'cursor-grab'
+              : ''
+          }`}
         >
           {/* Master Page Mode or Single Page View */}
           {(isEditingMaster || viewMode === 'single') && (
@@ -187,8 +278,34 @@ export const CanvasArea: React.FC = () => {
             </div>
           )}
 
-          {/* Modern Floating Viewport, View Mode & Zoom Pill */}
+          {/* Modern Floating Viewport, Tool Mode, Page View & Zoom Pill */}
           <div className="fixed bottom-10 right-76 z-30 flex items-center gap-1 bg-white/95 backdrop-blur-md px-2.5 py-1.5 rounded-full border border-slate-200/90 shadow-lg text-xs text-slate-700">
+            {/* Select vs Hand/Pan Tool Switcher */}
+            <div className="flex items-center bg-slate-100 p-0.5 rounded-full mr-0.5">
+              <button
+                onClick={() => setToolMode('select')}
+                className={`p-1 rounded-full transition ${
+                  !effectivePanMode
+                    ? 'bg-white text-emerald-700 shadow-2xs'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+                title="Select Tool (V)"
+              >
+                <MousePointer2 size={12} />
+              </button>
+              <button
+                onClick={() => setToolMode('pan')}
+                className={`p-1 rounded-full transition ${
+                  effectivePanMode
+                    ? 'bg-emerald-600 text-white shadow-2xs'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+                title="Hand / Pan Canvas Tool (H or hold Space)"
+              >
+                <Hand size={12} />
+              </button>
+            </div>
+
             {/* Multi-page view mode switcher */}
             <div className="flex items-center bg-slate-100 p-0.5 rounded-full mr-1">
               <button

@@ -37,6 +37,7 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
     selectedElementIds,
     isEditingMaster,
     setIsEditingMaster,
+    toolMode,
     hasClipboard,
     zoom,
     guidesVisible,
@@ -302,6 +303,8 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
         id={`print-page-${targetPage.id}`}
         ref={canvasRef}
         className={`relative select-none print-page transition-shadow duration-150 ${
+          toolMode === 'pan' ? 'pointer-events-none' : ''
+        } ${
           isEditingMaster
             ? 'ring-4 ring-amber-400/70'
             : isActivePage

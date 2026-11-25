@@ -39,9 +39,11 @@ interface PublisherContextType {
   isEditingMaster: boolean;
   hasClipboard: boolean;
   viewMode: 'single' | 'continuous' | 'spread';
+  toolMode: 'select' | 'pan';
 
   // Setters & UI controls
   setViewMode: (mode: 'single' | 'continuous' | 'spread') => void;
+  setToolMode: (mode: 'select' | 'pan') => void;
   setIsEditingMaster: (editing: boolean) => void;
   toggleMasterPageVisibility: () => void;
   setActiveTab: (tab: 'home' | 'insert' | 'page-design' | 'mailings' | 'view') => void;
@@ -152,6 +154,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [copiedElements, setCopiedElements] = useState<PublisherElement[]>([]);
   const [isEditingMaster, setIsEditingMasterState] = useState<boolean>(false);
   const [viewMode, setViewMode] = useState<'single' | 'continuous' | 'spread'>('continuous');
+  const [toolMode, setToolMode] = useState<'select' | 'pan'>('select');
   const [zoom, setZoomState] = useState<number>(0.8);
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
@@ -949,8 +952,10 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         isEditingMaster,
         hasClipboard: copiedElements.length > 0,
         viewMode,
+        toolMode,
 
         setViewMode,
+        setToolMode,
         setIsEditingMaster,
         toggleMasterPageVisibility,
         setActiveTab,
