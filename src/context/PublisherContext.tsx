@@ -339,11 +339,86 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const setColorScheme = useCallback(
     (schemeId: string) => {
-      const scheme = COLOR_SCHEMES.find((s) => s.id === schemeId);
-      if (!scheme) return;
+      const newScheme = COLOR_SCHEMES.find((s) => s.id === schemeId);
+      if (!newScheme) return;
+      const prevScheme =
+        COLOR_SCHEMES.find((s) => s.id === project.colorScheme) || COLOR_SCHEMES[0];
+
+      const primaryPool = new Set(COLOR_SCHEMES.map((s) => s.primary.toLowerCase()));
+      const secondaryPool = new Set(COLOR_SCHEMES.map((s) => s.secondary.toLowerCase()));
+      const accentPool = new Set(COLOR_SCHEMES.map((s) => s.accent.toLowerCase()));
+      const lightPool = new Set(COLOR_SCHEMES.map((s) => s.light.toLowerCase()));
+
+      const remapColor = (color: string | undefined): string | undefined => {
+        if (!color) return color;
+        const c = color.toLowerCase();
+        if (c === prevScheme.primary.toLowerCase() || primaryPool.has(c)) return newScheme.primary;
+        if (c === prevScheme.secondary.toLowerCase() || secondaryPool.has(c)) return newScheme.secondary;
+        if (c === prevScheme.accent.toLowerCase() || accentPool.has(c)) return newScheme.accent;
+        if (c === prevScheme.light.toLowerCase() || lightPool.has(c)) return newScheme.light;
+        return color;
+      };
+
+      const remapElements = (elements: PublisherElement[]): PublisherElement[] =>
+        elements.map((el) => {
+          switch (el.type) {
+            case 'text':
+              return {
+                ...el,
+                color: remapColor(el.color) || el.color,
+                backgroundColor: remapColor(el.backgroundColor),
+                borderColor: remapColor(el.borderColor),
+              };
+            case 'shape':
+              return {
+                ...el,
+                fillColor: remapColor(el.fillColor) || el.fillColor,
+                gradientColor2: remapColor(el.gradientColor2),
+                strokeColor: remapColor(el.strokeColor) || el.strokeColor,
+              };
+            case 'table':
+              return {
+                ...el,
+                headerBg: newScheme.primary,
+                altRowBg: newScheme.light,
+                borderColor: newScheme.secondary,
+              };
+            case 'accent':
+              return {
+                ...el,
+                accentColor:
+                  el.accentColor.toLowerCase() === prevScheme.accent.toLowerCase()
+                    ? newScheme.accent
+                    : newScheme.primary,
+                secondaryColor: newScheme.secondary,
+              };
+            case 'line':
+              return {
+                ...el,
+                strokeColor: remapColor(el.strokeColor) || newScheme.primary,
+              };
+            default:
+              return el;
+          }
+        });
+
+      const updatedPages = project.pages.map((pg) => ({
+        ...pg,
+        elements: remapElements(pg.elements),
+      }));
+
+      const updatedMaster = project.masterPage
+        ? {
+            ...project.masterPage,
+            elements: remapElements(project.masterPage.elements),
+          }
+        : undefined;
+
       commitProject({
         ...project,
         colorScheme: schemeId,
+        pages: updatedPages,
+        masterPage: updatedMaster,
       });
     },
     [project, commitProject]
@@ -737,6 +812,8 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     [activePage, addElement]
   );
 
+  const activeScheme = COLOR_SCHEMES.find((s) => s.id === project.colorScheme) || COLOR_SCHEMES[0];
+
   const addShape = useCallback(
     (shapeType: ShapeType, options?: Partial<ShapeElement>) => {
       const defaultShape: ShapeElement = {
@@ -749,15 +826,15 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         height: 120,
         rotation: 0,
         zIndex: 5,
-        fillColor: '#0f6b4e',
-        strokeColor: '#084834',
+        fillColor: activeScheme.primary,
+        strokeColor: activeScheme.dark,
         strokeWidth: 2,
         cornerRadius: shapeType === 'rounded-rect' ? 12 : 0,
         ...options,
       };
       addElement(defaultShape);
     },
-    [activePage, addElement]
+    [activePage, activeScheme, addElement]
   );
 
   const addImage = useCallback(
@@ -806,12 +883,12 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         cols,
         data,
         themeId: 'emerald-office',
-        headerBg: '#0f6b4e',
+        headerBg: activeScheme.primary,
         headerColor: '#ffffff',
         cellBg: '#ffffff',
-        altRowBg: '#ecfdf5',
+        altRowBg: activeScheme.light,
         cellColor: '#1e293b',
-        borderColor: '#a7f3d0',
+        borderColor: activeScheme.secondary,
         borderWidth: 1,
         bandedRows: true,
         showHeaderRow: true,
@@ -819,7 +896,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       };
       addElement(defaultTable);
     },
-    [activePage, addElement]
+    [activePage, activeScheme, addElement]
   );
 
   const addAccent = useCallback(
@@ -838,12 +915,12 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         subtitle: accentType === 'coupon' ? 'Save 25% on your next order' : '— Publication Editor',
         text: 'This is an authentic MS Publisher style accent building block for highlights, coupons and mastheads.',
         badgeText: 'LIMITED EDITION',
-        accentColor: '#0f6b4e',
+        accentColor: activeScheme.primary,
         ...options,
       };
       addElement(defaultAccent);
     },
-    [activePage, addElement]
+    [activePage, activeScheme, addElement]
   );
 
   const addLine = useCallback(
@@ -857,14 +934,14 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         height: 2,
         rotation: 0,
         zIndex: 6,
-        strokeColor: '#0f6b4e',
+        strokeColor: activeScheme.primary,
         strokeWidth: 2,
         strokeDash: 'solid',
         ...options,
       };
       addElement(defaultLine);
     },
-    [activePage, addElement]
+    [activePage, activeScheme, addElement]
   );
 
   const addQRCode = useCallback(
