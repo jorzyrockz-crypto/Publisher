@@ -11,7 +11,9 @@ export type ShapeType =
   | 'arrow-right'
   | 'arrow-double'
   | 'heart'
-  | 'diamond';
+  | 'diamond'
+  | 'hexagon'
+  | 'badge-burst';
 
 export type WordArtStyle = 'none' | 'rainbow' | 'gold3d' | 'outline' | 'retro' | 'gradient-blue';
 
@@ -37,6 +39,9 @@ export interface BaseElement {
   locked?: boolean;
   visible?: boolean;
   opacity?: number;
+  flipH?: boolean;
+  flipV?: boolean;
+  blendMode?: 'normal' | 'multiply' | 'screen' | 'overlay' | 'darken';
 }
 
 export interface TextElement extends BaseElement {
@@ -69,6 +74,9 @@ export interface ShapeElement extends BaseElement {
   type: 'shape';
   shapeType: ShapeType;
   fillColor: string;
+  fillType?: 'solid' | 'linear-gradient';
+  gradientColor2?: string;
+  gradientAngle?: number;
   strokeColor: string;
   strokeWidth: number;
   strokeDash?: 'solid' | 'dashed' | 'dotted';
@@ -90,10 +98,20 @@ export interface ImageElement extends BaseElement {
   borderWidth?: number;
   borderRadius?: number;
   borderArt?: BorderArtStyle;
-  maskShape?: 'none' | 'circle' | 'star' | 'rounded';
+  maskShape?: 'none' | 'circle' | 'star' | 'rounded' | 'diamond' | 'hexagon' | 'triangle' | 'heart';
   brightness?: number; // 0 to 200
   contrast?: number; // 0 to 200
+  saturate?: number; // 0 to 200
   grayscale?: number; // 0 to 100
+  sepia?: number; // 0 to 100
+  blur?: number; // 0 to 10
+  hueRotate?: number; // 0 to 360
+  objectFit?: 'cover' | 'contain' | 'fill';
+  imageScale?: number; // 1 to 2.5
+  panX?: number; // -50 to 50
+  panY?: number; // -50 to 50
+  shadow?: boolean;
+  shadowBlur?: number;
 }
 
 export interface TableElement extends BaseElement {

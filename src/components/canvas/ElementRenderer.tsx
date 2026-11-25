@@ -29,38 +29,56 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({
   onTextChange,
   onTableCellChange,
 }) => {
-  switch (element.type) {
-    case 'text':
-      return (
-        <TextRenderer
-          element={element}
-          isSelected={isSelected}
-          pageNumber={pageNumber}
-          totalPages={totalPages}
-          onTextChange={onTextChange}
-        />
-      );
-    case 'shape':
-      return <ShapeRenderer element={element} />;
-    case 'image':
-      return <ImageRenderer element={element} />;
-    case 'table':
-      return (
-        <TableRenderer
-          element={element}
-          isSelected={isSelected}
-          onTableCellChange={onTableCellChange}
-        />
-      );
-    case 'accent':
-      return <AccentRenderer element={element} />;
-    case 'line':
-      return <LineRenderer element={element} />;
-    case 'qr':
-      return <QRRenderer element={element} />;
-    default:
-      return null;
-  }
+  const renderInner = () => {
+    switch (element.type) {
+      case 'text':
+        return (
+          <TextRenderer
+            element={element}
+            isSelected={isSelected}
+            pageNumber={pageNumber}
+            totalPages={totalPages}
+            onTextChange={onTextChange}
+          />
+        );
+      case 'shape':
+        return <ShapeRenderer element={element} />;
+      case 'image':
+        return <ImageRenderer element={element} />;
+      case 'table':
+        return (
+          <TableRenderer
+            element={element}
+            isSelected={isSelected}
+            onTableCellChange={onTableCellChange}
+          />
+        );
+      case 'accent':
+        return <AccentRenderer element={element} />;
+      case 'line':
+        return <LineRenderer element={element} />;
+      case 'qr':
+        return <QRRenderer element={element} />;
+      default:
+        return null;
+    }
+  };
+
+  const scaleX = element.flipH ? -1 : 1;
+  const scaleY = element.flipV ? -1 : 1;
+
+  return (
+    <div
+      style={{
+        width: '100%',
+        height: '100%',
+        transform: scaleX !== 1 || scaleY !== 1 ? `scale(${scaleX}, ${scaleY})` : undefined,
+        mixBlendMode: element.blendMode || 'normal',
+      }}
+    >
+      {renderInner()}
+    </div>
+  );
 };
 
 const TextRenderer: React.FC<{
@@ -178,6 +196,10 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
     ? `drop-shadow(3px 4px ${element.shadowBlur || 6}px ${element.shadowColor || 'rgba(0,0,0,0.3)'})`
     : undefined;
 
+  const gradId = `grad-${element.id}`;
+  const effectiveFill =
+    element.fillType === 'linear-gradient' ? `url(#${gradId})` : fillColor;
+
   const renderSvgShape = () => {
     switch (shapeType) {
       case 'rectangle':
@@ -187,7 +209,7 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
             y={strokeWidth / 2}
             width={width - strokeWidth}
             height={height - strokeWidth}
-            fill={fillColor}
+            fill={effectiveFill}
             stroke={strokeColor}
             strokeWidth={strokeWidth}
             strokeDasharray={dashArray}
@@ -200,8 +222,8 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
             y={strokeWidth / 2}
             width={width - strokeWidth}
             height={height - strokeWidth}
-            rx={cornerRadius || 12}
-            fill={fillColor}
+            rx={cornerRadius ?? 12}
+            fill={effectiveFill}
             stroke={strokeColor}
             strokeWidth={strokeWidth}
             strokeDasharray={dashArray}
@@ -317,12 +339,66 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
                 C ${width / 2} ${height * 0.12}, ${width * 0.54} 0, ${width * 0.62} 0
                 C ${width * 0.8} 0, ${width} ${height * 0.08}, ${width} ${height * 0.22}
                 C ${width} ${height * 0.35}, ${width * 0.85} ${height * 0.6}, ${width / 2} ${height * 0.85} Z`}
-            fill={fillColor}
+            fill={effectiveFill}
             stroke={strokeColor}
             strokeWidth={strokeWidth}
             strokeDasharray={dashArray}
           />
         );
+      case 'arrow-double': {
+        const headW = Math.min(width * 0.25, 36);
+        const shaftH = height * 0.45;
+        const shaftY = (height - shaftH) / 2;
+        return (
+          <polygon
+            points={`0,${height / 2} ${headW},0 ${headW},${shaftY} ${width - headW},${shaftY} ${width - headW},0 ${width},${height / 2} ${width - headW},${height} ${width - headW},${shaftY + shaftH} ${headW},${shaftY + shaftH} ${headW},${height}`}
+            fill={effectiveFill}
+            stroke={strokeColor}
+            strokeWidth={strokeWidth}
+            strokeDasharray={dashArray}
+          />
+        );
+      }
+      case 'hexagon': {
+        const pts = [
+          `${width * 0.25},${strokeWidth}`,
+          `${width * 0.75},${strokeWidth}`,
+          `${width - strokeWidth},${height / 2}`,
+          `${width * 0.75},${height - strokeWidth}`,
+          `${width * 0.25},${height - strokeWidth}`,
+          `${strokeWidth},${height / 2}`,
+        ];
+        return (
+          <polygon
+            points={pts.join(' ')}
+            fill={effectiveFill}
+            stroke={strokeColor}
+            strokeWidth={strokeWidth}
+            strokeDasharray={dashArray}
+          />
+        );
+      }
+      case 'badge-burst': {
+        const cx = width / 2;
+        const cy = height / 2;
+        const outerR = Math.min(cx, cy) - strokeWidth;
+        const innerR = outerR * 0.78;
+        const pts: string[] = [];
+        for (let i = 0; i < 24; i++) {
+          const r = i % 2 === 0 ? outerR : innerR;
+          const angle = (i * Math.PI) / 12;
+          pts.push(`${cx + r * Math.cos(angle)},${cy + r * Math.sin(angle)}`);
+        }
+        return (
+          <polygon
+            points={pts.join(' ')}
+            fill={effectiveFill}
+            stroke={strokeColor}
+            strokeWidth={strokeWidth}
+            strokeDasharray={dashArray}
+          />
+        );
+      }
       default:
         return null;
     }
@@ -338,6 +414,17 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
           filter: shadowFilter,
         }}
       >
+        {element.fillType === 'linear-gradient' && (
+          <defs>
+            <linearGradient
+              id={gradId}
+              gradientTransform={`rotate(${element.gradientAngle ?? 90}, 0.5, 0.5)`}
+            >
+              <stop offset="0%" stopColor={fillColor} />
+              <stop offset="100%" stopColor={element.gradientColor2 || '#38bdf8'} />
+            </linearGradient>
+          </defs>
+        )}
         {renderSvgShape()}
       </svg>
       {element.label && (
@@ -372,8 +459,20 @@ const ImageRenderer: React.FC<{ element: ImageElement }> = ({ element }) => {
     if (element.contrast !== undefined && element.contrast !== 100) {
       filters.push(`contrast(${element.contrast}%)`);
     }
+    if (element.saturate !== undefined && element.saturate !== 100) {
+      filters.push(`saturate(${element.saturate}%)`);
+    }
     if (element.grayscale !== undefined && element.grayscale > 0) {
       filters.push(`grayscale(${element.grayscale}%)`);
+    }
+    if (element.sepia !== undefined && element.sepia > 0) {
+      filters.push(`sepia(${element.sepia}%)`);
+    }
+    if (element.blur !== undefined && element.blur > 0) {
+      filters.push(`blur(${element.blur}px)`);
+    }
+    if (element.hueRotate !== undefined && element.hueRotate !== 0) {
+      filters.push(`hue-rotate(${element.hueRotate}deg)`);
     }
     return filters.length > 0 ? filters.join(' ') : undefined;
   };
@@ -397,6 +496,27 @@ const ImageRenderer: React.FC<{ element: ImageElement }> = ({ element }) => {
     return element.borderRadius ? `${element.borderRadius}px` : undefined;
   };
 
+  const getClipPath = () => {
+    switch (element.maskShape) {
+      case 'star':
+        return 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)';
+      case 'diamond':
+        return 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)';
+      case 'hexagon':
+        return 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)';
+      case 'triangle':
+        return 'polygon(50% 0%, 0% 100%, 100% 100%)';
+      case 'heart':
+        return 'polygon(50% 88%, 12% 52%, 4% 28%, 18% 10%, 38% 10%, 50% 24%, 62% 10%, 82% 10%, 96% 28%, 88% 52%)';
+      default:
+        return undefined;
+    }
+  };
+
+  const imgScale = element.imageScale || 1;
+  const panX = element.panX || 0;
+  const panY = element.panY || 0;
+
   return (
     <div
       style={{
@@ -404,8 +524,12 @@ const ImageRenderer: React.FC<{ element: ImageElement }> = ({ element }) => {
         height: '100%',
         overflow: 'hidden',
         borderRadius: getMaskRadius(),
+        clipPath: getClipPath(),
         border: element.borderWidth
           ? `${element.borderWidth}px solid ${element.borderColor || '#cbd5e1'}`
+          : undefined,
+        filter: element.shadow
+          ? `drop-shadow(0 6px ${element.shadowBlur || 12}px rgba(0,0,0,0.28))`
           : undefined,
       }}
       className={getBorderArtClasses()}
@@ -417,7 +541,9 @@ const ImageRenderer: React.FC<{ element: ImageElement }> = ({ element }) => {
           style={{
             width: '100%',
             height: '100%',
-            objectFit: 'cover',
+            objectFit: element.objectFit || 'cover',
+            objectPosition: `${50 + panX}% ${50 + panY}%`,
+            transform: imgScale !== 1 ? `scale(${imgScale})` : undefined,
             filter: getFilterStyle(),
             pointerEvents: 'none',
           }}

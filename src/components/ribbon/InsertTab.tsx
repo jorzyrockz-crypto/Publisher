@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
+import { SAMPLE_GRAPHICS } from '../../constants/sampleGraphics';
 import {
   FilePlus,
   Copy,
@@ -13,6 +14,7 @@ import {
   Minus,
   QrCode,
   Hash,
+  Images,
 } from 'lucide-react';
 
 export const InsertTab: React.FC = () => {
@@ -32,6 +34,7 @@ export const InsertTab: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [tableGridHover, setTableGridHover] = useState<{ r: number; c: number }>({ r: 3, c: 3 });
   const [isTableDropdownOpen, setIsTableDropdownOpen] = useState(false);
+  const [isStockOpen, setIsStockOpen] = useState(false);
 
   return (
     <div className="flex items-center h-24 px-3 py-1 gap-3 text-xs text-slate-700 overflow-x-auto select-none">
@@ -149,6 +152,44 @@ export const InsertTab: React.FC = () => {
             </div>
             <span className="text-[10px] font-medium mt-1 text-slate-600">Picture</span>
           </button>
+
+          {/* Stock Graphics Picker */}
+          <div className="relative">
+            <button
+              onClick={() => setIsStockOpen(!isStockOpen)}
+              className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
+              title="Insert Built-in Stock Graphics"
+            >
+              <div className="w-8 h-8 rounded-xl bg-purple-50 border border-purple-200 text-purple-700 flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-all shadow-xs">
+                <Images size={16} />
+              </div>
+              <span className="text-[10px] font-medium mt-1 text-slate-600">Stock Art</span>
+            </button>
+
+            {isStockOpen && (
+              <div className="absolute top-full left-0 mt-2 bg-white border border-slate-200 shadow-2xl rounded-2xl p-2.5 z-50 w-60 grid grid-cols-2 gap-2 animate-in fade-in zoom-in-95 duration-100">
+                {SAMPLE_GRAPHICS.map((g) => (
+                  <button
+                    key={g.id}
+                    onClick={() => {
+                      addImage(g.src, { name: g.name });
+                      setIsStockOpen(false);
+                    }}
+                    className="group/item flex flex-col items-center p-1.5 rounded-xl border border-slate-200/80 hover:border-emerald-500 hover:bg-emerald-50/40 transition"
+                  >
+                    <img
+                      src={g.src}
+                      alt={g.name}
+                      className="w-full h-14 object-cover rounded-lg mb-1"
+                    />
+                    <span className="text-[10px] font-semibold text-slate-700 truncate w-full text-center">
+                      {g.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Quick Shapes */}
           <button

@@ -29,6 +29,9 @@ import {
   QrCode,
   Lock,
   Unlock,
+  FlipHorizontal2,
+  FlipVertical2,
+  RotateCcw,
 } from 'lucide-react';
 
 export const PropertiesPanel: React.FC = () => {
@@ -434,19 +437,56 @@ export const PropertiesPanel: React.FC = () => {
                 <option value="circle">Oval / Circle</option>
                 <option value="triangle">Triangle</option>
                 <option value="star">5-Point Star</option>
+                <option value="badge-burst">Starburst Seal</option>
+                <option value="hexagon">Hexagon</option>
                 <option value="banner">Ribbon Banner</option>
                 <option value="callout">Speech Callout</option>
                 <option value="arrow-right">Block Arrow</option>
+                <option value="arrow-double">Double Arrow</option>
                 <option value="diamond">Diamond</option>
                 <option value="heart">Heart</option>
               </select>
             </div>
 
-            {/* Fill Color */}
+            {/* Fill Mode: Solid vs Linear Gradient */}
             <div>
               <label className="block text-[11px] font-semibold text-slate-500 mb-1.5">
-                Fill Color
+                Fill Type
               </label>
+              <div className="grid grid-cols-2 gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60">
+                <button
+                  onClick={() =>
+                    updateElement(selectedElement.id, { fillType: 'solid' })
+                  }
+                  className={`py-1 rounded-lg text-[11px] font-semibold transition-all ${
+                    ((selectedElement as ShapeElement).fillType || 'solid') === 'solid'
+                      ? 'bg-white text-emerald-800 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Solid Fill
+                </button>
+                <button
+                  onClick={() =>
+                    updateElement(selectedElement.id, {
+                      fillType: 'linear-gradient',
+                      gradientColor2:
+                        (selectedElement as ShapeElement).gradientColor2 || '#38bdf8',
+                    })
+                  }
+                  className={`py-1 rounded-lg text-[11px] font-semibold transition-all ${
+                    (selectedElement as ShapeElement).fillType === 'linear-gradient'
+                      ? 'bg-white text-emerald-800 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Gradient
+                </button>
+              </div>
+            </div>
+
+            {/* Fill Color(s) */}
+            <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <input
                   type="color"
@@ -459,21 +499,78 @@ export const PropertiesPanel: React.FC = () => {
                 <span className="font-mono text-[11px] text-slate-600 font-semibold">
                   {(selectedElement as ShapeElement).fillColor}
                 </span>
-                <button
-                  onClick={() =>
-                    updateElement(selectedElement.id, { fillColor: 'transparent' })
-                  }
-                  className="ml-auto text-[11px] font-medium text-emerald-700 hover:underline"
-                >
-                  No Fill
-                </button>
+                {(selectedElement as ShapeElement).fillType === 'linear-gradient' ? (
+                  <div className="ml-auto flex items-center gap-1.5">
+                    <span className="text-[10px] text-slate-400">End:</span>
+                    <input
+                      type="color"
+                      value={(selectedElement as ShapeElement).gradientColor2 || '#38bdf8'}
+                      onChange={(e) =>
+                        updateElement(selectedElement.id, { gradientColor2: e.target.value })
+                      }
+                      className="w-6 h-6 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0 shadow-2xs"
+                    />
+                  </div>
+                ) : (
+                  <button
+                    onClick={() =>
+                      updateElement(selectedElement.id, { fillColor: 'transparent' })
+                    }
+                    className="ml-auto text-[11px] font-medium text-emerald-700 hover:underline"
+                  >
+                    No Fill
+                  </button>
+                )}
               </div>
+
+              {(selectedElement as ShapeElement).fillType === 'linear-gradient' && (
+                <div>
+                  <div className="flex justify-between text-[10px] text-slate-500 font-medium mb-1">
+                    <span>Gradient Angle</span>
+                    <span>{(selectedElement as ShapeElement).gradientAngle ?? 90}°</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={360}
+                    value={(selectedElement as ShapeElement).gradientAngle ?? 90}
+                    onChange={(e) =>
+                      updateElement(selectedElement.id, {
+                        gradientAngle: Number(e.target.value),
+                      })
+                    }
+                    className="w-full accent-emerald-600 cursor-pointer"
+                  />
+                </div>
+              )}
             </div>
 
-            {/* Stroke / Outline */}
-            <div className="grid grid-cols-2 gap-2">
+            {/* Corner Radius for Rounded Rect */}
+            {(selectedElement as ShapeElement).shapeType === 'rounded-rect' && (
               <div>
-                <label className="block text-[11px] font-semibold text-slate-500 mb-1.5">
+                <div className="flex justify-between text-[10px] text-slate-500 font-medium mb-1">
+                  <span>Corner Radius</span>
+                  <span>{(selectedElement as ShapeElement).cornerRadius ?? 12}px</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={80}
+                  value={(selectedElement as ShapeElement).cornerRadius ?? 12}
+                  onChange={(e) =>
+                    updateElement(selectedElement.id, {
+                      cornerRadius: Number(e.target.value),
+                    })
+                  }
+                  className="w-full accent-emerald-600 cursor-pointer"
+                />
+              </div>
+            )}
+
+            {/* Stroke / Outline & Dash */}
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <label className="block text-[10px] font-semibold text-slate-500 mb-1">
                   Outline
                 </label>
                 <input
@@ -486,8 +583,8 @@ export const PropertiesPanel: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-semibold text-slate-500 mb-1.5">
-                  Width (px)
+                <label className="block text-[10px] font-semibold text-slate-500 mb-1">
+                  Width
                 </label>
                 <input
                   type="number"
@@ -501,6 +598,24 @@ export const PropertiesPanel: React.FC = () => {
                   }
                   className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2 py-1 text-xs outline-none focus:bg-white text-center font-medium"
                 />
+              </div>
+              <div>
+                <label className="block text-[10px] font-semibold text-slate-500 mb-1">
+                  Style
+                </label>
+                <select
+                  value={(selectedElement as ShapeElement).strokeDash || 'solid'}
+                  onChange={(e) =>
+                    updateElement(selectedElement.id, {
+                      strokeDash: e.target.value as 'solid' | 'dashed' | 'dotted',
+                    })
+                  }
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-1.5 py-1 text-[11px] outline-none font-medium"
+                >
+                  <option value="solid">Solid</option>
+                  <option value="dashed">Dash</option>
+                  <option value="dotted">Dot</option>
+                </select>
               </div>
             </div>
 
@@ -607,13 +722,15 @@ export const PropertiesPanel: React.FC = () => {
               <label className="block text-[11px] font-semibold text-slate-500 mb-1.5">
                 Crop to Shape
               </label>
-              <div className="grid grid-cols-3 gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60">
-                {(['none', 'rounded', 'circle'] as const).map((mask) => (
+              <div className="grid grid-cols-4 gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60">
+                {(
+                  ['none', 'rounded', 'circle', 'star', 'diamond', 'hexagon', 'triangle', 'heart'] as const
+                ).map((mask) => (
                   <button
                     key={mask}
                     onClick={() => updateElement(selectedElement.id, { maskShape: mask })}
-                    className={`py-1 rounded-lg text-xs font-semibold capitalize transition-all ${
-                      (selectedElement as ImageElement).maskShape === mask
+                    className={`py-1 rounded-lg text-[10px] font-semibold capitalize transition-all ${
+                      ((selectedElement as ImageElement).maskShape || 'none') === mask
                         ? 'bg-white text-emerald-800 shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
@@ -624,47 +741,198 @@ export const PropertiesPanel: React.FC = () => {
               </div>
             </div>
 
-            {/* Image Adjustments */}
-            <div className="space-y-2.5 pt-2 border-t border-slate-100">
-              <label className="block text-slate-700 font-bold text-[11px]">
-                Adjustments
-              </label>
+            {/* Frame Fit, Zoom & Pan */}
+            <div className="space-y-2 pt-2 border-t border-slate-100">
+              <div className="flex items-center justify-between">
+                <label className="text-slate-700 font-bold text-[11px]">Crop & Frame Fit</label>
+                <button
+                  onClick={() =>
+                    updateElement(selectedElement.id, {
+                      imageScale: 1,
+                      panX: 0,
+                      panY: 0,
+                      objectFit: 'cover',
+                    })
+                  }
+                  className="text-[10px] text-emerald-700 hover:underline flex items-center gap-0.5"
+                >
+                  <RotateCcw size={10} /> Reset
+                </button>
+              </div>
+              <div className="grid grid-cols-3 gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60">
+                {(['cover', 'contain', 'fill'] as const).map((fit) => (
+                  <button
+                    key={fit}
+                    onClick={() => updateElement(selectedElement.id, { objectFit: fit })}
+                    className={`py-1 rounded-lg text-[10px] font-semibold capitalize transition-all ${
+                      ((selectedElement as ImageElement).objectFit || 'cover') === fit
+                        ? 'bg-white text-emerald-800 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    {fit}
+                  </button>
+                ))}
+              </div>
               <div>
-                <div className="flex justify-between text-[10px] text-slate-500 font-medium mb-1">
-                  <span>Brightness</span>
-                  <span>{(selectedElement as ImageElement).brightness || 100}%</span>
+                <div className="flex justify-between text-[10px] text-slate-500 font-medium mb-0.5">
+                  <span>Image Zoom</span>
+                  <span>{((selectedElement as ImageElement).imageScale ?? 1).toFixed(2)}×</span>
                 </div>
                 <input
                   type="range"
-                  min={50}
-                  max={150}
-                  value={(selectedElement as ImageElement).brightness || 100}
+                  min={100}
+                  max={250}
+                  value={Math.round(((selectedElement as ImageElement).imageScale ?? 1) * 100)}
                   onChange={(e) =>
                     updateElement(selectedElement.id, {
-                      brightness: Number(e.target.value),
+                      imageScale: Number(e.target.value) / 100,
                     })
                   }
                   className="w-full accent-emerald-600 cursor-pointer"
                 />
               </div>
-
-              <div>
-                <div className="flex justify-between text-[10px] text-slate-500 font-medium mb-1">
-                  <span>Contrast</span>
-                  <span>{(selectedElement as ImageElement).contrast || 100}%</span>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <div className="flex justify-between text-[10px] text-slate-500 mb-0.5">
+                    <span>Pan X</span>
+                    <span>{(selectedElement as ImageElement).panX ?? 0}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={-50}
+                    max={50}
+                    value={(selectedElement as ImageElement).panX ?? 0}
+                    onChange={(e) =>
+                      updateElement(selectedElement.id, { panX: Number(e.target.value) })
+                    }
+                    className="w-full accent-emerald-600 cursor-pointer"
+                  />
                 </div>
-                <input
-                  type="range"
-                  min={50}
-                  max={150}
-                  value={(selectedElement as ImageElement).contrast || 100}
-                  onChange={(e) =>
-                    updateElement(selectedElement.id, {
-                      contrast: Number(e.target.value),
-                    })
-                  }
-                  className="w-full accent-emerald-600 cursor-pointer"
-                />
+                <div>
+                  <div className="flex justify-between text-[10px] text-slate-500 mb-0.5">
+                    <span>Pan Y</span>
+                    <span>{(selectedElement as ImageElement).panY ?? 0}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={-50}
+                    max={50}
+                    value={(selectedElement as ImageElement).panY ?? 0}
+                    onChange={(e) =>
+                      updateElement(selectedElement.id, { panY: Number(e.target.value) })
+                    }
+                    className="w-full accent-emerald-600 cursor-pointer"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Filter Presets */}
+            <div className="space-y-1.5 pt-2 border-t border-slate-100">
+              <label className="block text-slate-700 font-bold text-[11px]">
+                Quick Filter Presets
+              </label>
+              <div className="grid grid-cols-3 gap-1">
+                {[
+                  {
+                    name: 'Original',
+                    vals: { brightness: 100, contrast: 100, saturate: 100, grayscale: 0, sepia: 0, blur: 0, hueRotate: 0 },
+                  },
+                  {
+                    name: 'B&W',
+                    vals: { brightness: 105, contrast: 120, saturate: 100, grayscale: 100, sepia: 0, blur: 0, hueRotate: 0 },
+                  },
+                  {
+                    name: 'Vintage',
+                    vals: { brightness: 105, contrast: 95, saturate: 85, grayscale: 0, sepia: 65, blur: 0, hueRotate: 0 },
+                  },
+                  {
+                    name: 'Vivid',
+                    vals: { brightness: 108, contrast: 118, saturate: 155, grayscale: 0, sepia: 0, blur: 0, hueRotate: 0 },
+                  },
+                  {
+                    name: 'Cool',
+                    vals: { brightness: 102, contrast: 110, saturate: 110, grayscale: 0, sepia: 0, blur: 0, hueRotate: 195 },
+                  },
+                  {
+                    name: 'Soft Blur',
+                    vals: { brightness: 108, contrast: 95, saturate: 95, grayscale: 0, sepia: 0, blur: 3, hueRotate: 0 },
+                  },
+                ].map((preset) => (
+                  <button
+                    key={preset.name}
+                    onClick={() => updateElement(selectedElement.id, preset.vals)}
+                    className="py-1 px-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-800 text-[10px] font-semibold transition"
+                  >
+                    {preset.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Image Adjustments */}
+            <div className="space-y-2 pt-2 border-t border-slate-100">
+              <label className="block text-slate-700 font-bold text-[11px]">
+                Color & Tone Adjustments
+              </label>
+              {[
+                { label: 'Brightness', key: 'brightness', min: 30, max: 180, def: 100, unit: '%' },
+                { label: 'Contrast', key: 'contrast', min: 30, max: 180, def: 100, unit: '%' },
+                { label: 'Saturation', key: 'saturate', min: 0, max: 200, def: 100, unit: '%' },
+                { label: 'Grayscale', key: 'grayscale', min: 0, max: 100, def: 0, unit: '%' },
+                { label: 'Sepia', key: 'sepia', min: 0, max: 100, def: 0, unit: '%' },
+                { label: 'Blur', key: 'blur', min: 0, max: 10, def: 0, unit: 'px' },
+                { label: 'Hue Shift', key: 'hueRotate', min: 0, max: 360, def: 0, unit: '°' },
+              ].map((slider) => {
+                const val =
+                  ((selectedElement as ImageElement)[slider.key as keyof ImageElement] as number | undefined) ??
+                  slider.def;
+                return (
+                  <div key={slider.key}>
+                    <div className="flex justify-between text-[10px] text-slate-500 font-medium mb-0.5">
+                      <span>{slider.label}</span>
+                      <span>
+                        {val}
+                        {slider.unit}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={slider.min}
+                      max={slider.max}
+                      value={val}
+                      onChange={(e) =>
+                        updateElement(selectedElement.id, {
+                          [slider.key]: Number(e.target.value),
+                        })
+                      }
+                      className="w-full accent-emerald-600 cursor-pointer"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Image Drop Shadow Switch */}
+            <div
+              onClick={() =>
+                updateElement(selectedElement.id, {
+                  shadow: !(selectedElement as ImageElement).shadow,
+                })
+              }
+              className="flex items-center justify-between pt-1 cursor-pointer hover:opacity-90"
+            >
+              <div>
+                <span className="font-semibold text-slate-800">Drop Shadow</span>
+                <p className="text-[10px] text-slate-400">Elevate image off page</p>
+              </div>
+              <div
+                className={`fluent-switch ${
+                  (selectedElement as ImageElement).shadow ? 'active' : ''
+                }`}
+              >
+                <div className="fluent-switch-knob" />
               </div>
             </div>
           </div>
@@ -820,21 +1088,74 @@ export const PropertiesPanel: React.FC = () => {
               />
             </div>
 
-            {/* Rotation Input */}
+            {/* Rotation & Flip Controls */}
             <div className="flex items-center justify-between text-[11px]">
-              <span className="text-slate-500 font-medium">Rotation (°)</span>
-              <input
-                type="number"
-                min={0}
-                max={360}
-                value={Math.round(selectedElement.rotation)}
+              <span className="text-slate-500 font-medium">Rotation & Flip</span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() =>
+                    updateElement(selectedElement.id, { flipH: !selectedElement.flipH })
+                  }
+                  className={`p-1 rounded-lg border transition ${
+                    selectedElement.flipH
+                      ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                  }`}
+                  title="Flip Horizontal"
+                >
+                  <FlipHorizontal2 size={13} />
+                </button>
+                <button
+                  onClick={() =>
+                    updateElement(selectedElement.id, { flipV: !selectedElement.flipV })
+                  }
+                  className={`p-1 rounded-lg border transition ${
+                    selectedElement.flipV
+                      ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                  }`}
+                  title="Flip Vertical"
+                >
+                  <FlipVertical2 size={13} />
+                </button>
+                <input
+                  type="number"
+                  min={0}
+                  max={360}
+                  value={Math.round(selectedElement.rotation)}
+                  onChange={(e) =>
+                    updateElement(selectedElement.id, {
+                      rotation: Number(e.target.value) % 360,
+                    })
+                  }
+                  className="w-14 bg-slate-50 border border-slate-200 rounded-xl px-1.5 py-1 text-xs outline-none text-center font-mono font-bold"
+                />
+              </div>
+            </div>
+
+            {/* Blend Mode */}
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-slate-500 font-medium">Blend Mode</span>
+              <select
+                value={selectedElement.blendMode || 'normal'}
                 onChange={(e) =>
                   updateElement(selectedElement.id, {
-                    rotation: Number(e.target.value) % 360,
+                    blendMode: e.target.value as
+                      | 'normal'
+                      | 'multiply'
+                      | 'screen'
+                      | 'overlay'
+                      | 'darken',
                   })
                 }
-                className="w-16 bg-slate-50 border border-slate-200 rounded-xl px-2 py-1 text-xs outline-none text-center font-mono font-bold"
-              />
+                className="bg-slate-50 border border-slate-200 rounded-xl px-2 py-1 text-[11px] outline-none font-medium capitalize"
+              >
+                <option value="normal">Normal</option>
+                <option value="multiply">Multiply</option>
+                <option value="screen">Screen</option>
+                <option value="overlay">Overlay</option>
+                <option value="darken">Darken</option>
+              </select>
             </div>
 
             <div className="grid grid-cols-2 gap-2 text-[11px] pt-1 border-t border-slate-100">

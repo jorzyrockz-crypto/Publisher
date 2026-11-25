@@ -283,7 +283,7 @@ export const HomeTab: React.FC = () => {
             </button>
 
             {isShapesOpen && (
-              <div className="absolute top-full left-0 mt-2 bg-white border border-slate-200 shadow-2xl rounded-2xl p-2.5 z-50 grid grid-cols-4 gap-1.5 w-56 animate-in fade-in zoom-in-95 duration-100">
+              <div className="absolute top-full left-0 mt-2 bg-white border border-slate-200 shadow-2xl rounded-2xl p-2.5 z-50 grid grid-cols-4 gap-1.5 w-64 animate-in fade-in zoom-in-95 duration-100">
                 {(
                   [
                     'rectangle',
@@ -291,9 +291,14 @@ export const HomeTab: React.FC = () => {
                     'circle',
                     'triangle',
                     'star',
+                    'badge-burst',
+                    'hexagon',
+                    'diamond',
+                    'heart',
                     'banner',
                     'callout',
                     'arrow-right',
+                    'arrow-double',
                   ] as ShapeType[]
                 ).map((shape) => (
                   <button
