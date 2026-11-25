@@ -12,6 +12,7 @@ import {
 } from '../../types/publisher';
 import { PAGE_SIZES } from '../../constants/pageSizes';
 import { TABLE_THEMES } from '../../constants/tableThemes';
+import { FontSelector } from '../common/FontSelector';
 import {
   Type,
   Square,
@@ -208,22 +209,13 @@ export const PropertiesPanel: React.FC = () => {
               <label className="block text-[11px] font-semibold text-slate-500 mb-1.5">
                 Font Family
               </label>
-              <select
-                className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-medium transition cursor-pointer"
+              <FontSelector
                 value={(selectedElement as TextElement).fontFamily}
-                onChange={(e) =>
-                  updateElement(selectedElement.id, { fontFamily: e.target.value })
+                onChange={(fontFamily) =>
+                  updateElement(selectedElement.id, { fontFamily })
                 }
-              >
-                <option value="Segoe UI">Segoe UI</option>
-                <option value="Arial">Arial</option>
-                <option value="Calibri">Calibri</option>
-                <option value="Georgia">Georgia</option>
-                <option value="Times New Roman">Times New Roman</option>
-                <option value="Trebuchet MS">Trebuchet MS</option>
-                <option value="Impact">Impact</option>
-                <option value="Courier New">Courier New</option>
-              </select>
+                className="w-full rounded-xl px-2.5 py-1.5"
+              />
             </div>
 
             {/* Font Size & Color */}

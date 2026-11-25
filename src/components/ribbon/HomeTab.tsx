@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
 import { TextElement, ShapeType } from '../../types/publisher';
 import { FloatingDropdown } from '../common/FloatingDropdown';
+import { FontSelector } from '../common/FontSelector';
 import {
   Copy,
   Trash2,
@@ -87,20 +88,11 @@ export const HomeTab: React.FC = () => {
         <div className="space-y-1.5 my-auto">
           {/* Top row: Font family & Size */}
           <div className="flex items-center gap-1.5">
-            <select
-              className="bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg px-2 py-1 text-xs outline-none w-36 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-medium transition cursor-pointer"
+            <FontSelector
               value={selectedTextElement?.fontFamily || 'Segoe UI'}
-              onChange={(e) => updateSelectedElements({ fontFamily: e.target.value })}
-            >
-              <option value="Segoe UI">Segoe UI</option>
-              <option value="Arial">Arial</option>
-              <option value="Calibri">Calibri</option>
-              <option value="Georgia">Georgia</option>
-              <option value="Times New Roman">Times New Roman</option>
-              <option value="Trebuchet MS">Trebuchet MS</option>
-              <option value="Impact">Impact</option>
-              <option value="Courier New">Courier New</option>
-            </select>
+              onChange={(fontFamily) => updateSelectedElements({ fontFamily })}
+              className="w-36"
+            />
 
             <input
               type="number"
