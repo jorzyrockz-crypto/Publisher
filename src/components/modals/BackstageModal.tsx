@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
-import { TEMPLATES } from '../../constants/templates';
+import { TEMPLATES, TemplateDefinition } from '../../constants/templates';
 import {
   saveProjectToFile,
   loadProjectFromFile,
@@ -34,6 +34,8 @@ export const BackstageModal: React.FC = () => {
   const [activeSection, setActiveSection] = useState<
     'info' | 'new' | 'open' | 'save' | 'print' | 'export'
   >('new');
+  const [templateGroupFilter, setTemplateGroupFilter] = useState<string>('All');
+  const [templateSearch, setTemplateSearch] = useState<string>('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -141,64 +143,132 @@ export const BackstageModal: React.FC = () => {
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto p-12 bg-slate-50">
-        {/* SECTION: NEW TEMPLATES */}
-        {activeSection === 'new' && (
-          <div className="max-w-5xl mx-auto space-y-6">
-            <div>
-              <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Templates Gallery</h1>
-              <p className="text-xs text-slate-500 mt-1.5">
-                Start from a designer-crafted publication layout or a clean blank canvas.
-              </p>
-            </div>
+        {/* SECTION: NEW TEMPLATES (Grouped & Categorized) */}
+        {activeSection === 'new' && (() => {
+          const groupDefs: { label: string; categories: TemplateDefinition['category'][] }[] = [
+            { label: 'Marketing & Flyers', categories: ['Brochure', 'Flyer', 'Poster', 'Postcard'] },
+            { label: 'Cards, Menus & Invitations', categories: ['Menu', 'Invitation', 'Business Card'] },
+            { label: 'Publications & Resumes', categories: ['Newsletter', 'Resume', 'Certificate'] },
+            { label: 'Blank Canvas', categories: ['Blank'] },
+          ];
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {TEMPLATES.map((tpl) => (
-                <div
-                  key={tpl.id}
-                  onClick={() => {
-                    loadTemplate(tpl.id);
-                    confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
-                  }}
-                  className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm hover:shadow-xl hover:border-emerald-500 cursor-pointer transition-all hover:-translate-y-1 group flex flex-col justify-between"
-                >
-                  <div>
-                    {/* Visual Card Banner */}
-                    <div
-                      className="w-full h-40 rounded-xl mb-3.5 flex items-center justify-center text-white font-bold p-4 relative overflow-hidden shadow-inner"
-                      style={{ backgroundColor: tpl.thumbnailColor }}
-                    >
-                      <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#fff_1.5px,transparent_1.5px)] [background-size:16px_16px]" />
-                      <span className="text-center text-base drop-shadow-md z-10 font-bold px-2">
-                        {tpl.name}
-                      </span>
-                    </div>
+          const filterTabs = ['All', ...groupDefs.map((g) => g.label)];
 
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/60">
-                        {tpl.category}
-                      </span>
-                      <span className="text-[11px] font-medium text-slate-400">
-                        {tpl.project.pages.length} {tpl.project.pages.length === 1 ? 'Page' : 'Pages'}
-                      </span>
-                    </div>
+          const visibleGroups = groupDefs
+            .filter((g) => templateGroupFilter === 'All' || g.label === templateGroupFilter)
+            .map((g) => ({
+              ...g,
+              items: TEMPLATES.filter(
+                (t) =>
+                  g.categories.includes(t.category) &&
+                  (t.name.toLowerCase().includes(templateSearch.toLowerCase()) ||
+                    t.category.toLowerCase().includes(templateSearch.toLowerCase()) ||
+                    t.description.toLowerCase().includes(templateSearch.toLowerCase()))
+              ),
+            }))
+            .filter((g) => g.items.length > 0);
 
-                    <h3 className="font-bold text-sm text-slate-800 group-hover:text-emerald-700 transition">
-                      {tpl.name}
-                    </h3>
-                    <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
-                      {tpl.description}
-                    </p>
-                  </div>
-
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-emerald-700">
-                    <span>Create Publication</span>
-                    <span className="group-hover:translate-x-1 transition-transform">→</span>
-                  </div>
+          return (
+            <div className="max-w-5xl mx-auto space-y-6">
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                  <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Templates Gallery</h1>
+                  <p className="text-xs text-slate-500 mt-1.5">
+                    Start from {TEMPLATES.length} designer-crafted publication layouts grouped by purpose.
+                  </p>
                 </div>
-              ))}
+
+                <input
+                  type="text"
+                  placeholder="Search templates (e.g. menu, poster, resume)..."
+                  value={templateSearch}
+                  onChange={(e) => setTemplateSearch(e.target.value)}
+                  className="w-full md:w-64 px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 shadow-2xs"
+                />
+              </div>
+
+              {/* Category Group Filter Pills */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {filterTabs.map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setTemplateGroupFilter(tab)}
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition ${
+                      templateGroupFilter === tab
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+
+              {/* Grouped Template Sections */}
+              <div className="space-y-8">
+                {visibleGroups.map((group) => (
+                  <div key={group.label} className="space-y-3.5">
+                    <div className="flex items-center gap-2 border-b border-slate-200/80 pb-2">
+                      <h2 className="text-sm font-bold text-slate-700">{group.label}</h2>
+                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-slate-200/70 text-slate-600">
+                        {group.items.length}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                      {group.items.map((tpl) => (
+                        <div
+                          key={tpl.id}
+                          onClick={() => {
+                            loadTemplate(tpl.id);
+                            confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
+                          }}
+                          className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm hover:shadow-xl hover:border-emerald-500 cursor-pointer transition-all hover:-translate-y-1 group flex flex-col justify-between"
+                        >
+                          <div>
+                            <div
+                              className="w-full h-36 rounded-xl mb-3.5 flex items-center justify-center text-white font-bold p-4 relative overflow-hidden shadow-inner"
+                              style={{
+                                background: tpl.thumbnailGradient || tpl.thumbnailColor,
+                              }}
+                            >
+                              <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#fff_1.5px,transparent_1.5px)] [background-size:16px_16px]" />
+                              <span className="text-center text-base drop-shadow-md z-10 font-bold px-2">
+                                {tpl.name}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/60">
+                                {tpl.category}
+                              </span>
+                              <span className="text-[11px] font-medium text-slate-400">
+                                {tpl.project.pages.length}{' '}
+                                {tpl.project.pages.length === 1 ? 'Page' : 'Pages'}
+                              </span>
+                            </div>
+
+                            <h3 className="font-bold text-sm text-slate-800 group-hover:text-emerald-700 transition">
+                              {tpl.name}
+                            </h3>
+                            <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
+                              {tpl.description}
+                            </p>
+                          </div>
+
+                          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-emerald-700">
+                            <span>Create Publication</span>
+                            <span className="group-hover:translate-x-1 transition-transform">→</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* SECTION: OPEN */}
         {activeSection === 'open' && (
