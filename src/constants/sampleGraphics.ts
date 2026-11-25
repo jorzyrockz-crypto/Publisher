@@ -1,4 +1,4 @@
-export type StockCategory = 'Nature' | 'Abstract' | 'Business' | 'Badges';
+export type StockCategory = 'Nature' | 'Abstract' | 'Business' | 'Badges' | 'Lifestyle';
 
 export interface SampleGraphic {
   id: string;
@@ -359,6 +359,320 @@ export const SAMPLE_GRAPHICS: SampleGraphic[] = [
         <path d="M330 235 H365 C385 235 395 250 395 270 C395 290 385 305 365 305 H330" fill="none" stroke="#78350f" stroke-width="20"/>
         <rect x="115" y="395" width="240" height="20" rx="10" fill="#92400e"/>
         <path d="M195 165 Q 210 130 195 105 M240 165 Q 255 130 240 105 M285 165 Q 300 130 285 105" stroke="#d97706" stroke-width="10" stroke-linecap="round" fill="none"/>
+      </svg>
+    `),
+  },
+
+  // Additional Nature
+  {
+    id: 'autumn-leaves',
+    name: 'Autumn Breeze',
+    category: 'Nature',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 550">
+        <rect width="800" height="550" fill="#fff7ed"/>
+        <circle cx="220" cy="180" r="110" fill="#fed7aa"/>
+        <path d="M180 420 C 200 260, 320 180, 460 140 C 430 290, 340 390, 180 420 Z" fill="#ea580c"/>
+        <path d="M380 440 C 410 300, 520 220, 650 190 C 620 330, 530 420, 380 440 Z" fill="#d97706"/>
+        <path d="M150 450 L 460 140" stroke="#7c2d12" stroke-width="6" stroke-linecap="round"/>
+      </svg>
+    `),
+  },
+  {
+    id: 'tropical-palm',
+    name: 'Tropical Island',
+    category: 'Nature',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 550">
+        <defs>
+          <linearGradient id="trop" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#0ea5e9"/>
+            <stop offset="100%" stop-color="#bae6fd"/>
+          </linearGradient>
+        </defs>
+        <rect width="800" height="550" fill="url(#trop)"/>
+        <circle cx="620" cy="130" r="65" fill="#fde047"/>
+        <path d="M0 400 Q 400 360 800 400 L 800 550 L 0 550 Z" fill="#0284c7"/>
+        <path d="M0 460 Q 300 420 620 550 L 0 550 Z" fill="#fde68a"/>
+        <path d="M180 480 Q 210 320 250 180" stroke="#78350f" stroke-width="22" fill="none" stroke-linecap="round"/>
+        <path d="M250 180 Q 150 140 90 210 M250 180 Q 200 90 140 100 M250 180 Q 330 110 390 170 M250 180 Q 350 200 390 260" stroke="#15803d" stroke-width="20" fill="none" stroke-linecap="round"/>
+      </svg>
+    `),
+  },
+  {
+    id: 'snowy-peaks',
+    name: 'Winter Frost',
+    category: 'Nature',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 550">
+        <rect width="800" height="550" fill="#e0f2fe"/>
+        <polygon points="40,550 260,170 480,550" fill="#64748b"/>
+        <polygon points="260,170 190,290 250,270 310,300 330,290" fill="#ffffff"/>
+        <polygon points="320,550 560,130 780,550" fill="#475569"/>
+        <polygon points="560,130 485,260 545,240 605,275 635,260" fill="#ffffff"/>
+      </svg>
+    `),
+  },
+
+  // Additional Abstract
+  {
+    id: 'neon-gradient',
+    name: 'Neon Aurora',
+    category: 'Abstract',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 550">
+        <defs>
+          <linearGradient id="neon" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#7c3aed"/>
+            <stop offset="50%" stop-color="#db2777"/>
+            <stop offset="100%" stop-color="#f97316"/>
+          </linearGradient>
+        </defs>
+        <rect width="800" height="550" fill="url(#neon)"/>
+        <circle cx="640" cy="120" r="170" fill="#ffffff" opacity="0.12"/>
+        <circle cx="160" cy="430" r="210" fill="#000000" opacity="0.15"/>
+      </svg>
+    `),
+  },
+  {
+    id: 'minimal-arch',
+    name: 'Terracotta Arch',
+    category: 'Abstract',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 550">
+        <rect width="800" height="550" fill="#fef3c7"/>
+        <path d="M220 550 V 250 A 180 180 0 0 1 580 250 V 550 Z" fill="#c2410c"/>
+        <circle cx="400" cy="240" r="75" fill="#fbbf24"/>
+        <rect x="0" y="480" width="800" height="70" fill="#78350f"/>
+      </svg>
+    `),
+  },
+  {
+    id: 'retro-halftone',
+    name: 'Retro Sunburst',
+    category: 'Abstract',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 550">
+        <rect width="800" height="550" fill="#fef08a"/>
+        <g fill="#f97316" opacity="0.85">
+          <polygon points="400,275 0,0 160,0"/>
+          <polygon points="400,275 320,0 480,0"/>
+          <polygon points="400,275 640,0 800,0"/>
+          <polygon points="400,275 800,140 800,310"/>
+          <polygon points="400,275 800,430 680,550"/>
+          <polygon points="400,275 480,550 320,550"/>
+          <polygon points="400,275 140,550 0,430"/>
+          <polygon points="400,275 0,310 0,140"/>
+        </g>
+        <circle cx="400" cy="275" r="95" fill="#dc2626"/>
+      </svg>
+    `),
+  },
+
+  // Additional Business
+  {
+    id: 'target-goal',
+    name: 'Target Bullseye',
+    category: 'Business',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+        <rect width="500" height="500" rx="28" fill="#f8fafc"/>
+        <circle cx="250" cy="250" r="165" fill="#ef4444"/>
+        <circle cx="250" cy="250" r="115" fill="#ffffff"/>
+        <circle cx="250" cy="250" r="65" fill="#ef4444"/>
+        <circle cx="250" cy="250" r="22" fill="#fde047"/>
+      </svg>
+    `),
+  },
+  {
+    id: 'briefcase-pro',
+    name: 'Executive Case',
+    category: 'Business',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+        <rect width="500" height="500" rx="28" fill="#f1f5f9"/>
+        <path d="M190 150 V 120 H 310 V 150" fill="none" stroke="#334155" stroke-width="18" stroke-linecap="round"/>
+        <rect x="95" y="150" width="310" height="230" rx="22" fill="#1e293b"/>
+        <rect x="95" y="150" width="310" height="95" rx="22" fill="#334155"/>
+        <rect x="225" y="225" width="50" height="36" rx="8" fill="#f59e0b"/>
+      </svg>
+    `),
+  },
+  {
+    id: 'calendar-event',
+    name: 'Event Calendar',
+    category: 'Business',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+        <rect width="500" height="500" rx="28" fill="#ecfdf5"/>
+        <rect x="95" y="110" width="310" height="290" rx="24" fill="#ffffff" stroke="#cbd5e1" stroke-width="6"/>
+        <path d="M95 134 A 24 24 0 0 1 119 110 H 381 A 24 24 0 0 1 405 134 V 195 H 95 Z" fill="#0f6b4e"/>
+        <rect x="155" y="80" width="22" height="55" rx="10" fill="#334155"/>
+        <rect x="323" y="80" width="22" height="55" rx="10" fill="#334155"/>
+        <rect x="145" y="235" width="55" height="45" rx="8" fill="#e2e8f0"/>
+        <rect x="222" y="235" width="55" height="45" rx="8" fill="#10b981"/>
+        <rect x="300" y="235" width="55" height="45" rx="8" fill="#e2e8f0"/>
+        <rect x="145" y="305" width="55" height="45" rx="8" fill="#e2e8f0"/>
+        <rect x="222" y="305" width="55" height="45" rx="8" fill="#e2e8f0"/>
+        <rect x="300" y="305" width="55" height="45" rx="8" fill="#f59e0b"/>
+      </svg>
+    `),
+  },
+
+  // Additional Badges
+  {
+    id: 'sale-tag',
+    name: 'Hot Sale Tag',
+    category: 'Badges',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+        <rect width="500" height="500" rx="28" fill="#fff1f2"/>
+        <path d="M110 110 H 265 L 405 250 L 250 405 L 110 265 Z" fill="#e11d48"/>
+        <circle cx="170" cy="170" r="22" fill="#fff1f2"/>
+        <text x="245" y="275" font-family="Arial, sans-serif" font-weight="900" font-size="64" fill="#ffffff" text-anchor="middle" transform="rotate(-45 245 260)">SALE</text>
+      </svg>
+    `),
+  },
+  {
+    id: 'ribbon-rosette',
+    name: 'First Place Ribbon',
+    category: 'Badges',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+        <rect width="500" height="500" rx="28" fill="#eff6ff"/>
+        <polygon points="185,260 140,430 215,390 250,440 250,260" fill="#1d4ed8"/>
+        <polygon points="315,260 360,430 285,390 250,440 250,260" fill="#2563eb"/>
+        <circle cx="250" cy="195" r="115" fill="#f59e0b"/>
+        <circle cx="250" cy="195" r="88" fill="#fde047"/>
+        <text x="250" y="218" font-family="Georgia, serif" font-weight="bold" font-size="76" fill="#92400e" text-anchor="middle">#1</text>
+      </svg>
+    `),
+  },
+  {
+    id: 'five-stars',
+    name: '5-Star Rating',
+    category: 'Badges',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 220">
+        <rect width="600" height="220" rx="24" fill="#0f172a"/>
+        <g fill="#facc15" transform="translate(45, 55)">
+          <polygon points="45,0 58,32 92,35 66,57 74,90 45,72 16,90 24,57 -2,35 32,32"/>
+          <polygon transform="translate(105,0)" points="45,0 58,32 92,35 66,57 74,90 45,72 16,90 24,57 -2,35 32,32"/>
+          <polygon transform="translate(210,0)" points="45,0 58,32 92,35 66,57 74,90 45,72 16,90 24,57 -2,35 32,32"/>
+          <polygon transform="translate(315,0)" points="45,0 58,32 92,35 66,57 74,90 45,72 16,90 24,57 -2,35 32,32"/>
+          <polygon transform="translate(420,0)" points="45,0 58,32 92,35 66,57 74,90 45,72 16,90 24,57 -2,35 32,32"/>
+        </g>
+      </svg>
+    `),
+  },
+
+  // Lifestyle, Food & Events
+  {
+    id: 'birthday-cake',
+    name: 'Party Cake',
+    category: 'Lifestyle',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+        <rect width="500" height="500" rx="28" fill="#fdf2f8"/>
+        <rect x="115" y="270" width="270" height="125" rx="18" fill="#f472b6"/>
+        <rect x="150" y="185" width="200" height="90" rx="14" fill="#fbcfe8"/>
+        <rect x="238" y="110" width="24" height="75" rx="6" fill="#38bdf8"/>
+        <path d="M250 65 Q 270 90 250 110 Q 230 90 250 65 Z" fill="#f59e0b"/>
+        <rect x="90" y="395" width="320" height="22" rx="11" fill="#be185d"/>
+      </svg>
+    `),
+  },
+  {
+    id: 'pizza-slice',
+    name: 'Pizza Special',
+    category: 'Lifestyle',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+        <rect width="500" height="500" rx="28" fill="#fffbeb"/>
+        <polygon points="250,410 105,130 395,130" fill="#facc15"/>
+        <path d="M95 130 Q 250 95 405 130" stroke="#d97706" stroke-width="34" stroke-linecap="round" fill="none"/>
+        <circle cx="220" cy="210" r="24" fill="#dc2626"/>
+        <circle cx="285" cy="230" r="22" fill="#dc2626"/>
+        <circle cx="250" cy="305" r="20" fill="#dc2626"/>
+      </svg>
+    `),
+  },
+  {
+    id: 'ticket-pass',
+    name: 'VIP Ticket',
+    category: 'Lifestyle',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 320">
+        <rect width="600" height="320" rx="24" fill="#0f172a"/>
+        <path d="M60 70 H 540 V 130 A 30 30 0 0 0 540 190 V 250 H 60 V 190 A 30 30 0 0 0 60 130 Z" fill="#f59e0b"/>
+        <line x1="410" y1="80" x2="410" y2="240" stroke="#78350f" stroke-width="4" stroke-dasharray="10 8"/>
+        <text x="235" y="178" font-family="Impact, sans-serif" font-size="64" fill="#451a03" text-anchor="middle">VIP PASS</text>
+      </svg>
+    `),
+  },
+  {
+    id: 'music-note',
+    name: 'Live Music',
+    category: 'Lifestyle',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+        <rect width="500" height="500" rx="28" fill="#312e81"/>
+        <circle cx="170" cy="340" r="48" fill="#38bdf8"/>
+        <circle cx="330" cy="310" r="48" fill="#ec4899"/>
+        <path d="M206 340 V 135 L 366 105 V 310" fill="none" stroke="#ffffff" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    `),
+  },
+  {
+    id: 'camera-lens',
+    name: 'Photo Studio',
+    category: 'Lifestyle',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+        <rect width="500" height="500" rx="28" fill="#f1f5f9"/>
+        <path d="M180 140 L 210 105 H 290 L 320 140 Z" fill="#334155"/>
+        <rect x="85" y="140" width="330" height="235" rx="28" fill="#1e293b"/>
+        <circle cx="250" cy="258" r="78" fill="#0f172a" stroke="#94a3b8" stroke-width="12"/>
+        <circle cx="250" cy="258" r="45" fill="#0284c7"/>
+        <circle cx="232" cy="240" r="14" fill="#ffffff" opacity="0.6"/>
+        <circle cx="365" cy="180" r="12" fill="#f59e0b"/>
+      </svg>
+    `),
+  },
+  {
+    id: 'grad-cap',
+    name: 'Graduation',
+    category: 'Lifestyle',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+        <rect width="500" height="500" rx="28" fill="#eff6ff"/>
+        <polygon points="250,120 430,205 250,290 70,205" fill="#1e293b"/>
+        <path d="M145 245 V 325 C 145 355 355 355 355 325 V 245" fill="#334155"/>
+        <line x1="395" y1="220" x2="395" y2="335" stroke="#f59e0b" stroke-width="10"/>
+        <circle cx="395" cy="340" r="16" fill="#f59e0b"/>
+      </svg>
+    `),
+  },
+  {
+    id: 'open-book',
+    name: 'Knowledge Book',
+    category: 'Lifestyle',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+        <rect width="500" height="500" rx="28" fill="#ecfdf5"/>
+        <path d="M80 140 Q 165 110 250 155 Q 335 110 420 140 V 360 Q 335 330 250 375 Q 165 330 80 360 Z" fill="#ffffff" stroke="#0f6b4e" stroke-width="14" stroke-linejoin="round"/>
+        <line x1="250" y1="155" x2="250" y2="375" stroke="#0f6b4e" stroke-width="10"/>
+      </svg>
+    `),
+  },
+  {
+    id: 'heart-love',
+    name: 'Greeting Heart',
+    category: 'Lifestyle',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+        <rect width="500" height="500" rx="28" fill="#fff1f2"/>
+        <path d="M250 400 C 120 310, 75 230, 75 170 C 75 110, 125 80, 175 80 C 215 80, 240 105, 250 130 C 260 105, 285 80, 325 80 C 375 80, 425 110, 425 170 C 425 230, 380 310, 250 400 Z" fill="#e11d48"/>
       </svg>
     `),
   },

@@ -39,6 +39,7 @@ export const InsertTab: React.FC = () => {
   const [isTableDropdownOpen, setIsTableDropdownOpen] = useState(false);
   const [isStockOpen, setIsStockOpen] = useState(false);
   const [stockCategory, setStockCategory] = useState<'All' | StockCategory>('All');
+  const [stockSearch, setStockSearch] = useState('');
 
   return (
     <div className="flex items-center h-24 px-3 py-1 gap-3 text-xs text-slate-700 overflow-x-auto select-none">
@@ -179,15 +180,22 @@ export const InsertTab: React.FC = () => {
               isOpen={isStockOpen}
               onClose={() => setIsStockOpen(false)}
               anchorRef={stockBtnRef}
-              className="p-3 w-80"
+              className="p-3 w-88"
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[11px] font-bold text-slate-700">
                   Stock Art & Clipart ({SAMPLE_GRAPHICS.length})
                 </span>
               </div>
+              <input
+                type="text"
+                placeholder="Search clipart (e.g. rocket, cake, sunset)..."
+                value={stockSearch}
+                onChange={(e) => setStockSearch(e.target.value)}
+                className="w-full mb-2 px-2.5 py-1 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-[11px] outline-none focus:border-emerald-500"
+              />
               <div className="flex items-center gap-1 mb-2.5 flex-wrap">
-                {(['All', 'Nature', 'Abstract', 'Business', 'Badges'] as const).map((cat) => (
+                {(['All', 'Nature', 'Abstract', 'Business', 'Badges', 'Lifestyle'] as const).map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setStockCategory(cat)}
@@ -201,9 +209,11 @@ export const InsertTab: React.FC = () => {
                   </button>
                 ))}
               </div>
-              <div className="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto pr-1">
+              <div className="grid grid-cols-3 gap-2 max-h-72 overflow-y-auto pr-1">
                 {SAMPLE_GRAPHICS.filter(
-                  (g) => stockCategory === 'All' || g.category === stockCategory
+                  (g) =>
+                    (stockCategory === 'All' || g.category === stockCategory) &&
+                    g.name.toLowerCase().includes(stockSearch.toLowerCase())
                 ).map((g) => (
                   <button
                     key={g.id}
