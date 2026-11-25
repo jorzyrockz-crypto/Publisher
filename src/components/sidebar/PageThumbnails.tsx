@@ -19,6 +19,7 @@ import {
   Minus,
 } from 'lucide-react';
 import { PublisherElement } from '../../types/publisher';
+import { ElementRenderer } from '../canvas/ElementRenderer';
 
 export const PageThumbnails: React.FC = () => {
   const {
@@ -129,7 +130,14 @@ export const PageThumbnails: React.FC = () => {
         <div className="flex-1 overflow-y-auto p-3 space-y-3.5">
           {project.pages.map((page, idx) => {
             const isActive = !isEditingMaster && idx === project.activePageIndex;
-            const aspectRatio = page.width / page.height;
+            const thumbW = 128;
+            const thumbScale = thumbW / page.width;
+            const thumbH = Math.min(165, Math.round(page.height * thumbScale));
+            const effectiveScale = Math.min(thumbScale, thumbH / page.height);
+            const masterEls =
+              project.masterPage?.showOnAllPages !== false
+                ? project.masterPage?.elements || []
+                : [];
 
             return (
               <div
@@ -145,38 +153,50 @@ export const PageThumbnails: React.FC = () => {
                 }`}
               >
                 <div
-                  className="w-32 bg-white border border-slate-200/90 shadow-sm rounded-lg relative overflow-hidden flex items-center justify-center transition-all group-hover:scale-[1.02]"
+                  className="bg-white border border-slate-200/90 shadow-sm rounded-lg relative overflow-hidden transition-all group-hover:scale-[1.02]"
                   style={{
-                    height: `${32 / aspectRatio}rem`,
-                    maxHeight: '145px',
+                    width: `${Math.round(page.width * effectiveScale)}px`,
+                    height: `${Math.round(page.height * effectiveScale)}px`,
                     backgroundColor: page.backgroundColor,
                   }}
                 >
-                  {page.elements.map((el) => {
-                    const scaleW = 128 / page.width;
-                    const scaleH = (128 / aspectRatio) / page.height;
-
-                    return (
-                      <div
-                        key={el.id}
-                        className="absolute opacity-80"
-                        style={{
-                          left: `${el.x * scaleW}px`,
-                          top: `${el.y * scaleH}px`,
-                          width: `${Math.max(2, el.width * scaleW)}px`,
-                          height: `${Math.max(2, el.height * scaleH)}px`,
-                          backgroundColor:
-                            el.type === 'shape'
-                              ? el.fillColor
-                              : el.type === 'text'
-                              ? el.color
-                              : '#94a3b8',
-                          borderRadius:
-                            el.type === 'shape' && el.shapeType === 'circle' ? '50%' : '1px',
-                        }}
-                      />
-                    );
-                  })}
+                  {/* Live Scaled Page Preview (shows real text, shapes, images, tables & master elements) */}
+                  <div
+                    className="pointer-events-none select-none"
+                    style={{
+                      width: `${page.width}px`,
+                      height: `${page.height}px`,
+                      transform: `scale(${effectiveScale})`,
+                      transformOrigin: 'top left',
+                      position: 'relative',
+                    }}
+                  >
+                    {[...masterEls, ...page.elements]
+                      .filter((el) => el.visible !== false)
+                      .map((el) => (
+                        <div
+                          key={el.id}
+                          style={{
+                            position: 'absolute',
+                            left: `${el.x}px`,
+                            top: `${el.y}px`,
+                            width: `${el.width}px`,
+                            height: `${el.height}px`,
+                            transform: `rotate(${el.rotation}deg)`,
+                            transformOrigin: 'center center',
+                            zIndex: el.zIndex,
+                            opacity: el.opacity !== undefined ? el.opacity : 1,
+                          }}
+                        >
+                          <ElementRenderer
+                            element={el}
+                            isSelected={false}
+                            pageNumber={idx + 1}
+                            totalPages={project.pages.length}
+                          />
+                        </div>
+                      ))}
+                  </div>
 
                   <div className="absolute bottom-1 right-1 bg-slate-900/60 backdrop-blur-xs text-white text-[9px] font-mono font-bold px-1.5 py-0.2 rounded-full pointer-events-none">
                     {idx + 1}
