@@ -46,6 +46,7 @@ import {
 } from '../../utils/svgRecolor';
 import { getBackdropColorUnder } from '../../utils/brandRebrand';
 import { countWords, layoutText } from '../../utils/textLayout';
+import { TEXT_CURVE_PRESETS, TEXT_EFFECTS, buildTextEffectPainter } from '../../utils/textEffects';
 import { DesignIdeasPanel } from './DesignIdeasPanel';
 import { InspectorCard } from './InspectorCard';
 import { useResizablePanel, useWindowWidth } from '../../hooks/useResizablePanel';
@@ -2054,6 +2055,157 @@ export const PropertiesPanel: React.FC = () => {
 
               {typoTab === 'effects' && (
                 <div className="space-y-3">
+                  {/* Canva-style text effects */}
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-semibold text-slate-500">
+                      Text Effects
+                    </label>
+                    <div className="grid grid-cols-4 gap-1">
+                      {TEXT_EFFECTS.map((fx) => {
+                        const active = (textEl.textEffect || (textEl.shadow ? 'shadow' : 'none')) === fx.id;
+                        return (
+                          <button
+                            key={fx.id}
+                            type="button"
+                            title={fx.description}
+                            onClick={() =>
+                              updateElement(textEl.id, {
+                                textEffect: fx.id,
+                                // the legacy flag would otherwise re-add a shadow
+                                shadow: fx.id === 'shadow' ? Boolean(textEl.shadow) : false,
+                              })
+                            }
+                            className={`py-1.5 rounded-lg border flex flex-col items-center gap-1 transition ${
+                              active
+                                ? 'bg-white border-[#b4a4f4] shadow-xs'
+                                : 'bg-slate-50 border-slate-200 hover:border-[#c9bdf7]'
+                            }`}
+                          >
+                            <span className="flex items-center -space-x-1">
+                              <span
+                                className="block w-2.5 h-2.5 rounded-full"
+                                style={{ backgroundColor: fx.swatch[0] }}
+                              />
+                              <span
+                                className="block w-2.5 h-2.5 rounded-full border border-white"
+                                style={{ backgroundColor: fx.swatch[1] }}
+                              />
+                            </span>
+                            <span className="text-[9px] font-bold text-slate-700">{fx.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {(() => {
+                      const paint = buildTextEffectPainter(textEl);
+                      if (paint.id === 'none') return null;
+                      return (
+                        <div className="flex items-center gap-2 bg-slate-50 p-1 rounded-xl border border-slate-200">
+                          <ColorInput
+                            className="w-6 h-6 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0"
+                            value={textEl.textEffectColor || '#6e56cf'}
+                            onChange={(e) =>
+                              updateElement(textEl.id, { textEffectColor: e.target.value })
+                            }
+                            target="fill"
+                          />
+                          <span className="text-[10px] text-slate-600 font-semibold flex-1">
+                            Effect colour
+                          </span>
+                          <span className="text-[9.5px] text-slate-400 font-mono">
+                            {paint.shadows.length > 0
+                              ? `${paint.shadows.length} layer${paint.shadows.length > 1 ? 's' : ''}`
+                              : paint.slices.length > 0
+                              ? `${paint.slices.length} slices`
+                              : 'stroke'}
+                          </span>
+                        </div>
+                      );
+                    })()}
+                    {(() => {
+                      const paint = buildTextEffectPainter(textEl);
+                      if (paint.strokeWidth <= 0 && paint.id === 'none') return null;
+                      return (
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
+                            <ColorInput
+                              className="w-5 h-5 rounded-full border border-slate-200 cursor-pointer p-0"
+                              value={textEl.textStrokeColor || paint.strokeColor || '#000000'}
+                              onChange={(e) =>
+                                updateElement(textEl.id, { textStrokeColor: e.target.value })
+                              }
+                              target="fill"
+                            />
+                            <span className="text-[10px] text-slate-600 font-semibold">Stroke</span>
+                          </div>
+                          <div>
+                            <div className="flex justify-between text-[10px] text-slate-500">
+                              <span>Width</span>
+                              <span>{paint.strokeWidth || 0}px</span>
+                            </div>
+                            <input
+                              type="range"
+                              min={0}
+                              max={12}
+                              step={0.5}
+                              value={textEl.textStrokeWidth ?? paint.strokeWidth}
+                              onChange={(e) =>
+                                updateElement(textEl.id, {
+                                  textStrokeWidth: Number(e.target.value),
+                                  textEffect: textEl.textEffect || 'outline',
+                                })
+                              }
+                              className="w-full accent-[#6e56cf] cursor-pointer"
+                            />
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Curved / circular text */}
+                  <div className="pt-2 border-t border-slate-100 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[11px] font-semibold text-slate-500">
+                        Curve
+                      </label>
+                      <span className="font-mono text-[10px] text-slate-500">
+                        {textEl.textCurve ?? 0}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={-100}
+                      max={100}
+                      step={5}
+                      value={textEl.textCurve ?? 0}
+                      onChange={(e) =>
+                        updateElement(textEl.id, { textCurve: Number(e.target.value) })
+                      }
+                      className="w-full accent-[#6e56cf] cursor-pointer"
+                    />
+                    <div className="grid grid-cols-3 gap-1">
+                      {TEXT_CURVE_PRESETS.map((preset) => (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          onClick={() => updateElement(textEl.id, { textCurve: preset.value })}
+                          className={`py-1 rounded-lg text-[9.5px] font-bold border transition ${
+                            (textEl.textCurve ?? 0) === preset.value
+                              ? 'bg-white border-[#b4a4f4] text-[#5c4bb8] shadow-xs'
+                              : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-[#c9bdf7]'
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[9.5px] text-slate-400 leading-tight">
+                      Positive arches up, negative bows down, ±100 closes the text into a ring.
+                      Curved text is laid out on one line.
+                    </p>
+                  </div>
+
                   {/* WordArt Style (Visual Preview Picker) */}
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-500 mb-1.5 flex items-center gap-1">
@@ -2138,7 +2290,17 @@ export const PropertiesPanel: React.FC = () => {
                   {/* Text Drop Shadow */}
                   <div className="pt-2 border-t border-slate-100 space-y-2">
                     <div
-                      onClick={() => updateElement(textEl.id, { shadow: !textEl.shadow })}
+                      onClick={() =>
+                        updateElement(textEl.id, {
+                          shadow: !textEl.shadow,
+                          // keep the effect picker in step with this legacy switch
+                          textEffect: !textEl.shadow
+                            ? 'shadow'
+                            : textEl.textEffect === 'shadow'
+                            ? 'none'
+                            : textEl.textEffect,
+                        })
+                      }
                       className="flex items-center justify-between cursor-pointer hover:opacity-90"
                     >
                       <div>

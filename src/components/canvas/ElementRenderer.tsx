@@ -15,6 +15,7 @@ import { buildWavyRectPath } from '../../utils/shapePaths';
 import { buildShapePatternDataUri } from '../../utils/patternGenerator';
 import { PATTERN_CATALOG } from '../../utils/patternGenerator';
 import { layoutText, verticalOffset } from '../../utils/textLayout';
+import { buildTextEffectPainter } from '../../utils/textEffects';
 
 interface ElementRendererProps {
   element: PublisherElement;
@@ -255,12 +256,101 @@ const TextRenderer: React.FC<{
     );
   }
 
+  const paint = buildTextEffectPainter(element);
+
   const gradientCss =
-    element.textFillType === 'gradient'
-      ? `linear-gradient(${element.textGradientAngle ?? 90}deg, ${
-          element.color || '#0f172a'
-        }, ${element.textGradientColor2 || '#6e56cf'})`
+    paint.gradient || element.textFillType === 'gradient'
+      ? `linear-gradient(${
+          paint.gradient?.angle ?? element.textGradientAngle ?? 90
+        }deg, ${paint.gradient?.from ?? element.color}, ${
+          paint.gradient?.to ?? element.textGradientColor2 ?? '#6e56cf'
+        })`
       : undefined;
+
+  const strokeStyle = paint.strokeWidth
+    ? { WebkitTextStroke: `${paint.strokeWidth}px ${paint.strokeColor}` as const }
+    : {};
+
+  const baseColor = paint.fillTransparent ? 'transparent' : element.color;
+
+  const gradientStyle = (x: number, y: number): React.CSSProperties =>
+    gradientCss
+      ? {
+          backgroundImage: gradientCss,
+          backgroundSize: `${Math.max(1, element.width)}px ${Math.max(1, layout.contentHeight)}px`,
+          backgroundPosition: `${-x}px ${-y}px`,
+          WebkitBackgroundClip: 'text',
+          backgroundClip: 'text',
+          color: 'transparent',
+        }
+      : {};
+
+  const renderGlyphs = (color: string, prefix: string, withEffects: boolean) => {
+    if (layout.curve) {
+      return layout.curve.chars.map((char, index) =>
+        char.text.trim() ? (
+          <span
+            key={`${prefix}-c${index}`}
+            style={{
+              position: 'absolute',
+              left: char.x,
+              top: offset + char.y,
+              transform: `translate(-50%, -50%) rotate(${char.angle}deg)`,
+              fontSize: `${char.fontSize}px`,
+              lineHeight: 1,
+              whiteSpace: 'pre',
+              color,
+              ...(withEffects ? gradientStyle(char.x, offset + char.y) : {}),
+              ...(withEffects ? strokeStyle : {}),
+              textShadow: withEffects && paint.cssShadow ? paint.cssShadow : undefined,
+            }}
+          >
+            {char.text}
+          </span>
+        ) : null
+      );
+    }
+
+    return layout.lines.map((line, lineIndex) =>
+      line.runs.map((run, runIndex) => {
+        if (!run.text) return null;
+        const isSpace = run.kind === 'space';
+        const highlight =
+          withEffects && element.highlightColor && run.kind !== 'marker'
+            ? element.highlightColor
+            : undefined;
+        return (
+          <span
+            key={`${prefix}-${lineIndex}-${runIndex}`}
+            style={{
+              position: 'absolute',
+              left: run.x,
+              top: offset + line.textTop + run.baselineShift,
+              height: line.height,
+              display: 'inline-flex',
+              alignItems: 'center',
+              fontSize: `${run.fontSize}px`,
+              lineHeight: 1,
+              letterSpacing: element.letterSpacing ? `${element.letterSpacing}px` : undefined,
+              color: isSpace ? 'transparent' : color,
+              ...(withEffects && !isSpace
+                ? gradientStyle(run.x, offset + line.y)
+                : {}),
+              ...(withEffects ? strokeStyle : {}),
+              textShadow: withEffects && paint.cssShadow ? paint.cssShadow : undefined,
+              backgroundColor: highlight,
+              textDecoration: element.textDecoration,
+              width: isSpace ? run.width : undefined,
+              overflow: 'hidden',
+              whiteSpace: 'pre',
+            }}
+          >
+            {run.kind === 'leader' ? leaderDom(run, element) : run.text}
+          </span>
+        );
+      })
+    );
+  };
 
   return (
     <div
@@ -277,7 +367,7 @@ const TextRenderer: React.FC<{
         fontStyle: element.fontStyle,
         fontKerning: element.kerning === false ? 'none' : 'normal',
         fontVariantLigatures: element.ligatures ? 'common-ligatures' : 'none',
-        userSelect: isEditing ? 'text' : 'none',
+        userSelect: 'none',
       }}
       className={wordArtClass}
     >
@@ -291,60 +381,47 @@ const TextRenderer: React.FC<{
             lineHeight: 1,
             fontWeight: 'bold',
             fontFamily: element.fontFamily,
-            color: element.color,
+            color: baseColor,
             whiteSpace: 'pre',
+            ...strokeStyle,
+            textShadow: paint.cssShadow || undefined,
           }}
         >
           {layout.dropCap.char}
         </span>
       )}
 
-      {layout.lines.map((line, lineIndex) =>
-        line.runs.map((run, runIndex) => {
-          if (!run.text) return null;
-          const isSpace = run.kind === 'space';
-          const highlight =
-            element.highlightColor && run.kind !== 'marker' ? element.highlightColor : undefined;
-          return (
-            <span
-              key={`${lineIndex}-${runIndex}`}
-              style={{
-                position: 'absolute',
-                left: run.x,
-                top: offset + line.textTop + run.baselineShift,
-                height: line.height,
-                display: 'inline-flex',
-                alignItems: 'center',
-                fontSize: `${run.fontSize}px`,
-                lineHeight: 1,
-                letterSpacing: element.letterSpacing ? `${element.letterSpacing}px` : undefined,
-                color: gradientCss ? 'transparent' : element.color,
-                backgroundImage: gradientCss,
-                backgroundSize: gradientCss ? `${element.width}px ${Math.max(1, layout.contentHeight)}px` : undefined,
-                backgroundPosition: gradientCss
-                  ? `${-run.x}px ${-(offset + line.y)}px`
-                  : undefined,
-                WebkitBackgroundClip: gradientCss ? 'text' : undefined,
-                backgroundClip: gradientCss ? 'text' : undefined,
-                backgroundColor: highlight,
-                textDecoration: element.textDecoration,
-                textTransform: 'none',
-                WebkitTextStroke: element.textStrokeWidth
-                  ? `${element.textStrokeWidth}px ${element.textStrokeColor || '#000000'}`
-                  : undefined,
-                textShadow: element.shadow
-                  ? `2px 3px ${element.shadowBlur ?? 6}px ${element.shadowColor || 'rgba(0,0,0,0.35)'}`
-                  : undefined,
-                width: isSpace ? run.width : undefined,
-                overflow: 'hidden',
-                whiteSpace: 'pre',
-              }}
-            >
-              {run.kind === 'leader' ? leaderDom(run, element) : run.text}
-            </span>
-          );
-        })
-      )}
+      {/* Base copy carries the fill, stroke and shadows. */}
+      <div style={{ position: 'absolute', inset: 0 }}>
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            color: baseColor,
+          }}
+        >
+          {renderGlyphs(baseColor, 'base', true)}
+        </div>
+      </div>
+
+      {/* Splice / glitch slices: clipped copies offset in colour. */}
+      {paint.slices.map((slice, sliceIndex) => (
+        <div
+          key={`slice-${sliceIndex}`}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            clipPath: `inset(${slice.top * 100}% ${slice.right * 100}% ${
+              slice.bottom * 100
+            }% ${slice.left * 100}%)`,
+            transform: `translate(${slice.dx}px, ${slice.dy}px)`,
+            opacity: slice.opacity ?? 1,
+            pointerEvents: 'none',
+          }}
+        >
+          {renderGlyphs(slice.color, `slice-${sliceIndex}`, false)}
+        </div>
+      ))}
     </div>
   );
 };

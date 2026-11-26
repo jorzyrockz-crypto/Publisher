@@ -14,6 +14,7 @@ import {
 import { buildPatternSvg, buildShapePatternDataUri } from './patternGenerator';
 import { buildWavyRectPath, getShapeSvgPath } from './shapePaths';
 import { buildFontString, layoutText, measureTextWidth, verticalOffset } from './textLayout';
+import { buildTextEffectPainter } from './textEffects';
 
 function loadImage(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
@@ -126,7 +127,10 @@ function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
   }
 
   const layout = layoutText(el);
+  const paint = buildTextEffectPainter(el);
   const top = verticalOffset(layout, el);
+  const letterSpacing = el.letterSpacing || 0;
+  const wordSpacing = el.wordSpacing || 0;
 
   ctx.save();
   ctx.beginPath();
@@ -134,7 +138,6 @@ function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
   else ctx.rect(0, 0, width, height);
   ctx.clip();
 
-  // Marker highlight sits behind the glyphs, matching the DOM render.
   if (el.highlightColor && el.highlightColor !== 'transparent') {
     ctx.fillStyle = el.highlightColor;
     for (const line of layout.lines) {
@@ -145,145 +148,288 @@ function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
     }
   }
 
-  if (el.shadow || el.wordArtStyle === 'neon-glow') {
-    ctx.shadowColor =
-      el.wordArtStyle === 'neon-glow' ? '#22d3ee' : el.shadowColor || 'rgba(0,0,0,0.35)';
-    ctx.shadowBlur = el.wordArtStyle === 'neon-glow' ? 14 : el.shadowBlur ?? 6;
-    ctx.shadowOffsetX = el.wordArtStyle === 'neon-glow' ? 0 : 2;
-    ctx.shadowOffsetY = el.wordArtStyle === 'neon-glow' ? 0 : 3;
-  }
-
-  const font = buildFontString(el, layout.fontSize);
-  ctx.font = font;
-  ctx.textBaseline = 'top';
-  ctx.textAlign = 'left';
   if (el.kerning === false && 'fontKerning' in ctx) {
     (ctx as CanvasRenderingContext2D & { fontKerning: string }).fontKerning = 'none';
   }
 
-  const fillFor = (): string | CanvasGradient => {
-    if (el.wordArtStyle === 'rainbow') {
-      const g = ctx.createLinearGradient(0, 0, width, 0);
-      g.addColorStop(0, '#ec4899');
-      g.addColorStop(0.5, '#f59e0b');
-      g.addColorStop(1, '#06b6d4');
-      return g;
-    }
-    if (el.wordArtStyle === 'sunset-gradient') {
-      const g = ctx.createLinearGradient(0, 0, width, 0);
-      g.addColorStop(0, '#f43f5e');
-      g.addColorStop(1, '#f59e0b');
-      return g;
-    }
-    if (el.wordArtStyle === 'gold3d') {
-      const g = ctx.createLinearGradient(0, top, 0, top + Math.max(1, layout.contentHeight));
-      g.addColorStop(0, '#fef08a');
-      g.addColorStop(0.5, '#eab308');
-      g.addColorStop(1, '#a16207');
-      return g;
-    }
-    if (el.textFillType === 'gradient') {
-      return createLinearGrad(
-        ctx,
-        width,
-        height,
-        el.textGradientAngle ?? 90,
-        el.color || '#0f172a',
-        el.textGradientColor2 || '#6e56cf'
-      );
-    }
-    return el.color || '#0f172a';
-  };
+  interface GlyphUnit {
+    text: string;
+    x: number;
+    y: number;
+    font: string;
+    /** Rotation in radians (curved text). */
+    angle: number;
+    centred: boolean;
+  }
 
-  ctx.fillStyle = fillFor();
-
-  const paintRun = (text: string, x: number, y: number, advance?: number) => {
-    if (!text) return;
-    const tracking = el.letterSpacing || 0;
-    const wordSpacing = el.wordSpacing || 0;
-
-    if (text === ' ' && advance !== undefined) {
-      // Justification-generated space run: the width is authoritative.
-      if (el.textStrokeWidth && el.textStrokeWidth > 0) return;
-      return;
+  const units: GlyphUnit[] = [];
+  if (layout.curve) {
+    const font = buildFontString(el, layout.fontSize);
+    for (const char of layout.curve.chars) {
+      if (!char.text.trim()) continue;
+      units.push({
+        text: char.text,
+        x: char.x,
+        y: top + char.y,
+        font,
+        angle: (char.angle * Math.PI) / 180,
+        centred: true,
+      });
     }
-
-    if (!tracking && !wordSpacing) {
-      if (el.textStrokeWidth && el.textStrokeWidth > 0) {
-        ctx.strokeStyle = el.textStrokeColor || '#000000';
-        ctx.lineWidth = el.textStrokeWidth;
-        ctx.strokeText(text, x, y);
+  } else {
+    for (const line of layout.lines) {
+      for (const run of line.runs) {
+        if (run.kind === 'leader' || !run.text || (run.kind === 'space' && !el.highlightColor)) {
+          continue;
+        }
+        if (run.kind === 'space') continue;
+        units.push({
+          text: run.text,
+          x: run.x,
+          y: top + line.textTop + run.baselineShift,
+          font: buildFontString(el, run.fontSize),
+          angle: 0,
+          centred: false,
+        });
       }
-      ctx.fillText(text, x, y);
-      return;
-    }
-
-    // Manual advance so tracking survives export in every browser.
-    let cursor = x;
-    ctx.save();
-    if (el.textStrokeWidth && el.textStrokeWidth > 0) {
-      ctx.strokeStyle = el.textStrokeColor || '#000000';
-      ctx.lineWidth = el.textStrokeWidth;
-    }
-    for (const ch of text) {
-      if (el.textStrokeWidth && el.textStrokeWidth > 0) ctx.strokeText(ch, cursor, y);
-      ctx.fillText(ch, cursor, y);
-      cursor += measureTextWidth(ch, font) + tracking + (ch === ' ' ? wordSpacing : 0);
-    }
-    ctx.restore();
-  };
-
-  const leaderRun = (run: { text: string; x: number; width: number }, y: number) => {
-    if (run.text === '─') {
-      ctx.save();
-      ctx.strokeStyle = el.color || '#0f172a';
-      ctx.lineWidth = Math.max(1, layout.fontSize * 0.06);
-      ctx.beginPath();
-      ctx.moveTo(run.x, y + layout.fontSize * 0.72);
-      ctx.lineTo(run.x + run.width, y + layout.fontSize * 0.72);
-      ctx.stroke();
-      ctx.restore();
-      return;
-    }
-    const dash = run.text === '-' ? '-' : '.';
-    const dashWidth = Math.max(1, measureTextWidth(dash, font));
-    const step = el.tabLeader === 'dash' ? dashWidth * 1.6 : dashWidth * 2.2;
-    let cursor = run.x;
-    while (cursor + dashWidth <= run.x + run.width) {
-      ctx.fillText(dash, cursor, y);
-      cursor += step;
-    }
-  };
-
-  for (const line of layout.lines) {
-    for (const run of line.runs) {
-      const y = top + line.textTop;
-      if (run.kind === 'leader') {
-        leaderRun(run, y);
-        continue;
-      }
-      if (run.kind === 'marker' || run.fontSize !== layout.fontSize) {
-        ctx.font = buildFontString(el, run.fontSize);
-        paintRun(run.text, run.x, y + run.baselineShift);
-        ctx.font = font;
-        continue;
-      }
-      paintRun(run.text, run.x, y + run.baselineShift, run.width);
     }
   }
 
+  const baseFont = buildFontString(el, layout.fontSize);
+
+  const drawUnits = (options: {
+    color?: string | CanvasGradient;
+    strokeColor?: string;
+    strokeWidth?: number;
+    offsetX?: number;
+    offsetY?: number;
+    blur?: number;
+    fill?: boolean;
+  }) => {
+    const {
+      color,
+      strokeColor,
+      strokeWidth = 0,
+      offsetX = 0,
+      offsetY = 0,
+      blur = 0,
+      fill = true,
+    } = options;
+
+    for (const unit of units) {
+      ctx.save();
+      if (blur > 0 && 'filter' in ctx) {
+        ctx.filter = `blur(${blur}px)`;
+      }
+      ctx.translate(unit.x + offsetX, unit.y + offsetY);
+      if (unit.angle) ctx.rotate(unit.angle);
+      ctx.font = unit.font;
+      ctx.textBaseline = unit.centred ? 'middle' : 'top';
+      ctx.textAlign = unit.centred ? 'center' : 'left';
+
+      if (fill && color !== undefined) {
+        ctx.fillStyle = color;
+        paintRun(ctx, unit.text, 0, 0, unit.font, letterSpacing, wordSpacing);
+      }
+      if (strokeWidth > 0 && strokeColor) {
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = strokeWidth;
+        strokeRun(ctx, unit.text, 0, 0, unit.font, letterSpacing, wordSpacing);
+      }
+      ctx.restore();
+    }
+  };
+
+  // 1. Shadow / glow layers behind the glyphs.
+  for (const shadow of paint.shadows) {
+    drawUnits({
+      color: shadow.color,
+      offsetX: shadow.dx,
+      offsetY: shadow.dy,
+      blur: shadow.blur,
+    });
+  }
+
+  // 2. Fill (gradient or flat), unless the effect is hollow.
+  let fillStyle: string | CanvasGradient = el.color || '#0f172a';
+  if (paint.gradient) {
+    fillStyle = gradientForBox(
+      ctx,
+      width,
+      height,
+      paint.gradient.angle,
+      paint.gradient.from,
+      paint.gradient.to
+    );
+  } else if (el.textFillType === 'gradient') {
+    fillStyle = gradientForBox(
+      ctx,
+      width,
+      height,
+      el.textGradientAngle ?? 90,
+      el.color || '#0f172a',
+      el.textGradientColor2 || '#6e56cf'
+    );
+  }
+  if (!paint.fillTransparent) {
+    drawUnits({ color: fillStyle });
+  }
+
+  // 3. Stroke.
+  if (paint.strokeWidth > 0) {
+    drawUnits({ fill: false, strokeColor: paint.strokeColor, strokeWidth: paint.strokeWidth });
+  }
+
+  // 4. Splice / glitch slices.
+  for (const slice of paint.slices) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(
+      width * slice.left,
+      height * slice.top,
+      width * (1 - slice.left - slice.right),
+      height * (1 - slice.top - slice.bottom)
+    );
+    ctx.clip();
+    drawUnits({ color: slice.color, offsetX: slice.dx, offsetY: slice.dy });
+    ctx.restore();
+  }
+
+  // 5. Tab leaders (never shadowed or sliced).
+  if (!layout.curve) {
+    for (const line of layout.lines) {
+      for (const run of line.runs) {
+        if (run.kind !== 'leader') continue;
+        const y = top + line.textTop;
+        if (run.text === '─') {
+          ctx.save();
+          ctx.strokeStyle = el.color || '#0f172a';
+          ctx.lineWidth = Math.max(1, layout.fontSize * 0.06);
+          ctx.beginPath();
+          ctx.moveTo(run.x, y + layout.fontSize * 0.72);
+          ctx.lineTo(run.x + run.width, y + layout.fontSize * 0.72);
+          ctx.stroke();
+          ctx.restore();
+        } else {
+          const dash = run.text === '-' ? '-' : '.';
+          const dashWidth = Math.max(1, measureTextWidth(dash, baseFont));
+          const step = el.tabLeader === 'dash' ? dashWidth * 1.6 : dashWidth * 2.2;
+          ctx.font = baseFont;
+          ctx.textBaseline = 'top';
+          ctx.textAlign = 'left';
+          ctx.fillStyle = el.color || '#0f172a';
+          let cursor = run.x;
+          while (cursor + dashWidth <= run.x + run.width) {
+            ctx.fillText(dash, cursor, y);
+            cursor += step;
+          }
+        }
+      }
+    }
+  }
+
+  // 6. Drop cap on top, matching the DOM order.
   if (layout.dropCap) {
     const cap = layout.dropCap;
-    ctx.font = buildFontString(el, cap.size);
-    if (el.textStrokeWidth && el.textStrokeWidth > 0) {
-      ctx.strokeStyle = el.textStrokeColor || '#000000';
-      ctx.lineWidth = el.textStrokeWidth;
-      ctx.strokeText(cap.char, cap.x, top + cap.y);
+    const capFont = buildFontString(el, cap.size);
+    ctx.save();
+    ctx.font = capFont;
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'left';
+    for (const shadow of paint.shadows) {
+      if ('filter' in ctx && shadow.blur > 0) ctx.filter = `blur(${shadow.blur}px)`;
+      ctx.fillStyle = shadow.color;
+      paintRun(ctx, cap.char, cap.x + shadow.dx, top + cap.y + shadow.dy, capFont, 0, 0);
+      if ('filter' in ctx) ctx.filter = 'none';
     }
-    ctx.fillText(cap.char, cap.x, top + cap.y);
+    if (!paint.fillTransparent) {
+      ctx.fillStyle = fillStyle;
+      paintRun(ctx, cap.char, cap.x, top + cap.y, capFont, 0, 0);
+    }
+    if (paint.strokeWidth > 0) {
+      ctx.strokeStyle = paint.strokeColor;
+      ctx.lineWidth = paint.strokeWidth;
+      strokeRun(ctx, cap.char, cap.x, top + cap.y, capFont, 0, 0);
+    }
+    ctx.restore();
   }
 
   ctx.restore();
+}
+
+/** Draws a run glyph by glyph so tracking survives export everywhere. */
+function paintRun(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  font: string,
+  letterSpacing: number,
+  wordSpacing: number
+) {
+  if (!text) return;
+  if (!letterSpacing && !wordSpacing) {
+    ctx.fillText(text, x, y);
+    return;
+  }
+  ctx.save();
+  ctx.font = font;
+  let cursor = x;
+  for (const ch of text) {
+    ctx.fillText(ch, cursor, y);
+    cursor += measureTextWidth(ch, font) + letterSpacing + (ch === ' ' ? wordSpacing : 0);
+  }
+  ctx.restore();
+}
+
+function strokeRun(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  font: string,
+  letterSpacing: number,
+  wordSpacing: number
+) {
+  if (!text) return;
+  if (!letterSpacing && !wordSpacing) {
+    ctx.strokeText(text, x, y);
+    return;
+  }
+  ctx.save();
+  ctx.font = font;
+  let cursor = x;
+  for (const ch of text) {
+    ctx.strokeText(ch, cursor, y);
+    cursor += measureTextWidth(ch, font) + letterSpacing + (ch === ' ' ? wordSpacing : 0);
+  }
+  ctx.restore();
+}
+
+/** CSS-style gradient (0° = to top, 90° = to right) mapped onto a box. */
+function gradientForBox(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  angleDeg: number,
+  from: string,
+  to: string
+): CanvasGradient {
+  const rad = (angleDeg * Math.PI) / 180;
+  const dx = Math.sin(rad);
+  const dy = -Math.cos(rad);
+  const length = Math.abs(width * dx) + Math.abs(height * dy);
+  const cx = width / 2;
+  const cy = height / 2;
+  const g = ctx.createLinearGradient(
+    cx - (dx * length) / 2,
+    cy - (dy * length) / 2,
+    cx + (dx * length) / 2,
+    cy + (dy * length) / 2
+  );
+  g.addColorStop(0, from);
+  g.addColorStop(1, to);
+  return g;
 }
 
 async function drawShapeElement(ctx: CanvasRenderingContext2D, el: ShapeElement) {

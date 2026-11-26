@@ -32,6 +32,17 @@ export interface LaidOutLine {
   isLast: boolean;
 }
 
+export interface CurveChar {
+  text: string;
+  /** Centre of the glyph box. */
+  x: number;
+  y: number;
+  /** Clockwise rotation in degrees. */
+  angle: number;
+  fontSize: number;
+  width: number;
+}
+
 export interface LaidOutDropCap {
   char: string;
   x: number;
@@ -51,6 +62,8 @@ export interface TextLayoutResult {
   columnCount: number;
   columnGap: number;
   dropCap?: LaidOutDropCap;
+  /** Present when the element is curved: glyphs placed on a circular arc. */
+  curve?: { chars: CurveChar[]; contentHeight: number };
   /** True when the layout is taller than the frame (after any auto-fit). */
   overflows: boolean;
 }
@@ -309,6 +322,37 @@ export function layoutText(el: TextElement, options: TextLayoutOptions = {}): Te
   const textWidth = Math.max(20, columnWidth - listIndent - hanging);
 
   const rawText = applyTextTransform(el.text || '', el);
+  const curveBend = el.textCurve ?? 0;
+
+  // Curved text bypasses line layout: glyphs are placed on an arc instead.
+  if (curveBend !== 0) {
+    const curve = buildCurveLayout(
+      el,
+      rawText.replace(/\n+/g, ' ').trim(),
+      baseSize,
+      font,
+      scriptScale,
+      baselineShift,
+      letterSpacing,
+      wordSpacing,
+      padding,
+      boxW,
+      curveBend
+    );
+    return {
+      fontSize: baseSize,
+      lines: [],
+      contentHeight: curve.contentHeight,
+      padding,
+      textLeft: padding,
+      columnWidth: boxW,
+      columnCount: 1,
+      columnGap: 0,
+      curve,
+      overflows: curve.contentHeight > boxH + 0.5,
+    };
+  }
+
   const firstPara = rawText.split('\n')[0] || '';
   const firstChar = firstPara.trim()[0] || '';
   const hasDropCap = Boolean(el.dropCap && firstChar);
@@ -500,6 +544,73 @@ export function layoutText(el: TextElement, options: TextLayoutOptions = {}): Te
     dropCap,
     overflows,
   };
+}
+
+/**
+ * Places each glyph on a circular arc. `bend` is a percentage of a full turn:
+ * 100 wraps the text into a complete ring, 35 gives a gentle arch, negative
+ * values bow it downwards like a bowl.
+ */
+function buildCurveLayout(
+  el: TextElement,
+  text: string,
+  baseSize: number,
+  font: string,
+  scriptScale: number,
+  baselineShift: number,
+  letterSpacing: number,
+  wordSpacing: number,
+  padding: number,
+  boxW: number,
+  bend: number
+): { chars: CurveChar[]; contentHeight: number } {
+  const chars: CurveChar[] = [];
+  const glyphs = Array.from(text);
+  if (glyphs.length === 0) return { chars, contentHeight: baseSize };
+
+  const widths = glyphs.map((ch) => measureRun(ch, font, letterSpacing, wordSpacing));
+  const totalWidth = Math.max(1, widths.reduce((a, b) => a + b, 0));
+  const pct = Math.max(-100, Math.min(100, Math.abs(bend))) / 100;
+  const sweep = Math.PI * 2 * pct; // total angle the string covers
+  const upward = bend > 0;
+
+  // A full ring only reads if the circle is big enough for the glyphs; when the
+  // text is short the radius grows and the letters spread out along the arc
+  // (exactly what Canva does) instead of piling up on a tight bend.
+  const minRadius = baseSize * 1.55;
+  let radius = Math.max(minRadius, totalWidth / Math.max(0.001, sweep));
+  const usableHalf = Math.max(minRadius, boxW / 2 - padding - baseSize * 0.5);
+  if (pct > 0.85) radius = Math.min(radius, Math.max(minRadius, usableHalf));
+
+  const cx = padding + boxW / 2;
+  const drop = radius * (1 - Math.cos(sweep / 2));
+  const arcTop = padding + baseSize * 0.6;
+
+  let cursor = 0;
+  glyphs.forEach((ch, index) => {
+    const width = widths[index];
+    const fraction = (cursor + width / 2) / totalWidth;
+    const theta = (fraction - 0.5) * sweep;
+    const x = cx + radius * Math.sin(theta);
+    const y = upward
+      ? arcTop + radius * (1 - Math.cos(theta))
+      : arcTop + drop - radius * (1 - Math.cos(theta));
+    chars.push({
+      text: ch,
+      x,
+      y,
+      angle: (upward ? theta : -theta) * (180 / Math.PI),
+      fontSize: baseSize,
+      width,
+    });
+    cursor += width;
+  });
+
+  void scriptScale;
+  void baselineShift;
+  void el;
+  const contentHeight = (upward ? drop : drop) + baseSize * 1.35;
+  return { chars, contentHeight };
 }
 
 /** Vertical offset that aligns the block inside its frame. */

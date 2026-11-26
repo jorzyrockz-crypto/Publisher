@@ -143,6 +143,11 @@ export interface TextElement extends BaseElement {
   textGradientAngle?: number;
   /** Quick style tag, used by "restyle all with this style". */
   textStyleId?: string;
+  /** Canva-style text effect (shadow, lift, hollow, neon, fire, glitch...). */
+  textEffect?: 'none' | 'shadow' | 'lift' | 'outline' | 'hollow' | 'echo' | 'splice' | 'neon' | 'fire' | 'glitch';
+  textEffectColor?: string;
+  /** Curved text: -100 (trough) .. 100 (full ring). */
+  textCurve?: number;
 }
 
 export interface ShapeElement extends BaseElement {
