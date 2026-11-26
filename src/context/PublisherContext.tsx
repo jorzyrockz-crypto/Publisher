@@ -20,6 +20,7 @@ import {
 import { buildMergedPartFromShape } from '../utils/shapePaths';
 import { TEMPLATES } from '../constants/templates';
 import { reflowElementsForSize } from '../utils/smartResize';
+import { CompositionStyle } from '../utils/designBlueprints';
 import { DEFAULT_BRAND_KITS, rebrandPageWithKit } from '../utils/brandRebrand';
 import { PAGE_SIZES } from '../constants/pageSizes';
 import { COLOR_SCHEMES } from '../constants/colorSchemes';
@@ -95,7 +96,7 @@ interface PublisherContextType {
   duplicateActivePage: () => void;
   deleteActivePage: () => void;
   deletePageById: (pageId: string) => void;
-  generateBrandBoardSizes: (sizeNames: string[]) => void;
+  generateBrandBoardSizes: (sizeNames: string[], layoutStyle?: CompositionStyle) => void;
   setPageSize: (sizeName: string) => void;
   setPageOrientation: (orientation: 'portrait' | 'landscape') => void;
   updatePagePosition: (pageIndex: number, x: number, y: number) => void;
@@ -464,7 +465,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   );
 
   const generateBrandBoardSizes = useCallback(
-    (sizeNames: string[]) => {
+    (sizeNames: string[], layoutStyle: CompositionStyle = 'auto') => {
       const defs = sizeNames
         .map((name) => PAGE_SIZES.find((s) => s.name === name))
         .filter((d): d is NonNullable<typeof d> => Boolean(d));
@@ -502,7 +503,8 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           def.width,
           def.height,
           targetMargins,
-          true
+          true,
+          layoutStyle
         );
 
         const newPage: Page = {

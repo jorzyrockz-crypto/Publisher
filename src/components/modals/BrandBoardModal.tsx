@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
 import { PAGE_SIZES } from '../../constants/pageSizes';
+import { CompositionStyle } from '../../utils/designBlueprints';
 import { Sparkles, X, Check, LayoutGrid } from 'lucide-react';
 
 export const BrandBoardModal: React.FC = () => {
@@ -13,6 +14,7 @@ export const BrandBoardModal: React.FC = () => {
     setViewMode,
   } = usePublisher();
 
+  const [layoutStyle, setLayoutStyle] = useState<CompositionStyle>('auto');
   const [selectedSizes, setSelectedSizes] = useState<string[]>([
     'ig-post',
     'ig-story',
@@ -43,7 +45,7 @@ export const BrandBoardModal: React.FC = () => {
 
   const handleGenerate = () => {
     if (selectedSizes.length === 0) return;
-    generateBrandBoardSizes(selectedSizes);
+    generateBrandBoardSizes(selectedSizes, layoutStyle);
     setViewMode('artboard');
     setZoom(0.4);
     setIsBrandBoardModalOpen(false);
@@ -86,6 +88,38 @@ export const BrandBoardModal: React.FC = () => {
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
+          {/* Composition Style Selector */}
+          <div className="flex items-center justify-between flex-wrap gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
+            <div>
+              <div className="text-xs font-bold text-slate-700">Intelligent Designer Style</div>
+              <div className="text-[10.5px] text-slate-400">
+                Measures wrapped headlines &amp; locks button proportions automatically
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-1 bg-slate-200/70 p-1 rounded-xl">
+              {(
+                [
+                  { id: 'auto', label: 'Smart Auto' },
+                  { id: 'editorial', label: 'Editorial Left' },
+                  { id: 'centered', label: 'Centered' },
+                ] as const
+              ).map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => setLayoutStyle(opt.id)}
+                  className={`px-3 py-1 rounded-lg text-[11px] font-semibold transition ${
+                    layoutStyle === opt.id
+                      ? 'bg-white text-indigo-800 shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Quick Suites */}
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2">
