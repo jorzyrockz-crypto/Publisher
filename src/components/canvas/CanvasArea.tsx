@@ -324,8 +324,8 @@ export const CanvasArea: React.FC = () => {
             <div
               className="relative flex-shrink-0"
               style={{
-                width: `${artboardMaxRight * zoom}px`,
-                height: `${artboardMaxBottom * zoom}px`,
+                width: `${artboardMaxRight * zoom + 80}px`,
+                height: `${artboardMaxBottom * zoom + 96}px`,
               }}
             >
               {project.pages.map((pg, idx) => {

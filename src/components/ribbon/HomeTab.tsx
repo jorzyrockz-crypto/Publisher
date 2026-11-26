@@ -58,14 +58,14 @@ export const HomeTab: React.FC = () => {
       : null;
 
   return (
-    <div className="flex items-center h-20 px-3 py-1 gap-3 text-xs text-[#202833] overflow-x-auto select-none">
+    <div className="flex items-center h-[84px] px-2 py-1.5 gap-2 text-xs text-[#202833] overflow-x-auto select-none">
       {/* 1. Clipboard Group */}
-      <div className="flex flex-col items-center justify-between h-full py-1 pr-3 border-r border-[#e5e9ee] flex-shrink-0">
+      <div className="flex flex-col items-center justify-between h-full py-1 pr-2 border-r border-[#e5e9ee] flex-shrink-0">
         <div className="flex items-center gap-1 my-auto">
           <button
             onClick={duplicateSelectedElements}
             disabled={selectedElementIds.length === 0}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] disabled:opacity-40 text-xs font-medium text-[#202833] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] disabled:opacity-40 text-xs font-medium text-[#202833] transition-all cursor-pointer"
             title="Duplicate Selected (Ctrl+D)"
           >
             <Copy size={15} className="text-[#087f83]" />
@@ -86,7 +86,7 @@ export const HomeTab: React.FC = () => {
       </div>
 
       {/* 2. Font Group */}
-      <div className="flex flex-col justify-between h-full py-1 px-3 border-r border-[#e5e9ee] flex-shrink-0 min-w-[220px]">
+      <div className="flex flex-col justify-between h-full py-1 px-2 border-r border-[#e5e9ee] flex-shrink-0 min-w-[220px]">
         <div className="space-y-1.5 my-auto">
           {/* Top row: Font family & Size */}
           <div className="flex items-center gap-1.5">
@@ -194,7 +194,7 @@ export const HomeTab: React.FC = () => {
       </div>
 
       {/* 3. Paragraph Group */}
-      <div className="flex flex-col justify-between h-full py-1 px-3 border-r border-[#e5e9ee] flex-shrink-0">
+      <div className="flex flex-col justify-between h-full py-1 px-2 border-r border-[#e5e9ee] flex-shrink-0">
         <div className="space-y-1.5 my-auto">
           {/* Alignment Segmented Control */}
           <div className="flex items-center bg-[#f3f5f7] p-0.5 rounded-[8px] border border-[#e5e9ee]">
@@ -250,12 +250,12 @@ export const HomeTab: React.FC = () => {
       </div>
 
       {/* 4. Objects Group */}
-      <div className="flex flex-col justify-between h-full py-1 px-3 border-r border-[#e5e9ee] flex-shrink-0">
+      <div className="flex flex-col justify-between h-full py-1 px-2 border-r border-[#e5e9ee] flex-shrink-0">
         <div className="flex items-center gap-1 my-auto relative">
           {/* Draw Text Box */}
           <button
             onClick={() => addTextBox()}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
             title="Draw Text Box"
           >
             <Type size={15} className="text-[#087f83]" />
@@ -267,7 +267,7 @@ export const HomeTab: React.FC = () => {
             <button
               ref={shapesBtnRef}
               onClick={() => setIsShapesOpen(!isShapesOpen)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
               title="Insert Shapes"
             >
               <Shapes size={15} className="text-[#087f83]" />
@@ -316,7 +316,7 @@ export const HomeTab: React.FC = () => {
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
             title="Insert Picture"
           >
             <ImageIcon size={15} className="text-[#087f83]" />
@@ -325,7 +325,7 @@ export const HomeTab: React.FC = () => {
 
           <button
             onClick={() => addPicturePlaceholder()}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
             title="Insert Picture Placeholder"
           >
             <ImagePlus size={15} className="text-[#087f83]" />
@@ -336,7 +336,7 @@ export const HomeTab: React.FC = () => {
       </div>
 
       {/* 5. Arrange Group */}
-      <div className="flex flex-col justify-between h-full py-1 px-3 border-r border-[#e5e9ee] flex-shrink-0">
+      <div className="flex flex-col justify-between h-full py-1 px-2 border-r border-[#e5e9ee] flex-shrink-0">
         <div className="space-y-1.5 my-auto">
           <div className="flex items-center gap-1.5">
             <button
@@ -384,7 +384,7 @@ export const HomeTab: React.FC = () => {
                       alignSelected(alignment);
                       setIsAlignOpen(false);
                     }}
-                    className="w-full text-left px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] rounded-[8px] text-xs capitalize transition cursor-pointer"
+                    className="w-full text-left px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] rounded-[8px] text-xs capitalize transition cursor-pointer"
                   >
                     Align {alignment}
                   </button>
@@ -396,7 +396,7 @@ export const HomeTab: React.FC = () => {
                   distributeSelected('horizontal');
                   setIsAlignOpen(false);
                 }}
-                className="w-full text-left px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] rounded-[8px] text-xs transition cursor-pointer"
+                className="w-full text-left px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] rounded-[8px] text-xs transition cursor-pointer"
               >
                 Distribute Horizontally
               </button>
@@ -405,7 +405,7 @@ export const HomeTab: React.FC = () => {
                   distributeSelected('vertical');
                   setIsAlignOpen(false);
                 }}
-                className="w-full text-left px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] rounded-[8px] text-xs transition cursor-pointer"
+                className="w-full text-left px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] rounded-[8px] text-xs transition cursor-pointer"
               >
                 Distribute Vertically
               </button>

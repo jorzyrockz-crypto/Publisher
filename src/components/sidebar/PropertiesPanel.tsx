@@ -717,7 +717,7 @@ export const PropertiesPanel: React.FC = () => {
                   <span>Page {project.activePageIndex + 1} Setup</span>
                 </div>
                 <span className="text-[10px] font-mono text-slate-400">
-                  {(activePage.width / 96).toFixed(1)}"Ã—{(activePage.height / 96).toFixed(1)}"
+                  {(activePage.width / 96).toFixed(1)}"×{(activePage.height / 96).toFixed(1)}"
                 </span>
               </div>
 
@@ -3560,7 +3560,7 @@ export const PropertiesPanel: React.FC = () => {
               <div>
                 <div className="flex justify-between text-[10px] text-slate-500 font-medium mb-0.5">
                   <span>Image Zoom</span>
-                  <span>{((selectedElement as ImageElement).imageScale ?? 1).toFixed(2)}Ã—</span>
+                  <span>{((selectedElement as ImageElement).imageScale ?? 1).toFixed(2)}×</span>
                 </div>
                 <input
                   type="range"

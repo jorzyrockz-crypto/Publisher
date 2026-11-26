@@ -11,7 +11,6 @@ import {
   LayoutGrid,
   Search,
   CheckCircle2,
-  Command,
 } from 'lucide-react';
 
 export const QuickAccessToolbar: React.FC = () => {
@@ -143,8 +142,7 @@ export const QuickAccessToolbar: React.FC = () => {
             className="w-full bg-[#f8fafb] hover:bg-[#f3f5f7] focus:bg-white text-[#202833] placeholder-[#9aa4ae] pl-8 pr-12 py-1.5 rounded-[8px] text-[11.5px] outline-none border border-[#e5e9ee] focus:border-[#73b9b7] transition-all"
           />
           <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 text-[9.5px] bg-[#f3f5f7] border border-[#e5e9ee] text-[#778391] px-1.5 py-0.5 rounded-[6px] font-mono pointer-events-none">
-            <Command size={9} />
-            <span>K</span>
+            <span>Ctrl+K</span>
           </div>
         </div>
 

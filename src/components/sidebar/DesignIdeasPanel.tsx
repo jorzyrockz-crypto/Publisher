@@ -128,7 +128,7 @@ export const DesignIdeasPanel: React.FC = () => {
           <button
             type="submit"
             disabled={isGenerating}
-            className="px-2.5 py-1.5 rounded-xl bg-[#087f83] hover:bg-[#06696c] disabled:bg-indigo-400 text-white text-[10.5px] font-bold flex items-center gap-1 transition cursor-pointer"
+            className="px-2.5 py-1.5 rounded-[8px] bg-[#087f83] hover:bg-[#06696c] disabled:opacity-50 !text-white text-[10.5px] font-semibold flex items-center gap-1 transition cursor-pointer"
             title="Generate custom style suggestion"
           >
             <Wand2 size={11} />

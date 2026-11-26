@@ -61,7 +61,7 @@ export const Ribbon: React.FC = () => {
 
       {/* Ribbon Command Strip Contents */}
       {!isCollapsed && (
-        <div className="bg-white min-h-[84px] flex items-center px-2 overflow-x-auto transition-all animate-in slide-in-from-top-1 duration-150">
+        <div className="bg-white min-h-[88px] flex items-center px-2 overflow-x-auto transition-all animate-in slide-in-from-top-1 duration-150">
           {activeTab === 'home' && <HomeTab />}
           {activeTab === 'insert' && <InsertTab />}
           {activeTab === 'page-design' && <PageDesignTab />}

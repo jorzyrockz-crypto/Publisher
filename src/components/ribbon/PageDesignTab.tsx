@@ -41,13 +41,13 @@ export const PageDesignTab: React.FC = () => {
   const [isSchemesDropdownOpen, setIsSchemesDropdownOpen] = useState(false);
 
   return (
-    <div className="flex items-center h-20 px-3 py-1 gap-3 text-xs text-[#202833] overflow-x-auto select-none">
+    <div className="flex items-center h-[84px] px-2 py-1.5 gap-2 text-xs text-[#202833] overflow-x-auto select-none">
       {/* 1. Template Group */}
-      <div className="flex flex-col justify-between h-full py-1 pr-3 border-r border-[#e5e9ee] flex-shrink-0">
+      <div className="flex flex-col justify-between h-full py-1 pr-2 border-r border-[#e5e9ee] flex-shrink-0">
         <div className="my-auto flex items-center gap-1">
           <button
             onClick={() => setIsBackstageOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
             title="Browse Templates"
           >
             <FileText size={15} className="text-[#087f83]" />
@@ -56,7 +56,7 @@ export const PageDesignTab: React.FC = () => {
 
           <button
             onClick={() => setIsBrandBoardModalOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
             title="Generate Multiple Brand Sizes on Artboard"
           >
             <LayoutGrid size={15} className="text-[#087f83]" />
@@ -67,7 +67,7 @@ export const PageDesignTab: React.FC = () => {
       </div>
 
       {/* 2. Page Setup Group */}
-      <div className="flex flex-col justify-between h-full py-1 px-3 border-r border-[#e5e9ee] flex-shrink-0">
+      <div className="flex flex-col justify-between h-full py-1 px-2 border-r border-[#e5e9ee] flex-shrink-0">
         <div className="space-y-1.5 my-auto">
           <div className="flex items-center gap-2">
             {/* Margins Dropdown */}
@@ -91,7 +91,7 @@ export const PageDesignTab: React.FC = () => {
                     setPageMargins({ top: 48, right: 48, bottom: 48, left: 48 });
                     setIsMarginsDropdownOpen(false);
                   }}
-                  className="w-full text-left px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] rounded-[8px] text-xs transition cursor-pointer"
+                  className="w-full text-left px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] rounded-[8px] text-xs transition cursor-pointer"
                 >
                   Normal (0.5")
                 </button>
@@ -100,7 +100,7 @@ export const PageDesignTab: React.FC = () => {
                     setPageMargins({ top: 24, right: 24, bottom: 24, left: 24 });
                     setIsMarginsDropdownOpen(false);
                   }}
-                  className="w-full text-left px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] rounded-[8px] text-xs transition cursor-pointer"
+                  className="w-full text-left px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] rounded-[8px] text-xs transition cursor-pointer"
                 >
                   Narrow (0.25")
                 </button>
@@ -109,7 +109,7 @@ export const PageDesignTab: React.FC = () => {
                     setPageMargins({ top: 96, right: 96, bottom: 96, left: 96 });
                     setIsMarginsDropdownOpen(false);
                   }}
-                  className="w-full text-left px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] rounded-[8px] text-xs transition cursor-pointer"
+                  className="w-full text-left px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] rounded-[8px] text-xs transition cursor-pointer"
                 >
                   Wide (1.0")
                 </button>
@@ -118,7 +118,7 @@ export const PageDesignTab: React.FC = () => {
                     setPageMargins({ top: 0, right: 0, bottom: 0, left: 0 });
                     setIsMarginsDropdownOpen(false);
                   }}
-                  className="w-full text-left px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] rounded-[8px] text-xs transition cursor-pointer"
+                  className="w-full text-left px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] rounded-[8px] text-xs transition cursor-pointer"
                 >
                   None (0")
                 </button>
@@ -177,7 +177,7 @@ export const PageDesignTab: React.FC = () => {
                     setPageSize(size.name);
                     setIsSizeDropdownOpen(false);
                   }}
-                  className="w-full text-left px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] rounded-[8px] text-xs transition cursor-pointer"
+                  className="w-full text-left px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] rounded-[8px] text-xs transition cursor-pointer"
                 >
                   {size.displayName}
                 </button>
@@ -189,11 +189,11 @@ export const PageDesignTab: React.FC = () => {
       </div>
 
       {/* 3. Brand Kit & Color Schemes Group */}
-      <div className="flex flex-col justify-between h-full py-1 px-3 border-r border-[#e5e9ee] flex-shrink-0 relative">
+      <div className="flex flex-col justify-between h-full py-1 px-2 border-r border-[#e5e9ee] flex-shrink-0 relative">
         <div className="my-auto flex items-center gap-1">
           <button
             onClick={() => setIsBrandKitModalOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
             title={`Open Brand Kit Studio (Active: ${activeBrandKit.name})`}
           >
             <Sparkles size={15} className="text-[#087f83]" />
@@ -203,7 +203,7 @@ export const PageDesignTab: React.FC = () => {
           <button
             ref={schemesBtnRef}
             onClick={() => setIsSchemesDropdownOpen(!isSchemesDropdownOpen)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
             title="Change Color Scheme"
           >
             <Palette size={15} className="text-[#087f83]" />
@@ -213,7 +213,7 @@ export const PageDesignTab: React.FC = () => {
 
           <button
             onClick={() => applyBrandKit(activeBrandKit, 'all')}
-            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+            className="hidden sm:flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
             title={`Apply "${activeBrandKit.name}" to all artboards`}
           >
             <div className="grid grid-cols-2 gap-0.5 w-3.5 h-3.5">
@@ -259,7 +259,7 @@ export const PageDesignTab: React.FC = () => {
       </div>
 
       {/* 4. Canvas Background */}
-      <div className="flex flex-col justify-between h-full py-1 px-3 border-r border-[#e5e9ee] flex-shrink-0">
+      <div className="flex flex-col justify-between h-full py-1 px-2 border-r border-[#e5e9ee] flex-shrink-0">
         <div className="flex items-center gap-2 my-auto">
           <input
             type="color"

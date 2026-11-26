@@ -31,9 +31,9 @@ export const ViewTab: React.FC = () => {
   } = usePublisher();
 
   return (
-    <div className="flex items-center h-20 px-3 py-1 gap-3 text-xs text-[#202833] overflow-x-auto select-none">
+    <div className="flex items-center h-[84px] px-2 py-1.5 gap-2 text-xs text-[#202833] overflow-x-auto select-none">
       {/* 1. Show / Hide Group with modern switches */}
-      <div className="flex flex-col justify-between h-full py-1 pr-3 border-r border-[#e5e9ee] flex-shrink-0 min-w-[145px]">
+      <div className="flex flex-col justify-between h-full py-1 pr-2 border-r border-[#e5e9ee] flex-shrink-0 min-w-[145px]">
         <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 my-auto">
           <div
             onClick={() => setRulerVisible(!rulerVisible)}
@@ -79,11 +79,11 @@ export const ViewTab: React.FC = () => {
       </div>
 
       {/* 2. Zoom Controls */}
-      <div className="flex flex-col justify-between h-full py-1 px-3 border-r border-[#e5e9ee] flex-shrink-0">
+      <div className="flex flex-col justify-between h-full py-1 px-2 border-r border-[#e5e9ee] flex-shrink-0">
         <div className="flex items-center gap-1.5 my-auto">
           <button
             onClick={zoom100}
-            className="flex items-center gap-1 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] border border-[#e5e9ee] bg-[#f8fafb] text-xs font-semibold text-[#202833] transition-all cursor-pointer tabular-nums"
+            className="flex items-center gap-1 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] border border-[#e5e9ee] bg-[#f8fafb] text-xs font-semibold text-[#202833] transition-all cursor-pointer tabular-nums"
             title="100% Actual Size"
           >
             100%
@@ -91,7 +91,7 @@ export const ViewTab: React.FC = () => {
 
           <button
             onClick={zoomFit}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
             title="Fit Whole Page to Window"
           >
             <Maximize size={15} className="text-[#087f83]" />

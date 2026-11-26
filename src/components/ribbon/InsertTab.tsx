@@ -77,13 +77,13 @@ export const InsertTab: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center h-20 px-3 py-1 gap-3 text-xs text-[#202833] overflow-x-auto select-none">
+    <div className="flex items-center h-[84px] px-2 py-1.5 gap-2 text-xs text-[#202833] overflow-x-auto select-none">
       {/* 1. Pages Group */}
-      <div className="flex flex-col justify-between h-full py-1 pr-3 border-r border-[#e5e9ee] flex-shrink-0">
+      <div className="flex flex-col justify-between h-full py-1 pr-2 border-r border-[#e5e9ee] flex-shrink-0">
         <div className="flex items-center gap-1 my-auto">
           <button
             onClick={addPage}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
             title="Insert Blank Page"
           >
             <FilePlus size={15} className="text-[#087f83]" />
@@ -92,7 +92,7 @@ export const InsertTab: React.FC = () => {
 
           <button
             onClick={duplicateActivePage}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
             title="Duplicate Current Page"
           >
             <Copy size={15} className="text-[#52606c]" />
@@ -103,12 +103,12 @@ export const InsertTab: React.FC = () => {
       </div>
 
       {/* 2. Tables Group */}
-      <div className="flex flex-col justify-between h-full py-1 px-3 border-r border-[#e5e9ee] flex-shrink-0 relative">
+      <div className="flex flex-col justify-between h-full py-1 px-2 border-r border-[#e5e9ee] flex-shrink-0 relative">
         <div className="my-auto">
           <button
             ref={tableBtnRef}
             onClick={() => setIsTableDropdownOpen(!isTableDropdownOpen)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
             title="Insert Table"
           >
             <TableIcon size={15} className="text-[#087f83]" />
@@ -161,7 +161,7 @@ export const InsertTab: React.FC = () => {
       </div>
 
       {/* 3. Illustrations & Media */}
-      <div className="flex flex-col justify-between h-full py-1 px-3 border-r border-[#e5e9ee] flex-shrink-0">
+      <div className="flex flex-col justify-between h-full py-1 px-2 border-r border-[#e5e9ee] flex-shrink-0">
         <div className="flex items-center gap-1 my-auto">
           {/* Picture (Single or Batch Multiple Import in Staggered Grid) */}
           <input
@@ -227,7 +227,7 @@ export const InsertTab: React.FC = () => {
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
             title="Upload Picture"
           >
             <ImageIcon size={15} className="text-[#087f83]" />
@@ -239,7 +239,7 @@ export const InsertTab: React.FC = () => {
             <button
               ref={placeholderBtnRef}
               onClick={() => setIsPlaceholderOpen(!isPlaceholderOpen)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
               title="Insert Empty Picture Placeholder (Drag & drop or customize anytime)"
             >
               <ImagePlus size={15} className="text-[#087f83]" />
@@ -318,7 +318,7 @@ export const InsertTab: React.FC = () => {
           {/* Free Hybrid AI Image Studio */}
           <button
             onClick={() => setIsAIImageModalOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
             title="Free AI Image Studio (Hybrid Cloud + Offline Art)"
           >
             <Wand2 size={15} className="text-[#087f83]" />
@@ -328,7 +328,7 @@ export const InsertTab: React.FC = () => {
           {/* Photo Collage Builder */}
           <button
             onClick={() => setIsCollageModalOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
             title="Create Multi-Photo Collage Grid"
           >
             <LayoutGrid size={15} className="text-[#087f83]" />
@@ -354,7 +354,7 @@ export const InsertTab: React.FC = () => {
             <button
               ref={stickerBtnRef}
               onClick={() => setIsStickersOpen(!isStickersOpen)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
               title="Insert Decorative & Vibe Pack Stickers"
             >
               <Smile size={15} className="text-[#087f83]" />
@@ -461,7 +461,7 @@ export const InsertTab: React.FC = () => {
           {/* Quick Shapes */}
           <button
             onClick={() => addShape('rounded-rect')}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
             title="Add Rounded Rectangle"
           >
             <Square size={15} className="text-[#52606c]" />
@@ -471,7 +471,7 @@ export const InsertTab: React.FC = () => {
           {/* Line */}
           <button
             onClick={() => addLine()}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
             title="Insert Horizontal Divider Line"
           >
             <Minus size={15} className="text-[#52606c]" />
@@ -482,11 +482,11 @@ export const InsertTab: React.FC = () => {
       </div>
 
       {/* 4. Building Blocks */}
-      <div className="flex flex-col justify-between h-full py-1 px-3 border-r border-[#e5e9ee] flex-shrink-0">
+      <div className="flex flex-col justify-between h-full py-1 px-2 border-r border-[#e5e9ee] flex-shrink-0">
         <div className="flex items-center gap-1 my-auto">
           <button
             onClick={() => addAccent('coupon')}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
             title="Insert Tear-off Special Coupon"
           >
             <Scissors size={15} className="text-[#087f83]" />
@@ -495,7 +495,7 @@ export const InsertTab: React.FC = () => {
 
           <button
             onClick={() => addAccent('pull-quote')}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
             title="Insert Large Pull Quote Accent"
           >
             <Quote size={15} className="text-[#087f83]" />
@@ -504,7 +504,7 @@ export const InsertTab: React.FC = () => {
 
           <button
             onClick={() => addAccent('masthead')}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
             title="Insert Newspaper / Newsletter Masthead"
           >
             <Layout size={15} className="text-[#087f83]" />
@@ -519,7 +519,7 @@ export const InsertTab: React.FC = () => {
         <div className="flex items-center gap-1 my-auto">
           <button
             onClick={() => setIsWordArtModalOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
             title="Insert WordArt Styles"
           >
             <Sparkles size={15} className="text-[#087f83]" />
@@ -531,7 +531,7 @@ export const InsertTab: React.FC = () => {
             <button
               ref={qrBtnRef}
               onClick={() => setIsQrOpen(!isQrOpen)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
               title="Create & Insert Scannable QR Code"
             >
               <QrCode size={15} className="text-[#52606c]" />
@@ -635,7 +635,7 @@ export const InsertTab: React.FC = () => {
 
           <button
             onClick={addPageNumberToken}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
             title="Insert Dynamic Page Number"
           >
             <Hash size={15} className="text-[#52606c]" />

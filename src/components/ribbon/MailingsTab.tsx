@@ -6,13 +6,13 @@ export const MailingsTab: React.FC = () => {
   const { setIsMailMergeOpen, addTextBox } = usePublisher();
 
   return (
-    <div className="flex items-center h-20 px-3 py-1 gap-3 text-xs text-[#202833] overflow-x-auto select-none">
+    <div className="flex items-center h-[84px] px-2 py-1.5 gap-2 text-xs text-[#202833] overflow-x-auto select-none">
       {/* 1. Start Mail Merge */}
-      <div className="flex flex-col justify-between h-full py-1 pr-3 border-r border-[#e5e9ee] flex-shrink-0">
+      <div className="flex flex-col justify-between h-full py-1 pr-2 border-r border-[#e5e9ee] flex-shrink-0">
         <div className="flex items-center gap-1 my-auto">
           <button
             onClick={() => setIsMailMergeOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] transition-all text-xs font-medium text-[#202833] cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] transition-all text-xs font-medium text-[#202833] cursor-pointer"
             title="Step-by-Step Mail Merge Wizard"
           >
             <Mail size={15} className="text-[#087f83]" />
@@ -23,7 +23,7 @@ export const MailingsTab: React.FC = () => {
       </div>
 
       {/* 2. Insert Merge Fields */}
-      <div className="flex flex-col justify-between h-full py-1 px-3 border-r border-[#e5e9ee] flex-shrink-0">
+      <div className="flex flex-col justify-between h-full py-1 px-2 border-r border-[#e5e9ee] flex-shrink-0">
         <div className="space-y-1.5 my-auto">
           <div className="flex items-center gap-1.5">
             <button
