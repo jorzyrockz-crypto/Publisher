@@ -15,6 +15,7 @@ on GitHub Pages.
 | Clipart.Free | Vite proxy | ⚠ needs a proxy — see below |
 | Pixabay (stock photos) | same function as production (`api/pixabay.js`) | ⚠ needs the serverless relay — see below |
 | Unsplash (stock photos) | same function as production (`api/unsplash.js`) | ⚠ needs the serverless relay for search only — see below |
+| AI Type Studio (headline ideas) | same function as production (`api/ai.js`) | ⚠ needs the serverless relay — see below |
 
 Every resolver returns an ordered candidate list, so a failed request silently
 falls through to the next strategy instead of breaking the search.
@@ -118,6 +119,32 @@ The key is on your Unsplash app page (Access Key, not the Secret Key).
   quiet notice; the other six sources keep working.
 - Never put "Unsplash" in your app's name or icon (their guideline), which is why
   the app is StudioPress and the tab is just `Uns`.
+
+## AI Type Studio on a static host
+
+The WordArt gallery's "AI ideas" panel asks a free text model to write display
+headlines and choose a WordArt style for each. Browsers are not allowed to call
+the model directly from every host, and the anonymous tier is rate-limited per
+IP, so one function brokers it:
+
+```
+GET /api/ai?mode=text&prompt=…    → { text, source }
+GET /api/ai?mode=diag[&probe=1]   → reachability, optional live probe
+```
+
+**No key is required.** It uses Pollinations' keyless text endpoint
+(`text.pollinations.ai`). If you set `POLLINATIONS_API_KEY` (type *sensitive*),
+the higher-limit `gen.pollinations.ai` endpoint is used instead — still
+server-side, never in the bundle.
+
+- The anonymous tier allows roughly **one request every 15–45 seconds per IP**,
+  so the panel sends one request per click and never retries in a loop.
+- When the model is busy, times out (25 s server-side, 28 s client-side) or
+  answers with anything unparseable, the panel shows **local suggestions**
+  computed in `src/utils/aiTypeStudio.ts` and labels them as such. The feature
+  never dead-ends, with or without a network.
+- Ideas are inserted as ordinary WordArt text boxes, so exports and printing are
+  unaffected.
 
 ### 2. Other static hosts (GitHub Pages, S3…)
 
