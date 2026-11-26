@@ -20,6 +20,11 @@ import {
 } from '../../utils/clipartSearch';
 import { getClipartProxyBase, saveClipartProxyBase } from '../../utils/apiEndpoints';
 import {
+  OpenverseItem,
+  fetchOpenverseAsDataUrl,
+  searchOpenverse,
+} from '../../utils/openverseSearch';
+import {
   Images,
   Search,
   X,
@@ -30,11 +35,11 @@ import {
   Sticker,
 } from 'lucide-react';
 
-type StockSourceFilter = 'all' | 'builtin' | 'clipartfree' | 'iconify' | 'wikimedia';
+type StockSourceFilter = 'all' | 'builtin' | 'clipartfree' | 'iconify' | 'wikimedia' | 'openverse';
 
 interface UnifiedStockItem {
   uid: string;
-  source: 'builtin' | 'clipartfree' | 'iconify' | 'wikimedia';
+  source: 'builtin' | 'clipartfree' | 'iconify' | 'wikimedia' | 'openverse';
   sourceLabel: string;
   title: string;
   thumbUrl: string;
@@ -45,6 +50,7 @@ interface UnifiedStockItem {
   rawClipartFree?: ClipartFreeItem;
   rawIconify?: IconifyItem;
   rawWikimedia?: WikimediaItem;
+  rawOpenverse?: OpenverseItem;
 }
 
 const QUICK_SEARCH_CHIPS = [
@@ -78,17 +84,42 @@ export const StockArtPanel: React.FC = () => {
   const [cfItems, setCfItems] = useState<UnifiedStockItem[]>([]);
   const [iconifyItems, setIconifyItems] = useState<UnifiedStockItem[]>([]);
   const [wikiItems, setWikiItems] = useState<UnifiedStockItem[]>([]);
+  const [ovItems, setOvItems] = useState<UnifiedStockItem[]>([]);
 
   const [loadingSources, setLoadingSources] = useState({
     clipartfree: false,
     iconify: false,
     wikimedia: false,
+    openverse: false,
   });
   const [sourceErrors, setSourceErrors] = useState<string[]>([]);
+  // Sources the user chose not to retry (persisted), e.g. because the host has
+  // no route to them. Keeps a dead third-party API from complaining every search.
+  const [disabledSources, setDisabledSources] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem('studiopress_disabled_sources');
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed.filter((x) => typeof x === 'string') : [];
+    } catch {
+      return [];
+    }
+  });
   const [insertingUid, setInsertingUid] = useState<string | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
   const hasAutoSearchedRef = useRef(false);
+
+  const setSourceDisabled = (source: string, disabled: boolean) => {
+    setDisabledSources((prev) => {
+      const next = disabled ? Array.from(new Set([...prev, source])) : prev.filter((x) => x !== source);
+      try {
+        localStorage.setItem('studiopress_disabled_sources', JSON.stringify(next));
+      } catch {
+        // ignore storage errors
+      }
+      return next;
+    });
+  };
 
   const runUnifiedSearch = (overrideQuery?: string) => {
     const q = (overrideQuery ?? query).trim();
@@ -115,7 +146,13 @@ export const StockArtPanel: React.FC = () => {
     abortRef.current = controller;
 
     setSourceErrors([]);
-    setLoadingSources({ clipartfree: true, iconify: true, wikimedia: true });
+    const cfEnabled = !disabledSources.includes('clipartfree');
+    setLoadingSources({
+      clipartfree: cfEnabled,
+      iconify: true,
+      wikimedia: true,
+      openverse: true,
+    });
 
     // 1. Built-in (instant local filter)
     const lowerQ = q.toLowerCase();
@@ -134,7 +171,8 @@ export const StockArtPanel: React.FC = () => {
     }));
     setBuiltinItems(matchedBuiltin);
 
-    // 2. Clipart.Free (CC0)
+    // 2. Clipart.Free (CC0) — skipped when the user disabled the source
+    if (cfEnabled) {
     searchClipartFree(q, { apiKey: clipartApiKey, signal: controller.signal })
       .then((res) => {
         if (controller.signal.aborted) return;
@@ -154,9 +192,10 @@ export const StockArtPanel: React.FC = () => {
       .catch((err) => {
         if (controller.signal.aborted) return;
         setCfItems([]);
+        const msg = err instanceof Error ? err.message : 'Error';
         setSourceErrors((prev) => [
           ...prev,
-          `Clipart.Free: ${err instanceof Error ? err.message : 'Error'}`,
+          msg.startsWith('Clipart.Free') ? msg : `Clipart.Free: ${msg}`,
         ]);
       })
       .finally(() => {
@@ -164,6 +203,9 @@ export const StockArtPanel: React.FC = () => {
           setLoadingSources((s) => ({ ...s, clipartfree: false }));
         }
       });
+    } else {
+      setCfItems([]);
+    }
 
     // 3. Iconify (200k+ SVG icons & color illustrations)
     searchIconify(q, { limit: 24, signal: controller.signal })
@@ -193,6 +235,38 @@ export const StockArtPanel: React.FC = () => {
       .finally(() => {
         if (!controller.signal.aborted) {
           setLoadingSources((s) => ({ ...s, iconify: false }));
+        }
+      });
+
+    // 5. Openverse — keyless, CORS-enabled CC imagery (works without a proxy)
+    searchOpenverse(q, { limit: 16, signal: controller.signal })
+      .then((items) => {
+        if (controller.signal.aborted) return;
+        setOvItems(
+          items.map((item) => ({
+            uid: `ov-${item.id}`,
+            source: 'openverse' as const,
+            sourceLabel: 'Openverse',
+            title: item.title,
+            thumbUrl: item.thumbUrl,
+            isSvg: item.isSvg,
+            width: item.width,
+            height: item.height,
+            rawOpenverse: item,
+          }))
+        );
+      })
+      .catch((err) => {
+        if (controller.signal.aborted) return;
+        setOvItems([]);
+        setSourceErrors((prev) => [
+          ...prev,
+          `Openverse: ${err instanceof Error ? err.message : 'Error'}`,
+        ]);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setLoadingSources((s) => ({ ...s, openverse: false }));
         }
       });
 
@@ -247,7 +321,7 @@ export const StockArtPanel: React.FC = () => {
   const combinedResults = useMemo(() => {
     let list: UnifiedStockItem[] = [];
     if (sourceFilter === 'all') {
-      const buckets = [builtinItems, cfItems, iconifyItems, wikiItems];
+      const buckets = [builtinItems, cfItems, iconifyItems, wikiItems, ovItems];
       const maxLen = Math.max(...buckets.map((b) => b.length), 0);
       for (let i = 0; i < maxLen; i++) {
         for (const bucket of buckets) {
@@ -260,6 +334,8 @@ export const StockArtPanel: React.FC = () => {
       list = cfItems;
     } else if (sourceFilter === 'iconify') {
       list = iconifyItems;
+    } else if (sourceFilter === 'openverse') {
+      list = ovItems;
     } else {
       list = wikiItems;
     }
@@ -268,10 +344,13 @@ export const StockArtPanel: React.FC = () => {
       list = list.filter((item) => item.isSvg);
     }
     return list;
-  }, [sourceFilter, svgOnly, builtinItems, cfItems, iconifyItems, wikiItems]);
+  }, [sourceFilter, svgOnly, builtinItems, cfItems, iconifyItems, wikiItems, ovItems]);
 
   const isAnyLoading =
-    loadingSources.clipartfree || loadingSources.iconify || loadingSources.wikimedia;
+    loadingSources.clipartfree ||
+    loadingSources.iconify ||
+    loadingSources.wikimedia ||
+    loadingSources.openverse;
 
   const handleInsertItem = async (item: UnifiedStockItem, asSticker = false) => {
     setInsertingUid(item.uid);
@@ -285,6 +364,8 @@ export const StockArtPanel: React.FC = () => {
         dataUrl = await fetchIconifyAsDataUrl(item.rawIconify);
       } else if (item.source === 'wikimedia' && item.rawWikimedia) {
         dataUrl = await fetchWikimediaAsDataUrl(item.rawWikimedia);
+      } else if (item.source === 'openverse' && item.rawOpenverse) {
+        dataUrl = await fetchOpenverseAsDataUrl(item.rawOpenverse);
       }
 
       if (!dataUrl) return;
@@ -369,7 +450,7 @@ export const StockArtPanel: React.FC = () => {
               Stock Art & Clipart
             </h3>
             <p className="text-[10px] text-[#5b6673] leading-tight">
-              Unified search across 4 sources
+              Unified search across 5 sources
             </p>
           </div>
         </div>
@@ -530,9 +611,13 @@ export const StockArtPanel: React.FC = () => {
             [
               { id: 'all', label: `All (${totalAllCount})` },
               { id: 'builtin', label: `Built-in (${builtinItems.length})` },
-              { id: 'clipartfree', label: `CF (${cfItems.length})` },
+              {
+                id: 'clipartfree',
+                label: disabledSources.includes('clipartfree') ? 'CF (off)' : `CF (${cfItems.length})`,
+              },
               { id: 'iconify', label: `Iconify (${iconifyItems.length})` },
               { id: 'wikimedia', label: `Wiki (${wikiItems.length})` },
+              { id: 'openverse', label: `Open (${ovItems.length})` },
             ] as const
           ).map((tab) => (
             <button
@@ -567,13 +652,66 @@ export const StockArtPanel: React.FC = () => {
       {/* Results Area */}
       <div className="flex-1 overflow-y-auto p-3 space-y-2.5 bg-[#f8fafb]">
         {sourceErrors.length > 0 && (
-          <div className="p-2 rounded-xl bg-amber-50 border border-amber-200 text-[10px] text-amber-800 space-y-0.5">
-            {sourceErrors.map((err, i) => (
-              <div key={i} className="flex items-start gap-1.5">
-                <AlertCircle size={12} className="flex-shrink-0 mt-0.5" />
-                <span>{err}</span>
-              </div>
-            ))}
+          <div className="space-y-1">
+            {Array.from(new Set(sourceErrors)).map((err) => {
+              const isClipart = err.startsWith('Clipart.Free');
+              return (
+                <div
+                  key={err}
+                  className="p-1.5 rounded-[8px] bg-amber-50 border border-amber-200 text-[10px] text-amber-900 flex items-start gap-1.5"
+                >
+                  <AlertCircle size={12} className="flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <span className="block leading-snug">{err}</span>
+                    {isClipart && (
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setShowKeyBar(true)}
+                          className="px-1.5 py-0.5 rounded-[5px] bg-white border border-amber-300 font-semibold hover:bg-amber-100 transition cursor-pointer"
+                        >
+                          Proxy settings
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSourceDisabled('clipartfree', true);
+                            setSourceErrors((prev) => prev.filter((e) => !e.startsWith('Clipart.Free')));
+                          }}
+                          className="px-1.5 py-0.5 rounded-[5px] bg-white border border-amber-300 font-semibold hover:bg-amber-100 transition cursor-pointer"
+                        >
+                          Don&apos;t retry
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSourceErrors((prev) => prev.filter((e) => e !== err))}
+                    className="p-0.5 rounded-[4px] text-amber-700 hover:bg-amber-100 cursor-pointer flex-shrink-0"
+                    aria-label="Dismiss"
+                  >
+                    <X size={11} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {disabledSources.includes('clipartfree') && (
+          <div className="flex items-center gap-1.5 px-1.5 py-1 rounded-[8px] bg-[#f8fafb] border border-[#e5e9ee] text-[10px] text-[#5b6673]">
+            <span>Clipart.Free is turned off for this browser.</span>
+            <button
+              type="button"
+              onClick={() => {
+                setSourceDisabled('clipartfree', false);
+                runUnifiedSearch();
+              }}
+              className="ml-auto px-1.5 py-0.5 rounded-[5px] bg-[#efeafd] border border-[#d3c9f9] text-[#5c4bb8] font-semibold hover:bg-[#f4f2ff] transition cursor-pointer"
+            >
+              Turn on
+            </button>
           </div>
         )}
 

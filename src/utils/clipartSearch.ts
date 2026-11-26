@@ -156,7 +156,7 @@ async function describeClipartHttpError(res: Response): Promise<string> {
     return 'Clipart.Free rate-limited this key (HTTP 429). Wait a moment and retry.';
   }
   if (res.status === 502 || res.status === 504) {
-    return `Clipart.Free could not be reached by the proxy (HTTP ${res.status}). The proxy host has no internet access to clipart.free — try again from a normal browser tab, or run StudioPress outside a sandbox.`;
+    return `Unreachable from this host (HTTP ${res.status}) — the proxy has no internet route to clipart.free. Openverse, Iconify and Wikimedia still work.`;
   }
   return `Clipart.Free HTTP ${res.status}${detail ? `: ${detail}` : ''}`;
 }

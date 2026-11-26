@@ -47,6 +47,7 @@ An authentic, modern, desktop-grade clone of **Microsoft Publisher** built with 
   - Publisher "BorderArt" decorative borders.
 - **Interactive Tables**:
   - Editable cell contents, custom header and cell background colors, and border widths.
+- **Stock Art Sources**: five live sources — built-in graphics, Iconify (200k+ icons), Wikimedia Commons, **Openverse** (keyless CC imagery that works on static hosts) and the optional Clipart.Free key.
 - **Building Blocks**:
   - Tear-off Coupons with dashed scissor lines.
   - Pull Quotes with large quotation marks.

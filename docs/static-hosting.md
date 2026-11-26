@@ -55,6 +55,10 @@ it reports exactly which hop failed:
 | `blocked (CORS or offline)` | The browser call was refused **and** no proxy answered | Add a proxy URL, or use Iconify / Wikimedia |
 | `404 for every known API path` | Clipart.Free changed its REST routes | Update the path list in `src/utils/clipartSearch.ts` |
 
+**Openverse** is the keyless fallback for imagery: `https://api.openverse.org` sends CORS headers and needs no
+proxy, so the Stock Art panel keeps working even when Clipart.Free is unreachable.
+Deploy the worker below only if you specifically want Clipart.Free.
+
 Requests are now issued **from the browser first** (`https://clipart.free/…`)
 and only fall back to the same-origin proxy — a dev server running in a sandbox
 with no outbound internet can no longer break the source on its own.
