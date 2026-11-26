@@ -16,7 +16,8 @@ import { buildShapePatternDataUri } from '../../utils/patternGenerator';
 import { PATTERN_CATALOG } from '../../utils/patternGenerator';
 import { layoutText, verticalOffset } from '../../utils/textLayout';
 import { buildTextEffectPainter } from '../../utils/textEffects';
-import { imageFit, imageMaskClip } from '../../utils/imageFrame';
+import { imageContentRect, imageFit, imageMaskClip } from '../../utils/imageFrame';
+import { useImageAspect } from '../../hooks/useImageAspect';
 import { elementClipPath } from '../../utils/shapeClip';
 
 interface ElementRendererProps {
@@ -1154,6 +1155,7 @@ const ImageRenderer: React.FC<{
   const imgScale = element.imageScale || 1;
   const panX = element.panX || 0;
   const panY = element.panY || 0;
+  const natural = useImageAspect(element.src);
 
   const art = element.borderArt || 'none';
   const artColor = element.borderArtColor || element.borderColor || '#ffffff';
@@ -1170,6 +1172,26 @@ const ImageRenderer: React.FC<{
       : 0);
   const effect = element.effectPreset || 'none';
   const isStickerMode = effect === 'sticker' || Boolean(element.isSticker);
+
+  // Candy-stripe art insets the picture by its padding; everything else fills
+  // the box. Absolute placement is measured from the padding box, so the
+  // offset has to be added back.
+  const picturePad = !isStickerMode && art === 'candy-stripe' ? 4 : 0;
+  const innerBox = {
+    width: Math.max(1, element.width - picturePad * 2),
+    height: Math.max(1, element.height - picturePad * 2),
+  };
+  // The picture is drawn at its fitted size times the zoom and then slid by
+  // `pan` — the same geometry the exporter and the crop gesture use, so a
+  // zoomed picture can still be composed inside its frame.
+  const picture = natural
+    ? imageContentRect(
+        innerBox,
+        natural,
+        { fit: imageFit(element), scale: imgScale },
+        { panX, panY }
+      )
+    : null;
 
   const getStickerContourFilter = (): string => {
     if (!isStickerMode) return '';
@@ -1473,13 +1495,31 @@ const ImageRenderer: React.FC<{
               src={element.src}
               alt={element.alt || 'Publication image'}
               style={{
-                width: '100%',
-                height: '100%',
-                objectFit: imageFit(element),
-                objectPosition: `${50 + panX}% ${50 + panY}%`,
+                // Known intrinsic size: place the picture exactly (this is what
+                // lets a zoomed picture be panned). Until it loads, fall back
+                // to plain object-fit, which matches the same box at 1x.
+                ...(picture
+                  ? {
+                      position: 'absolute' as const,
+                      left: picturePad + picture.left,
+                      top: picturePad + picture.top,
+                      width: picture.width,
+                      height: picture.height,
+                      objectFit: 'fill' as const,
+                      // rotate/flip about the centre of the frame, like the exporter
+                      transformOrigin: `${innerBox.width / 2 - picture.left}px ${
+                        innerBox.height / 2 - picture.top
+                      }px`,
+                    }
+                  : {
+                      width: '100%',
+                      height: '100%',
+                      objectFit: imageFit(element),
+                      objectPosition: `${50 + panX}% ${50 + panY}%`,
+                    }),
                 transform:
                   [
-                    imgScale !== 1 ? `scale(${imgScale})` : '',
+                    !picture && imgScale !== 1 ? `scale(${imgScale})` : '',
                     element.imageRotation ? `rotate(${element.imageRotation}deg)` : '',
                     element.flipH ? 'scaleX(-1)' : '',
                     element.flipV ? 'scaleY(-1)' : '',

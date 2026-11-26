@@ -115,13 +115,34 @@ export function imageContentRect(
 ): ContentRect {
   const scale = frame.scale && frame.scale > 0 ? frame.scale : 1;
   const fitted = fittedSize(box, natural, frame.fit);
-  const left0 = (box.width - fitted.width) * ((50 + pan.panX) / 100);
-  const top0 = (box.height - fitted.height) * ((50 + pan.panY) / 100);
+  const width = fitted.width * scale;
+  const height = fitted.height * scale;
   return {
-    left: box.width / 2 + (left0 - box.width / 2) * scale,
-    top: box.height / 2 + (top0 - box.height / 2) * scale,
-    width: fitted.width * scale,
-    height: fitted.height * scale,
+    left: (box.width - width) * ((50 + pan.panX) / 100),
+    top: (box.height - height) * ((50 + pan.panY) / 100),
+    width,
+    height,
+  };
+}
+
+/**
+ * How far the picture can slide on each axis, in px. Zero means it already
+ * fills the frame on that axis, so panning there cannot do anything — zooming
+ * in is what creates room.
+ */
+export function panRoom(
+  box: { width: number; height: number },
+  natural: { width: number; height: number } | null,
+  frame: PanFrame = {}
+): { x: number; y: number } {
+  if (!natural || !natural.width || !natural.height) return { x: 0, y: 0 };
+  const scale = frame.scale && frame.scale > 0 ? frame.scale : 1;
+  const fitted = fittedSize(box, natural, frame.fit);
+  const round = (v: number) => (Math.abs(v) < 0.5 ? 0 : Math.round(v));
+  // magnitude: how much slack the axis has, in px (0 = locked)
+  return {
+    x: round(Math.abs(box.width - fitted.width * scale)),
+    y: round(Math.abs(box.height - fitted.height * scale)),
   };
 }
 
@@ -132,7 +153,7 @@ export interface PanResult {
 
 export interface PanFrame {
   fit?: 'cover' | 'contain' | 'fill';
-  /** imageScale — the picture is scaled about the centre of the box. */
+  /** imageScale — the picture is drawn this much larger, then positioned. */
   scale?: number;
   /** imageRotation in degrees (multiples of 90). */
   rotation?: number;
@@ -143,10 +164,10 @@ export interface PanFrame {
 /**
  * Converts a mouse drag of the picture into pan percentages.
  *
- * The picture is painted at `object-position: 50 + pan` and then transformed
- * about the centre of the box, so this undoes the transform, inverts the
- * placement and clamps — keeping the frame filled and the picture under the
- * cursor, for photos and clip art alike.
+ * The picture is drawn at `fitted × scale` and placed by `pan` within whatever
+ * room is left, then rotated about the centre of the box — so this undoes the
+ * rotation and inverts the placement, keeping the picture under the cursor for
+ * photos and clip art alike.
  */
 export function panFromDrag(
   current: PanResult,
@@ -156,17 +177,14 @@ export function panFromDrag(
   frame: PanFrame = {}
 ): PanResult {
   const clamp = (v: number) => Math.max(-50, Math.min(50, v));
-  const scale = frame.scale && frame.scale > 0 ? frame.scale : 1;
   const rot = ((((frame.rotation || 0) % 360) + 360) % 360) * (Math.PI / 180);
 
-  // Undo the element transform — scale, then rotation, then flips — so a drag
-  // still follows the cursor when the picture is zoomed, turned or mirrored.
-  const sx = delta.x / scale;
-  const sy = delta.y / scale;
+  // Undo the rotation and mirroring, so a drag still follows the cursor when
+  // the picture is turned or flipped.
   const cos = Math.cos(rot);
   const sin = Math.sin(rot);
-  const unrotX = sx * cos + sy * sin;
-  const unrotY = -sx * sin + sy * cos;
+  const unrotX = delta.x * cos + delta.y * sin;
+  const unrotY = -delta.x * sin + delta.y * cos;
   const dx = frame.flipH ? -unrotX : unrotX;
   const dy = frame.flipV ? -unrotY : unrotY;
 
@@ -178,16 +196,15 @@ export function panFromDrag(
     };
   }
 
+  const scale = frame.scale && frame.scale > 0 ? frame.scale : 1;
   const fitted = fittedSize(box, natural, frame.fit);
 
-  /** Invert `left = size/2 + ((size - fitted) * p - size/2) * scale` for one axis. */
+  /** Invert `left = (size - fitted * scale) * p` for one axis. */
   const axis = (pan: number, d: number, size: number, fittedAxis: number): number => {
-    const room = size - fittedAxis;
+    const room = size - fittedAxis * scale;
     if (Math.abs(room) < 0.5) return pan; // no slack, keep the axis put
-    const left0 = room * ((50 + pan) / 100);
-    const visible = size / 2 + (left0 - size / 2) * scale;
-    const nextLeft0 = (visible + d - size / 2) / scale + size / 2;
-    return (nextLeft0 / room) * 100 - 50;
+    const left = room * ((50 + pan) / 100) + d;
+    return (left / room) * 100 - 50;
   };
 
   return {

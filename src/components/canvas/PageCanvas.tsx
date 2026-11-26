@@ -6,7 +6,8 @@ import { calculateSnap } from '../../utils/snapping';
 import { buildPatternBackgroundStyle } from '../../utils/patternGenerator';
 import { computeTarpapelMetrics } from '../../utils/printUtils';
 import { resizeTextBox } from '../../utils/textResize';
-import { imageFit, imageHasFrame, imageMaskClip, panFromDrag } from '../../utils/imageFrame';
+import { imageFit, imageHasFrame, imageMaskClip, panFromDrag, panRoom } from '../../utils/imageFrame';
+import { useImageAspect } from '../../hooks/useImageAspect';
 import { PublisherElement, Page, ConnectorElement, ImageElement } from '../../types/publisher';
 import {
   Copy,
@@ -455,6 +456,14 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
     ? (displayedElements.find((el) => el.id === editingPhotoId) as ImageElement | undefined)
     : undefined;
   const photoEditingScale = photoEditingElement?.imageScale || 1;
+  const photoEditingAspect = useImageAspect(photoEditingElement?.src);
+  const photoEditingRoom = photoEditingElement
+    ? panRoom(
+        { width: photoEditingElement.width, height: photoEditingElement.height },
+        photoEditingAspect,
+        { fit: imageFit(photoEditingElement), scale: photoEditingElement.imageScale || 1 }
+      )
+    : null;
 
   // A wheel over the lifted frame resizes the picture inside it. The listener
   // is native so the page does not scroll instead.
@@ -1034,6 +1043,11 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
                 <div className="absolute left-1/2 -translate-x-1/2 -top-7 whitespace-nowrap pointer-events-none bg-[#6e56cf] text-white text-[9.5px] font-semibold px-2 py-0.5 rounded-full shadow-sm">
                   Drag to move · scroll to resize · click outside to crop
                 </div>
+                {photoEditingRoom && (photoEditingRoom.x === 0 || photoEditingRoom.y === 0) && (
+                  <div className="absolute left-1/2 -translate-x-1/2 -top-[42px] whitespace-nowrap pointer-events-none bg-amber-500 text-white text-[9px] font-semibold px-2 py-0.5 rounded-full shadow-sm">
+                    Already fills the frame {photoEditingRoom.y === 0 && photoEditingRoom.x !== 0 ? 'vertically' : photoEditingRoom.x === 0 && photoEditingRoom.y !== 0 ? 'horizontally' : 'on both sides'} — scroll to zoom, then drag
+                  </div>
+                )}
               </>
             )}
 

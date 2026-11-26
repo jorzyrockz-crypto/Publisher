@@ -20,7 +20,8 @@ import { FontSelector } from '../common/FontSelector';
 import { FloatingDropdown } from '../common/FloatingDropdown';
 import { ShapePreviewIcon } from '../common/ShapePreviewIcon';
 import { SHAPE_CATALOG } from '../../utils/shapePaths';
-import { imageFit } from '../../utils/imageFrame';
+import { imageFit, panRoom } from '../../utils/imageFrame';
+import { useImageAspect } from '../../hooks/useImageAspect';
 import {
   PATTERN_CATALOG,
   DEFAULT_BACKGROUND_PATTERN,
@@ -91,6 +92,76 @@ import {
   Eraser,
   Unlink,
 } from 'lucide-react';
+
+/**
+ * Pan X / Pan Y for a cropped picture. A picture can only slide on an axis
+ * where it is larger than its frame, so an axis with no slack is shown as
+ * unavailable instead of silently doing nothing.
+ */
+const PanAxes: React.FC<{
+  element: ImageElement;
+  onChange: (patch: Partial<ImageElement>) => void;
+}> = ({ element, onChange }) => {
+  const aspect = useImageAspect(element.src);
+  const room = panRoom(
+    { width: element.width, height: element.height },
+    aspect,
+    { fit: imageFit(element), scale: element.imageScale || 1 }
+  );
+
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-2">
+        {(
+          [
+            { key: 'panX', label: 'Pan X', room: room.x, where: 'horizontally' },
+            { key: 'panY', label: 'Pan Y', room: room.y, where: 'vertically' },
+          ] as const
+        ).map((axis) => {
+          const stuck = axis.room === 0 && aspect !== null;
+          return (
+            <div key={axis.key}>
+              <div
+                className={`flex justify-between text-[10px] mb-0.5 ${
+                  stuck ? 'text-slate-300' : 'text-slate-500'
+                }`}
+              >
+                <span>{axis.label}</span>
+                <span>{element[axis.key] ?? 0}%</span>
+              </div>
+              <input
+                type="range"
+                min={-50}
+                max={50}
+                disabled={stuck}
+                value={element[axis.key] ?? 0}
+                onChange={(e) => onChange({ [axis.key]: Number(e.target.value) })}
+                title={
+                  stuck
+                    ? `The picture already fills the frame ${axis.where} — raise Image Zoom to slide it`
+                    : undefined
+                }
+                className={`w-full accent-[#6e56cf] ${
+                  stuck ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'
+                }`}
+              />
+            </div>
+          );
+        })}
+      </div>
+      {aspect !== null && (room.x === 0 || room.y === 0) && (
+        <p className="text-[9.5px] text-slate-400 leading-tight">
+          A picture can only slide where it is bigger than its frame.
+          {room.x === 0 && room.y === 0
+            ? ' This one fits exactly — raise Image Zoom to move it.'
+            : room.y === 0
+              ? ' This one fills the frame vertically, so raise Image Zoom to slide it up or down.'
+              : ' This one fills the frame horizontally, so raise Image Zoom to slide it sideways.'}
+        </p>
+      )}
+    </>
+  );
+};
 
 export const PropertiesPanel: React.FC = () => {
   const {
@@ -4413,40 +4484,10 @@ export const PropertiesPanel: React.FC = () => {
                   className="w-full accent-[#6e56cf] cursor-pointer"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <div className="flex justify-between text-[10px] text-slate-500 mb-0.5">
-                    <span>Pan X</span>
-                    <span>{(selectedElement as ImageElement).panX ?? 0}%</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={-50}
-                    max={50}
-                    value={(selectedElement as ImageElement).panX ?? 0}
-                    onChange={(e) =>
-                      updateElement(selectedElement.id, { panX: Number(e.target.value) })
-                    }
-                    className="w-full accent-[#6e56cf] cursor-pointer"
-                  />
-                </div>
-                <div>
-                  <div className="flex justify-between text-[10px] text-slate-500 mb-0.5">
-                    <span>Pan Y</span>
-                    <span>{(selectedElement as ImageElement).panY ?? 0}%</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={-50}
-                    max={50}
-                    value={(selectedElement as ImageElement).panY ?? 0}
-                    onChange={(e) =>
-                      updateElement(selectedElement.id, { panY: Number(e.target.value) })
-                    }
-                    className="w-full accent-[#6e56cf] cursor-pointer"
-                  />
-                </div>
-              </div>
+              <PanAxes
+                element={selectedElement as ImageElement}
+                onChange={(patch) => updateElement(selectedElement.id, patch)}
+              />
             </div>
 
             {/* Filter & Stylized Effect Presets */}
