@@ -160,6 +160,9 @@
 }
 
 @media print {
+  @page {
+    margin: 8mm;
+  }
   body {
     background: transparent !important;
     overflow: visible !important;

@@ -32,7 +32,7 @@ export function loadProjectFromFile(file: File): Promise<DocumentProject> {
       try {
         const parsed = JSON.parse(e.target?.result as string);
         if (!parsed.pages || !Array.isArray(parsed.pages)) {
-          throw new Error('Invalid MS Publisher project file format');
+          throw new Error('Invalid StudioPress project file format (.pub)');
         }
         resolve(parsed);
       } catch (err) {

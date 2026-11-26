@@ -7,9 +7,16 @@ import {
   saveProjectToFile,
   loadProjectFromFile,
   exportToImage,
-  triggerPrint,
 } from '../../utils/imageExport';
 import { exportToPdf } from '../../utils/pdfExport';
+import { buildPatternBackgroundStyle } from '../../utils/patternGenerator';
+import {
+  DEFAULT_PRINT_SETTINGS,
+  PrintSettings,
+  chunkPagesIntoSheets,
+  executePrintJob,
+  parsePageIndices,
+} from '../../utils/printUtils';
 import confetti from 'canvas-confetti';
 import {
   ArrowLeft,
@@ -23,13 +30,19 @@ import {
   Sparkles,
   Eye,
   X,
+  ChevronLeft,
+  ChevronRight,
+  RefreshCw,
 } from 'lucide-react';
 
 const TemplatePagePreview: React.FC<{
   page: Page;
   maxWidth: number;
   maxHeight: number;
-}> = React.memo(({ page, maxWidth, maxHeight }) => {
+  showMargins?: boolean;
+  showCropMarks?: boolean;
+  grayscale?: boolean;
+}> = React.memo(({ page, maxWidth, maxHeight, showMargins, showCropMarks, grayscale }) => {
   const scale = Math.min(maxWidth / page.width, maxHeight / page.height);
   const scaledW = Math.round(page.width * scale);
   const scaledH = Math.round(page.height * scale);
@@ -38,24 +51,35 @@ const TemplatePagePreview: React.FC<{
   );
 
   return (
-    <div
-      className="relative shadow-md border border-slate-200/80 overflow-hidden bg-white flex-shrink-0"
-      style={{
-        width: `${scaledW}px`,
-        height: `${scaledH}px`,
-        backgroundColor: page.backgroundColor || '#ffffff',
-      }}
-    >
+    <div className={`relative flex-shrink-0 ${showCropMarks ? 'p-2.5' : ''}`}>
+      {showCropMarks && (
+        <>
+          <div className="absolute top-0 left-0 w-2.5 h-2.5 border-r border-b border-slate-700 pointer-events-none" />
+          <div className="absolute top-0 right-0 w-2.5 h-2.5 border-l border-b border-slate-700 pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-2.5 h-2.5 border-r border-t border-slate-700 pointer-events-none" />
+          <div className="absolute bottom-0 right-0 w-2.5 h-2.5 border-l border-t border-slate-700 pointer-events-none" />
+        </>
+      )}
       <div
-        className="pointer-events-none select-none"
+        className="relative shadow-md border border-slate-200/80 overflow-hidden bg-white"
         style={{
-          width: `${page.width}px`,
-          height: `${page.height}px`,
-          transform: `scale(${scale})`,
-          transformOrigin: 'top left',
-          position: 'relative',
+          width: `${scaledW}px`,
+          height: `${scaledH}px`,
+          backgroundColor: page.backgroundColor || '#ffffff',
+          ...buildPatternBackgroundStyle(page.backgroundPattern, scale),
+          filter: grayscale ? 'grayscale(100%)' : undefined,
         }}
       >
+        <div
+          className="pointer-events-none select-none"
+          style={{
+            width: `${page.width}px`,
+            height: `${page.height}px`,
+            transform: `scale(${scale})`,
+            transformOrigin: 'top left',
+            position: 'relative',
+          }}
+        >
         {page.elements
           .filter((el) => el.visible !== false && el.type !== 'connector')
           .map((el) => (
@@ -104,8 +128,22 @@ const TemplatePagePreview: React.FC<{
                 />
               );
             })}
-          </svg>
-        )}
+            </svg>
+          )}
+
+          {showMargins && (
+            <div
+              className="absolute border border-dashed border-sky-500/80 pointer-events-none"
+              style={{
+                left: `${page.margins.left}px`,
+                top: `${page.margins.top}px`,
+                right: `${page.margins.right}px`,
+                bottom: `${page.margins.bottom}px`,
+                zIndex: 90,
+              }}
+            />
+          )}
+        </div>
       </div>
     </div>
   );
@@ -128,9 +166,43 @@ export const BackstageModal: React.FC = () => {
   const [templateSearch, setTemplateSearch] = useState<string>('');
   const [previewTemplate, setPreviewTemplate] = useState<TemplateDefinition | null>(null);
 
+  const [printSettings, setPrintSettings] = useState<PrintSettings>(DEFAULT_PRINT_SETTINGS);
+  const [activeSheetIdx, setActiveSheetIdx] = useState<number>(0);
+  const [showAllPrintSheets, setShowAllPrintSheets] = useState<boolean>(false);
+  const [isPreparingPrint, setIsPreparingPrint] = useState<boolean>(false);
+  const [printCapturePages, setPrintCapturePages] = useState<Page[] | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isBackstageOpen) return null;
+
+  const resolveSelectedPrintPages = (): Page[] => {
+    if (printSettings.rangeMode === 'current') {
+      return [activePage];
+    }
+    if (printSettings.rangeMode === 'custom') {
+      const indices = parsePageIndices(printSettings.customRange, project.pages.length);
+      return indices.length > 0 ? indices.map((i) => project.pages[i]) : [activePage];
+    }
+    return project.pages;
+  };
+
+  const handlePrintNow = async () => {
+    const pagesToPrint = resolveSelectedPrintPages();
+    setIsPreparingPrint(true);
+    setPrintCapturePages(pagesToPrint);
+
+    // Allow React 1 frame to render the full-resolution offscreen staging elements
+    await new Promise<void>((res) => window.requestAnimationFrame(() => res()));
+    await new Promise<void>((res) => window.setTimeout(res, 60));
+
+    try {
+      await executePrintJob(pagesToPrint, printSettings, 'print-capture-');
+    } finally {
+      setIsPreparingPrint(false);
+      setPrintCapturePages(null);
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-white z-50 flex select-none text-slate-800 animate-in fade-in duration-150">
@@ -462,48 +534,332 @@ export const BackstageModal: React.FC = () => {
           </div>
         )}
 
-        {/* SECTION: PRINT */}
-        {activeSection === 'print' && (
-          <div className="max-w-3xl mx-auto space-y-6">
-            <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Print Publication</h1>
-            <div className="bg-white p-8 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row gap-8">
-              <div className="w-full md:w-64 space-y-5">
-                <button
-                  onClick={() => {
-                    setIsBackstageOpen(false);
-                    setTimeout(triggerPrint, 300);
-                  }}
-                  className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-xl font-bold text-sm transition shadow-md flex items-center justify-center gap-2"
-                >
-                  <Printer size={18} />
-                  <span>Print Document</span>
-                </button>
+        {/* SECTION: PRINT PUBLICATION */}
+        {activeSection === 'print' && (() => {
+          const selectedPages = resolveSelectedPrintPages();
+          const sheets = chunkPagesIntoSheets(selectedPages, printSettings.pagesPerSheet);
+          const safeSheetIdx = Math.min(activeSheetIdx, Math.max(0, sheets.length - 1));
+          const displayedSheets = showAllPrintSheets ? sheets : [sheets[safeSheetIdx]].filter(Boolean);
 
-                <div className="text-xs space-y-2.5 text-slate-600 border-t border-slate-100 pt-4 font-medium">
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Pages:</span>
-                    <span className="font-bold text-slate-800">{project.pages.length}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Paper Size:</span>
-                    <span className="font-bold text-slate-800 capitalize">{project.pageSizeName}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Orientation:</span>
-                    <span className="font-bold text-slate-800 capitalize">{activePage.orientation}</span>
-                  </div>
+          return (
+            <div className="max-w-5xl mx-auto space-y-5">
+              <div className="flex items-end justify-between flex-wrap gap-2">
+                <div>
+                  <h1 className="text-3xl font-bold text-slate-800 tracking-tight">
+                    Print Publication
+                  </h1>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Configure sheet imposition, grayscale ink proofing, trim marks, and print directly.
+                  </p>
                 </div>
+                <span className="text-xs font-semibold px-3 py-1 rounded-full bg-indigo-50 text-indigo-800 border border-indigo-200/70">
+                  {selectedPages.length} {selectedPages.length === 1 ? 'Page' : 'Pages'} • {sheets.length}{' '}
+                  {sheets.length === 1 ? 'Sheet' : 'Sheets'}
+                </span>
               </div>
 
-              <div className="flex-1 bg-slate-50 rounded-2xl p-6 flex items-center justify-center border border-dashed border-slate-300">
-                <div className="text-center text-slate-400 text-xs">
-                  <Printer size={36} className="mx-auto mb-2.5 text-slate-400" />
-                  <span>Ready to print: {activePage.name}</span>
+              <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden grid grid-cols-1 lg:grid-cols-12">
+                {/* Left Column: Print Settings */}
+                <div className="lg:col-span-4 p-6 border-b lg:border-b-0 lg:border-r border-slate-200 space-y-4">
+                  {/* Primary Actions */}
+                  <div className="space-y-2">
+                    <button
+                      type="button"
+                      disabled={isPreparingPrint}
+                      onClick={handlePrintNow}
+                      className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 active:scale-95 text-white rounded-xl font-bold text-sm transition shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      {isPreparingPrint ? (
+                        <>
+                          <RefreshCw size={16} className="animate-spin" />
+                          <span>Preparing Sheets...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Printer size={18} />
+                          <span>Print Document</span>
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await exportToPdf(project);
+                        confetti({ particleCount: 35 });
+                      }}
+                      className="w-full py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer"
+                    >
+                      <FileDown size={14} className="text-rose-600" />
+                      <span>Export Print-Ready PDF</span>
+                    </button>
+                  </div>
+
+                  {/* Copies */}
+                  <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                    <label className="text-xs font-bold text-slate-600">Copies</label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={99}
+                      value={printSettings.copies}
+                      onChange={(e) =>
+                        setPrintSettings((s) => ({
+                          ...s,
+                          copies: Math.max(1, Math.min(99, Number(e.target.value) || 1)),
+                        }))
+                      }
+                      className="w-20 px-2.5 py-1 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-center outline-none focus:border-indigo-600"
+                    />
+                  </div>
+
+                  {/* Page Range */}
+                  <div className="space-y-2 pt-3 border-t border-slate-100">
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                      Pages to Print
+                    </label>
+                    <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl">
+                      {(
+                        [
+                          { id: 'all', label: `All (${project.pages.length})` },
+                          { id: 'current', label: `Current (#${project.activePageIndex + 1})` },
+                          { id: 'custom', label: 'Custom' },
+                        ] as const
+                      ).map((opt) => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => {
+                            setPrintSettings((s) => ({ ...s, rangeMode: opt.id }));
+                            setActiveSheetIdx(0);
+                          }}
+                          className={`py-1 px-1.5 rounded-lg text-[10.5px] font-semibold transition ${
+                            printSettings.rangeMode === opt.id
+                              ? 'bg-white text-indigo-800 shadow-2xs'
+                              : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                    {printSettings.rangeMode === 'custom' && (
+                      <input
+                        type="text"
+                        value={printSettings.customRange}
+                        onChange={(e) => {
+                          setPrintSettings((s) => ({ ...s, customRange: e.target.value }));
+                          setActiveSheetIdx(0);
+                        }}
+                        placeholder="e.g. 1, 3-4"
+                        className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-xs font-mono outline-none focus:border-indigo-600"
+                      />
+                    )}
+                  </div>
+
+                  {/* Color Mode */}
+                  <div className="space-y-1.5 pt-3 border-t border-slate-100">
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                      Color &amp; Ink Proof
+                    </label>
+                    <div className="grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-xl">
+                      {(
+                        [
+                          { id: 'color', label: 'Full Color' },
+                          { id: 'grayscale', label: 'B&W Grayscale' },
+                        ] as const
+                      ).map((mode) => (
+                        <button
+                          key={mode.id}
+                          type="button"
+                          onClick={() =>
+                            setPrintSettings((s) => ({ ...s, colorMode: mode.id }))
+                          }
+                          className={`py-1.5 rounded-lg text-[11px] font-semibold transition ${
+                            printSettings.colorMode === mode.id
+                              ? 'bg-white text-indigo-800 shadow-2xs'
+                              : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          {mode.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Sheet Layout (Pages Per Sheet) */}
+                  <div className="space-y-1.5 pt-3 border-t border-slate-100">
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                      Pages Per Sheet
+                    </label>
+                    <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl">
+                      {([1, 2, 4] as const).map((n) => (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => {
+                            setPrintSettings((s) => ({ ...s, pagesPerSheet: n }));
+                            setActiveSheetIdx(0);
+                          }}
+                          className={`py-1.5 rounded-lg text-[11px] font-semibold transition ${
+                            printSettings.pagesPerSheet === n
+                              ? 'bg-white text-indigo-800 shadow-2xs'
+                              : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          {n === 1 ? '1-Up' : n === 2 ? '2-Up' : '4-Up Grid'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Prepress Marks & Guides */}
+                  <div className="space-y-2 pt-3 border-t border-slate-100">
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                      Prepress &amp; Proof Overlays
+                    </label>
+                    <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={printSettings.showCropMarks}
+                        onChange={(e) =>
+                          setPrintSettings((s) => ({ ...s, showCropMarks: e.target.checked }))
+                        }
+                        className="accent-indigo-600 rounded"
+                      />
+                      <span>Corner Crop / Trim Marks</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={printSettings.showMarginBox}
+                        onChange={(e) =>
+                          setPrintSettings((s) => ({ ...s, showMarginBox: e.target.checked }))
+                        }
+                        className="accent-indigo-600 rounded"
+                      />
+                      <span>Show Safe Margin Box (Preview)</span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Right Column: Live Print Sheet Preview Stage */}
+                <div className="lg:col-span-8 bg-slate-100/90 p-6 flex flex-col justify-between gap-4 min-h-[480px]">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-slate-700">
+                        Live Print Sheet Preview
+                      </span>
+                      {printSettings.colorMode === 'grayscale' && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-700 text-white font-semibold">
+                          B&amp;W Proof
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {sheets.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setShowAllPrintSheets(!showAllPrintSheets)}
+                          className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition ${
+                            showAllPrintSheets
+                              ? 'bg-indigo-600 text-white border-indigo-600'
+                              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                          }`}
+                        >
+                          {showAllPrintSheets ? 'Single Sheet' : 'View All Sheets'}
+                        </button>
+                      )}
+
+                      {!showAllPrintSheets && sheets.length > 1 && (
+                        <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg px-1.5 py-0.5">
+                          <button
+                            type="button"
+                            disabled={safeSheetIdx === 0}
+                            onClick={() => setActiveSheetIdx((i) => Math.max(0, i - 1))}
+                            className="p-0.5 text-slate-600 disabled:opacity-30 hover:text-indigo-700"
+                          >
+                            <ChevronLeft size={14} />
+                          </button>
+                          <span className="text-[11px] font-mono font-bold text-slate-700 px-1">
+                            Sheet {safeSheetIdx + 1}/{sheets.length}
+                          </span>
+                          <button
+                            type="button"
+                            disabled={safeSheetIdx >= sheets.length - 1}
+                            onClick={() =>
+                              setActiveSheetIdx((i) => Math.min(sheets.length - 1, i + 1))
+                            }
+                            className="p-0.5 text-slate-600 disabled:opacity-30 hover:text-indigo-700"
+                          >
+                            <ChevronRight size={14} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Physical Print Sheet Display */}
+                  <div className="flex-1 flex flex-col items-center justify-center gap-6 overflow-y-auto py-2">
+                    {displayedSheets.map((sheetPages, sIdx) => {
+                      const cols = printSettings.pagesPerSheet === 1 ? 1 : 2;
+                      const perPgW =
+                        printSettings.pagesPerSheet === 1
+                          ? showAllPrintSheets
+                            ? 320
+                            : 420
+                          : printSettings.pagesPerSheet === 2
+                          ? 220
+                          : 185;
+                      const perPgH =
+                        printSettings.pagesPerSheet === 1
+                          ? showAllPrintSheets
+                            ? 340
+                            : 440
+                          : printSettings.pagesPerSheet === 2
+                          ? 290
+                          : 185;
+
+                      return (
+                        <div key={sIdx} className="flex flex-col items-center gap-1.5">
+                          <div
+                            className="bg-white rounded-md shadow-xl border border-slate-300/90 p-5 grid gap-4 place-items-center"
+                            style={{
+                              gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+                            }}
+                          >
+                            {sheetPages.map((pg) => (
+                              <div key={pg.id} className="flex flex-col items-center gap-1">
+                                <TemplatePagePreview
+                                  page={pg}
+                                  maxWidth={perPgW}
+                                  maxHeight={perPgH}
+                                  showMargins={printSettings.showMarginBox}
+                                  showCropMarks={printSettings.showCropMarks}
+                                  grayscale={printSettings.colorMode === 'grayscale'}
+                                />
+                                {printSettings.pagesPerSheet > 1 && (
+                                  <span className="text-[9.5px] font-medium text-slate-400">
+                                    {pg.name}
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                          <span className="text-[10.5px] font-medium text-slate-500">
+                            Sheet {showAllPrintSheets ? sIdx + 1 : safeSheetIdx + 1} •{' '}
+                            {sheetPages.map((p) => p.name).join(' + ')}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* SECTION: EXPORT */}
         {activeSection === 'export' && (
@@ -659,6 +1015,89 @@ export const BackstageModal: React.FC = () => {
               ))}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Offscreen Full-Resolution Staging Container for Multi-Page Print Capture */}
+      {printCapturePages && (
+        <div
+          style={{
+            position: 'fixed',
+            left: '-100000px',
+            top: 0,
+            pointerEvents: 'none',
+            opacity: 1,
+          }}
+        >
+          {printCapturePages.map((pg, idx) => {
+            const connectors = pg.elements.filter(
+              (el): el is ConnectorElement => el.type === 'connector' && el.visible !== false
+            );
+            return (
+              <div
+                key={`cap-${pg.id}`}
+                id={`print-capture-${pg.id}`}
+                style={{
+                  position: 'relative',
+                  width: `${pg.width}px`,
+                  height: `${pg.height}px`,
+                  backgroundColor: pg.backgroundColor || '#ffffff',
+                  ...buildPatternBackgroundStyle(pg.backgroundPattern),
+                  overflow: 'hidden',
+                }}
+              >
+                {pg.elements
+                  .filter((el) => el.visible !== false && el.type !== 'connector')
+                  .map((el) => (
+                    <div
+                      key={el.id}
+                      style={{
+                        position: 'absolute',
+                        left: `${el.x}px`,
+                        top: `${el.y}px`,
+                        width: `${el.width}px`,
+                        height: `${el.height}px`,
+                        transform: `rotate(${el.rotation}deg)`,
+                        transformOrigin: 'center center',
+                        zIndex: el.zIndex,
+                        opacity: el.opacity !== undefined ? el.opacity : 1,
+                      }}
+                    >
+                      <ElementRenderer
+                        element={el}
+                        isSelected={false}
+                        pageNumber={idx + 1}
+                        totalPages={project.pages.length}
+                      />
+                    </div>
+                  ))}
+                {connectors.length > 0 && (
+                  <svg
+                    width={pg.width}
+                    height={pg.height}
+                    style={{ position: 'absolute', inset: 0, zIndex: 45, overflow: 'visible' }}
+                  >
+                    {connectors.map((conn) => {
+                      const fromEl = pg.elements.find((e) => e.id === conn.fromId);
+                      const toEl = pg.elements.find((e) => e.id === conn.toId);
+                      if (!fromEl || !toEl) return null;
+                      return (
+                        <line
+                          key={conn.id}
+                          x1={fromEl.x + fromEl.width / 2}
+                          y1={fromEl.y + fromEl.height / 2}
+                          x2={toEl.x + toEl.width / 2}
+                          y2={toEl.y + toEl.height / 2}
+                          stroke={conn.strokeColor}
+                          strokeWidth={conn.strokeWidth || 3}
+                        />
+                      );
+                    })}
+                  </svg>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
