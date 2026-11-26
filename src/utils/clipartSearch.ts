@@ -1,7 +1,6 @@
 import { encodeSvgDataUri } from './svgRecolor';
 import {
-  CLIPART_PROXY_HINT,
-  IS_STATIC_HOST,
+  FetchAttemptError,
   fetchFirstOk,
   resolveClipartAssetUrls,
   resolveClipartSearchUrls,
@@ -97,38 +96,123 @@ export async function searchClipartFree(
     params.set('category', options.category);
   }
 
-  const pathAndQuery = `/api/clipart/search?${params.toString()}`;
-  const candidates = resolveClipartSearchUrls(pathAndQuery);
+  // The Clipart.Free REST path has changed between releases; probe the known
+  // shapes so a 404 on one doesn't take the whole source down.
+  const pathVariants = [
+    `/api/clipart/search`,
+    `/api/v1/clipart/search`,
+    `/api/search`,
+  ];
 
-  let res: Response;
-  try {
-    res = await fetchFirstOk(candidates, { signal: options.signal });
-  } catch (err) {
-    if (options.signal?.aborted) throw err;
-    if (IS_STATIC_HOST) {
-      throw new Error(CLIPART_PROXY_HINT);
-    }
-    throw err instanceof Error ? err : new Error('Clipart.Free search failed');
-  }
+  let lastResponse: Response | null = null;
+  let lastNetworkError: unknown = null;
 
-  if (!res.ok) {
-    let errText = `Clipart.Free HTTP ${res.status}`;
+  for (const base of pathVariants) {
+    const pathAndQuery = `${base}?${params.toString()}`;
+    const candidates = resolveClipartSearchUrls(pathAndQuery);
+
     try {
-      const json = await res.json();
-      if (json?.error || json?.message) {
-        errText = json.error || json.message;
-      }
-    } catch {
-      // ignore parse error
+      const res = await fetchFirstOk(candidates, { signal: options.signal });
+      if (res.ok) return res.json();
+      lastResponse = res;
+      // 404 = wrong route, try the next one. Anything else is meaningful.
+      if (res.status !== 404) break;
+    } catch (err) {
+      if (options.signal?.aborted) throw err;
+      lastNetworkError = err;
+      break;
     }
-    if (IS_STATIC_HOST && (res.status === 0 || res.type === 'opaque')) {
-      errText = CLIPART_PROXY_HINT;
-    }
-    throw new Error(errText);
   }
 
-  return res.json();
+  if (lastResponse && lastResponse.status !== 404) {
+    throw new Error(await describeClipartHttpError(lastResponse));
+  }
+  if (lastResponse) {
+    throw new Error(
+      'Clipart.Free returned 404 for every known API path — the service may have changed its API. Try Iconify or Wikimedia instead.'
+    );
+  }
+
+  throw new Error(describeClipartNetworkError(lastNetworkError));
 }
+
+/** Turns a raw response into an actionable message. */
+async function describeClipartHttpError(res: Response): Promise<string> {
+  let detail = '';
+  try {
+    const json = await res.json();
+    if (json?.error || json?.message) detail = String(json.error || json.message);
+  } catch {
+    // non-JSON body (HTML error page / proxy error)
+  }
+
+  if (res.status === 401 || res.status === 403) {
+    return `Clipart.Free rejected the API key (HTTP ${res.status}). Open the 🔑 button and paste a valid cf_ key.`;
+  }
+  if (res.status === 402) {
+    return 'Clipart.Free says this key is out of quota (HTTP 402).';
+  }
+  if (res.status === 429) {
+    return 'Clipart.Free rate-limited this key (HTTP 429). Wait a moment and retry.';
+  }
+  if (res.status === 502 || res.status === 504) {
+    return `Clipart.Free could not be reached by the proxy (HTTP ${res.status}). The proxy host has no internet access to clipart.free — try again from a normal browser tab, or run StudioPress outside a sandbox.`;
+  }
+  return `Clipart.Free HTTP ${res.status}${detail ? `: ${detail}` : ''}`;
+}
+
+/** Explains a total network failure (CORS / offline / blocked proxy). */
+function describeClipartNetworkError(err: unknown): string {
+  const attempts = err instanceof FetchAttemptError ? err.attempts : [];
+  const triedProxy = attempts.some((a) => a.url.startsWith('/api/') || /workers\.dev|vercel\.app/.test(a.url));
+  const triedDirect = attempts.some((a) => a.url.startsWith('https://clipart.free'));
+
+  if (triedDirect && triedProxy) {
+    return (
+      'Clipart.Free is unreachable: the browser call was blocked (CORS or offline) and the proxy failed too. ' +
+      'Add a CORS proxy URL under the 🔑 button (docs/static-hosting.md) — Iconify and Wikimedia work without one.'
+    );
+  }
+  if (triedDirect) {
+    return (
+      'Clipart.Free blocked this browser request (no CORS header or the site is offline). ' +
+      'Add a CORS proxy URL under the 🔑 button — see docs/static-hosting.md.'
+    );
+  }
+  return 'Clipart.Free search failed — network unreachable. Iconify and Wikimedia are unaffected.';
+}
+
+/**
+ * Diagnostics used by the Stock Art panel's "Test" button: explains exactly
+ * which hop failed instead of a generic failure.
+ */
+export async function diagnoseClipartConnection(
+  apiKey: string
+): Promise<{ ok: boolean; message: string }> {
+  const key = apiKey.trim();
+  if (!key) return { ok: false, message: 'No API key set.' };
+
+  const params = new URLSearchParams({ q: 'cat', page: '1', key });
+  const url = `/api/clipart/search?${params.toString()}`;
+
+  try {
+    const res = await fetchFirstOk(resolveClipartSearchUrls(url));
+    if (res.ok) {
+      let count = 0;
+      try {
+        const json = await res.json();
+        count = Array.isArray(json?.results) ? json.results.length : 0;
+      } catch {
+        // ignore
+      }
+      return { ok: true, message: `Connected · ${count} results for “cat”.` };
+    }
+    return { ok: false, message: await describeClipartHttpError(res) };
+  } catch (err) {
+    return { ok: false, message: describeClipartNetworkError(err) };
+  }
+}
+
 
 function blobToDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {

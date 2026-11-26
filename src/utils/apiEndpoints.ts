@@ -20,7 +20,9 @@
  * walk the list and use the first one that answers.
  */
 
-const env = import.meta.env as unknown as Record<string, string | boolean | undefined>;
+// Guarded so the module is also importable outside Vite (tests / scripts).
+const env = ((import.meta as unknown as { env?: Record<string, string | boolean | undefined> })
+  .env ?? {}) as Record<string, string | boolean | undefined>;
 
 /** True when the app was built for a static host (no Vite dev proxy available). */
 export const IS_STATIC_HOST = !env.DEV;
@@ -110,8 +112,12 @@ export function resolveClipartSearchUrls(pathAndQuery: string): string[] {
   const devProxy = `/api/clipart-free${pathAndQuery}`;
   const customProxy = proxyBase ? `${proxyBase}${pathAndQuery}` : '';
 
-  if (proxyBase) return unique([customProxy, IS_STATIC_HOST ? direct : devProxy, direct]);
-  return IS_STATIC_HOST ? unique([direct]) : unique([devProxy, direct]);
+  // A user-configured proxy wins; otherwise always try the browser's own
+  // request first and keep the same-origin proxy as a fallback. The dev-server
+  // proxy lives inside whatever sandbox the app runs in and cannot be assumed
+  // to have outbound internet access.
+  if (proxyBase) return unique([customProxy, direct, devProxy]);
+  return unique([direct, devProxy]);
 }
 
 /**
@@ -186,28 +192,55 @@ export function resolveWikimediaAssetUrls(rawUrl: string): string[] {
 /* Generic helpers                                                     */
 /* ------------------------------------------------------------------ */
 
-/** Fetches the first candidate URL that responds `ok`, preserving the last error. */
+export interface FetchAttempt {
+  url: string;
+  /** HTTP status, or undefined when the request never completed. */
+  status?: number;
+  /** Network/CORS error message when the request never completed. */
+  networkError?: string;
+}
+
+/** Error carrying every attempt so the UI can explain *why* a source failed. */
+export class FetchAttemptError extends Error {
+  attempts: FetchAttempt[];
+
+  constructor(attempts: FetchAttempt[]) {
+    super(attempts.map((a) => `${a.url} → ${a.status ? `HTTP ${a.status}` : a.networkError}`).join('; '));
+    this.name = 'FetchAttemptError';
+    this.attempts = attempts;
+  }
+}
+
+/**
+ * Fetches the first candidate URL that responds `ok`.
+ * Returns the last real HTTP response if nothing succeeded, and throws a
+ * `FetchAttemptError` (with per-URL diagnostics) when every attempt failed at
+ * the network level (offline, blocked, CORS).
+ */
 export async function fetchFirstOk(
   urls: string[],
   init?: RequestInit
 ): Promise<Response> {
-  let lastError: Error | null = null;
+  const attempts: FetchAttempt[] = [];
   let lastResponse: Response | null = null;
 
   for (const url of urls) {
     try {
       const res = await fetch(url, init);
+      attempts.push({ url, status: res.status });
       if (res.ok) return res;
       lastResponse = res;
-      lastError = new Error(`HTTP ${res.status}`);
     } catch (err) {
       if (init?.signal?.aborted) throw err;
-      lastError = err instanceof Error ? err : new Error('Network error');
+      attempts.push({
+        url,
+        networkError: err instanceof Error ? err.message : 'Network error',
+      });
     }
   }
 
   if (lastResponse) return lastResponse; // let callers surface a real HTTP status
-  throw lastError || new Error('Request failed');
+  throw new FetchAttemptError(attempts);
 }
 
 /** Human-readable hint shown when a static host blocks a keyed API. */

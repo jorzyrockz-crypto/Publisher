@@ -11,13 +11,14 @@ import {
   IconifyItem,
   saveClipartFreeKey,
   searchClipartFree,
+  diagnoseClipartConnection,
   searchIconify,
   searchWikimedia,
   toProxiedClipartUrl,
   toProxiedWikimediaUrl,
   WikimediaItem,
 } from '../../utils/clipartSearch';
-import { IS_STATIC_HOST, getClipartProxyBase, saveClipartProxyBase } from '../../utils/apiEndpoints';
+import { getClipartProxyBase, saveClipartProxyBase } from '../../utils/apiEndpoints';
 import {
   Images,
   Search,
@@ -69,6 +70,8 @@ export const StockArtPanel: React.FC = () => {
   );
   const [showKeyBar, setShowKeyBar] = useState(false);
   const [clipartProxyUrl, setClipartProxyUrl] = useState<string>(() => getClipartProxyBase());
+  const [cfTest, setCfTest] = useState<{ ok: boolean; message: string } | null>(null);
+  const [isTestingCf, setIsTestingCf] = useState(false);
 
   // Per-source results & loading states so fast sources render immediately
   const [builtinItems, setBuiltinItems] = useState<UnifiedStockItem[]>([]);
@@ -435,10 +438,39 @@ export const StockArtPanel: React.FC = () => {
               className="w-full bg-white px-2 py-1 rounded-[8px] border border-[#e5e9ee] text-[11px] outline-none focus:border-[#b3a4f2]"
             />
             <p className="text-[9.5px] leading-snug text-[#6a7682]">
-              {IS_STATIC_HOST
-                ? 'Optional. Iconify & Wikimedia work without a proxy; Clipart.Free needs one on GitHub Pages.'
-                : 'Optional. The Vite dev server already proxies these requests.'}
+              Optional. Iconify &amp; Wikimedia work without a proxy; Clipart.Free needs one on static hosts (or when
+              the app&apos;s host has no outbound internet).
             </p>
+
+            <button
+              type="button"
+              disabled={isTestingCf}
+              onClick={async () => {
+                setIsTestingCf(true);
+                setCfTest(null);
+                try {
+                  setCfTest(await diagnoseClipartConnection(clipartApiKey));
+                } finally {
+                  setIsTestingCf(false);
+                }
+              }}
+              className="w-full py-1 rounded-[8px] border border-[#d3c9f9] bg-[#efeafd] hover:bg-[#f4f2ff] text-[#5c4bb8] text-[10px] font-bold transition cursor-pointer disabled:opacity-60"
+            >
+              {isTestingCf ? 'Testing connection…' : 'Test Clipart.Free connection'}
+            </button>
+
+            {cfTest && (
+              <p
+                className={`text-[9.5px] leading-snug rounded-[6px] px-1.5 py-1 border ${
+                  cfTest.ok
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                    : 'bg-amber-50 border-amber-200 text-amber-900'
+                }`}
+              >
+                {cfTest.ok ? '✓ ' : '✕ '}
+                {cfTest.message}
+              </p>
+            )}
           </div>
         )}
 

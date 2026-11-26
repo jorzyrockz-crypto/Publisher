@@ -42,6 +42,23 @@ VITE_WIKIMEDIA_PROXY_URL=        # optional, Wikimedia already works directly
 
 Vite inlines these at build time. Then run `npm run build` as usual.
 
+## Troubleshooting: "Clipart.Free won't run"
+
+Use the **Test Clipart.Free connection** button in the Stock Art panel's 🔑 bar —
+it reports exactly which hop failed:
+
+| Message | Meaning | Fix |
+| --- | --- | --- |
+| `HTTP 401/403` | Key rejected | Paste a valid `cf_…` key |
+| `HTTP 402 / 429` | Quota / rate limit | Wait, or use another key |
+| `HTTP 502/504` | The **proxy host** cannot reach clipart.free | Use a proxy on a host with internet access (Worker/Vercel), not a sandboxed dev server |
+| `blocked (CORS or offline)` | The browser call was refused **and** no proxy answered | Add a proxy URL, or use Iconify / Wikimedia |
+| `404 for every known API path` | Clipart.Free changed its REST routes | Update the path list in `src/utils/clipartSearch.ts` |
+
+Requests are now issued **from the browser first** (`https://clipart.free/…`)
+and only fall back to the same-origin proxy — a dev server running in a sandbox
+with no outbound internet can no longer break the source on its own.
+
 ## Deploy the Cloudflare Worker proxy
 
 [`workers/clipart-proxy.js`](../workers/clipart-proxy.js) is a ready-to-deploy,
