@@ -2486,58 +2486,94 @@ export const PropertiesPanel: React.FC = () => {
         )}
 
         {/* Case 6: QR Code Properties */}
-        {selectedElement && selectedElement.type === 'qr' && (
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3.5 shadow-2xs">
-            <div className="font-bold text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-100">
-              <QrCode size={14} className="text-indigo-700" />
-              <span>QR Code Generator</span>
-            </div>
+        {selectedElement && selectedElement.type === 'qr' && (() => {
+          const qrEl = selectedElement as QRElement;
+          const isHttpLink = /^https?:\/\//i.test(qrEl.value.trim());
 
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-500 mb-1.5">
-                URL or Text Content
-              </label>
-              <textarea
-                rows={3}
-                value={(selectedElement as QRElement).value}
-                onChange={(e) =>
-                  updateElement(selectedElement.id, { value: e.target.value })
-                }
-                placeholder="https://example.com"
-                className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium"
-              />
-            </div>
+          return (
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3.5 shadow-2xs">
+              <div className="font-bold text-slate-800 flex items-center justify-between pb-2 border-b border-slate-100">
+                <div className="flex items-center gap-1.5">
+                  <QrCode size={14} className="text-indigo-700" />
+                  <span>QR Code Generator</span>
+                </div>
+                {isHttpLink && (
+                  <a
+                    href={qrEl.value.trim()}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[10px] font-bold text-indigo-600 hover:underline"
+                  >
+                    Test Link ↗
+                  </a>
+                )}
+              </div>
 
-            <div className="grid grid-cols-2 gap-2">
+              {/* Quick Format Presets */}
+              <div className="grid grid-cols-4 gap-1">
+                {[
+                  { label: 'URL', val: 'https://example.com' },
+                  { label: 'Wi-Fi', val: 'WIFI:T:WPA;S:GuestWiFi;P:password;;' },
+                  { label: 'Email', val: 'mailto:hello@example.com' },
+                  { label: 'Phone', val: 'tel:+15551234567' },
+                ].map((preset) => (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => updateElement(qrEl.id, { value: preset.val })}
+                    className="py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-800 text-[10px] font-semibold transition"
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+
               <div>
                 <label className="block text-[11px] font-semibold text-slate-500 mb-1.5">
-                  Foreground
+                  URL or Text Content
                 </label>
-                <input
-                  type="color"
-                  value={(selectedElement as QRElement).fgColor}
+                <textarea
+                  rows={3}
+                  value={qrEl.value}
                   onChange={(e) =>
-                    updateElement(selectedElement.id, { fgColor: e.target.value })
+                    updateElement(qrEl.id, { value: e.target.value })
                   }
-                  className="w-7 h-7 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0 shadow-2xs"
+                  placeholder="https://example.com"
+                  className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium"
                 />
               </div>
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-500 mb-1.5">
-                  Background
-                </label>
-                <input
-                  type="color"
-                  value={(selectedElement as QRElement).bgColor}
-                  onChange={(e) =>
-                    updateElement(selectedElement.id, { bgColor: e.target.value })
-                  }
-                  className="w-7 h-7 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0 shadow-2xs"
-                />
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-500 mb-1.5">
+                    Foreground
+                  </label>
+                  <input
+                    type="color"
+                    value={qrEl.fgColor}
+                    onChange={(e) =>
+                      updateElement(qrEl.id, { fgColor: e.target.value })
+                    }
+                    className="w-7 h-7 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0 shadow-2xs"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-500 mb-1.5">
+                    Background
+                  </label>
+                  <input
+                    type="color"
+                    value={qrEl.bgColor}
+                    onChange={(e) =>
+                      updateElement(qrEl.id, { bgColor: e.target.value })
+                    }
+                    className="w-7 h-7 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0 shadow-2xs"
+                  />
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Selected Geometry, Opacity, Rotation & Lock */}
         {selectedElement && (

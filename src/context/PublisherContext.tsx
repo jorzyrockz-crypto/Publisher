@@ -1313,7 +1313,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   );
 
   const addQRCode = useCallback(
-    (value = 'https://www.microsoft.com/publisher', options?: Partial<QRElement>) => {
+    (value = 'https://example.com', options?: Partial<QRElement>) => {
       const defaultQR: QRElement = {
         id: `qr-${Date.now()}`,
         type: 'qr',

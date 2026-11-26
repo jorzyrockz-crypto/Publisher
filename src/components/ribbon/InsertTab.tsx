@@ -39,11 +39,32 @@ export const InsertTab: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const tableBtnRef = useRef<HTMLButtonElement>(null);
   const stockBtnRef = useRef<HTMLButtonElement>(null);
+  const qrBtnRef = useRef<HTMLButtonElement>(null);
   const [tableGridHover, setTableGridHover] = useState<{ r: number; c: number }>({ r: 3, c: 3 });
   const [isTableDropdownOpen, setIsTableDropdownOpen] = useState(false);
   const [isStockOpen, setIsStockOpen] = useState(false);
+  const [isQrOpen, setIsQrOpen] = useState(false);
+  const [qrMode, setQrMode] = useState<'url' | 'wifi' | 'email' | 'phone'>('url');
+  const [qrInput, setQrInput] = useState('https://example.com');
+  const [wifiSsid, setWifiSsid] = useState('');
+  const [wifiPass, setWifiPass] = useState('');
   const [stockCategory, setStockCategory] = useState<'All' | StockCategory>('All');
   const [stockSearch, setStockSearch] = useState('');
+
+  const buildQrPayload = () => {
+    if (qrMode === 'wifi') {
+      return `WIFI:T:WPA;S:${wifiSsid || 'GuestWiFi'};P:${wifiPass || ''};;`;
+    }
+    if (qrMode === 'email') {
+      const clean = qrInput.trim().replace(/^mailto:/i, '') || 'hello@example.com';
+      return `mailto:${clean}`;
+    }
+    if (qrMode === 'phone') {
+      const clean = qrInput.trim().replace(/^tel:/i, '') || '+15551234567';
+      return `tel:${clean}`;
+    }
+    return qrInput.trim() || 'https://example.com';
+  };
 
   return (
     <div className="flex items-center h-24 px-3 py-1 gap-3 text-xs text-slate-700 overflow-x-auto select-none">
@@ -349,17 +370,114 @@ export const InsertTab: React.FC = () => {
             <span className="text-[10px] font-medium mt-1 text-slate-600">WordArt</span>
           </button>
 
-          {/* QR Code */}
-          <button
-            onClick={() => addQRCode()}
-            className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
-            title="Insert Scannable QR Code"
-          >
-            <div className="w-8 h-8 rounded-xl bg-slate-100 border border-slate-300 flex items-center justify-center group-hover:bg-slate-800 group-hover:text-white transition-all text-slate-800 shadow-xs">
-              <QrCode size={16} />
-            </div>
-            <span className="text-[10px] font-medium mt-1 text-slate-600">QR Code</span>
-          </button>
+          {/* QR Code Popover Prompt */}
+          <div className="relative">
+            <button
+              ref={qrBtnRef}
+              onClick={() => setIsQrOpen(!isQrOpen)}
+              className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
+              title="Create & Insert Scannable QR Code"
+            >
+              <div className="w-8 h-8 rounded-xl bg-slate-100 border border-slate-300 flex items-center justify-center group-hover:bg-slate-800 group-hover:text-white transition-all text-slate-800 shadow-xs">
+                <QrCode size={16} />
+              </div>
+              <span className="text-[10px] font-medium mt-1 text-slate-600">QR Code</span>
+            </button>
+
+            <FloatingDropdown
+              isOpen={isQrOpen}
+              onClose={() => setIsQrOpen(false)}
+              anchorRef={qrBtnRef}
+              className="p-3 w-72 space-y-2.5"
+            >
+              <div className="text-[11px] font-bold text-slate-800 flex items-center justify-between">
+                <span>Insert QR Code</span>
+                <span className="text-[10px] text-slate-400 font-medium">Scannable PNG</span>
+              </div>
+
+              {/* QR Content Type Pills */}
+              <div className="grid grid-cols-4 gap-1 bg-slate-100 p-1 rounded-xl">
+                {(
+                  [
+                    { id: 'url', label: 'URL' },
+                    { id: 'wifi', label: 'Wi-Fi' },
+                    { id: 'email', label: 'Email' },
+                    { id: 'phone', label: 'Phone' },
+                  ] as const
+                ).map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => {
+                      setQrMode(tab.id);
+                      if (tab.id === 'url' && !qrInput.startsWith('http')) setQrInput('https://example.com');
+                      if (tab.id === 'email' && qrInput.startsWith('http')) setQrInput('hello@example.com');
+                      if (tab.id === 'phone' && qrInput.startsWith('http')) setQrInput('+1 555 123 4567');
+                    }}
+                    className={`py-1 rounded-lg text-[10.5px] font-semibold transition ${
+                      qrMode === tab.id
+                        ? 'bg-white text-indigo-800 shadow-2xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {qrMode === 'wifi' ? (
+                <div className="space-y-1.5">
+                  <input
+                    type="text"
+                    placeholder="Wi-Fi Network Name (SSID)"
+                    value={wifiSsid}
+                    onChange={(e) => setWifiSsid(e.target.value)}
+                    className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-xs outline-none focus:border-indigo-600"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Wi-Fi Password"
+                    value={wifiPass}
+                    onChange={(e) => setWifiPass(e.target.value)}
+                    className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-xs outline-none focus:border-indigo-600"
+                  />
+                </div>
+              ) : (
+                <input
+                  type="text"
+                  autoFocus
+                  placeholder={
+                    qrMode === 'email'
+                      ? 'hello@yourbrand.com'
+                      : qrMode === 'phone'
+                      ? '+1 555 123 4567'
+                      : 'https://yourwebsite.com'
+                  }
+                  value={qrInput}
+                  onChange={(e) => setQrInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addQRCode(buildQrPayload());
+                      setIsQrOpen(false);
+                    }
+                  }}
+                  className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-xs outline-none focus:border-indigo-600"
+                />
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  addQRCode(buildQrPayload());
+                  setIsQrOpen(false);
+                }}
+                className="w-full py-1.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition cursor-pointer"
+              >
+                Generate &amp; Insert QR
+              </button>
+            </FloatingDropdown>
+          </div>
 
           {/* Page Number */}
           <button

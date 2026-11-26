@@ -1108,7 +1108,7 @@ const QRRenderer: React.FC<{ element: QRElement }> = ({ element }) => {
 
   useEffect(() => {
     let active = true;
-    QRCode.toDataURL(element.value || 'https://www.microsoft.com', {
+    QRCode.toDataURL(element.value || 'https://example.com', {
       margin: 1,
       width: 256,
       color: {
