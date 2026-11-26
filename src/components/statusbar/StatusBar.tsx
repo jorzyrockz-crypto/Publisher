@@ -1,6 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useSyncExternalStore } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
 import { useWindowWidth } from '../../hooks/useResizablePanel';
+import {
+  formatBytes,
+  getLastSaveInfo,
+  subscribeSaveInfo,
+} from '../../utils/workspaceStorage';
 import { ZoomIn, ZoomOut, Maximize, FileText, CheckCircle2, Layers } from 'lucide-react';
 
 const MIN_ZOOM = 20;
@@ -23,6 +28,17 @@ export const StatusBar: React.FC = () => {
   const isVeryCompact = windowWidth < 900;
 
   const [zoomDraft, setZoomDraft] = useState<string | null>(null);
+
+  // Which store the last save landed in — IndexedDB for photo-heavy documents,
+  // localStorage only when IndexedDB is unavailable (or the write failed).
+  const saveInfo = useSyncExternalStore(subscribeSaveInfo, getLastSaveInfo, () => null);
+  const isIndexedDb = saveInfo?.mode === 'indexeddb';
+  const saveLabel = isIndexedDb ? 'Saved to browser storage' : 'Saved locally';
+  const saveTitle = saveInfo
+    ? `${isIndexedDb ? 'IndexedDB' : 'localStorage'} · ${formatBytes(saveInfo.bytes)} · ${
+        saveInfo.persisted === true ? 'storage is persistent' : 'storage may be cleared by the browser'
+      }`
+    : 'Documents save automatically in this browser';
 
   const selectionCount = selectedElementIds.length;
   const selectedElement =
@@ -82,9 +98,15 @@ export const StatusBar: React.FC = () => {
         {!isCompact && (
           <>
             <span className="text-[#e5e9ee]">|</span>
-            <span className="flex items-center gap-1 text-[#5b6673] whitespace-nowrap">
+            <span
+              className="flex items-center gap-1 text-[#5b6673] whitespace-nowrap"
+              title={saveTitle}
+            >
               <CheckCircle2 size={11} className="text-[#6e56cf]" />
-              Saved locally
+              {saveLabel}
+              {saveInfo && (
+                <span className="text-[#8a8fa3] tabular-nums">· {formatBytes(saveInfo.bytes)}</span>
+              )}
             </span>
           </>
         )}

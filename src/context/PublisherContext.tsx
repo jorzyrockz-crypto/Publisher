@@ -24,6 +24,13 @@ import { buildMergedPartFromShape } from '../utils/shapePaths';
 import { mergeShapeGeometry } from '../utils/shapeBoolean';
 import { pageRingsToLocal, ringsToPath, shapeOutlineRings } from '../utils/shapeClip';
 import { TEMPLATES } from '../constants/templates';
+import {
+  flushMirrorSync,
+  readBootCache,
+  readStoredWorkspace,
+  saveWorkspace,
+  type StoredWorkspace,
+} from '../utils/workspaceStorage';
 import { reflowElementsForSize } from '../utils/smartResize';
 import { CompositionStyle } from '../utils/designBlueprints';
 import { DEFAULT_BRAND_KITS, rebrandPageWithKit } from '../utils/brandRebrand';
@@ -248,58 +255,82 @@ export interface WorkspaceTab {
 
 const PublisherContext = createContext<PublisherContextType | null>(null);
 
-const AUTOSAVE_KEY = 'ms_publisher_clone_autosave_v1';
-const WORKSPACE_TABS_KEY = 'studiopress_workspace_tabs_v1';
 const BRAND_KITS_STORAGE_KEY = 'studiopress_brand_kits_v1';
 
-function loadInitialWorkspace(): { tabs: WorkspaceTab[]; activeTabId: string } {
+interface BootWorkspace {
+  tabs: WorkspaceTab[];
+  activeTabId: string;
+  /** True while an IndexedDB copy may still be newer than the in-memory one. */
+  expectIndexedDb: boolean;
+  savedAt: number;
+}
+
+function defaultWorkspace(): WorkspaceTab[] {
+  return [
+    {
+      id: 'tab-initial',
+      project: JSON.parse(JSON.stringify(TEMPLATES[0].project)),
+      updatedAt: Date.now(),
+    },
+  ];
+}
+
+/**
+ * First paint reads what `localStorage` can serve synchronously (the small
+ * mirror, or the pre-IndexedDB keys on first run after the upgrade). When the
+ * marker says an IndexedDB copy exists, the provider shows a short restoring
+ * screen and swaps in the authoritative document — see `expectIndexedDb`.
+ */
+function loadInitialWorkspace(): BootWorkspace {
   try {
-    const rawTabs = localStorage.getItem(WORKSPACE_TABS_KEY);
-    if (rawTabs) {
-      const parsed = JSON.parse(rawTabs);
-      if (parsed && Array.isArray(parsed.tabs) && parsed.tabs.length > 0) {
-        const validTabs = parsed.tabs.filter(
-          (t: WorkspaceTab) => t?.id && t?.project && Array.isArray(t.project.pages) && t.project.pages.length > 0
-        );
-        if (validTabs.length > 0) {
-          const activeExists = validTabs.some((t: WorkspaceTab) => t.id === parsed.activeTabId);
-          return {
-            tabs: validTabs,
-            activeTabId: activeExists ? parsed.activeTabId : validTabs[0].id,
-          };
-        }
-      }
-    }
-    const savedSingle = localStorage.getItem(AUTOSAVE_KEY);
-    if (savedSingle) {
-      const parsed = JSON.parse(savedSingle);
-      if (parsed && Array.isArray(parsed.pages) && parsed.pages.length > 0) {
+    const cached = readBootCache();
+    if (cached.workspace && cached.workspace.tabs.length > 0) {
+      const tabs = cached.workspace.tabs.filter(
+        (tab) => tab?.id && tab?.project && Array.isArray(tab.project.pages) && tab.project.pages.length > 0
+      );
+      if (tabs.length > 0) {
+        const activeExists = tabs.some((tab) => tab.id === cached.workspace!.activeTabId);
         return {
-          tabs: [{ id: 'tab-initial', project: parsed, updatedAt: Date.now() }],
-          activeTabId: 'tab-initial',
+          tabs,
+          activeTabId: activeExists ? cached.workspace.activeTabId : tabs[0].id,
+          expectIndexedDb: cached.expectIndexedDb,
+          savedAt: cached.savedAt,
         };
       }
     }
+    return {
+      tabs: defaultWorkspace(),
+      activeTabId: 'tab-initial',
+      expectIndexedDb: cached.expectIndexedDb,
+      savedAt: cached.savedAt,
+    };
   } catch {
-    // ignore storage errors
+    return { tabs: defaultWorkspace(), activeTabId: 'tab-initial', expectIndexedDb: false, savedAt: 0 };
   }
-  return {
-    tabs: [
-      {
-        id: 'tab-initial',
-        project: JSON.parse(JSON.stringify(TEMPLATES[0].project)),
-        updatedAt: Date.now(),
-      },
-    ],
-    activeTabId: 'tab-initial',
-  };
 }
 
+/**
+ * Shown while the authoritative document is read out of IndexedDB. Without it
+ * the editor would flash the default template and could export the wrong page.
+ */
+const WorkspaceRestoreSplash: React.FC = () => (
+  <div className="h-screen w-screen flex items-center justify-center bg-[#f4f6f8]">
+    <div className="flex flex-col items-center gap-3">
+      <div className="w-8 h-8 rounded-full border-2 border-[#d3c9f9] border-t-[#6e56cf] animate-spin" />
+      <p className="text-xs font-semibold text-[#161a22]">Restoring your document…</p>
+      <p className="text-[11px] text-[#6a7682]">Large images load from browser storage</p>
+    </div>
+  </div>
+);
+
 export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const initialWorkspaceRef = useRef<{ tabs: WorkspaceTab[]; activeTabId: string } | null>(null);
+  const initialWorkspaceRef = useRef<BootWorkspace | null>(null);
   if (!initialWorkspaceRef.current) {
     initialWorkspaceRef.current = loadInitialWorkspace();
   }
+  const [isRestoring, setIsRestoring] = useState<boolean>(
+    () => initialWorkspaceRef.current!.expectIndexedDb
+  );
 
   const [workspaceTabs, setWorkspaceTabs] = useState<WorkspaceTab[]>(
     () => initialWorkspaceRef.current!.tabs
@@ -326,39 +357,96 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     );
   }, [project, activeTabId]);
 
-  // Debounced auto-save all workspace tabs to localStorage
+  // Debounced auto-save of every workspace tab. IndexedDB is the real store
+  // (it has no 5 MB ceiling for photo-heavy documents); localStorage only keeps
+  // a mirror small enough to boot from instantly.
   const latestTabsRef = useRef({ tabs: workspaceTabs, activeTabId });
   latestTabsRef.current = { tabs: workspaceTabs, activeTabId };
-  const latestProjectRef = useRef(project);
-  latestProjectRef.current = project;
+  const saveChainRef = useRef<Promise<unknown>>(Promise.resolve());
+
+  const persistWorkspace = useCallback(() => {
+    const snapshot = latestTabsRef.current;
+    // Serialise saves: two in flight at once could land out of order.
+    saveChainRef.current = saveChainRef.current
+      .then(() => saveWorkspace({ tabs: snapshot.tabs, activeTabId: snapshot.activeTabId }))
+      .catch(() => {
+        // Storage failure must never break editing; the status bar shows the mode.
+      });
+  }, []);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      try {
-        localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(latestProjectRef.current));
-        localStorage.setItem(WORKSPACE_TABS_KEY, JSON.stringify(latestTabsRef.current));
-      } catch {
-        // ignore quota errors
-      }
-    }, 500);
+    // Never write while the authoritative document is still being restored.
+    if (isRestoring) return;
+    const timer = window.setTimeout(persistWorkspace, 500);
     return () => window.clearTimeout(timer);
-  }, [workspaceTabs, activeTabId]);
+  }, [workspaceTabs, activeTabId, isRestoring, persistWorkspace]);
 
   useEffect(() => {
-    const flushSave = () => {
-      try {
-        localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(latestProjectRef.current));
-        localStorage.setItem(WORKSPACE_TABS_KEY, JSON.stringify(latestTabsRef.current));
-      } catch {
-        // ignore quota errors
+    // A tab being closed or hidden cannot await IndexedDB, so write the small
+    // mirror synchronously and let the queued save catch up in the background.
+    const flush = () => flushMirrorSync(latestTabsRef.current);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        flush();
+        persistWorkspace();
       }
     };
-    window.addEventListener('beforeunload', flushSave);
-    return () => window.removeEventListener('beforeunload', flushSave);
-  }, []);
+    window.addEventListener('beforeunload', flush);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      window.removeEventListener('beforeunload', flush);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [persistWorkspace]);
 
   const [historyPast, setHistoryPast] = useState<DocumentProject[]>([]);
   const [historyFuture, setHistoryFuture] = useState<DocumentProject[]>([]);
+
+  // A store that never answers must not trap the editor behind the splash.
+  const restoreAbandonedRef = useRef(false);
+  useEffect(() => {
+    if (!isRestoring) return;
+    const timer = window.setTimeout(() => {
+      restoreAbandonedRef.current = true;
+      setIsRestoring(false);
+    }, 3000);
+    return () => window.clearTimeout(timer);
+  }, [isRestoring]);
+
+  // Swap in the authoritative document once IndexedDB answers, unless the
+  // synchronous copy was already newer.
+  useEffect(() => {
+    if (!initialWorkspaceRef.current!.expectIndexedDb) return;
+    let cancelled = false;
+    const bootSavedAt = initialWorkspaceRef.current!.savedAt;
+    void readStoredWorkspace()
+      .then((stored: StoredWorkspace | null) => {
+        if (cancelled || restoreAbandonedRef.current) return;
+        if (!stored || stored.savedAt <= bootSavedAt) return;
+        const validTabs = stored.tabs.filter(
+          (tab) => tab?.id && tab?.project && Array.isArray(tab.project.pages) && tab.project.pages.length > 0
+        );
+        if (validTabs.length === 0) return;
+        const activeExists = validTabs.some((tab) => tab.id === stored.activeTabId);
+        const nextActiveId = activeExists ? stored.activeTabId : validTabs[0].id;
+        const nextProject = validTabs.find((tab) => tab.id === nextActiveId)!.project;
+        tabHistoriesRef.current = {};
+        setWorkspaceTabs(validTabs);
+        setActiveTabId(nextActiveId);
+        setProjectState(nextProject);
+        setHistoryPast([]);
+        setHistoryFuture([]);
+      })
+      .catch(() => {
+        // Corrupt or unavailable store: keep whatever localStorage gave us.
+      })
+      .finally(() => {
+        if (!cancelled) setIsRestoring(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const [selectedElementIds, setSelectedElementIds] = useState<string[]>([]);
   const [copiedElements, setCopiedElements] = useState<PublisherElement[]>([]);
@@ -2484,6 +2572,12 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setZoomState(Number(Math.min(3.0, Math.max(0.2, fitScale)).toFixed(2)));
     setPan({ x: 0, y: 0 });
   }, [activePage]);
+
+  // Hold the editor back until the real document is in memory, so nobody sees
+  // (or exports) the default template while IndexedDB is still answering.
+  if (isRestoring) {
+    return <WorkspaceRestoreSplash />;
+  }
 
   return (
     <PublisherContext.Provider
