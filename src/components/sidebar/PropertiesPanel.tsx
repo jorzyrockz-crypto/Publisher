@@ -36,11 +36,15 @@ import {
 } from '../../utils/pictureEffects';
 import { removeImageBackground } from '../../utils/bgRemoval';
 import {
-  RECOLOR_PALETTE_PRESETS,
+  analyzeSvgColors,
   extractSvgPalette,
+  getSmartRecolorTargets,
   isSvgDataUri,
   recolorSvgDataUri,
+  smartRecolorSvg,
+  type SmartRecolorMode,
 } from '../../utils/svgRecolor';
+import { getBackdropColorUnder } from '../../utils/brandRebrand';
 import { DesignIdeasPanel } from './DesignIdeasPanel';
 import { InspectorCard } from './InspectorCard';
 import { useResizablePanel, useWindowWidth } from '../../hooks/useResizablePanel';
@@ -2943,6 +2947,23 @@ export const PropertiesPanel: React.FC = () => {
                 {stk.src && isSvgDataUri(stk.src) && (() => {
                   const palette = extractSvgPalette(stk.src);
                   if (palette.length === 0) return null;
+                  const stickerBase =
+                    stk.originalSrc && isSvgDataUri(stk.originalSrc) ? stk.originalSrc : stk.src;
+                  const stickerBackdrop = getBackdropColorUnder(
+                    stk,
+                    elementsPool,
+                    activePage.backgroundColor || '#ffffff'
+                  );
+                  const stickerTargets = getSmartRecolorTargets(activeBrandKit, stickerBackdrop);
+                  const stickerModes: { id: SmartRecolorMode; label: string; swatches: string[] }[] = [
+                    {
+                      id: 'brand',
+                      label: 'Brand',
+                      swatches: [stickerTargets.dominant, stickerTargets.secondary, stickerTargets.accent],
+                    },
+                    { id: 'mono', label: 'Mono', swatches: [stickerTargets.ink] },
+                    { id: 'tint', label: 'Soft', swatches: [stickerTargets.dominant] },
+                  ];
                   return (
                     <div className="p-2.5 rounded-xl bg-amber-50/50 border border-amber-200/80 space-y-2">
                       <div className="flex items-center justify-between">
@@ -2991,23 +3012,32 @@ export const PropertiesPanel: React.FC = () => {
                         ))}
                       </div>
                       <div className="grid grid-cols-3 gap-1">
-                        {RECOLOR_PALETTE_PRESETS.slice(0, 3).map((preset) => (
+                        {stickerModes.map((mode) => (
                           <button
-                            key={preset.id}
+                            key={mode.id}
                             type="button"
                             onClick={() => {
-                              const map: Record<string, string> = {};
-                              palette.forEach((c, i) => {
-                                map[c] = preset.colors[i % preset.colors.length];
-                              });
-                              updateElement(stk.id, {
-                                originalSrc: stk.originalSrc || stk.src,
-                                src: recolorSvgDataUri(stk.src, map),
-                              });
+                              const next = smartRecolorSvg(
+                                stickerBase,
+                                activeBrandKit,
+                                stickerBackdrop,
+                                mode.id
+                              );
+                              if (!next || next === stk.src) return;
+                              updateElement(stk.id, { originalSrc: stickerBase, src: next });
                             }}
-                            className="py-1 px-1 rounded-lg bg-white border border-amber-200 hover:bg-amber-100/60 text-[9px] font-bold text-slate-700 truncate"
+                            className="px-1 py-1 rounded-lg bg-white border border-amber-200 hover:bg-amber-100/60 flex flex-col items-center gap-1"
                           >
-                            {preset.name}
+                            <span className="flex items-center -space-x-1">
+                              {mode.swatches.map((swatch, i) => (
+                                <span
+                                  key={`${mode.id}-${i}`}
+                                  className="block w-2.5 h-2.5 rounded-full border border-white shadow-2xs"
+                                  style={{ backgroundColor: swatch }}
+                                />
+                              ))}
+                            </span>
+                            <span className="text-[9px] font-bold text-slate-700">{mode.label}</span>
                           </button>
                         ))}
                       </div>
@@ -3151,18 +3181,63 @@ export const PropertiesPanel: React.FC = () => {
               )}
             </div>
 
-            {/* Recolor Vector Stock Art / Clipart */}
+            {/* Smart Recolor: follows the brand kit and the surface underneath */}
             {(selectedElement as ImageElement).src &&
               isSvgDataUri((selectedElement as ImageElement).src) && (() => {
                 const imgEl = selectedElement as ImageElement;
-                const palette = extractSvgPalette(imgEl.src);
-                if (palette.length === 0) return null;
+                const roles = analyzeSvgColors(imgEl.src);
+                if (roles.length === 0) return null;
+
+                const baseSrc =
+                  imgEl.originalSrc && isSvgDataUri(imgEl.originalSrc) ? imgEl.originalSrc : imgEl.src;
+                const backdrop = getBackdropColorUnder(
+                  imgEl,
+                  elementsPool,
+                  activePage.backgroundColor || '#ffffff'
+                );
+                const targets = getSmartRecolorTargets(activeBrandKit, backdrop);
+                const manualColors = roles
+                  .filter((r) => r.role !== 'highlight')
+                  .map((r) => r.color);
+
+                const applySmart = (mode: SmartRecolorMode) => {
+                  const next = smartRecolorSvg(baseSrc, activeBrandKit, backdrop, mode);
+                  if (!next || next === imgEl.src) return;
+                  updateElement(imgEl.id, { originalSrc: baseSrc, src: next });
+                };
+
+                const modes: { id: SmartRecolorMode; label: string; hint: string; swatches: string[] }[] = [
+                  {
+                    id: 'brand',
+                    label: 'Brand',
+                    hint: `Map the art onto ${activeBrandKit.name}`,
+                    swatches: [targets.dominant, targets.secondary, targets.accent, targets.ink],
+                  },
+                  {
+                    id: 'mono',
+                    label: 'Mono',
+                    hint: 'One ink colour, guaranteed readable on this surface',
+                    swatches: [targets.ink],
+                  },
+                  {
+                    id: 'tint',
+                    label: 'Soft',
+                    hint: 'Quiet watermark tint blended into the backdrop',
+                    swatches: [targets.dominant],
+                  },
+                ];
+
                 return (
                   <div className="p-2.5 rounded-xl bg-[#efeafd]/45 border border-[#d3c9f9]/70 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold text-indigo-950">
-                        Recolor Clipart / Stock Art
-                      </span>
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="text-[11px] font-bold text-indigo-950">Smart Recolor</div>
+                        <div className="text-[9.5px] text-slate-500 leading-tight">
+                          {activeBrandKit.name} · backdrop{' '}
+                          <span className="font-mono">{backdrop}</span>
+                          {targets.onDark ? ' (dark)' : ' (light)'}
+                        </div>
+                      </div>
                       {imgEl.originalSrc && isSvgDataUri(imgEl.originalSrc) && (
                         <button
                           type="button"
@@ -3172,14 +3247,44 @@ export const PropertiesPanel: React.FC = () => {
                               originalSrc: undefined,
                             })
                           }
-                          className="text-[10px] font-bold text-rose-600 hover:underline"
+                          className="text-[10px] font-bold text-rose-600 hover:underline shrink-0"
                         >
-                          Reset Colors
+                          Reset
                         </button>
                       )}
                     </div>
+
+                    <div className="grid grid-cols-3 gap-1">
+                      {modes.map((mode) => (
+                        <button
+                          key={mode.id}
+                          type="button"
+                          title={mode.hint}
+                          onClick={() => applySmart(mode.id)}
+                          className="px-1.5 py-1 rounded-lg bg-white border border-[#d3c9f9]/80 hover:bg-[#efeafd]/70 hover:border-[#b4a4f4] transition flex flex-col items-center gap-1"
+                        >
+                          <span className="flex items-center -space-x-1">
+                            {mode.swatches.map((swatch, i) => (
+                              <span
+                                key={`${mode.id}-${i}`}
+                                className="block w-2.5 h-2.5 rounded-full border border-white shadow-2xs"
+                                style={{ backgroundColor: swatch }}
+                              />
+                            ))}
+                          </span>
+                          <span className="text-[9.5px] font-bold text-slate-700">{mode.label}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9.5px] font-semibold text-slate-500">
+                        Manual · {manualColors.length} colours
+                      </span>
+                      <span className="text-[9px] text-slate-400">recolours one at a time</span>
+                    </div>
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      {palette.map((col) => (
+                      {manualColors.map((col) => (
                         <label
                           key={col}
                           className="relative cursor-pointer"
@@ -3200,29 +3305,8 @@ export const PropertiesPanel: React.FC = () => {
                             }}
                             className="sr-only"
                             target="fill"
-                            />
+                          />
                         </label>
-                      ))}
-                    </div>
-                    <div className="grid grid-cols-3 gap-1">
-                      {RECOLOR_PALETTE_PRESETS.slice(0, 6).map((preset) => (
-                        <button
-                          key={preset.id}
-                          type="button"
-                          onClick={() => {
-                            const map: Record<string, string> = {};
-                            palette.forEach((c, i) => {
-                              map[c] = preset.colors[i % preset.colors.length];
-                            });
-                            updateElement(imgEl.id, {
-                              originalSrc: imgEl.originalSrc || imgEl.src,
-                              src: recolorSvgDataUri(imgEl.src, map),
-                            });
-                          }}
-                          className="py-1 px-1 rounded-lg bg-white border border-[#d3c9f9]/80 hover:bg-[#efeafd]/60 text-[9px] font-bold text-slate-700 truncate"
-                        >
-                          {preset.name}
-                        </button>
                       ))}
                     </div>
                   </div>

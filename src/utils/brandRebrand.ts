@@ -1,3 +1,4 @@
+import { isRecolorableSvg, isSvgDataUri, smartRecolorSvg } from './svgRecolor';
 import {
   BrandKit,
   ImageElement,
@@ -242,7 +243,7 @@ function getContrastTextColor(bgColor: string, kit: BrandKit): string {
 /**
  * Estimates the visual backdrop color immediately behind an element (shape underneath or page bg).
  */
-function findBackdropColorUnder(
+export function getBackdropColorUnder(
   el: PublisherElement,
   allElements: PublisherElement[],
   pageBg: string
@@ -399,7 +400,7 @@ export function rebrandPageWithKit(
 
       txt.fontFamily = isHeading ? kit.headingFont : kit.bodyFont;
 
-      const backdrop = findBackdropColorUnder(txt, firstPassShapes, nextPageBg);
+      const backdrop = getBackdropColorUnder(txt, firstPassShapes, nextPageBg);
       const backdropLum = getColorLuminance(backdrop);
       const prevSat = getSaturation(txt.color);
 
@@ -426,8 +427,26 @@ export function rebrandPageWithKit(
       return txt;
     }
 
-    if (el.type === 'image' && el.name === 'Brand Kit Logo' && kit.logoSrc) {
-      return { ...el, src: kit.logoSrc };
+    if (el.type === 'image') {
+      const img = { ...el } as ImageElement;
+
+      if (img.name === 'Brand Kit Logo' && kit.logoSrc) {
+        return { ...img, src: kit.logoSrc };
+      }
+
+      // Vector clip art / stock art joins the rebrand: any SVG with real fills is
+      // recoloured onto the kit, read against the surface it sits on. Recolouring
+      // starts from `originalSrc` so repeated rebrands stay idempotent.
+      const baseSrc =
+        img.originalSrc && isSvgDataUri(img.originalSrc) ? img.originalSrc : img.src;
+      if (isRecolorableSvg(baseSrc)) {
+        const backdrop = getBackdropColorUnder(img, firstPassShapes, nextPageBg);
+        const recolored = smartRecolorSvg(baseSrc, kit, backdrop, 'brand');
+        if (recolored && recolored !== baseSrc) {
+          return { ...img, originalSrc: baseSrc, src: recolored };
+        }
+      }
+      return img;
     }
 
     return el;
