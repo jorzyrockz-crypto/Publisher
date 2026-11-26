@@ -192,17 +192,17 @@ export const PropertiesPanel: React.FC = () => {
 
   if (!isRightPanelOpen) {
     return (
-      <div className="w-9 bg-white border-l border-slate-200 flex flex-col items-center py-2.5 gap-3 h-full select-none flex-shrink-0 z-20 shadow-2xs">
+      <div className="w-9 bg-white border-l border-[#e5e9ee] flex flex-col items-center py-2.5 gap-3 h-full select-none flex-shrink-0 z-20">
         <button
           onClick={() => setIsRightPanelOpen(true)}
-          className="p-1.5 rounded-lg text-slate-600 hover:text-indigo-800 hover:bg-indigo-50 transition"
+          className="p-1.5 rounded-[8px] text-[#52606c] hover:text-[#087477] hover:bg-[#eef5f5] transition cursor-pointer"
           title="Expand Inspector Panel"
         >
           <PanelRightOpen size={15} />
         </button>
         <div
           onClick={() => setIsRightPanelOpen(true)}
-          className="text-[10px] font-bold tracking-widest text-slate-400 uppercase cursor-pointer hover:text-indigo-700 transition"
+          className="text-[10px] font-bold tracking-[0.09em] text-[#9aa4ae] uppercase cursor-pointer hover:text-[#087477] transition"
           style={{ writingMode: 'vertical-rl' }}
         >
           Inspector
@@ -214,8 +214,8 @@ export const PropertiesPanel: React.FC = () => {
   return (
     <div
       style={{ width: panelWidth }}
-      className={`bg-white border-l border-slate-200 flex flex-col h-full select-none flex-shrink-0 text-xs text-slate-700 overflow-y-auto ${
-        isNarrowViewport ? 'absolute right-0 top-0 bottom-0 z-30 shadow-2xl' : 'relative z-20 shadow-2xs'
+      className={`bg-white border-l border-[#e5e9ee] flex flex-col h-full select-none flex-shrink-0 text-xs text-[#202833] overflow-y-auto ${
+        isNarrowViewport ? 'absolute right-0 top-0 bottom-0 z-30 shadow-[0_8px_28px_rgba(28,44,58,0.12)]' : 'relative z-20'
       } ${isResizing ? '' : 'transition-[width] duration-150'}`}
     >
       {/* Drag-to-resize handle on left edge */}
@@ -224,40 +224,40 @@ export const PropertiesPanel: React.FC = () => {
         onDoubleClick={resetWidth}
         title="Drag to resize • Double-click to reset"
         className={`absolute top-0 left-0 bottom-0 w-1.5 cursor-col-resize z-30 transition-colors ${
-          isResizing ? 'bg-indigo-500' : 'hover:bg-indigo-400/70'
+          isResizing ? 'bg-[#087f83]' : 'hover:bg-[#087f83]/50'
         }`}
       />
-      {/* Header with Inspector | Design Ideas Tabs */}
-      <div className="p-2 flex items-center gap-1.5 font-bold text-xs text-slate-700 border-b border-slate-200/80 bg-slate-50/70 sticky top-0 z-10">
-        <div className="flex-1 grid grid-cols-2 bg-slate-200/70 p-0.5 rounded-xl">
+      {/* Header with Inspector | Design Ideas Underline Tabs */}
+      <div className="px-3 pt-2 flex items-center justify-between gap-2 text-xs text-[#202833] border-b border-[#e5e9ee] bg-white sticky top-0 z-10">
+        <div className="flex-1 flex items-center gap-4">
           <button
             type="button"
             onClick={() => setRightPanelTab('inspector')}
-            className={`flex items-center justify-center gap-1 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 pb-2 border-b-2 text-[11.5px] transition-all cursor-pointer ${
               rightPanelTab === 'inspector'
-                ? 'bg-white text-indigo-800 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'border-[#087f83] text-[#087f83] font-semibold'
+                : 'border-transparent text-[#778391] hover:text-[#202833] font-medium'
             }`}
           >
-            <Sliders size={11} />
+            <Sliders size={12} />
             <span>Inspector</span>
           </button>
           <button
             type="button"
             onClick={() => setRightPanelTab('design-ideas')}
-            className={`flex items-center justify-center gap-1 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 pb-2 border-b-2 text-[11.5px] transition-all cursor-pointer ${
               rightPanelTab === 'design-ideas'
-                ? 'bg-white text-indigo-800 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'border-[#087f83] text-[#087f83] font-semibold'
+                : 'border-transparent text-[#778391] hover:text-[#202833] font-medium'
             }`}
           >
-            <Sparkles size={11} className="text-amber-500" />
+            <Sparkles size={12} />
             <span>Design Ideas</span>
           </button>
         </div>
         <button
           onClick={() => setIsRightPanelOpen(false)}
-          className="p-1 hover:bg-slate-200/70 text-slate-400 hover:text-slate-700 rounded-lg transition"
+          className="p-1 mb-1 hover:bg-[#eef5f5] text-[#778391] hover:text-[#087477] rounded-[6px] transition cursor-pointer"
           title="Collapse Right Panel"
         >
           <PanelRightClose size={14} />
@@ -291,7 +291,7 @@ export const PropertiesPanel: React.FC = () => {
                 <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3 shadow-2xs">
                   <div className="font-bold text-slate-800 flex items-center justify-between pb-2 border-b border-slate-100">
                     <div className="flex items-center gap-1.5">
-                      <ImageIcon size={14} className="text-indigo-700" />
+                      <ImageIcon size={14} className="text-[#087477]" />
                       <span>Multi-Picture Tools ({selectedImages.length})</span>
                     </div>
                   </div>
@@ -318,7 +318,7 @@ export const PropertiesPanel: React.FC = () => {
                             });
                             updateElementsBatch(map);
                           }}
-                          className="py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-800 text-[10px] font-bold transition"
+                          className="py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-[#e5f4f3] hover:border-[#b7dddd] hover:text-[#087477] text-[10px] font-bold transition"
                         >
                           {cr.label}
                         </button>
@@ -394,7 +394,7 @@ export const PropertiesPanel: React.FC = () => {
                                   borderArtWidth: Number(e.target.value),
                                 })
                               }
-                              className="w-full accent-indigo-600 cursor-pointer"
+                              className="w-full accent-[#087f83] cursor-pointer"
                             />
                           </div>
                           <div>
@@ -412,7 +412,7 @@ export const PropertiesPanel: React.FC = () => {
                                   borderArtPadding: Number(e.target.value),
                                 })
                               }
-                              className="w-full accent-indigo-600 cursor-pointer"
+                              className="w-full accent-[#087f83] cursor-pointer"
                             />
                           </div>
                         </div>
@@ -431,7 +431,7 @@ export const PropertiesPanel: React.FC = () => {
                           key={preset.name}
                           type="button"
                           onClick={() => applyToAllSelectedImages(preset.vals)}
-                          className="py-1 px-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-800 text-[9.5px] font-semibold transition truncate"
+                          className="py-1 px-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-[#e5f4f3] hover:border-[#b7dddd] hover:text-[#087477] text-[9.5px] font-semibold transition truncate"
                         >
                           {preset.name}
                         </button>
@@ -445,11 +445,11 @@ export const PropertiesPanel: React.FC = () => {
             <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3 shadow-2xs">
               <div className="font-bold text-slate-800 flex items-center justify-between pb-2 border-b border-slate-100">
                 <div className="flex items-center gap-1.5">
-                  <Group size={14} className="text-indigo-700" />
+                  <Group size={14} className="text-[#087477]" />
                   <span>Group ({selectedElementIds.length} items)</span>
                 </div>
                 {isUnifiedGroup && (
-                  <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-bold">
+                  <span className="px-2 py-0.5 rounded-full bg-[#e5f4f3] text-[#087477] text-[10px] font-bold">
                     Grouped
                   </span>
                 )}
@@ -462,7 +462,7 @@ export const PropertiesPanel: React.FC = () => {
                   className={`flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-xl border text-xs font-semibold transition ${
                     isUnifiedGroup
                       ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
-                      : 'border-indigo-200 bg-indigo-50 text-indigo-800 hover:bg-indigo-100 hover:border-indigo-400'
+                      : 'border-[#b7dddd] bg-[#e5f4f3] text-[#087477] hover:bg-[#e5f4f3] hover:border-[#b7dddd]'
                   }`}
                 >
                   <Group size={13} />
@@ -486,7 +486,7 @@ export const PropertiesPanel: React.FC = () => {
               <div className="grid grid-cols-3 gap-1.5">
                 <button
                   onClick={duplicateSelectedElements}
-                  className="flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-800 text-[11px] font-semibold transition"
+                  className="flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-[#e5f4f3] hover:border-[#b7dddd] hover:text-[#087477] text-[11px] font-semibold transition"
                   title="Duplicate Selection"
                 >
                   <Copy size={12} />
@@ -533,7 +533,7 @@ export const PropertiesPanel: React.FC = () => {
                     <button
                       key={item.key}
                       onClick={() => alignSelected(item.key)}
-                      className="py-1 px-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-800 text-[10.5px] font-semibold transition"
+                      className="py-1 px-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-[#e5f4f3] hover:border-[#b7dddd] hover:text-[#087477] text-[10.5px] font-semibold transition"
                     >
                       {item.label}
                     </button>
@@ -543,13 +543,13 @@ export const PropertiesPanel: React.FC = () => {
                   <div className="grid grid-cols-2 gap-1.5">
                     <button
                       onClick={() => distributeSelected('horizontal')}
-                      className="py-1 px-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-800 text-[10.5px] font-semibold transition"
+                      className="py-1 px-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-[#e5f4f3] hover:border-[#b7dddd] hover:text-[#087477] text-[10.5px] font-semibold transition"
                     >
                       Distribute Horiz.
                     </button>
                     <button
                       onClick={() => distributeSelected('vertical')}
-                      className="py-1 px-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-800 text-[10.5px] font-semibold transition"
+                      className="py-1 px-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-[#e5f4f3] hover:border-[#b7dddd] hover:text-[#087477] text-[10.5px] font-semibold transition"
                     >
                       Distribute Vert.
                     </button>
@@ -567,7 +567,7 @@ export const PropertiesPanel: React.FC = () => {
                 <div className="grid grid-cols-4 gap-1">
                   <button
                     onClick={bringToFront}
-                    className="flex flex-col items-center py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-800 text-[9.5px] font-semibold transition"
+                    className="flex flex-col items-center py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-[#e5f4f3] hover:text-[#087477] text-[9.5px] font-semibold transition"
                     title="Bring to Front"
                   >
                     <ArrowUpToLine size={12} />
@@ -575,7 +575,7 @@ export const PropertiesPanel: React.FC = () => {
                   </button>
                   <button
                     onClick={bringForward}
-                    className="flex flex-col items-center py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-800 text-[9.5px] font-semibold transition"
+                    className="flex flex-col items-center py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-[#e5f4f3] hover:text-[#087477] text-[9.5px] font-semibold transition"
                     title="Bring Forward"
                   >
                     <ArrowUp size={12} />
@@ -583,7 +583,7 @@ export const PropertiesPanel: React.FC = () => {
                   </button>
                   <button
                     onClick={sendBackward}
-                    className="flex flex-col items-center py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-800 text-[9.5px] font-semibold transition"
+                    className="flex flex-col items-center py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-[#e5f4f3] hover:text-[#087477] text-[9.5px] font-semibold transition"
                     title="Send Backward"
                   >
                     <ArrowDown size={12} />
@@ -591,7 +591,7 @@ export const PropertiesPanel: React.FC = () => {
                   </button>
                   <button
                     onClick={sendToBack}
-                    className="flex flex-col items-center py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-800 text-[9.5px] font-semibold transition"
+                    className="flex flex-col items-center py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-[#e5f4f3] hover:text-[#087477] text-[9.5px] font-semibold transition"
                     title="Send to Back"
                   >
                     <ArrowDownToLine size={12} />
@@ -612,7 +612,7 @@ export const PropertiesPanel: React.FC = () => {
                     onChange={(e) =>
                       updateSelectedElements({ opacity: Number(e.target.value) / 100 })
                     }
-                    className="w-full accent-indigo-600 cursor-pointer"
+                    className="w-full accent-[#087f83] cursor-pointer"
                   />
                 </div>
               </div>
@@ -620,7 +620,7 @@ export const PropertiesPanel: React.FC = () => {
 
             <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3 shadow-2xs">
               <div className="font-bold text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-100">
-                <GitMerge size={14} className="text-indigo-700" />
+                <GitMerge size={14} className="text-[#087477]" />
                 <span>Merge Shapes ({selectedElementIds.length} selected)</span>
               </div>
               <p className="text-[10.5px] text-slate-500">
@@ -638,7 +638,7 @@ export const PropertiesPanel: React.FC = () => {
                   <button
                     key={item.op}
                     onClick={() => mergeSelectedShapes(item.op)}
-                    className="py-1.5 px-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-400 hover:text-indigo-800 text-xs font-semibold transition"
+                    className="py-1.5 px-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-[#e5f4f3] hover:border-[#b7dddd] hover:text-[#087477] text-xs font-semibold transition"
                   >
                     {item.label}
                   </button>
@@ -658,11 +658,11 @@ export const PropertiesPanel: React.FC = () => {
             <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3 shadow-2xs">
                   <div className="font-bold text-slate-800 flex items-center justify-between pb-2 border-b border-slate-100">
                     <div className="flex items-center gap-1.5">
-                      <Workflow size={14} className="text-indigo-700" />
+                      <Workflow size={14} className="text-[#087477]" />
                       <span>Diagram Auto-Connect</span>
                     </div>
                     {existingConnectors.length > 0 && (
-                      <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-bold">
+                      <span className="px-2 py-0.5 rounded-full bg-[#e5f4f3] text-[#087477] text-[10px] font-bold">
                         Connected
                       </span>
                     )}
@@ -685,8 +685,8 @@ export const PropertiesPanel: React.FC = () => {
                         onClick={() => autoConnectSelectedShapes(style.id)}
                         className={`py-1.5 px-2 rounded-xl border text-[11px] font-semibold transition ${
                           activeConnectorStyle === style.id
-                            ? 'border-indigo-500 bg-indigo-50 text-indigo-800 shadow-2xs'
-                            : 'border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-800 text-slate-700'
+                            ? 'border-[#b7dddd] bg-[#e5f4f3] text-[#087477] shadow-2xs'
+                            : 'border-slate-200 bg-slate-50 hover:bg-[#e5f4f3] hover:text-[#087477] text-slate-700'
                         }`}
                       >
                         {style.label}
@@ -713,7 +713,7 @@ export const PropertiesPanel: React.FC = () => {
             <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3.5 shadow-2xs">
               <div className="font-bold text-slate-800 flex items-center justify-between pb-2 border-b border-slate-100">
                 <div className="flex items-center gap-1.5">
-                  <Square size={14} className="text-indigo-700" />
+                  <Square size={14} className="text-[#087477]" />
                   <span>Page {project.activePageIndex + 1} Setup</span>
                 </div>
                 <span className="text-[10px] font-mono text-slate-400">
@@ -727,7 +727,7 @@ export const PropertiesPanel: React.FC = () => {
                   Page Size
                 </label>
                 <select
-                  className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium transition cursor-pointer"
+                  className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-[#087f83]/20 focus:border-[#73b9b7] font-medium transition cursor-pointer"
                   value={
                     PAGE_SIZES.find(
                       (s) => s.width === activePage.width && s.height === activePage.height
@@ -744,9 +744,9 @@ export const PropertiesPanel: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsBrandBoardModalOpen(true)}
-                  className="mt-2 w-full py-1.5 px-2.5 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 text-[11px] font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer"
+                  className="mt-2 w-full py-1.5 px-2.5 rounded-xl border border-[#b7dddd] bg-[#e5f4f3] hover:bg-[#e5f4f3] text-[#087477] text-[11px] font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer"
                 >
-                  <Sparkles size={12} className="text-indigo-600" />
+                  <Sparkles size={12} className="text-[#087477]" />
                   <span>Convert to Multi-Size Brand Board</span>
                 </button>
               </div>
@@ -761,7 +761,7 @@ export const PropertiesPanel: React.FC = () => {
                     onClick={() => setPageOrientation('portrait')}
                     className={`py-1 px-2 rounded-lg text-xs font-semibold transition-all ${
                       activePage.orientation === 'portrait'
-                        ? 'bg-white text-indigo-800 shadow-xs'
+                        ? 'bg-white text-[#087477] shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
@@ -771,7 +771,7 @@ export const PropertiesPanel: React.FC = () => {
                     onClick={() => setPageOrientation('landscape')}
                     className={`py-1 px-2 rounded-lg text-xs font-semibold transition-all ${
                       activePage.orientation === 'landscape'
-                        ? 'bg-white text-indigo-800 shadow-xs'
+                        ? 'bg-white text-[#087477] shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
@@ -828,7 +828,7 @@ export const PropertiesPanel: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setIsBrandKitModalOpen(true)}
-                    className="text-[10.5px] font-bold text-indigo-700 hover:underline"
+                    className="text-[10.5px] font-bold text-[#087477] hover:underline"
                   >
                     Edit / Switch
                   </button>
@@ -869,7 +869,7 @@ export const PropertiesPanel: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => applyBrandKit(activeBrandKit, 'all')}
-                    className="w-full py-1.5 px-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold transition cursor-pointer"
+                    className="w-full py-1.5 px-2.5 rounded-lg bg-[#087f83] hover:bg-[#06696c] text-white text-[11px] font-bold transition cursor-pointer"
                   >
                     Rebrand All Artboards ({project.pages.length})
                   </button>
@@ -896,7 +896,7 @@ export const PropertiesPanel: React.FC = () => {
                       setPageBackgroundColor('#ffffff');
                       setPageBackgroundGradient(undefined);
                     }}
-                    className="ml-auto text-[11px] font-medium text-indigo-700 hover:underline"
+                    className="ml-auto text-[11px] font-medium text-[#087477] hover:underline"
                   >
                     White
                   </button>
@@ -937,7 +937,7 @@ export const PropertiesPanel: React.FC = () => {
                           }
                           className={`h-6 rounded-lg border transition cursor-pointer ${
                             isSel
-                              ? 'border-indigo-600 ring-2 ring-indigo-500/30 scale-105'
+                              ? 'border-indigo-600 ring-2 ring-[#087f83]/30 scale-105'
                               : 'border-slate-200 hover:scale-105'
                           }`}
                           style={{
@@ -990,8 +990,8 @@ export const PropertiesPanel: React.FC = () => {
                         title={pat.label}
                         className={`h-10 rounded-lg border transition-all relative overflow-hidden ${
                           isSelected
-                            ? 'border-indigo-600 ring-2 ring-indigo-500/30 shadow-xs'
-                            : 'border-slate-200 hover:border-indigo-400'
+                            ? 'border-indigo-600 ring-2 ring-[#087f83]/30 shadow-xs'
+                            : 'border-slate-200 hover:border-[#b7dddd]'
                         }`}
                         style={{
                           backgroundColor: activePage.backgroundColor || '#ffffff',
@@ -1028,7 +1028,7 @@ export const PropertiesPanel: React.FC = () => {
                           onClick={() =>
                             setPageBackgroundPattern({ ...pat, color: activeScheme.primary })
                           }
-                          className="ml-auto text-[10px] font-semibold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition"
+                          className="ml-auto text-[10px] font-semibold px-2 py-0.5 rounded-md bg-[#e5f4f3] text-[#087477] hover:bg-[#e5f4f3] transition"
                         >
                           Match Theme
                         </button>
@@ -1048,7 +1048,7 @@ export const PropertiesPanel: React.FC = () => {
                             onChange={(e) =>
                               setPageBackgroundPattern({ ...pat, scale: Number(e.target.value) })
                             }
-                            className="w-full accent-indigo-600 cursor-pointer"
+                            className="w-full accent-[#087f83] cursor-pointer"
                           />
                         </div>
                         <div>
@@ -1067,7 +1067,7 @@ export const PropertiesPanel: React.FC = () => {
                                 opacity: Number(e.target.value) / 100,
                               })
                             }
-                            className="w-full accent-indigo-600 cursor-pointer"
+                            className="w-full accent-[#087f83] cursor-pointer"
                           />
                         </div>
                       </div>
@@ -1090,7 +1090,7 @@ export const PropertiesPanel: React.FC = () => {
                                 strokeWidth: Number(e.target.value),
                               })
                             }
-                            className="w-full accent-indigo-600 cursor-pointer"
+                            className="w-full accent-[#087f83] cursor-pointer"
                           />
                         </div>
                         <div>
@@ -1110,7 +1110,7 @@ export const PropertiesPanel: React.FC = () => {
                                 rotation: Number(e.target.value),
                               })
                             }
-                            className="w-full accent-indigo-600 cursor-pointer"
+                            className="w-full accent-[#087f83] cursor-pointer"
                           />
                         </div>
                       </div>
@@ -1129,7 +1129,7 @@ export const PropertiesPanel: React.FC = () => {
             <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3.5 shadow-2xs">
               <div className="font-bold text-slate-800 flex items-center justify-between pb-2 border-b border-slate-100">
                 <div className="flex items-center gap-1.5">
-                  <Type size={14} className="text-indigo-700" />
+                  <Type size={14} className="text-[#087477]" />
                   <span>Typography</span>
                 </div>
                 <span className="text-[10px] font-medium text-slate-400">Adobe Pro</span>
@@ -1149,7 +1149,7 @@ export const PropertiesPanel: React.FC = () => {
                     onClick={() => setTypoTab(tab.id)}
                     className={`py-1 rounded-lg text-[11px] font-semibold transition-all ${
                       typoTab === tab.id
-                        ? 'bg-white text-indigo-800 shadow-xs'
+                        ? 'bg-white text-[#087477] shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
@@ -1181,7 +1181,7 @@ export const PropertiesPanel: React.FC = () => {
                         Weight / Style
                       </label>
                       <select
-                        className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium transition cursor-pointer"
+                        className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-[#087f83]/20 focus:border-[#73b9b7] font-medium transition cursor-pointer"
                         value={textEl.fontWeight}
                         onChange={(e) =>
                           updateElement(textEl.id, {
@@ -1206,7 +1206,7 @@ export const PropertiesPanel: React.FC = () => {
                         type="number"
                         min={6}
                         max={240}
-                        className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium transition text-center"
+                        className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-[#087f83]/20 focus:border-[#73b9b7] font-medium transition text-center"
                         value={textEl.fontSize}
                         onChange={(e) =>
                           updateElement(textEl.id, {
@@ -1233,7 +1233,7 @@ export const PropertiesPanel: React.FC = () => {
                         onChange={(e) =>
                           updateElement(textEl.id, { lineHeight: Number(e.target.value) })
                         }
-                        className="w-full accent-indigo-600 cursor-pointer"
+                        className="w-full accent-[#087f83] cursor-pointer"
                       />
                     </div>
                     <div>
@@ -1250,7 +1250,7 @@ export const PropertiesPanel: React.FC = () => {
                         onChange={(e) =>
                           updateElement(textEl.id, { letterSpacing: Number(e.target.value) })
                         }
-                        className="w-full accent-indigo-600 cursor-pointer"
+                        className="w-full accent-[#087f83] cursor-pointer"
                       />
                     </div>
                   </div>
@@ -1271,7 +1271,7 @@ export const PropertiesPanel: React.FC = () => {
                         onChange={(e) =>
                           updateElement(textEl.id, { wordSpacing: Number(e.target.value) })
                         }
-                        className="w-full accent-indigo-600 cursor-pointer"
+                        className="w-full accent-[#087f83] cursor-pointer"
                       />
                     </div>
                     <div>
@@ -1290,7 +1290,7 @@ export const PropertiesPanel: React.FC = () => {
                         onChange={(e) =>
                           updateElement(textEl.id, { baselineShift: Number(e.target.value) })
                         }
-                        className="w-full accent-indigo-600 cursor-pointer"
+                        className="w-full accent-[#087f83] cursor-pointer"
                       />
                     </div>
                   </div>
@@ -1310,7 +1310,7 @@ export const PropertiesPanel: React.FC = () => {
                         title="Bold"
                         className={`py-1 rounded-lg flex items-center justify-center transition ${
                           textEl.fontWeight === 'bold' || textEl.fontWeight === '800' || textEl.fontWeight === '900'
-                            ? 'bg-white shadow-xs text-indigo-800 font-bold'
+                            ? 'bg-white shadow-xs text-[#087477] font-bold'
                             : 'text-slate-600 hover:bg-white/60'
                         }`}
                       >
@@ -1325,7 +1325,7 @@ export const PropertiesPanel: React.FC = () => {
                         title="Italic"
                         className={`py-1 rounded-lg flex items-center justify-center transition ${
                           textEl.fontStyle === 'italic'
-                            ? 'bg-white shadow-xs text-indigo-800'
+                            ? 'bg-white shadow-xs text-[#087477]'
                             : 'text-slate-600 hover:bg-white/60'
                         }`}
                       >
@@ -1341,7 +1341,7 @@ export const PropertiesPanel: React.FC = () => {
                         title="Underline"
                         className={`py-1 rounded-lg flex items-center justify-center transition ${
                           textEl.textDecoration === 'underline'
-                            ? 'bg-white shadow-xs text-indigo-800'
+                            ? 'bg-white shadow-xs text-[#087477]'
                             : 'text-slate-600 hover:bg-white/60'
                         }`}
                       >
@@ -1357,7 +1357,7 @@ export const PropertiesPanel: React.FC = () => {
                         title="Strikethrough"
                         className={`py-1 rounded-lg text-xs font-bold line-through transition ${
                           textEl.textDecoration === 'line-through'
-                            ? 'bg-white shadow-xs text-indigo-800'
+                            ? 'bg-white shadow-xs text-[#087477]'
                             : 'text-slate-600 hover:bg-white/60'
                         }`}
                       >
@@ -1377,7 +1377,7 @@ export const PropertiesPanel: React.FC = () => {
                         title="All Caps (TT)"
                         className={`py-1 rounded-lg text-[10.5px] font-bold transition ${
                           textEl.textTransform === 'uppercase'
-                            ? 'bg-white shadow-xs text-indigo-800'
+                            ? 'bg-white shadow-xs text-[#087477]'
                             : 'text-slate-600 hover:bg-white/60'
                         }`}
                       >
@@ -1394,7 +1394,7 @@ export const PropertiesPanel: React.FC = () => {
                         title="Small Caps"
                         className={`py-1 rounded-lg text-[10.5px] font-bold transition ${
                           textEl.fontVariant === 'small-caps'
-                            ? 'bg-white shadow-xs text-indigo-800'
+                            ? 'bg-white shadow-xs text-[#087477]'
                             : 'text-slate-600 hover:bg-white/60'
                         }`}
                       >
@@ -1411,7 +1411,7 @@ export const PropertiesPanel: React.FC = () => {
                         title="Title Case"
                         className={`py-1 rounded-lg text-[10.5px] font-bold transition ${
                           textEl.textTransform === 'capitalize'
-                            ? 'bg-white shadow-xs text-indigo-800'
+                            ? 'bg-white shadow-xs text-[#087477]'
                             : 'text-slate-600 hover:bg-white/60'
                         }`}
                       >
@@ -1428,7 +1428,7 @@ export const PropertiesPanel: React.FC = () => {
                         title="Lowercase"
                         className={`py-1 rounded-lg text-[10.5px] font-bold transition ${
                           textEl.textTransform === 'lowercase'
-                            ? 'bg-white shadow-xs text-indigo-800'
+                            ? 'bg-white shadow-xs text-[#087477]'
                             : 'text-slate-600 hover:bg-white/60'
                         }`}
                       >
@@ -1506,7 +1506,7 @@ export const PropertiesPanel: React.FC = () => {
                           onClick={() => updateElement(textEl.id, { textAlign: align })}
                           className={`py-1.5 rounded-lg flex items-center justify-center transition-all ${
                             textEl.textAlign === align
-                              ? 'bg-white shadow-xs text-indigo-800'
+                              ? 'bg-white shadow-xs text-[#087477]'
                               : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
                           }`}
                         >
@@ -1531,7 +1531,7 @@ export const PropertiesPanel: React.FC = () => {
                           onClick={() => updateElement(textEl.id, { verticalAlign: vAlign })}
                           className={`py-1 rounded-lg text-[11px] font-semibold capitalize transition-all ${
                             textEl.verticalAlign === vAlign
-                              ? 'bg-white text-indigo-800 shadow-xs'
+                              ? 'bg-white text-[#087477] shadow-xs'
                               : 'text-slate-600 hover:text-slate-900'
                           }`}
                         >
@@ -1556,7 +1556,7 @@ export const PropertiesPanel: React.FC = () => {
                       onChange={(e) =>
                         updateElement(textEl.id, { textIndent: Number(e.target.value) })
                       }
-                      className="w-full accent-indigo-600 cursor-pointer"
+                      className="w-full accent-[#087f83] cursor-pointer"
                     />
                   </div>
 
@@ -1572,7 +1572,7 @@ export const PropertiesPanel: React.FC = () => {
                           onClick={() => updateElement(textEl.id, { columns: col })}
                           className={`py-1 rounded-lg text-xs font-semibold transition-all ${
                             textEl.columns === col
-                              ? 'bg-white text-indigo-800 shadow-xs'
+                              ? 'bg-white text-[#087477] shadow-xs'
                               : 'text-slate-600 hover:text-slate-900'
                           }`}
                         >
@@ -1594,7 +1594,7 @@ export const PropertiesPanel: React.FC = () => {
                           onChange={(e) =>
                             updateElement(textEl.id, { columnGap: Number(e.target.value) })
                           }
-                          className="w-full accent-indigo-600 cursor-pointer"
+                          className="w-full accent-[#087f83] cursor-pointer"
                         />
                       </div>
                     )}
@@ -1637,7 +1637,7 @@ export const PropertiesPanel: React.FC = () => {
                             ref={wordArtPickerBtnRef}
                             type="button"
                             onClick={() => setIsWordArtPickerOpen(!isWordArtPickerOpen)}
-                            className="w-full flex items-center justify-between bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium transition cursor-pointer"
+                            className="w-full flex items-center justify-between bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-[#087f83]/20 focus:border-[#73b9b7] font-medium transition cursor-pointer"
                           >
                             <div className="flex items-center gap-2 min-w-0">
                               <span
@@ -1677,8 +1677,8 @@ export const PropertiesPanel: React.FC = () => {
                                     }}
                                     className={`flex flex-col items-center gap-1 p-2 rounded-xl border transition text-center ${
                                       isCurrent
-                                        ? 'border-indigo-500 bg-indigo-50/70 ring-1 ring-indigo-500/30'
-                                        : 'border-slate-200/80 bg-white hover:border-indigo-400 hover:bg-slate-50'
+                                        ? 'border-[#b7dddd] bg-[#e5f4f3] ring-1 ring-[#087f83]/30'
+                                        : 'border-slate-200/80 bg-white hover:border-[#b7dddd] hover:bg-slate-50'
                                     }`}
                                   >
                                     <div
@@ -1741,7 +1741,7 @@ export const PropertiesPanel: React.FC = () => {
                             onChange={(e) =>
                               updateElement(textEl.id, { shadowBlur: Number(e.target.value) })
                             }
-                            className="w-full accent-indigo-600 cursor-pointer"
+                            className="w-full accent-[#087f83] cursor-pointer"
                           />
                         </div>
                       </div>
@@ -1766,7 +1766,7 @@ export const PropertiesPanel: React.FC = () => {
                         onChange={(e) =>
                           updateElement(textEl.id, { padding: Number(e.target.value) })
                         }
-                        className="w-full accent-indigo-600 cursor-pointer"
+                        className="w-full accent-[#087f83] cursor-pointer"
                       />
                     </div>
 
@@ -1844,7 +1844,7 @@ export const PropertiesPanel: React.FC = () => {
                         onChange={(e) =>
                           updateElement(textEl.id, { borderRadius: Number(e.target.value) })
                         }
-                        className="w-full accent-indigo-600 cursor-pointer"
+                        className="w-full accent-[#087f83] cursor-pointer"
                       />
                     </div>
                   </div>
@@ -1858,7 +1858,7 @@ export const PropertiesPanel: React.FC = () => {
         {selectedElement && selectedElement.type === 'shape' && (
           <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3.5 shadow-2xs">
             <div className="font-bold text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-100">
-              <Square size={14} className="text-indigo-700" />
+              <Square size={14} className="text-[#087477]" />
               <span>Shape Formatting</span>
             </div>
 
@@ -1871,7 +1871,7 @@ export const PropertiesPanel: React.FC = () => {
                 ref={shapePickerBtnRef}
                 type="button"
                 onClick={() => setIsShapePickerOpen(!isShapePickerOpen)}
-                className="w-full flex items-center justify-between bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium transition cursor-pointer"
+                className="w-full flex items-center justify-between bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-[#087f83]/20 focus:border-[#73b9b7] font-medium transition cursor-pointer"
               >
                 <div className="flex items-center gap-2">
                   <ShapePreviewIcon
@@ -1911,7 +1911,7 @@ export const PropertiesPanel: React.FC = () => {
                       }}
                       className={`p-2 rounded-xl flex flex-col items-center gap-1 text-[10px] font-semibold transition border ${
                         isCurrent
-                          ? 'bg-indigo-50 border-indigo-500 text-indigo-800'
+                          ? 'bg-[#e5f4f3] border-[#b7dddd] text-[#087477]'
                           : 'border-transparent hover:bg-slate-100 text-slate-700'
                       }`}
                     >
@@ -1925,12 +1925,12 @@ export const PropertiesPanel: React.FC = () => {
 
             {/* Wavy Side Edge (e.g. Make Rectangle Top Side a Wave) */}
             {(selectedElement as ShapeElement).shapeType === 'rectangle' && (
-              <div className="bg-indigo-50/50 border border-indigo-200/70 rounded-xl p-2.5 space-y-2">
+              <div className="bg-[#e5f4f3] border border-[#b7dddd]/70 rounded-xl p-2.5 space-y-2">
                 <div className="flex items-center gap-1.5 text-[11px] font-bold text-indigo-900">
-                  <Waves size={13} className="text-indigo-700" />
+                  <Waves size={13} className="text-[#087477]" />
                   <span>Wave Side Edge</span>
                 </div>
-                <div className="grid grid-cols-5 gap-1 bg-white p-0.5 rounded-lg border border-indigo-200/60">
+                <div className="grid grid-cols-5 gap-1 bg-white p-0.5 rounded-lg border border-[#b7dddd]/60">
                   {(['none', 'top', 'bottom', 'left', 'right'] as const).map((edge) => (
                     <button
                       key={edge}
@@ -1939,7 +1939,7 @@ export const PropertiesPanel: React.FC = () => {
                       }
                       className={`py-1 rounded text-[10px] font-semibold capitalize transition ${
                         ((selectedElement as ShapeElement).waveEdge || 'none') === edge
-                          ? 'bg-indigo-600 text-white'
+                          ? 'bg-[#087f83] text-white'
                           : 'text-slate-600 hover:bg-slate-100'
                       }`}
                     >
@@ -1966,7 +1966,7 @@ export const PropertiesPanel: React.FC = () => {
                               waveAmplitude: Number(e.target.value),
                             })
                           }
-                          className="w-full accent-indigo-600 cursor-pointer"
+                          className="w-full accent-[#087f83] cursor-pointer"
                         />
                       </div>
                       <div>
@@ -1984,7 +1984,7 @@ export const PropertiesPanel: React.FC = () => {
                               waveFrequency: Number(e.target.value),
                             })
                           }
-                          className="w-full accent-indigo-600 cursor-pointer"
+                          className="w-full accent-[#087f83] cursor-pointer"
                         />
                       </div>
                     </div>
@@ -1995,7 +1995,7 @@ export const PropertiesPanel: React.FC = () => {
             {/* Quick Diagram Next Step */}
             <button
               onClick={() => addConnectedDiagramStep('elbow')}
-              className="w-full py-1.5 px-3 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 text-[11px] font-bold flex items-center justify-center gap-1.5 transition"
+              className="w-full py-1.5 px-3 rounded-xl border border-[#b7dddd] bg-[#e5f4f3] hover:bg-[#e5f4f3] text-[#087477] text-[11px] font-bold flex items-center justify-center gap-1.5 transition"
               title="Spawn a connected diagram node with an auto-following arrow"
             >
               <Workflow size={13} />
@@ -2049,7 +2049,7 @@ export const PropertiesPanel: React.FC = () => {
                   <button
                     key={preset.name}
                     onClick={() => updateElement(selectedElement.id, preset.apply)}
-                    className="p-1.5 rounded-xl border border-slate-200 hover:border-indigo-500 bg-slate-50/70 flex flex-col items-center gap-1 transition"
+                    className="p-1.5 rounded-xl border border-slate-200 hover:border-[#b7dddd] bg-slate-50/70 flex flex-col items-center gap-1 transition"
                   >
                     <div
                       className="w-full h-4 rounded-md"
@@ -2076,7 +2076,7 @@ export const PropertiesPanel: React.FC = () => {
                   }
                   className={`py-1 rounded-lg text-[11px] font-semibold transition-all ${
                     ((selectedElement as ShapeElement).fillType || 'solid') === 'solid'
-                      ? 'bg-white text-indigo-800 shadow-xs'
+                      ? 'bg-white text-[#087477] shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -2092,7 +2092,7 @@ export const PropertiesPanel: React.FC = () => {
                   }
                   className={`py-1 rounded-lg text-[11px] font-semibold transition-all ${
                     (selectedElement as ShapeElement).fillType === 'linear-gradient'
-                      ? 'bg-white text-indigo-800 shadow-xs'
+                      ? 'bg-white text-[#087477] shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -2119,7 +2119,7 @@ export const PropertiesPanel: React.FC = () => {
                   }}
                   className={`py-1 rounded-lg text-[11px] font-semibold transition-all ${
                     (selectedElement as ShapeElement).fillType === 'pattern'
-                      ? 'bg-white text-indigo-800 shadow-xs'
+                      ? 'bg-white text-[#087477] shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -2177,7 +2177,7 @@ export const PropertiesPanel: React.FC = () => {
                               }
                               className={`h-8 rounded-lg border transition-all overflow-hidden ${
                                 isSelected
-                                  ? 'border-indigo-600 ring-2 ring-indigo-500/30 scale-[1.03]'
+                                  ? 'border-indigo-600 ring-2 ring-[#087f83]/30 scale-[1.03]'
                                   : 'border-slate-200 hover:border-slate-300'
                               }`}
                               style={
@@ -2213,7 +2213,7 @@ export const PropertiesPanel: React.FC = () => {
                             }
                             className={`px-2 py-0.5 rounded-md text-[9.5px] font-bold transition ${
                               patBgType === 'solid'
-                                ? 'bg-white text-indigo-700 shadow-2xs'
+                                ? 'bg-white text-[#087477] shadow-2xs'
                                 : 'text-slate-500'
                             }`}
                           >
@@ -2231,7 +2231,7 @@ export const PropertiesPanel: React.FC = () => {
                             }
                             className={`px-2 py-0.5 rounded-md text-[9.5px] font-bold transition ${
                               patBgType === 'gradient'
-                                ? 'bg-white text-indigo-700 shadow-2xs'
+                                ? 'bg-white text-[#087477] shadow-2xs'
                                 : 'text-slate-500'
                             }`}
                           >
@@ -2309,7 +2309,7 @@ export const PropertiesPanel: React.FC = () => {
                               }
                               className={`ml-auto text-[9px] font-semibold px-1.5 py-0.5 rounded ${
                                 patBg === 'transparent'
-                                  ? 'bg-indigo-100 text-indigo-700'
+                                  ? 'bg-[#e5f4f3] text-[#087477]'
                                   : 'text-slate-400 hover:text-slate-600'
                               }`}
                               title="Toggle transparent background"
@@ -2339,7 +2339,7 @@ export const PropertiesPanel: React.FC = () => {
                                 }
                                 className={`h-5 rounded-md border transition cursor-pointer ${
                                   isSel
-                                    ? 'border-indigo-600 ring-1 ring-indigo-500/40 scale-105'
+                                    ? 'border-indigo-600 ring-1 ring-[#087f83]/40 scale-105'
                                     : 'border-slate-200 hover:scale-105'
                                 }`}
                                 style={{
@@ -2367,7 +2367,7 @@ export const PropertiesPanel: React.FC = () => {
                             patternScale: Number(e.target.value),
                           })
                         }
-                        className="w-full accent-indigo-600 cursor-pointer"
+                        className="w-full accent-[#087f83] cursor-pointer"
                       />
                     </div>
 
@@ -2387,7 +2387,7 @@ export const PropertiesPanel: React.FC = () => {
                             patternOpacity: Number(e.target.value),
                           })
                         }
-                        className="w-full accent-indigo-600 cursor-pointer"
+                        className="w-full accent-[#087f83] cursor-pointer"
                       />
                     </div>
                   </div>
@@ -2424,7 +2424,7 @@ export const PropertiesPanel: React.FC = () => {
                     onClick={() =>
                       updateElement(selectedElement.id, { fillColor: 'transparent' })
                     }
-                    className="ml-auto text-[11px] font-medium text-indigo-700 hover:underline"
+                    className="ml-auto text-[11px] font-medium text-[#087477] hover:underline"
                   >
                     No Fill
                   </button>
@@ -2448,7 +2448,7 @@ export const PropertiesPanel: React.FC = () => {
                           gradientAngle: Number(e.target.value),
                         })
                       }
-                      className="w-full accent-indigo-600 cursor-pointer"
+                      className="w-full accent-[#087f83] cursor-pointer"
                     />
                   </div>
                   <div>
@@ -2475,7 +2475,7 @@ export const PropertiesPanel: React.FC = () => {
                             }
                             className={`h-6 rounded-lg border transition cursor-pointer ${
                               isSel
-                                ? 'border-indigo-600 ring-2 ring-indigo-500/30 scale-105'
+                                ? 'border-indigo-600 ring-2 ring-[#087f83]/30 scale-105'
                                 : 'border-slate-200 hover:scale-105'
                             }`}
                             style={{
@@ -2508,7 +2508,7 @@ export const PropertiesPanel: React.FC = () => {
                       cornerRadius: Number(e.target.value),
                     })
                   }
-                  className="w-full accent-indigo-600 cursor-pointer"
+                  className="w-full accent-[#087f83] cursor-pointer"
                 />
               </div>
             )}
@@ -2629,7 +2629,7 @@ export const PropertiesPanel: React.FC = () => {
                     onChange={(e) =>
                       updateElement(selectedElement.id, { glowSize: Number(e.target.value) })
                     }
-                    className="flex-1 accent-indigo-600 cursor-pointer"
+                    className="flex-1 accent-[#087f83] cursor-pointer"
                   />
                 </div>
               )}
@@ -2701,7 +2701,7 @@ export const PropertiesPanel: React.FC = () => {
                         effectPreset: 'none',
                       })
                     }
-                    className="text-[10px] font-semibold text-slate-500 hover:text-indigo-700 underline"
+                    className="text-[10px] font-semibold text-slate-500 hover:text-[#087477] underline"
                     title="Switch to rectangular Picture Frame tools"
                   >
                     To Picture
@@ -2843,8 +2843,8 @@ export const PropertiesPanel: React.FC = () => {
                         onClick={() => updateElement(stk.id, { stickerFinish: f.id })}
                         className={`py-1 rounded-lg text-[10px] font-bold border transition ${
                           finish === f.id
-                            ? 'bg-indigo-600 text-white border-indigo-600'
-                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-indigo-50'
+                            ? 'bg-[#087f83] text-white border-indigo-600'
+                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-[#e5f4f3]'
                         }`}
                       >
                         {f.label}
@@ -2893,7 +2893,7 @@ export const PropertiesPanel: React.FC = () => {
                       onClick={() => updateElement(stk.id, { flipH: !stk.flipH })}
                       className={`py-1.5 rounded-lg border text-[10.5px] font-semibold flex items-center justify-center gap-1 transition ${
                         stk.flipH
-                          ? 'bg-indigo-50 border-indigo-300 text-indigo-800'
+                          ? 'bg-[#e5f4f3] border-[#b7dddd] text-[#087477]'
                           : 'bg-slate-50 border-slate-200 text-slate-700'
                       }`}
                     >
@@ -2904,7 +2904,7 @@ export const PropertiesPanel: React.FC = () => {
                       onClick={() => updateElement(stk.id, { flipV: !stk.flipV })}
                       className={`py-1.5 rounded-lg border text-[10.5px] font-semibold flex items-center justify-center gap-1 transition ${
                         stk.flipV
-                          ? 'bg-indigo-50 border-indigo-300 text-indigo-800'
+                          ? 'bg-[#e5f4f3] border-[#b7dddd] text-[#087477]'
                           : 'bg-slate-50 border-slate-200 text-slate-700'
                       }`}
                     >
@@ -2994,7 +2994,7 @@ export const PropertiesPanel: React.FC = () => {
                   <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-[10.5px] font-bold text-slate-700 flex items-center gap-1">
-                        <Eraser size={12} className="text-indigo-600" />
+                        <Eraser size={12} className="text-[#087477]" />
                         Background Removal
                       </span>
                       {stk.originalSrc && (
@@ -3017,7 +3017,7 @@ export const PropertiesPanel: React.FC = () => {
                       type="button"
                       disabled={isRemovingBg}
                       onClick={handleStickerBgRemoval}
-                      className="w-full py-1.5 px-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white text-[10.5px] font-bold transition"
+                      className="w-full py-1.5 px-2.5 rounded-lg bg-[#087f83] hover:bg-[#06696c] disabled:bg-indigo-400 text-white text-[10.5px] font-bold transition"
                     >
                       {isRemovingBg ? 'Removing...' : 'Auto-Remove Background'}
                     </button>
@@ -3035,7 +3035,7 @@ export const PropertiesPanel: React.FC = () => {
           <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3.5 shadow-2xs">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <div className="font-bold text-slate-800 flex items-center gap-1.5">
-                <ImageIcon size={14} className="text-indigo-700" />
+                <ImageIcon size={14} className="text-[#087477]" />
                 <span>Picture Tools</span>
               </div>
               {(selectedElement as ImageElement).src && (
@@ -3087,7 +3087,7 @@ export const PropertiesPanel: React.FC = () => {
               />
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 shadow-xs"
+                className="w-full py-2 px-3 bg-[#087f83] hover:bg-[#06696c] text-white rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 shadow-xs"
               >
                 <Upload size={13} />
                 <span>
@@ -3132,7 +3132,7 @@ export const PropertiesPanel: React.FC = () => {
                 const palette = extractSvgPalette(imgEl.src);
                 if (palette.length === 0) return null;
                 return (
-                  <div className="p-2.5 rounded-xl bg-indigo-50/45 border border-indigo-200/70 space-y-2">
+                  <div className="p-2.5 rounded-xl bg-[#e5f4f3]/45 border border-[#b7dddd]/70 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-bold text-indigo-950">
                         Recolor Clipart / Stock Art
@@ -3193,7 +3193,7 @@ export const PropertiesPanel: React.FC = () => {
                               src: recolorSvgDataUri(imgEl.src, map),
                             });
                           }}
-                          className="py-1 px-1 rounded-lg bg-white border border-indigo-200/80 hover:bg-indigo-100/60 text-[9px] font-bold text-slate-700 truncate"
+                          className="py-1 px-1 rounded-lg bg-white border border-[#b7dddd]/80 hover:bg-[#e5f4f3]/60 text-[9px] font-bold text-slate-700 truncate"
                         >
                           {preset.name}
                         </button>
@@ -3232,7 +3232,7 @@ export const PropertiesPanel: React.FC = () => {
                 <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
-                      <Eraser size={12} className="text-indigo-600" />
+                      <Eraser size={12} className="text-[#087477]" />
                       <span>Background Removal</span>
                     </span>
                     {imgEl.originalSrc && (
@@ -3258,7 +3258,7 @@ export const PropertiesPanel: React.FC = () => {
                       onClick={() => setBgMode('flood')}
                       className={`py-1 rounded-md text-[10px] font-bold transition ${
                         bgMode === 'flood'
-                          ? 'bg-white text-indigo-800 shadow-2xs'
+                          ? 'bg-white text-[#087477] shadow-2xs'
                           : 'text-slate-600'
                       }`}
                     >
@@ -3269,7 +3269,7 @@ export const PropertiesPanel: React.FC = () => {
                       onClick={() => setBgMode('color-key')}
                       className={`py-1 rounded-md text-[10px] font-bold transition ${
                         bgMode === 'color-key'
-                          ? 'bg-white text-indigo-800 shadow-2xs'
+                          ? 'bg-white text-[#087477] shadow-2xs'
                           : 'text-slate-600'
                       }`}
                     >
@@ -3291,7 +3291,7 @@ export const PropertiesPanel: React.FC = () => {
                         onClick={() => setBgTarget(t.id)}
                         className={`py-1 rounded-lg text-[9.5px] font-bold border transition ${
                           bgTarget === t.id
-                            ? 'bg-indigo-600 text-white border-indigo-600'
+                            ? 'bg-[#087f83] text-white border-indigo-600'
                             : 'bg-white text-slate-600 border-slate-200'
                         }`}
                       >
@@ -3312,7 +3312,7 @@ export const PropertiesPanel: React.FC = () => {
                         max={85}
                         value={bgTolerance}
                         onChange={(e) => setBgTolerance(Number(e.target.value))}
-                        className="w-full accent-indigo-600 cursor-pointer"
+                        className="w-full accent-[#087f83] cursor-pointer"
                       />
                     </div>
                     <div>
@@ -3326,7 +3326,7 @@ export const PropertiesPanel: React.FC = () => {
                         max={3}
                         value={bgFeather}
                         onChange={(e) => setBgFeather(Number(e.target.value))}
-                        className="w-full accent-indigo-600 cursor-pointer"
+                        className="w-full accent-[#087f83] cursor-pointer"
                       />
                     </div>
                   </div>
@@ -3335,7 +3335,7 @@ export const PropertiesPanel: React.FC = () => {
                     type="button"
                     disabled={isRemovingBg}
                     onClick={handleBgRemove}
-                    className="w-full py-1.5 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white text-[11px] font-bold transition"
+                    className="w-full py-1.5 px-3 rounded-lg bg-[#087f83] hover:bg-[#06696c] disabled:bg-indigo-400 text-white text-[11px] font-bold transition"
                   >
                     {isRemovingBg ? 'Removing Background...' : 'Remove Background'}
                   </button>
@@ -3412,7 +3412,7 @@ export const PropertiesPanel: React.FC = () => {
                             onChange={(e) =>
                               updateElement(imgEl.id, { borderArtWidth: Number(e.target.value) })
                             }
-                            className="w-full accent-indigo-600 cursor-pointer"
+                            className="w-full accent-[#087f83] cursor-pointer"
                           />
                         </div>
                         <div>
@@ -3428,7 +3428,7 @@ export const PropertiesPanel: React.FC = () => {
                             onChange={(e) =>
                               updateElement(imgEl.id, { borderArtPadding: Number(e.target.value) })
                             }
-                            className="w-full accent-indigo-600 cursor-pointer"
+                            className="w-full accent-[#087f83] cursor-pointer"
                           />
                         </div>
                       </div>
@@ -3440,7 +3440,7 @@ export const PropertiesPanel: React.FC = () => {
                             updateElement(imgEl.id, { borderArtCaption: e.target.value })
                           }
                           placeholder="Polaroid caption..."
-                          className="w-full px-2 py-1 rounded-lg border border-slate-200 bg-white text-[11px] outline-none focus:border-indigo-500"
+                          className="w-full px-2 py-1 rounded-lg border border-slate-200 bg-white text-[11px] outline-none focus:border-[#b7dddd]"
                         />
                       )}
                     </div>
@@ -3469,7 +3469,7 @@ export const PropertiesPanel: React.FC = () => {
                         )
                       )
                     }
-                    className="py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-800 text-[10px] font-bold transition"
+                    className="py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-[#e5f4f3] hover:border-[#b7dddd] hover:text-[#087477] text-[10px] font-bold transition"
                   >
                     {cr.label}
                   </button>
@@ -3491,7 +3491,7 @@ export const PropertiesPanel: React.FC = () => {
                     onClick={() => updateElement(selectedElement.id, { maskShape: mask })}
                     className={`py-1 rounded-lg text-[10px] font-semibold capitalize transition-all ${
                       ((selectedElement as ImageElement).maskShape || 'none') === mask
-                        ? 'bg-white text-indigo-800 shadow-xs'
+                        ? 'bg-white text-[#087477] shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
@@ -3536,7 +3536,7 @@ export const PropertiesPanel: React.FC = () => {
                     probe.onerror = () => updateElement(selectedElement.id, baseReset);
                     probe.src = imgEl.src;
                   }}
-                  className="text-[10px] text-indigo-700 hover:underline flex items-center gap-0.5 cursor-pointer"
+                  className="text-[10px] text-[#087477] hover:underline flex items-center gap-0.5 cursor-pointer"
                   title="Reset crop, pan, rotation, and restore original image size/proportions"
                 >
                   <RotateCcw size={10} /> Reset
@@ -3549,7 +3549,7 @@ export const PropertiesPanel: React.FC = () => {
                     onClick={() => updateElement(selectedElement.id, { objectFit: fit })}
                     className={`py-1 rounded-lg text-[10px] font-semibold capitalize transition-all ${
                       ((selectedElement as ImageElement).objectFit || 'cover') === fit
-                        ? 'bg-white text-indigo-800 shadow-xs'
+                        ? 'bg-white text-[#087477] shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
@@ -3572,7 +3572,7 @@ export const PropertiesPanel: React.FC = () => {
                       imageScale: Number(e.target.value) / 100,
                     })
                   }
-                  className="w-full accent-indigo-600 cursor-pointer"
+                  className="w-full accent-[#087f83] cursor-pointer"
                 />
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -3589,7 +3589,7 @@ export const PropertiesPanel: React.FC = () => {
                     onChange={(e) =>
                       updateElement(selectedElement.id, { panX: Number(e.target.value) })
                     }
-                    className="w-full accent-indigo-600 cursor-pointer"
+                    className="w-full accent-[#087f83] cursor-pointer"
                   />
                 </div>
                 <div>
@@ -3605,7 +3605,7 @@ export const PropertiesPanel: React.FC = () => {
                     onChange={(e) =>
                       updateElement(selectedElement.id, { panY: Number(e.target.value) })
                     }
-                    className="w-full accent-indigo-600 cursor-pointer"
+                    className="w-full accent-[#087f83] cursor-pointer"
                   />
                 </div>
               </div>
@@ -3626,8 +3626,8 @@ export const PropertiesPanel: React.FC = () => {
                       preset.vals.effectPreset &&
                       preset.vals.effectPreset !== 'none' &&
                       (selectedElement as ImageElement).effectPreset === preset.vals.effectPreset
-                        ? 'border-indigo-500 bg-indigo-50 text-indigo-800 shadow-2xs'
-                        : 'border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-800'
+                        ? 'border-[#b7dddd] bg-[#e5f4f3] text-[#087477] shadow-2xs'
+                        : 'border-slate-200 bg-slate-50 hover:bg-[#e5f4f3] hover:border-[#b7dddd] hover:text-[#087477]'
                     }`}
                   >
                     {preset.name}
@@ -3672,7 +3672,7 @@ export const PropertiesPanel: React.FC = () => {
                           [slider.key]: Number(e.target.value),
                         })
                       }
-                      className="w-full accent-indigo-600 cursor-pointer"
+                      className="w-full accent-[#087f83] cursor-pointer"
                     />
                   </div>
                 );
@@ -3707,7 +3707,7 @@ export const PropertiesPanel: React.FC = () => {
         {selectedElement && selectedElement.type === 'table' && (
           <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3.5 shadow-2xs">
             <div className="font-bold text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-100">
-              <TableIcon size={14} className="text-indigo-700" />
+              <TableIcon size={14} className="text-[#087477]" />
               <span>Table Design & Themes</span>
             </div>
 
@@ -3738,7 +3738,7 @@ export const PropertiesPanel: React.FC = () => {
                       }
                       className={`p-1.5 rounded-xl border text-left transition-all hover:scale-[1.02] ${
                         isActive
-                          ? 'border-indigo-600 ring-2 ring-indigo-500/30 bg-indigo-50/40'
+                          ? 'border-indigo-600 ring-2 ring-[#087f83]/30 bg-[#e5f4f3]'
                           : 'border-slate-200 hover:border-slate-300 bg-slate-50/60'
                       }`}
                     >
@@ -3807,7 +3807,7 @@ export const PropertiesPanel: React.FC = () => {
                     height: tbl.height + 36,
                   });
                 }}
-                className="py-1 px-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-800 text-[10px] font-semibold transition"
+                className="py-1 px-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-[#e5f4f3] hover:text-[#087477] text-[10px] font-semibold transition"
               >
                 + Add Row
               </button>
@@ -3823,7 +3823,7 @@ export const PropertiesPanel: React.FC = () => {
                     data: newData,
                   });
                 }}
-                className="py-1 px-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-800 text-[10px] font-semibold transition"
+                className="py-1 px-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-[#e5f4f3] hover:text-[#087477] text-[10px] font-semibold transition"
               >
                 + Add Col
               </button>
@@ -3899,7 +3899,7 @@ export const PropertiesPanel: React.FC = () => {
             <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3.5 shadow-2xs">
               <div className="font-bold text-slate-800 flex items-center justify-between pb-2 border-b border-slate-100">
                 <div className="flex items-center gap-1.5">
-                  <QrCode size={14} className="text-indigo-700" />
+                  <QrCode size={14} className="text-[#087477]" />
                   <span>QR Code Generator</span>
                 </div>
                 {isHttpLink && (
@@ -3907,7 +3907,7 @@ export const PropertiesPanel: React.FC = () => {
                     href={qrEl.value.trim()}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-[10px] font-bold text-indigo-600 hover:underline"
+                    className="text-[10px] font-bold text-[#087477] hover:underline"
                   >
                     Test Link â†—
                   </a>
@@ -3926,7 +3926,7 @@ export const PropertiesPanel: React.FC = () => {
                     key={preset.label}
                     type="button"
                     onClick={() => updateElement(qrEl.id, { value: preset.val })}
-                    className="py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-800 text-[10px] font-semibold transition"
+                    className="py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-[#e5f4f3] hover:border-[#b7dddd] hover:text-[#087477] text-[10px] font-semibold transition"
                   >
                     {preset.label}
                   </button>
@@ -3944,7 +3944,7 @@ export const PropertiesPanel: React.FC = () => {
                     updateElement(qrEl.id, { value: e.target.value })
                   }
                   placeholder="https://example.com"
-                  className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium"
+                  className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-[#087f83]/20 focus:border-[#73b9b7] font-medium"
                 />
               </div>
 
@@ -4014,7 +4014,7 @@ export const PropertiesPanel: React.FC = () => {
                     opacity: Number(e.target.value) / 100,
                   })
                 }
-                className="w-full accent-indigo-600 cursor-pointer"
+                className="w-full accent-[#087f83] cursor-pointer"
               />
             </div>
 
@@ -4028,7 +4028,7 @@ export const PropertiesPanel: React.FC = () => {
                   }
                   className={`p-1 rounded-lg border transition ${
                     selectedElement.flipH
-                      ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
+                      ? 'bg-[#e5f4f3] border-[#b7dddd] text-[#087477]'
                       : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                   }`}
                   title="Flip Horizontal"
@@ -4041,7 +4041,7 @@ export const PropertiesPanel: React.FC = () => {
                   }
                   className={`p-1 rounded-lg border transition ${
                     selectedElement.flipV
-                      ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
+                      ? 'bg-[#e5f4f3] border-[#b7dddd] text-[#087477]'
                       : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                   }`}
                   title="Flip Vertical"

@@ -74,7 +74,7 @@ export const FloatingDropdown: React.FC<FloatingDropdownProps> = ({
         left: `${coords.left}px`,
         zIndex: 9999,
       }}
-      className={`bg-white/95 backdrop-blur-md border border-slate-200 shadow-2xl rounded-2xl animate-in fade-in zoom-in-95 duration-100 ${className}`}
+      className={`bg-white border border-[#e5e9ee] shadow-[0_8px_28px_rgba(28,44,58,0.12)] rounded-[12px] animate-in fade-in zoom-in-95 duration-100 ${className}`}
     >
       {children}
     </div>,

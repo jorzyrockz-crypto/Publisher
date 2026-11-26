@@ -65,7 +65,7 @@ const TemplatePagePreview: React.FC<{
         </>
       )}
       <div
-        className="relative shadow-md border border-slate-200/80 overflow-hidden bg-white"
+        className="relative shadow-md border border-[#e5e9ee] overflow-hidden bg-white"
         style={{
           width: `${scaledW}px`,
           height: `${scaledH}px`,
@@ -388,7 +388,7 @@ export const BackstageModal: React.FC = () => {
                   placeholder="Search templates (e.g. menu, poster, resume)..."
                   value={templateSearch}
                   onChange={(e) => setTemplateSearch(e.target.value)}
-                  className="w-full md:w-64 px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 shadow-2xs"
+                  className="w-full md:w-64 px-3.5 py-2 rounded-xl border border-[#e5e9ee] bg-white text-xs outline-none focus:ring-2 focus:ring-[#087f83]/20 focus:border-[#73b9b7] shadow-2xs"
                 />
               </div>
 
@@ -400,8 +400,8 @@ export const BackstageModal: React.FC = () => {
                     onClick={() => setTemplateGroupFilter(tab)}
                     className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition ${
                       templateGroupFilter === tab
-                        ? 'bg-indigo-600 text-white shadow-xs'
-                        : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
+                        ? 'bg-[#087f83] text-white shadow-xs'
+                        : 'bg-white border border-[#e5e9ee] text-slate-600 hover:bg-slate-100'
                     }`}
                   >
                     {tab}
@@ -413,7 +413,7 @@ export const BackstageModal: React.FC = () => {
               <div className="space-y-8">
                 {visibleGroups.map((group) => (
                   <div key={group.label} className="space-y-3.5">
-                    <div className="flex items-center gap-2 border-b border-slate-200/80 pb-2">
+                    <div className="flex items-center gap-2 border-b border-[#e5e9ee] pb-2">
                       <h2 className="text-sm font-bold text-slate-700">{group.label}</h2>
                       <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-slate-200/70 text-slate-600">
                         {group.items.length}
@@ -428,11 +428,11 @@ export const BackstageModal: React.FC = () => {
                             loadTemplate(tpl.id);
                             confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
                           }}
-                          className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm hover:shadow-xl hover:border-indigo-500 cursor-pointer transition-all hover:-translate-y-1 group flex flex-col justify-between"
+                          className="bg-white border border-[#e5e9ee] rounded-2xl p-4 shadow-sm hover:shadow-xl hover:border-[#b7dddd] cursor-pointer transition-all hover:-translate-y-1 group flex flex-col justify-between"
                         >
                           <div>
                             <div
-                              className="w-full h-44 rounded-xl mb-3.5 flex items-center justify-center p-3 relative overflow-hidden border border-slate-200/70"
+                              className="w-full h-44 rounded-xl mb-3.5 flex items-center justify-center p-3 relative overflow-hidden border border-[#e5e9ee]/70"
                               style={{
                                 background:
                                   tpl.category === 'Blank'
@@ -456,7 +456,7 @@ export const BackstageModal: React.FC = () => {
                                   e.stopPropagation();
                                   setPreviewTemplate(tpl);
                                 }}
-                                className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-900/80 hover:bg-indigo-600 text-white text-[10.5px] font-semibold opacity-0 group-hover:opacity-100 transition-all shadow-md"
+                                className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-900/80 hover:bg-[#087f83] text-white text-[10.5px] font-semibold opacity-0 group-hover:opacity-100 transition-all shadow-md"
                                 title="Full Preview"
                               >
                                 <Eye size={12} />
@@ -465,7 +465,7 @@ export const BackstageModal: React.FC = () => {
                             </div>
 
                             <div className="flex items-center gap-2 mb-1.5">
-                              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-800 border border-indigo-200/60">
+                              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-[#e5f4f3] text-[#087477] border border-[#b7dddd]/60">
                                 {tpl.category}
                               </span>
                               <span className="text-[11px] font-medium text-slate-400">
@@ -474,7 +474,7 @@ export const BackstageModal: React.FC = () => {
                               </span>
                             </div>
 
-                            <h3 className="font-bold text-sm text-slate-800 group-hover:text-indigo-700 transition">
+                            <h3 className="font-bold text-sm text-slate-800 group-hover:text-[#087477] transition">
                               {tpl.name}
                             </h3>
                             <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
@@ -482,7 +482,7 @@ export const BackstageModal: React.FC = () => {
                             </p>
                           </div>
 
-                          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-indigo-700">
+                          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-[#087477]">
                             <span>Create Publication</span>
                             <span className="group-hover:translate-x-1 transition-transform">→</span>
                           </div>
@@ -503,7 +503,7 @@ export const BackstageModal: React.FC = () => {
 
             {/* Open Workspace Tabs Switcher */}
             {workspaceTabs.length > 0 && (
-              <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-3">
+              <div className="bg-white p-6 rounded-2xl border border-[#e5e9ee] shadow-sm space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-sm text-slate-800">
                     Open Workspace Tabs ({workspaceTabs.length})
@@ -524,15 +524,15 @@ export const BackstageModal: React.FC = () => {
                         }}
                         className={`p-3 rounded-xl border flex items-center justify-between gap-2 cursor-pointer transition ${
                           isCur
-                            ? 'border-indigo-500 bg-indigo-50/70'
-                            : 'border-slate-200 hover:border-indigo-300 hover:bg-slate-50'
+                            ? 'border-[#b7dddd] bg-[#e5f4f3]'
+                            : 'border-[#e5e9ee] hover:border-[#b7dddd] hover:bg-slate-50'
                         }`}
                       >
                         <div className="min-w-0">
                           <div className="text-xs font-bold text-slate-800 truncate flex items-center gap-1.5">
                             <span>{tab.project.name}</span>
                             {isCur && (
-                              <span className="px-1.5 py-0.5 rounded bg-indigo-600 text-white text-[9px]">
+                              <span className="px-1.5 py-0.5 rounded bg-[#087f83] text-white text-[9px]">
                                 Active
                               </span>
                             )}
@@ -561,8 +561,8 @@ export const BackstageModal: React.FC = () => {
               </div>
             )}
 
-            <div className="bg-white p-10 rounded-2xl border border-slate-200/80 shadow-sm text-center space-y-4">
-              <div className="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-700 flex items-center justify-center mx-auto shadow-xs">
+            <div className="bg-white p-10 rounded-2xl border border-[#e5e9ee] shadow-sm text-center space-y-4">
+              <div className="w-16 h-16 rounded-2xl bg-[#e5f4f3] text-[#087477] flex items-center justify-center mx-auto shadow-xs">
                 <FolderOpen size={32} />
               </div>
               <div>
@@ -594,7 +594,7 @@ export const BackstageModal: React.FC = () => {
 
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-xl font-semibold text-xs transition shadow-sm"
+                className="px-6 py-2.5 bg-[#087f83] hover:bg-[#06696c] active:scale-95 text-white rounded-xl font-semibold text-xs transition shadow-sm"
               >
                 Browse Files...
               </button>
@@ -606,7 +606,7 @@ export const BackstageModal: React.FC = () => {
         {activeSection === 'save' && (
           <div className="max-w-2xl mx-auto space-y-6">
             <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Save Publication</h1>
-            <div className="bg-white p-8 rounded-2xl border border-slate-200/80 shadow-sm space-y-6">
+            <div className="bg-white p-8 rounded-2xl border border-[#e5e9ee] shadow-sm space-y-6">
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1.5">
                   File Name
@@ -615,7 +615,7 @@ export const BackstageModal: React.FC = () => {
                   type="text"
                   value={project.name}
                   onChange={(e) => (project.name = e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium"
+                  className="w-full border border-[#e5e9ee] rounded-xl px-3.5 py-2 text-sm outline-none focus:ring-2 focus:ring-[#087f83]/20 focus:border-[#73b9b7] font-medium"
                 />
               </div>
 
@@ -625,7 +625,7 @@ export const BackstageModal: React.FC = () => {
                     saveProjectToFile(project);
                     setIsBackstageOpen(false);
                   }}
-                  className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-xl font-semibold text-xs transition shadow-sm flex items-center gap-2"
+                  className="px-6 py-2.5 bg-[#087f83] hover:bg-[#06696c] active:scale-95 text-white rounded-xl font-semibold text-xs transition shadow-sm flex items-center gap-2"
                 >
                   <Save size={14} />
                   <span>Download .pub File</span>
@@ -653,22 +653,22 @@ export const BackstageModal: React.FC = () => {
                     Configure sheet imposition, grayscale ink proofing, trim marks, and print directly.
                   </p>
                 </div>
-                <span className="text-xs font-semibold px-3 py-1 rounded-full bg-indigo-50 text-indigo-800 border border-indigo-200/70">
+                <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#e5f4f3] text-[#087477] border border-[#b7dddd]/70">
                   {selectedPages.length} {selectedPages.length === 1 ? 'Page' : 'Pages'} • {sheets.length}{' '}
                   {sheets.length === 1 ? 'Sheet' : 'Sheets'}
                 </span>
               </div>
 
-              <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden grid grid-cols-1 lg:grid-cols-12">
+              <div className="bg-white rounded-[15px] border border-[#e5e9ee] shadow-sm overflow-hidden grid grid-cols-1 lg:grid-cols-12">
                 {/* Left Column: Print Settings */}
-                <div className="lg:col-span-4 p-6 border-b lg:border-b-0 lg:border-r border-slate-200 space-y-4">
+                <div className="lg:col-span-4 p-6 border-b lg:border-b-0 lg:border-r border-[#e5e9ee] space-y-4">
                   {/* Primary Actions */}
                   <div className="space-y-2">
                     <button
                       type="button"
                       disabled={isPreparingPrint}
                       onClick={handlePrintNow}
-                      className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 active:scale-95 text-white rounded-xl font-bold text-sm transition shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                      className="w-full py-3 bg-[#087f83] hover:bg-[#06696c] disabled:bg-indigo-400 active:scale-95 text-white rounded-xl font-bold text-sm transition shadow-md flex items-center justify-center gap-2 cursor-pointer"
                     >
                       {isPreparingPrint ? (
                         <>
@@ -706,7 +706,7 @@ export const BackstageModal: React.FC = () => {
                           confetti({ particleCount: 35 });
                         })
                       }
-                      className="w-full py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer"
+                      className="w-full py-2 rounded-xl border border-[#e5e9ee] bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer"
                     >
                       <FileDown size={14} className="text-rose-600" />
                       <span>
@@ -728,7 +728,7 @@ export const BackstageModal: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setShowPrinterProps(!showPrinterProps)}
-                        className="text-[10.5px] font-bold text-indigo-700 hover:underline"
+                        className="text-[10.5px] font-bold text-[#087477] hover:underline"
                       >
                         {showPrinterProps ? 'Hide Properties' : 'Printer Properties'}
                       </button>
@@ -741,7 +741,7 @@ export const BackstageModal: React.FC = () => {
                           printerName: e.target.value as PrintSettings['printerName'],
                         }))
                       }
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-indigo-600 cursor-pointer"
+                      className="w-full rounded-xl border border-[#e5e9ee] bg-slate-50 hover:bg-slate-100 px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#73b9b7] cursor-pointer"
                     >
                       <option value="System Print Dialog">System Print Dialog (Default)</option>
                       <option value="Save as PDF">Save as PDF (Direct Download)</option>
@@ -750,7 +750,7 @@ export const BackstageModal: React.FC = () => {
                     </select>
 
                     {showPrinterProps && (
-                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2.5 text-[11px]">
+                      <div className="p-3 rounded-xl bg-slate-50 border border-[#e5e9ee] space-y-2.5 text-[11px]">
                         <div className="grid grid-cols-2 gap-2">
                           <div>
                             <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">
@@ -764,7 +764,7 @@ export const BackstageModal: React.FC = () => {
                                   paperSize: e.target.value as PrintSettings['paperSize'],
                                 }))
                               }
-                              className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-medium outline-none"
+                              className="w-full rounded-lg border border-[#e5e9ee] bg-white px-2 py-1 text-[11px] font-medium outline-none"
                             >
                               <option value="auto">Auto-Match</option>
                               <option value="letter">Letter (8.5×11&quot;)</option>
@@ -786,7 +786,7 @@ export const BackstageModal: React.FC = () => {
                                   qualityDpi: Number(e.target.value) as PrintSettings['qualityDpi'],
                                 }))
                               }
-                              className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-medium outline-none"
+                              className="w-full rounded-lg border border-[#e5e9ee] bg-white px-2 py-1 text-[11px] font-medium outline-none"
                             >
                               <option value={150}>Draft (150 DPI)</option>
                               <option value={300}>Standard (300 DPI)</option>
@@ -808,7 +808,7 @@ export const BackstageModal: React.FC = () => {
                                   duplex: e.target.value as PrintSettings['duplex'],
                                 }))
                               }
-                              className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-medium outline-none"
+                              className="w-full rounded-lg border border-[#e5e9ee] bg-white px-2 py-1 text-[11px] font-medium outline-none"
                             >
                               <option value="one-sided">One-Sided</option>
                               <option value="long-edge">2-Sided (Long)</option>
@@ -827,7 +827,7 @@ export const BackstageModal: React.FC = () => {
                                   scaleMode: e.target.value as PrintSettings['scaleMode'],
                                 }))
                               }
-                              className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-medium outline-none"
+                              className="w-full rounded-lg border border-[#e5e9ee] bg-white px-2 py-1 text-[11px] font-medium outline-none"
                             >
                               <option value="fit">Fit to Paper</option>
                               <option value="actual">Actual (100%)</option>
@@ -853,7 +853,7 @@ export const BackstageModal: React.FC = () => {
                           copies: Math.max(1, Math.min(99, Number(e.target.value) || 1)),
                         }))
                       }
-                      className="w-20 px-2.5 py-1 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-center outline-none focus:border-indigo-600"
+                      className="w-20 px-2.5 py-1 rounded-xl border border-[#e5e9ee] bg-slate-50 text-xs font-bold text-center outline-none focus:border-[#73b9b7]"
                     />
                   </div>
 
@@ -879,7 +879,7 @@ export const BackstageModal: React.FC = () => {
                           }}
                           className={`py-1 px-1.5 rounded-lg text-[10.5px] font-semibold transition ${
                             printSettings.rangeMode === opt.id
-                              ? 'bg-white text-indigo-800 shadow-2xs'
+                              ? 'bg-white text-[#087477] shadow-2xs'
                               : 'text-slate-600 hover:text-slate-900'
                           }`}
                         >
@@ -896,7 +896,7 @@ export const BackstageModal: React.FC = () => {
                           setActiveSheetIdx(0);
                         }}
                         placeholder="e.g. 1, 3-4"
-                        className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-xs font-mono outline-none focus:border-indigo-600"
+                        className="w-full px-2.5 py-1.5 rounded-xl border border-[#e5e9ee] bg-slate-50 focus:bg-white text-xs font-mono outline-none focus:border-[#73b9b7]"
                       />
                     )}
                   </div>
@@ -921,7 +921,7 @@ export const BackstageModal: React.FC = () => {
                           }
                           className={`py-1.5 rounded-lg text-[11px] font-semibold transition ${
                             printSettings.colorMode === mode.id
-                              ? 'bg-white text-indigo-800 shadow-2xs'
+                              ? 'bg-white text-[#087477] shadow-2xs'
                               : 'text-slate-600 hover:text-slate-900'
                           }`}
                         >
@@ -956,7 +956,7 @@ export const BackstageModal: React.FC = () => {
                           }}
                           className={`py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${
                             printSettings.printMode === m.id
-                              ? 'bg-white text-indigo-800 shadow-2xs'
+                              ? 'bg-white text-[#087477] shadow-2xs'
                               : 'text-slate-600 hover:text-slate-900'
                           }`}
                         >
@@ -989,7 +989,7 @@ export const BackstageModal: React.FC = () => {
                             }
                             className={`py-1 rounded-lg text-[10.5px] font-semibold transition cursor-pointer ${
                               printSettings.sheetOrientation === ori.id
-                                ? 'bg-white text-indigo-800 shadow-2xs'
+                                ? 'bg-white text-[#087477] shadow-2xs'
                                 : 'text-slate-600 hover:text-slate-900'
                             }`}
                           >
@@ -1011,7 +1011,7 @@ export const BackstageModal: React.FC = () => {
                             }}
                             className={`py-1.5 rounded-lg text-[11px] font-semibold transition ${
                               printSettings.pagesPerSheet === n
-                                ? 'bg-white text-indigo-800 shadow-2xs'
+                                ? 'bg-white text-[#087477] shadow-2xs'
                                 : 'text-slate-600 hover:text-slate-900'
                             }`}
                           >
@@ -1022,8 +1022,8 @@ export const BackstageModal: React.FC = () => {
                     )}
 
                     {printSettings.printMode === 'booklet' && (
-                      <div className="p-2.5 rounded-xl bg-indigo-50/70 border border-indigo-200/70 space-y-2">
-                        <div className="text-[10.5px] font-bold text-indigo-900">
+                      <div className="p-2.5 rounded-xl bg-[#e5f4f3] border border-[#b7dddd]/70 space-y-2">
+                        <div className="text-[10.5px] font-bold text-[#087477]">
                           Booklet Saddle-Stitch Imposition
                         </div>
                         <div className="grid grid-cols-3 gap-1">
@@ -1043,8 +1043,8 @@ export const BackstageModal: React.FC = () => {
                               }}
                               className={`py-1 rounded-lg text-[10px] font-bold border transition cursor-pointer ${
                                 printSettings.bookletSides === side.id
-                                  ? 'bg-indigo-600 text-white border-indigo-600'
-                                  : 'bg-white text-slate-600 border-slate-200'
+                                  ? 'bg-[#087f83] text-white border-indigo-600'
+                                  : 'bg-white text-slate-600 border-[#e5e9ee]'
                               }`}
                             >
                               {side.label}
@@ -1061,7 +1061,7 @@ export const BackstageModal: React.FC = () => {
                                 bookletShowFoldLine: e.target.checked,
                               }))
                             }
-                            className="accent-indigo-600 rounded"
+                            className="accent-[#087f83] rounded"
                           />
                           <span>Show Center Fold Line</span>
                         </label>
@@ -1222,7 +1222,7 @@ export const BackstageModal: React.FC = () => {
                                   }));
                                   setTarpapelInspectTileIdx(0);
                                 }}
-                                className="w-full px-2 py-1 rounded-lg border border-slate-200 bg-white text-xs font-bold"
+                                className="w-full px-2 py-1 rounded-lg border border-[#e5e9ee] bg-white text-xs font-bold"
                               />
                             </div>
                             <div>
@@ -1241,7 +1241,7 @@ export const BackstageModal: React.FC = () => {
                                   }));
                                   setTarpapelInspectTileIdx(0);
                                 }}
-                                className="w-full px-2 py-1 rounded-lg border border-slate-200 bg-white text-xs font-bold"
+                                className="w-full px-2 py-1 rounded-lg border border-[#e5e9ee] bg-white text-xs font-bold"
                               />
                             </div>
                           </div>
@@ -1377,7 +1377,7 @@ export const BackstageModal: React.FC = () => {
                                 setTarpapelOverlayVisible(true);
                                 setIsBackstageOpen(false);
                               }}
-                              className="py-1.5 px-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold transition cursor-pointer"
+                              className="py-1.5 px-2 rounded-lg bg-[#087f83] hover:bg-[#06696c] text-white text-[10px] font-bold transition cursor-pointer"
                               title="Return to editor with live R1·C1 Tarpapel grid lines on the canvas so you can resize your photo"
                             >
                               Grid on Canvas
@@ -1400,7 +1400,7 @@ export const BackstageModal: React.FC = () => {
                         onChange={(e) =>
                           setPrintSettings((s) => ({ ...s, showCropMarks: e.target.checked }))
                         }
-                        className="accent-indigo-600 rounded"
+                        className="accent-[#087f83] rounded"
                       />
                       <span>Corner Crop / Trim Marks</span>
                     </label>
@@ -1411,7 +1411,7 @@ export const BackstageModal: React.FC = () => {
                         onChange={(e) =>
                           setPrintSettings((s) => ({ ...s, showMarginBox: e.target.checked }))
                         }
-                        className="accent-indigo-600 rounded"
+                        className="accent-[#087f83] rounded"
                       />
                       <span>Show Safe Margin Box (Preview)</span>
                     </label>
@@ -1439,8 +1439,8 @@ export const BackstageModal: React.FC = () => {
                           onClick={() => setShowAllPrintSheets(!showAllPrintSheets)}
                           className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition ${
                             showAllPrintSheets
-                              ? 'bg-indigo-600 text-white border-indigo-600'
-                              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                              ? 'bg-[#087f83] text-white border-indigo-600'
+                              : 'bg-white text-slate-600 border-[#e5e9ee] hover:bg-slate-50'
                           }`}
                         >
                           {showAllPrintSheets ? 'Single Sheet' : 'View All Sheets'}
@@ -1448,12 +1448,12 @@ export const BackstageModal: React.FC = () => {
                       )}
 
                       {!showAllPrintSheets && sheets.length > 1 && (
-                        <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg px-1.5 py-0.5">
+                        <div className="flex items-center gap-1 bg-white border border-[#e5e9ee] rounded-lg px-1.5 py-0.5">
                           <button
                             type="button"
                             disabled={safeSheetIdx === 0}
                             onClick={() => setActiveSheetIdx((i) => Math.max(0, i - 1))}
-                            className="p-0.5 text-slate-600 disabled:opacity-30 hover:text-indigo-700"
+                            className="p-0.5 text-slate-600 disabled:opacity-30 hover:text-[#087477]"
                           >
                             <ChevronLeft size={14} />
                           </button>
@@ -1466,7 +1466,7 @@ export const BackstageModal: React.FC = () => {
                             onClick={() =>
                               setActiveSheetIdx((i) => Math.min(sheets.length - 1, i + 1))
                             }
-                            className="p-0.5 text-slate-600 disabled:opacity-30 hover:text-indigo-700"
+                            className="p-0.5 text-slate-600 disabled:opacity-30 hover:text-[#087477]"
                           >
                             <ChevronRight size={14} />
                           </button>
@@ -1500,7 +1500,7 @@ export const BackstageModal: React.FC = () => {
                                     grayscale={printSettings.colorMode === 'grayscale'}
                                   />
                                 ) : (
-                                  <div className="w-[180px] h-[230px] border border-dashed border-slate-200 rounded flex items-center justify-center text-[10px] text-slate-400">
+                                  <div className="w-[180px] h-[230px] border border-dashed border-[#e5e9ee] rounded flex items-center justify-center text-[10px] text-slate-400">
                                     Blank Half
                                   </div>
                                 )}
@@ -1519,7 +1519,7 @@ export const BackstageModal: React.FC = () => {
                                     grayscale={printSettings.colorMode === 'grayscale'}
                                   />
                                 ) : (
-                                  <div className="w-[180px] h-[230px] border border-dashed border-slate-200 rounded flex items-center justify-center text-[10px] text-slate-400">
+                                  <div className="w-[180px] h-[230px] border border-dashed border-[#e5e9ee] rounded flex items-center justify-center text-[10px] text-slate-400">
                                     Blank Half
                                   </div>
                                 )}
@@ -1528,7 +1528,7 @@ export const BackstageModal: React.FC = () => {
                                 </span>
                               </div>
                             </div>
-                            <span className="text-[10.5px] font-semibold text-indigo-800">
+                            <span className="text-[10.5px] font-semibold text-[#087477]">
                               Sheet {bs.sheetNumber} • {bs.side} ({bs.leftPageNum ? `P${bs.leftPageNum}` : 'Blank'} |{' '}
                               {bs.rightPageNum ? `P${bs.rightPageNum}` : 'Blank'})
                             </span>
@@ -1594,7 +1594,7 @@ export const BackstageModal: React.FC = () => {
                           <div className="flex flex-col items-center gap-3 w-full">
                             {/* View Mode Switcher: Poster Tile Map | Inspect Single Sheet */}
                             <div className="flex items-center gap-2 flex-wrap justify-center">
-                              <div className="flex items-center bg-white border border-slate-200 rounded-full p-0.5 text-[10.5px] font-bold shadow-2xs">
+                              <div className="flex items-center bg-white border border-[#e5e9ee] rounded-full p-0.5 text-[10.5px] font-bold shadow-2xs">
                                 <button
                                   type="button"
                                   onClick={() => setTarpapelPreviewMode('map')}
@@ -1620,7 +1620,7 @@ export const BackstageModal: React.FC = () => {
                               </div>
 
                               {tarpapelPreviewMode === 'tile' && (
-                                <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-full px-2 py-0.5 text-[10.5px] font-bold text-slate-700">
+                                <div className="flex items-center gap-1 bg-white border border-[#e5e9ee] rounded-full px-2 py-0.5 text-[10.5px] font-bold text-slate-700">
                                   <button
                                     type="button"
                                     disabled={safeTileIdx <= 0}
@@ -1739,7 +1739,7 @@ export const BackstageModal: React.FC = () => {
                                 }}
                               >
                                 <div
-                                  className="relative overflow-hidden border border-slate-200/80 w-full h-full"
+                                  className="relative overflow-hidden border border-[#e5e9ee] w-full h-full"
                                   style={{
                                     width: `${printablePreviewW}px`,
                                     height: `${printablePreviewH}px`,
@@ -1874,7 +1874,7 @@ export const BackstageModal: React.FC = () => {
             <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Export & Publish</h1>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* PDF */}
-              <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+              <div className="bg-white p-6 rounded-2xl border border-[#e5e9ee] shadow-sm hover:shadow-md transition flex flex-col justify-between">
                 <div>
                   <div className="w-12 h-12 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mb-3">
                     <FileDown size={24} />
@@ -1899,7 +1899,7 @@ export const BackstageModal: React.FC = () => {
               </div>
 
               {/* PNG */}
-              <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+              <div className="bg-white p-6 rounded-2xl border border-[#e5e9ee] shadow-sm hover:shadow-md transition flex flex-col justify-between">
                 <div>
                   <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3">
                     <ImageIcon size={24} />
@@ -1913,7 +1913,7 @@ export const BackstageModal: React.FC = () => {
                       type="checkbox"
                       checked={transparentPng}
                       onChange={(e) => setTransparentPng(e.target.checked)}
-                      className="accent-indigo-600 rounded"
+                      className="accent-[#087f83] rounded"
                     />
                     <span>Transparent Background</span>
                   </label>
@@ -1939,7 +1939,7 @@ export const BackstageModal: React.FC = () => {
               </div>
 
               {/* JPEG */}
-              <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+              <div className="bg-white p-6 rounded-2xl border border-[#e5e9ee] shadow-sm hover:shadow-md transition flex flex-col justify-between">
                 <div>
                   <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-3">
                     <ImageIcon size={24} />
@@ -2013,7 +2013,7 @@ export const BackstageModal: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => saveProjectToFile(project)}
-                    className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
+                    className="px-3.5 py-2 rounded-xl border border-[#e5e9ee] bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
                   >
                     <Save size={14} />
                     <span>Save .pub</span>
@@ -2021,7 +2021,7 @@ export const BackstageModal: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setActiveSection('print')}
-                    className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+                    className="px-4 py-2 rounded-xl bg-[#087f83] hover:bg-[#06696c] text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition cursor-pointer"
                   >
                     <Printer size={14} />
                     <span>Print Preview</span>
@@ -2031,7 +2031,7 @@ export const BackstageModal: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {/* Document Properties Card */}
-                <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4 text-xs">
+                <div className="bg-white p-6 rounded-2xl border border-[#e5e9ee] shadow-sm space-y-4 text-xs">
                   <h2 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2">
                     Document Properties
                   </h2>
@@ -2046,7 +2046,7 @@ export const BackstageModal: React.FC = () => {
                       onChange={(e) =>
                         setProject({ ...project, name: e.target.value || 'Untitled.pub' })
                       }
-                      className="w-full px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white font-bold text-slate-800 outline-none focus:border-indigo-600"
+                      className="w-full px-3 py-1.5 rounded-xl border border-[#e5e9ee] bg-slate-50 focus:bg-white font-bold text-slate-800 outline-none focus:border-[#73b9b7]"
                     />
                   </div>
 
@@ -2071,7 +2071,7 @@ export const BackstageModal: React.FC = () => {
                 </div>
 
                 {/* Elements & Preflight Card */}
-                <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4 text-xs">
+                <div className="bg-white p-6 rounded-2xl border border-[#e5e9ee] shadow-sm space-y-4 text-xs">
                   <h2 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2">
                     Content &amp; Preflight Check
                   </h2>
@@ -2087,9 +2087,9 @@ export const BackstageModal: React.FC = () => {
                     ].map((stat) => (
                       <div
                         key={stat.label}
-                        className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/70 text-center"
+                        className="p-2.5 rounded-xl bg-slate-50 border border-[#e5e9ee]/70 text-center"
                       >
-                        <div className="text-base font-extrabold text-indigo-700">{stat.count}</div>
+                        <div className="text-base font-extrabold text-[#087477]">{stat.count}</div>
                         <div className="text-[10px] font-semibold text-slate-500">{stat.label}</div>
                       </div>
                     ))}
@@ -2105,7 +2105,7 @@ export const BackstageModal: React.FC = () => {
                         usedFonts.map((f) => (
                           <span
                             key={f}
-                            className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-800 border border-indigo-200/60 text-[10.5px] font-semibold"
+                            className="px-2 py-0.5 rounded-full bg-[#e5f4f3] text-[#087477] border border-[#b7dddd]/60 text-[10.5px] font-semibold"
                           >
                             {f}
                           </span>
@@ -2143,17 +2143,17 @@ export const BackstageModal: React.FC = () => {
       {/* Full Template Preview Lightbox */}
       {previewTemplate && (
         <div
-          className="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-6"
+          className="fixed inset-0 z-50 bg-[#15232d]/35 backdrop-blur-[2px] flex items-center justify-center p-6"
           onClick={() => setPreviewTemplate(null)}
         >
           <div
-            className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden"
+            className="bg-white rounded-[15px] shadow-[0_20px_70px_rgba(21,35,45,0.22)] border border-[#e5e9ee] max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+            <div className="px-6 py-4 border-b border-[#e5e9ee] flex items-center justify-between bg-slate-50">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-[#e5f4f3] text-[#087477]">
                     {previewTemplate.category}
                   </span>
                   <h2 className="text-lg font-bold text-slate-800">{previewTemplate.name}</h2>
@@ -2167,7 +2167,7 @@ export const BackstageModal: React.FC = () => {
                     setPreviewTemplate(null);
                     confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
                   }}
-                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-[#087f83] hover:bg-[#06696c] text-white text-xs font-bold shadow-sm transition cursor-pointer"
                 >
                   Use This Template
                 </button>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { usePublisher } from '../../context/PublisherContext';
-import { ZoomIn, ZoomOut, Maximize, FileText, CheckCircle2 } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize, FileText } from 'lucide-react';
 
 export const StatusBar: React.FC = () => {
   const {
@@ -20,47 +20,48 @@ export const StatusBar: React.FC = () => {
       : null;
 
   return (
-    <div className="h-6 bg-[#064e3b] text-indigo-100 flex items-center justify-between px-3 text-[11px] select-none z-30 flex-shrink-0 border-t border-indigo-900/50 shadow-inner">
+    <div className="h-[34px] bg-white text-[#778391] flex items-center justify-between px-4 text-[11px] select-none z-30 flex-shrink-0 border-t border-[#e5e9ee]">
       {/* Left: Page Info & Element Geometry */}
-      <div className="flex items-center gap-3">
-        <span className="flex items-center gap-1 font-semibold text-white">
-          <FileText size={11} className="text-indigo-300" />
+      <div className="flex items-center gap-3 tabular-nums">
+        <span className="flex items-center gap-1.5 font-medium text-[#202833]">
+          <FileText size={12} className="text-[#087f83]" />
           Page {project.activePageIndex + 1} of {project.pages.length}
         </span>
 
-        <span className="text-indigo-400/40">|</span>
+        <span className="text-[#e5e9ee]">|</span>
 
-        <span className="text-indigo-200/80">
+        <span className="text-[#778391]">
           {(activePage.width / 96).toFixed(1)}" × {(activePage.height / 96).toFixed(1)}" (
           {activePage.orientation})
         </span>
 
         {selectedElement && (
           <>
-            <span className="text-indigo-400/40">|</span>
-            <span className="font-mono text-indigo-300 bg-indigo-900/50 px-1.5 py-0.2 rounded text-[10px]">
-              Pos: {Math.round(selectedElement.x)}, {Math.round(selectedElement.y)} • Size: {Math.round(selectedElement.width)}×{Math.round(selectedElement.height)}
+            <span className="text-[#e5e9ee]">|</span>
+            <span className="font-mono text-[#087477] bg-[#e5f4f3] px-2 py-0.5 rounded-[6px] text-[10px]">
+              Pos: {Math.round(selectedElement.x)}, {Math.round(selectedElement.y)} • Size:{' '}
+              {Math.round(selectedElement.width)}×{Math.round(selectedElement.height)}
             </span>
           </>
         )}
       </div>
 
       {/* Right: Zoom slider & Fit Page */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 tabular-nums">
         <button
           onClick={zoomFit}
-          className="hover:text-white p-0.5 rounded transition text-indigo-200"
+          className="hover:text-[#087477] hover:bg-[#eef5f5] p-1 rounded-[6px] transition text-[#52606c] cursor-pointer"
           title="Fit Page in Window"
         >
-          <Maximize size={11} />
+          <Maximize size={12} />
         </button>
 
         <button
           onClick={zoomOut}
-          className="hover:text-white p-0.5 rounded transition text-indigo-200"
+          className="hover:text-[#087477] hover:bg-[#eef5f5] p-1 rounded-[6px] transition text-[#52606c] cursor-pointer"
           title="Zoom Out"
         >
-          <ZoomOut size={11} />
+          <ZoomOut size={12} />
         </button>
 
         <input
@@ -69,18 +70,18 @@ export const StatusBar: React.FC = () => {
           max={250}
           value={Math.round(zoom * 100)}
           onChange={(e) => setZoom(Number(e.target.value) / 100)}
-          className="w-20 h-1 accent-indigo-400 cursor-pointer"
+          className="w-24 h-1 accent-[#087f83] cursor-pointer"
         />
 
         <button
           onClick={zoomIn}
-          className="hover:text-white p-0.5 rounded transition text-indigo-200"
+          className="hover:text-[#087477] hover:bg-[#eef5f5] p-1 rounded-[6px] transition text-[#52606c] cursor-pointer"
           title="Zoom In"
         >
-          <ZoomIn size={11} />
+          <ZoomIn size={12} />
         </button>
 
-        <span className="w-9 text-right font-mono font-semibold text-white">
+        <span className="w-10 text-right font-mono font-semibold text-[#202833]">
           {Math.round(zoom * 100)}%
         </span>
       </div>

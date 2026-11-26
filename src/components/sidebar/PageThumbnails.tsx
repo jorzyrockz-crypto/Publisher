@@ -153,7 +153,7 @@ export const PageThumbnails: React.FC = () => {
   const getLayerIcon = (el: PublisherElement) => {
     switch (el.type) {
       case 'text':
-        return <Type size={12} className="text-indigo-700" />;
+        return <Type size={12} className="text-[#087477]" />;
       case 'shape':
         return <Square size={12} className="text-blue-600" />;
       case 'image':
@@ -186,17 +186,17 @@ export const PageThumbnails: React.FC = () => {
 
   if (!isLeftPanelOpen) {
     return (
-      <div className="w-9 bg-white border-r border-slate-200 flex flex-col items-center py-2.5 gap-3 h-full select-none flex-shrink-0 z-20 shadow-2xs">
+      <div className="w-9 bg-white border-r border-[#e5e9ee] flex flex-col items-center py-2.5 gap-3 h-full select-none flex-shrink-0 z-20">
         <button
           onClick={() => setIsLeftPanelOpen(true)}
-          className="p-1.5 rounded-lg text-slate-600 hover:text-indigo-800 hover:bg-indigo-50 transition"
+          className="p-1.5 rounded-[8px] text-[#52606c] hover:text-[#087477] hover:bg-[#eef5f5] transition cursor-pointer"
           title="Expand Pages & Layers Panel"
         >
           <PanelLeftOpen size={15} />
         </button>
         <div
           onClick={() => setIsLeftPanelOpen(true)}
-          className="text-[10px] font-bold tracking-widest text-slate-400 uppercase cursor-pointer hover:text-indigo-700 transition"
+          className="text-[10px] font-bold tracking-[0.09em] text-[#9aa4ae] uppercase cursor-pointer hover:text-[#087477] transition"
           style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
         >
           Pages & Layers
@@ -208,8 +208,8 @@ export const PageThumbnails: React.FC = () => {
   return (
     <div
       style={{ width: panelWidth }}
-      className={`bg-white border-r border-slate-200 flex flex-col h-full select-none flex-shrink-0 ${
-        isNarrowViewport ? 'absolute left-0 top-0 bottom-0 z-30 shadow-2xl' : 'relative z-20 shadow-2xs'
+      className={`bg-white border-r border-[#e5e9ee] flex flex-col h-full select-none flex-shrink-0 ${
+        isNarrowViewport ? 'absolute left-0 top-0 bottom-0 z-30 shadow-[0_8px_28px_rgba(28,44,58,0.12)]' : 'relative z-20'
       } ${isResizing ? '' : 'transition-[width] duration-150'}`}
     >
       {/* Drag-to-resize handle on right edge */}
@@ -218,18 +218,18 @@ export const PageThumbnails: React.FC = () => {
         onDoubleClick={resetWidth}
         title="Drag to resize • Double-click to reset"
         className={`absolute top-0 right-0 bottom-0 w-1.5 cursor-col-resize z-30 transition-colors ${
-          isResizing ? 'bg-indigo-500' : 'hover:bg-indigo-400/70'
+          isResizing ? 'bg-[#087f83]' : 'hover:bg-[#087f83]/50'
         }`}
       />
       {/* Segmented Header Tabs: Pages | Layers */}
-      <div className="p-2 border-b border-slate-200/80 bg-slate-50/70 flex items-center gap-1">
-        <div className="flex-1 grid grid-cols-2 bg-slate-200/70 p-0.5 rounded-xl">
+      <div className="px-3 py-2.5 border-b border-[#e5e9ee] bg-white flex items-center gap-1.5">
+        <div className="flex-1 grid grid-cols-2 bg-[#f3f5f7] p-0.5 rounded-[8px]">
           <button
             onClick={() => setSidebarTab('pages')}
-            className={`flex items-center justify-center gap-1 py-1 rounded-lg text-[10.5px] font-bold transition-all ${
+            className={`flex items-center justify-center gap-1 py-1 rounded-[6px] text-[11px] font-semibold transition-all cursor-pointer ${
               sidebarTab === 'pages'
-                ? 'bg-white text-indigo-800 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-[#e5f4f3] text-[#087477]'
+                : 'text-[#52606c] hover:text-[#202833]'
             }`}
           >
             <FileText size={11} />
@@ -237,10 +237,10 @@ export const PageThumbnails: React.FC = () => {
           </button>
           <button
             onClick={() => setSidebarTab('layers')}
-            className={`flex items-center justify-center gap-1 py-1 rounded-lg text-[10.5px] font-bold transition-all ${
+            className={`flex items-center justify-center gap-1 py-1 rounded-[6px] text-[11px] font-semibold transition-all cursor-pointer ${
               sidebarTab === 'layers'
-                ? 'bg-white text-indigo-800 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-[#e5f4f3] text-[#087477]'
+                : 'text-[#52606c] hover:text-[#202833]'
             }`}
           >
             <Layers size={11} />
@@ -251,7 +251,7 @@ export const PageThumbnails: React.FC = () => {
         {sidebarTab === 'pages' && (
           <button
             onClick={addPage}
-            className="p-1 hover:bg-indigo-100 hover:text-indigo-800 text-slate-600 rounded-lg transition active:scale-95"
+            className="p-1.5 hover:bg-[#eef5f5] hover:text-[#087477] text-[#52606c] rounded-[8px] transition active:scale-95 cursor-pointer"
             title="Add Blank Page"
           >
             <Plus size={14} />
@@ -336,7 +336,7 @@ export const PageThumbnails: React.FC = () => {
                 compact ? 'p-1 rounded-xl' : 'p-2 rounded-2xl'
               } transition-all ${
                 isActive
-                  ? 'bg-indigo-50/70 ring-2 ring-indigo-600 shadow-xs'
+                  ? 'bg-[#e5f4f3] ring-2 ring-indigo-600 shadow-xs'
                   : 'hover:bg-slate-100/70'
               } ${isDropTarget ? 'border-t-2 border-indigo-600' : ''}`}
             >
@@ -390,9 +390,9 @@ export const PageThumbnails: React.FC = () => {
                   <span
                     className={`${compact ? 'text-[7px] px-1' : 'text-[8px] px-1.5'} py-0.2 font-bold rounded-full ${
                       roleLabel === 'Cover'
-                        ? 'bg-indigo-600/85 text-white'
+                        ? 'bg-[#087f83]/85 text-white'
                         : roleLabel === 'Back'
-                        ? 'bg-purple-600/85 text-white'
+                        ? 'bg-[#087f83]/85 text-white'
                         : 'bg-slate-900/55 text-white'
                     }`}
                   >
@@ -435,7 +435,7 @@ export const PageThumbnails: React.FC = () => {
                           setRenamingPageId(null);
                         }
                       }}
-                      className="flex-1 bg-white border border-indigo-400 rounded px-1 py-0.5 text-[10.5px] outline-none"
+                      className="flex-1 bg-white border border-[#b7dddd] rounded px-1 py-0.5 text-[10.5px] outline-none"
                     />
                   ) : (
                     <span
@@ -445,7 +445,7 @@ export const PageThumbnails: React.FC = () => {
                         setRenamePageDraft(page.name || `Page ${idx + 1}`);
                       }}
                       className={`truncate font-medium text-[11px] ${
-                        isActive ? 'text-indigo-800 font-bold' : ''
+                        isActive ? 'text-[#087477] font-bold' : ''
                       }`}
                       title="Click to jump to page, double-click to rename, drag to reorder"
                     >
@@ -460,7 +460,7 @@ export const PageThumbnails: React.FC = () => {
                         setActivePageIndex(idx);
                         duplicateActivePage();
                       }}
-                      className="p-1 hover:bg-slate-200/80 rounded-md text-slate-600 hover:text-indigo-700 transition"
+                      className="p-1 hover:bg-slate-200/80 rounded-md text-slate-600 hover:text-[#087477] transition"
                       title="Duplicate Page"
                     >
                       <Copy size={11} />
@@ -523,7 +523,7 @@ export const PageThumbnails: React.FC = () => {
                     onClick={() => setPagesViewMode(m.id)}
                     className={`py-1 rounded-md text-[9.5px] font-bold transition cursor-pointer ${
                       pagesViewMode === m.id
-                        ? 'bg-white text-indigo-800 shadow-2xs'
+                        ? 'bg-white text-[#087477] shadow-2xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
@@ -534,7 +534,7 @@ export const PageThumbnails: React.FC = () => {
 
               <div className="flex items-center justify-between text-[9.5px] font-bold text-slate-500 px-1">
                 <span>{project.pages.length} {project.pages.length === 1 ? 'page' : 'pages'}</span>
-                <span className="text-indigo-700">
+                <span className="text-[#087477]">
                   {Math.ceil(project.pages.length / 4)} booklet {Math.ceil(project.pages.length / 4) === 1 ? 'sheet' : 'sheets'}
                 </span>
               </div>
@@ -542,7 +542,7 @@ export const PageThumbnails: React.FC = () => {
                 <button
                   type="button"
                   onClick={addBookletSpread}
-                  className="py-1 px-1.5 rounded-lg bg-white border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/70 text-[9.5px] font-bold text-slate-700 hover:text-indigo-800 transition"
+                  className="py-1 px-1.5 rounded-lg bg-white border border-slate-200 hover:border-[#b7dddd] hover:bg-[#e5f4f3] text-[9.5px] font-bold text-slate-700 hover:text-[#087477] transition"
                   title="Add 2 facing pages (1 spread)"
                 >
                   +2 Spread
@@ -554,7 +554,7 @@ export const PageThumbnails: React.FC = () => {
                   className={`py-1 px-1.5 rounded-lg border text-[9.5px] font-bold transition ${
                     project.pages.length % 4 === 0
                       ? 'bg-emerald-50 border-emerald-200 text-emerald-700 cursor-default'
-                      : 'bg-white border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/70 text-slate-700 hover:text-indigo-800'
+                      : 'bg-white border-slate-200 hover:border-[#b7dddd] hover:bg-[#e5f4f3] text-slate-700 hover:text-[#087477]'
                   }`}
                   title="Pad pages to a multiple of 4 for saddle-stitch booklet printing"
                 >
@@ -585,9 +585,9 @@ export const PageThumbnails: React.FC = () => {
               bookletPrintSheets.map((bs, bsIdx) => (
                 <div
                   key={bsIdx}
-                  className="bg-indigo-50/40 border border-indigo-200/70 rounded-xl p-1.5 space-y-1"
+                  className="bg-[#e5f4f3] border border-[#b7dddd]/70 rounded-xl p-1.5 space-y-1"
                 >
-                  <div className="flex items-center justify-between text-[9px] font-bold text-indigo-800 px-1">
+                  <div className="flex items-center justify-between text-[9px] font-bold text-[#087477] px-1">
                     <span>
                       Sheet {bs.sheetNumber} • {bs.side}
                     </span>
@@ -701,8 +701,8 @@ export const PageThumbnails: React.FC = () => {
                           assignMasterToPage(targetPg.id, mp.id);
                           setPageCtxMenu(null);
                         }}
-                        className={`w-full px-2 py-1 rounded-lg hover:bg-indigo-50 flex items-center justify-between font-medium ${
-                          isAssigned ? 'text-indigo-700 font-bold bg-indigo-50/70' : ''
+                        className={`w-full px-2 py-1 rounded-lg hover:bg-[#e5f4f3] flex items-center justify-between font-medium ${
+                          isAssigned ? 'text-[#087477] font-bold bg-[#e5f4f3]' : ''
                         }`}
                       >
                         <span className="truncate">{mp.name}</span>
@@ -798,7 +798,7 @@ export const PageThumbnails: React.FC = () => {
                   value={layerSearch}
                   onChange={(e) => setLayerSearch(e.target.value)}
                   placeholder="Search layers..."
-                  className="w-full pl-6 pr-2 py-1 rounded-lg border border-slate-200 bg-white text-[10.5px] outline-none focus:border-indigo-500"
+                  className="w-full pl-6 pr-2 py-1 rounded-lg border border-slate-200 bg-white text-[10.5px] outline-none focus:border-[#b7dddd]"
                 />
               </div>
 
@@ -818,7 +818,7 @@ export const PageThumbnails: React.FC = () => {
                     onClick={() => setLayerFilter(f.id)}
                     className={`px-1.5 py-0.5 rounded text-[9.5px] font-bold transition cursor-pointer ${
                       layerFilter === f.id
-                        ? 'bg-indigo-600 text-white'
+                        ? 'bg-[#087f83] text-white'
                         : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
                     }`}
                   >
@@ -875,7 +875,7 @@ export const PageThumbnails: React.FC = () => {
                         onClick={() => selectElements(memberIds)}
                         className={`flex items-center justify-between px-2 py-1.5 rounded-xl cursor-pointer text-[10.5px] border transition ${
                           allSelected
-                            ? 'bg-indigo-100/80 border-indigo-400 text-indigo-950 font-bold'
+                            ? 'bg-[#e5f4f3]/80 border-[#b7dddd] text-indigo-950 font-bold'
                             : 'bg-slate-100/80 border-slate-200/80 hover:bg-slate-200/60 text-slate-700 font-semibold'
                         }`}
                       >
@@ -893,7 +893,7 @@ export const PageThumbnails: React.FC = () => {
                           >
                             {isCollapsed ? <ChevronRight size={11} /> : <ChevronDown size={11} />}
                           </button>
-                          <Folder size={11} className="text-indigo-600 flex-shrink-0" />
+                          <Folder size={11} className="text-[#087477] flex-shrink-0" />
                           <span className="truncate">
                             {isCollageGroup ? 'Collage' : 'Group'} ({row.members.length})
                           </span>
@@ -983,7 +983,7 @@ export const PageThumbnails: React.FC = () => {
                         isDropTarget ? 'border-t-2 border-t-indigo-600' : ''
                       } ${
                         isSelected
-                          ? 'bg-indigo-50 border-indigo-400 text-indigo-900 font-semibold shadow-2xs'
+                          ? 'bg-[#e5f4f3] border-[#b7dddd] text-indigo-900 font-semibold shadow-2xs'
                           : 'bg-white border-slate-200/70 hover:bg-slate-50 text-slate-700'
                       } ${isHidden ? 'opacity-50' : ''}`}
                     >
@@ -1005,7 +1005,7 @@ export const PageThumbnails: React.FC = () => {
                               else if (e.key === 'Escape') setRenamingId(null);
                             }}
                             onClick={(e) => e.stopPropagation()}
-                            className="w-full px-1 py-0 text-[10.5px] bg-white border border-indigo-400 rounded outline-none"
+                            className="w-full px-1 py-0 text-[10.5px] bg-white border border-[#b7dddd] rounded outline-none"
                           />
                         ) : (
                           <span className="truncate">{getLayerLabel(el)}</span>
@@ -1068,7 +1068,7 @@ export const PageThumbnails: React.FC = () => {
                     <button
                       type="button"
                       onClick={groupSelected}
-                      className="p-1 rounded-lg hover:bg-white border border-transparent hover:border-slate-200 text-indigo-700"
+                      className="p-1 rounded-lg hover:bg-white border border-transparent hover:border-slate-200 text-[#087477]"
                       title="Group Selected"
                     >
                       <Group size={12} />
@@ -1148,7 +1148,7 @@ export const PageThumbnails: React.FC = () => {
                   }}
                   className="w-full px-2 py-1 rounded-lg hover:bg-slate-100 flex items-center gap-2 font-medium"
                 >
-                  <Layers size={11} className="text-indigo-600" />
+                  <Layers size={11} className="text-[#087477]" />
                   <span>Select Same Type</span>
                 </button>
                 <div className="my-1 border-t border-slate-100" />
@@ -1183,7 +1183,7 @@ export const PageThumbnails: React.FC = () => {
                     }}
                     className="w-full px-2 py-1 rounded-lg hover:bg-slate-100 flex items-center gap-2 font-medium"
                   >
-                    <Group size={11} className="text-indigo-600" />
+                    <Group size={11} className="text-[#087477]" />
                     <span>Group Selected</span>
                   </button>
                 )}
@@ -1319,7 +1319,7 @@ export const PageThumbnails: React.FC = () => {
             <button
               type="button"
               onClick={() => applyMasterPreset(selectedPresetId)}
-              className="px-2 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[9.5px] transition whitespace-nowrap"
+              className="px-2 py-1 rounded-lg bg-[#087f83] hover:bg-[#06696c] text-white font-bold text-[9.5px] transition whitespace-nowrap"
               title="Apply selected preset elements to this Master Page"
             >
               Apply
@@ -1335,7 +1335,7 @@ export const PageThumbnails: React.FC = () => {
           className={`flex-1 py-1 px-2 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1.5 transition ${
             isEditingMaster
               ? 'bg-amber-500 text-white shadow-xs'
-              : 'bg-white border border-slate-200 text-slate-700 hover:bg-indigo-50 hover:text-indigo-800'
+              : 'bg-white border border-slate-200 text-slate-700 hover:bg-[#e5f4f3] hover:text-[#087477]'
           }`}
           title="Edit Master Page (headers, footers, page numbers applied to all pages)"
         >
@@ -1347,7 +1347,7 @@ export const PageThumbnails: React.FC = () => {
           onClick={toggleMasterPageVisibility}
           className={`p-1.5 rounded-lg border transition ${
             project.masterPage?.showOnAllPages !== false
-              ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+              ? 'bg-[#e5f4f3] border-[#b7dddd] text-[#087477]'
               : 'bg-white border-slate-200 text-slate-400'
           }`}
           title="Toggle Master Page Elements Visibility"

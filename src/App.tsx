@@ -43,7 +43,7 @@ export const AppContent: React.FC = () => {
   }, [isStockArtPanelOpen, windowWidth, setIsRightPanelOpen]);
 
   return (
-    <div className="flex flex-col w-screen h-screen overflow-hidden bg-slate-100 font-sans">
+    <div className="flex flex-col w-screen h-screen overflow-hidden bg-[#edf0f3] text-[#202833] font-sans">
       {/* 1. Office Ribbon Header & Quick Access Toolbar */}
       <Ribbon />
 

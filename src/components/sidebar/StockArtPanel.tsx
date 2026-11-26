@@ -340,8 +340,8 @@ export const StockArtPanel: React.FC = () => {
   return (
     <aside
       style={{ width: panelWidth }}
-      className={`bg-white border-l border-slate-200 flex flex-col h-full flex-shrink-0 select-none ${
-        isNarrowViewport ? 'absolute right-0 top-0 bottom-0 z-30 shadow-2xl' : 'relative z-20 shadow-xs'
+      className={`bg-white border-l border-[#e5e9ee] flex flex-col h-full flex-shrink-0 select-none text-[#202833] ${
+        isNarrowViewport ? 'absolute right-0 top-0 bottom-0 z-30 shadow-[0_8px_28px_rgba(28,44,58,0.12)]' : 'relative z-20'
       } ${isResizing ? '' : 'transition-[width] duration-150'}`}
     >
       {/* Drag-to-resize handle on left edge */}
@@ -350,20 +350,20 @@ export const StockArtPanel: React.FC = () => {
         onDoubleClick={resetWidth}
         title="Drag to resize • Double-click to reset"
         className={`absolute top-0 left-0 bottom-0 w-1.5 cursor-col-resize z-30 transition-colors ${
-          isResizing ? 'bg-indigo-500' : 'hover:bg-indigo-400/70'
+          isResizing ? 'bg-[#087f83]' : 'hover:bg-[#087f83]/50'
         }`}
       />
       {/* Inspector-style Header */}
-      <div className="px-3.5 py-2.5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+      <div className="px-3.5 py-2.5 border-b border-[#e5e9ee] bg-white flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 text-white flex items-center justify-center shadow-xs">
+          <div className="w-7 h-7 rounded-[8px] bg-[#e5f4f3] text-[#087477] flex items-center justify-center">
             <Images size={14} />
           </div>
           <div>
-            <h3 className="text-xs font-bold text-slate-800 leading-tight">
+            <h3 className="text-xs font-semibold text-[#202833] leading-tight">
               Stock Art & Clipart
             </h3>
-            <p className="text-[10px] text-slate-500 leading-tight">
+            <p className="text-[10px] text-[#778391] leading-tight">
               Unified search across 4 sources
             </p>
           </div>
@@ -373,10 +373,10 @@ export const StockArtPanel: React.FC = () => {
             type="button"
             onClick={() => setShowKeyBar(!showKeyBar)}
             title="Clipart.Free API Key Settings"
-            className={`p-1.5 rounded-lg border transition ${
+            className={`p-1.5 rounded-[8px] border transition cursor-pointer ${
               showKeyBar
-                ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
-                : 'border-transparent text-slate-400 hover:text-slate-700 hover:bg-slate-200/60'
+                ? 'bg-[#e5f4f3] border-[#b7dddd] text-[#087477]'
+                : 'border-transparent text-[#778391] hover:text-[#087477] hover:bg-[#eef5f5]'
             }`}
           >
             <KeyRound size={13} />
@@ -385,7 +385,7 @@ export const StockArtPanel: React.FC = () => {
             type="button"
             onClick={() => setIsStockArtPanelOpen(false)}
             title="Close Stock Art Panel"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition"
+            className="p-1.5 rounded-[8px] text-[#778391] hover:text-[#202833] hover:bg-[#eef5f5] transition cursor-pointer"
           >
             <X size={14} />
           </button>
@@ -393,10 +393,10 @@ export const StockArtPanel: React.FC = () => {
       </div>
 
       {/* Search & Filters */}
-      <div className="p-3 border-b border-slate-100 space-y-2.5 bg-white">
+      <div className="p-3 border-b border-[#e5e9ee] space-y-2.5 bg-white">
         {showKeyBar && (
-          <div className="p-2 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-            <label className="block text-[10px] font-bold text-slate-600">
+          <div className="p-2 rounded-[8px] bg-[#f8fafb] border border-[#e5e9ee] space-y-1">
+            <label className="block text-[10px] font-bold uppercase tracking-[0.09em] text-[#9aa4ae]">
               Clipart.Free API Key (cf_...)
             </label>
             <div className="flex items-center gap-1.5">
@@ -408,12 +408,12 @@ export const StockArtPanel: React.FC = () => {
                   saveClipartFreeKey(e.target.value);
                 }}
                 placeholder="cf_..."
-                className="flex-1 bg-white px-2 py-1 rounded-lg border border-slate-200 text-[11px] outline-none focus:border-indigo-500"
+                className="flex-1 bg-white px-2 py-1 rounded-[8px] border border-[#e5e9ee] text-[11px] outline-none focus:border-[#73b9b7]"
               />
               <button
                 type="button"
                 onClick={() => setShowKeyBar(false)}
-                className="px-2 py-1 rounded-lg bg-indigo-600 text-white text-[10px] font-bold"
+                className="px-2.5 py-1 rounded-[8px] bg-[#087f83] hover:bg-[#06696c] text-white text-[10px] font-semibold cursor-pointer"
               >
                 Done
               </button>
@@ -431,20 +431,20 @@ export const StockArtPanel: React.FC = () => {
           <div className="relative flex-1">
             <Search
               size={13}
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#9aa4ae] pointer-events-none"
             />
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search cliparts, icons, photos..."
-              className="w-full pl-8 pr-2.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-xs text-slate-700 outline-none focus:border-indigo-500 transition"
+              className="w-full pl-8 pr-2.5 py-1.5 rounded-[8px] border border-[#e5e9ee] bg-[#f8fafb] focus:bg-white text-xs text-[#202833] placeholder-[#9aa4ae] outline-none focus:border-[#73b9b7] transition"
             />
           </div>
           <button
             type="submit"
             disabled={isAnyLoading}
-            className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-xs font-bold flex items-center gap-1 transition shadow-xs cursor-pointer"
+            className="px-3 py-1.5 rounded-[8px] bg-[#087f83] hover:bg-[#06696c] disabled:opacity-60 text-white text-xs font-semibold flex items-center gap-1 transition cursor-pointer"
           >
             {isAnyLoading ? <Loader2 size={13} className="animate-spin" /> : 'Search'}
           </button>
@@ -460,10 +460,10 @@ export const StockArtPanel: React.FC = () => {
                 setQuery(chip);
                 runUnifiedSearch(chip);
               }}
-              className={`px-2 py-0.5 rounded-full text-[10px] font-semibold transition cursor-pointer ${
+              className={`px-2 py-0.5 rounded-[6px] text-[10px] font-medium transition cursor-pointer ${
                 query.toLowerCase() === chip
-                  ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  ? 'bg-[#e5f4f3] text-[#087477] font-semibold'
+                  : 'bg-[#f3f5f7] text-[#52606c] hover:bg-[#eef5f5] hover:text-[#087477]'
               }`}
             >
               {chip}
@@ -486,10 +486,10 @@ export const StockArtPanel: React.FC = () => {
               key={tab.id}
               type="button"
               onClick={() => setSourceFilter(tab.id)}
-              className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition cursor-pointer ${
+              className={`px-2 py-0.5 rounded-[6px] text-[10px] font-semibold transition cursor-pointer tabular-nums ${
                 sourceFilter === tab.id
-                  ? 'bg-indigo-600 text-white shadow-2xs'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  ? 'bg-[#e5f4f3] text-[#087477]'
+                  : 'bg-[#f3f5f7] text-[#52606c] hover:bg-[#eef5f5] hover:text-[#087477]'
               }`}
             >
               {tab.label}
@@ -499,10 +499,10 @@ export const StockArtPanel: React.FC = () => {
             type="button"
             onClick={() => setSvgOnly(!svgOnly)}
             title="Show only recolorable Vector SVGs"
-            className={`ml-auto px-2 py-0.5 rounded-lg text-[10px] font-bold border transition cursor-pointer flex items-center gap-1 ${
+            className={`ml-auto px-2 py-0.5 rounded-[6px] text-[10px] font-semibold border transition cursor-pointer flex items-center gap-1 ${
               svgOnly
-                ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
-                : 'bg-white border-slate-200 text-slate-500 hover:text-slate-800'
+                ? 'bg-[#e5f4f3] border-[#b7dddd] text-[#087477]'
+                : 'bg-[#f8fafb] border-[#e5e9ee] text-[#52606c] hover:text-[#087477] hover:bg-[#eef5f5]'
             }`}
           >
             <Sparkles size={10} />
@@ -512,7 +512,7 @@ export const StockArtPanel: React.FC = () => {
       </div>
 
       {/* Results Area */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2.5 bg-slate-50/50">
+      <div className="flex-1 overflow-y-auto p-3 space-y-2.5 bg-[#f8fafb]">
         {sourceErrors.length > 0 && (
           <div className="p-2 rounded-xl bg-amber-50 border border-amber-200 text-[10px] text-amber-800 space-y-0.5">
             {sourceErrors.map((err, i) => (
@@ -525,7 +525,7 @@ export const StockArtPanel: React.FC = () => {
         )}
 
         {isAnyLoading && (
-          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-indigo-50 border border-indigo-100 text-[10.5px] text-indigo-700 font-medium">
+          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-[#e5f4f3] border border-[#b7dddd] text-[10.5px] text-[#087477] font-medium">
             <Loader2 size={12} className="animate-spin flex-shrink-0" />
             <span>
               Searching{' '}
@@ -561,7 +561,7 @@ export const StockArtPanel: React.FC = () => {
               return (
                 <div
                   key={item.uid}
-                  className="group relative flex flex-col rounded-xl bg-white border border-slate-200/90 hover:border-indigo-400 hover:shadow-sm transition overflow-hidden"
+                  className="group relative flex flex-col rounded-xl bg-white border border-slate-200/90 hover:border-[#b7dddd] hover:shadow-sm transition overflow-hidden"
                 >
                   {/* Clickable Card Body */}
                   <button
@@ -582,7 +582,7 @@ export const StockArtPanel: React.FC = () => {
                       <span
                         className={`absolute top-1 left-1 px-1.5 py-0.2 rounded text-[8px] font-bold uppercase tracking-tight ${
                           item.source === 'builtin'
-                            ? 'bg-purple-100 text-purple-800'
+                            ? 'bg-[#e5f4f3] text-[#087477]'
                             : item.source === 'clipartfree'
                             ? 'bg-emerald-100 text-emerald-800'
                             : item.source === 'iconify'
@@ -597,7 +597,7 @@ export const StockArtPanel: React.FC = () => {
                           : item.sourceLabel}
                       </span>
                       {item.isSvg && (
-                        <span className="absolute top-1 right-1 px-1 py-0.2 rounded bg-indigo-600 text-white text-[8px] font-bold">
+                        <span className="absolute top-1 right-1 px-1 py-0.2 rounded bg-[#087f83] text-white text-[8px] font-bold">
                           SVG
                         </span>
                       )}
@@ -616,7 +616,7 @@ export const StockArtPanel: React.FC = () => {
                         handleInsertItem(item, true);
                       }}
                       title="Insert as Die-Cut Sticker"
-                      className="opacity-0 group-hover:opacity-100 absolute bottom-7 right-2 px-1.5 py-0.5 rounded-md bg-slate-900/85 hover:bg-indigo-600 text-white text-[9px] font-bold flex items-center gap-0.5 transition cursor-pointer shadow-xs"
+                      className="opacity-0 group-hover:opacity-100 absolute bottom-7 right-2 px-1.5 py-0.5 rounded-md bg-slate-900/85 hover:bg-[#087f83] text-white text-[9px] font-bold flex items-center gap-0.5 transition cursor-pointer shadow-xs"
                     >
                       <Sticker size={9} />
                       <span>Sticker</span>

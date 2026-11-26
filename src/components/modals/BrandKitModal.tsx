@@ -120,23 +120,23 @@ export const BrandKitModal: React.FC = () => {
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-slate-900/55 flex items-center justify-center p-4 select-none"
+      className="fixed inset-0 z-50 bg-[#15232d]/35 backdrop-blur-[2px] flex items-center justify-center p-4 select-none"
       onClick={() => setIsBrandKitModalOpen(false)}
     >
       <div
-        className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden"
+        className="bg-white rounded-[15px] shadow-[0_20px_70px_rgba(21,35,45,0.22)] border border-[#e5e9ee] max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+        <div className="px-6 py-4 border-b border-[#e5e9ee] flex items-center justify-between bg-slate-50">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white flex items-center justify-center shadow-sm">
+            <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-[#0c9c9c] to-[#075f77] text-white flex items-center justify-center shadow-sm">
               <Palette size={18} />
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
                 <span>Brand Kit Studio</span>
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#e5f4f3] text-[#087477]">
                   Smart Rebrand
                 </span>
               </h2>
@@ -164,7 +164,7 @@ export const BrandKitModal: React.FC = () => {
               <button
                 type="button"
                 onClick={handleCreateNew}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold transition cursor-pointer"
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#087f83] hover:bg-[#06696c] text-white text-[11px] font-bold transition cursor-pointer"
               >
                 <Plus size={12} />
                 <span>New Kit</span>
@@ -180,8 +180,8 @@ export const BrandKitModal: React.FC = () => {
                     onClick={() => setDraft(kit)}
                     className={`group p-2.5 rounded-xl border cursor-pointer transition flex items-center justify-between gap-2 ${
                       isSelected
-                        ? 'border-indigo-600 bg-white ring-1 ring-indigo-500/30 shadow-xs'
-                        : 'border-slate-200 bg-white/80 hover:border-indigo-400'
+                        ? 'border-indigo-600 bg-white ring-1 ring-[#087f83]/30 shadow-xs'
+                        : 'border-[#e5e9ee] bg-white/80 hover:border-[#b7dddd]'
                     }`}
                   >
                     <div className="min-w-0 flex-1">
@@ -190,7 +190,7 @@ export const BrandKitModal: React.FC = () => {
                           {kit.name}
                         </span>
                         {kit.isCustom && (
-                          <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-indigo-100 text-indigo-700 font-bold">
+                          <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-[#e5f4f3] text-[#087477] font-bold">
                             Custom
                           </span>
                         )}
@@ -205,7 +205,7 @@ export const BrandKitModal: React.FC = () => {
                         ].map((hex, i) => (
                           <span
                             key={i}
-                            className="w-4 h-4 rounded-full border border-slate-200/80 shadow-2xs"
+                            className="w-4 h-4 rounded-full border border-[#e5e9ee] shadow-2xs"
                             style={{ backgroundColor: hex }}
                           />
                         ))}
@@ -248,13 +248,13 @@ export const BrandKitModal: React.FC = () => {
                     type="text"
                     value={draft.name}
                     onChange={(e) => updateDraftField({ name: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 focus:bg-white px-3 py-1.5 text-xs font-semibold outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
+                    className="w-full rounded-xl border border-[#e5e9ee] bg-slate-50 focus:bg-white px-3 py-1.5 text-xs font-semibold outline-none focus:ring-2 focus:ring-[#087f83]/20 focus:border-[#73b9b7]"
                   />
                 </div>
 
                 {/* Live Mini Preview Card */}
                 <div
-                  className="rounded-2xl p-3.5 border border-slate-200 shadow-xs space-y-1.5 relative overflow-hidden"
+                  className="rounded-2xl p-3.5 border border-[#e5e9ee] shadow-xs space-y-1.5 relative overflow-hidden"
                   style={{ backgroundColor: draft.colors.light }}
                 >
                   <div className="flex items-center justify-between gap-2">
@@ -302,7 +302,7 @@ export const BrandKitModal: React.FC = () => {
                   className="hidden"
                   onChange={handleLogoUpload}
                 />
-                <div className="h-24 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 flex items-center justify-center relative overflow-hidden">
+                <div className="h-24 rounded-2xl border-2 border-dashed border-[#e5e9ee] bg-slate-50 flex items-center justify-center relative overflow-hidden">
                   {draft.logoSrc ? (
                     <>
                       <img
@@ -323,7 +323,7 @@ export const BrandKitModal: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => logoInputRef.current?.click()}
-                      className="flex flex-col items-center gap-1 text-slate-400 hover:text-indigo-600 transition cursor-pointer"
+                      className="flex flex-col items-center gap-1 text-slate-400 hover:text-[#087477] transition cursor-pointer"
                     >
                       <Upload size={18} />
                       <span className="text-[11px] font-semibold">Upload PNG / SVG Logo</span>
@@ -336,7 +336,7 @@ export const BrandKitModal: React.FC = () => {
                     <button
                       type="button"
                       onClick={handleAutoPickFromLogo}
-                      className="flex-1 py-1 px-2 rounded-lg border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 text-[10.5px] font-bold flex items-center justify-center gap-1 transition cursor-pointer"
+                      className="flex-1 py-1 px-2 rounded-lg border border-[#b7dddd] bg-[#e5f4f3] hover:bg-[#e5f4f3] text-[#087477] text-[10.5px] font-bold flex items-center justify-center gap-1 transition cursor-pointer"
                     >
                       <Wand2 size={11} />
                       <span>Auto-Pick Colors</span>
@@ -344,7 +344,7 @@ export const BrandKitModal: React.FC = () => {
                     <button
                       type="button"
                       onClick={handleInsertLogoOnce}
-                      className="flex-1 py-1 px-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-[10.5px] font-semibold flex items-center justify-center gap-1 transition cursor-pointer"
+                      className="flex-1 py-1 px-2 rounded-lg border border-[#e5e9ee] bg-slate-50 hover:bg-slate-100 text-slate-700 text-[10.5px] font-semibold flex items-center justify-center gap-1 transition cursor-pointer"
                     >
                       <ImagePlus size={11} />
                       <span>Insert Logo</span>
@@ -396,13 +396,13 @@ export const BrandKitModal: React.FC = () => {
                 ).map((swatch) => (
                   <div
                     key={swatch.key}
-                    className="flex flex-col items-center gap-1 p-2 rounded-xl border border-slate-200 bg-slate-50"
+                    className="flex flex-col items-center gap-1 p-2 rounded-xl border border-[#e5e9ee] bg-slate-50"
                   >
                     <input
                       type="color"
                       value={draft.colors[swatch.key]}
                       onChange={(e) => updateColor(swatch.key, e.target.value)}
-                      className="w-8 h-8 rounded-full border border-slate-200 cursor-pointer p-0 shadow-2xs"
+                      className="w-8 h-8 rounded-full border border-[#e5e9ee] cursor-pointer p-0 shadow-2xs"
                     />
                     <span className="text-[10px] font-semibold text-slate-700">
                       {swatch.label}
@@ -421,7 +421,7 @@ export const BrandKitModal: React.FC = () => {
                   type="checkbox"
                   checked={stampLogo}
                   onChange={(e) => setStampLogo(e.target.checked)}
-                  className="accent-indigo-600 rounded"
+                  className="accent-[#087f83] rounded"
                 />
                 <span>Auto-stamp Brand Logo onto rebranded artboards</span>
               </label>
@@ -430,7 +430,7 @@ export const BrandKitModal: React.FC = () => {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between flex-wrap gap-2">
+        <div className="px-6 py-4 border-t border-[#e5e9ee] bg-slate-50 flex items-center justify-between flex-wrap gap-2">
           <span className="text-xs text-slate-500">
             Updates fonts, fills, gradients, patterns &amp; contrast-safe text (Undoable via Ctrl+Z)
           </span>
@@ -438,7 +438,7 @@ export const BrandKitModal: React.FC = () => {
             <button
               type="button"
               onClick={() => handleApply('page')}
-              className="py-2 px-4 rounded-xl border border-indigo-200 bg-white hover:bg-indigo-50 text-indigo-800 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+              className="py-2 px-4 rounded-xl border border-[#b7dddd] bg-white hover:bg-[#e5f4f3] text-[#087477] text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
             >
               <FileCheck size={14} />
               <span>Rebrand Active Page</span>
@@ -446,7 +446,7 @@ export const BrandKitModal: React.FC = () => {
             <button
               type="button"
               onClick={() => handleApply('all')}
-              className="py-2 px-5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm flex items-center gap-1.5 transition cursor-pointer"
+              className="py-2 px-5 rounded-xl bg-[#087f83] hover:bg-[#06696c] text-white text-xs font-bold shadow-sm flex items-center gap-1.5 transition cursor-pointer"
             >
               <Sparkles size={14} />
               <Layers size={14} />

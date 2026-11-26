@@ -39,7 +39,7 @@ export const WordArtPickerModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center select-none p-4 animate-in fade-in duration-150">
-      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200/90 w-full max-w-lg overflow-hidden flex flex-col">
+      <div className="bg-white rounded-[15px] shadow-[0_20px_70px_rgba(21,35,45,0.22)] border border-[#e5e9ee]/90 w-full max-w-lg overflow-hidden flex flex-col">
         {/* Header */}
         <div className="bg-gradient-to-r from-[#064e3b] to-[#047857] text-white px-5 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-2 font-bold text-sm">
@@ -64,7 +64,7 @@ export const WordArtPickerModal: React.FC = () => {
               type="text"
               value={wordArtText}
               onChange={(e) => setWordArtText(e.target.value)}
-              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-bold text-slate-800"
+              className="w-full border border-[#e5e9ee] rounded-xl px-3.5 py-2 text-sm outline-none focus:ring-2 focus:ring-[#087f83]/20 focus:border-[#73b9b7] font-bold text-slate-800"
             />
           </div>
 
@@ -82,7 +82,7 @@ export const WordArtPickerModal: React.FC = () => {
                   } ${
                     selectedStyle === s.id
                       ? 'border-indigo-600 ring-2 ring-indigo-600 shadow-xs'
-                      : 'border-slate-200/80 hover:border-slate-300'
+                      : 'border-[#e5e9ee] hover:border-slate-300'
                   }`}
                 >
                   <span className={`text-xl font-black ${s.previewClass} truncate max-w-full`}>
@@ -105,13 +105,13 @@ export const WordArtPickerModal: React.FC = () => {
         <div className="bg-slate-50 px-5 py-3.5 border-t border-slate-100 flex justify-end gap-2.5">
           <button
             onClick={() => setIsWordArtModalOpen(false)}
-            className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-100 transition"
+            className="px-4 py-2 rounded-xl border border-[#e5e9ee] text-xs font-semibold text-slate-600 hover:bg-slate-100 transition"
           >
             Cancel
           </button>
           <button
             onClick={handleInsert}
-            className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-bold transition shadow-xs"
+            className="px-5 py-2 rounded-xl bg-[#087f83] hover:bg-[#06696c] active:scale-95 text-white text-xs font-bold transition shadow-xs"
           >
             Insert WordArt
           </button>

@@ -257,23 +257,23 @@ export const AIImageModal: React.FC = () => {
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-slate-900/55 flex items-center justify-center p-4 select-none"
+      className="fixed inset-0 z-50 bg-[#15232d]/35 backdrop-blur-[2px] flex items-center justify-center p-4 select-none"
       onClick={() => setIsAIImageModalOpen(false)}
     >
       <div
-        className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-5xl w-full max-h-[92vh] flex flex-col overflow-hidden"
+        className="bg-white rounded-[15px] shadow-[0_20px_70px_rgba(21,35,45,0.22)] border border-[#e5e9ee] max-w-5xl w-full max-h-[92vh] flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header + Creation Type Switcher */}
-        <div className="px-6 py-3.5 border-b border-slate-200 flex items-center justify-between gap-3 bg-slate-50 flex-wrap">
+        <div className="px-6 py-3.5 border-b border-[#e5e9ee] flex items-center justify-between gap-3 bg-slate-50 flex-wrap">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-indigo-500 to-teal-600 text-white flex items-center justify-center shadow-sm">
+            <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-[#0c9c9c] to-[#075f77] text-white flex items-center justify-center shadow-sm">
               <Wand2 size={18} />
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
                 <span>AI Image Studio</span>
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#e5f4f3] text-[#087477]">
                   Flux + Gemini + Cutout
                 </span>
               </h2>
@@ -292,7 +292,7 @@ export const AIImageModal: React.FC = () => {
                 onClick={() => handleSelectCreationType(ct.id)}
                 className={`px-3 py-1 rounded-xl text-[11px] font-bold transition cursor-pointer ${
                   creationType === ct.id
-                    ? 'bg-white text-indigo-800 shadow-xs'
+                    ? 'bg-white text-[#087477] shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -323,14 +323,14 @@ export const AIImageModal: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowKeyBar(!showKeyBar)}
-                  className="text-[10px] font-bold text-indigo-700 hover:underline"
+                  className="text-[10px] font-bold text-[#087477] hover:underline"
                 >
                   {geminiApiKey ? 'Gemini Key Set ✓' : '+ Gemini API Key (Optional)'}
                 </button>
               </div>
 
               {showKeyBar && (
-                <div className="p-2 rounded-xl bg-indigo-50/70 border border-indigo-200 flex items-center gap-1.5">
+                <div className="p-2 rounded-xl bg-[#e5f4f3] border border-[#b7dddd] flex items-center gap-1.5">
                   <input
                     type="password"
                     value={geminiApiKey}
@@ -345,19 +345,19 @@ export const AIImageModal: React.FC = () => {
                       }
                     }}
                     placeholder="Paste Gemini API key..."
-                    className="flex-1 bg-white border border-indigo-200 rounded-lg px-2 py-1 text-[10.5px] outline-none"
+                    className="flex-1 bg-white border border-[#b7dddd] rounded-lg px-2 py-1 text-[10.5px] outline-none"
                   />
                   <button
                     type="button"
                     onClick={() => setShowKeyBar(false)}
-                    className="px-2 py-1 rounded-lg bg-indigo-600 text-white text-[10px] font-bold"
+                    className="px-2 py-1 rounded-lg bg-[#087f83] text-white text-[10px] font-bold"
                   >
                     Done
                   </button>
                 </div>
               )}
 
-              <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200/70">
+              <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl border border-[#e5e9ee]/70">
                 {(
                   [
                     { id: 'hybrid', label: 'Auto Hybrid', icon: Zap },
@@ -373,7 +373,7 @@ export const AIImageModal: React.FC = () => {
                       onClick={() => setEngineMode(item.id)}
                       className={`flex items-center justify-center gap-1 py-1.5 px-1.5 rounded-lg text-[11px] font-semibold transition ${
                         engineMode === item.id
-                          ? 'bg-white text-indigo-800 shadow-xs'
+                          ? 'bg-white text-[#087477] shadow-xs'
                           : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
@@ -399,7 +399,7 @@ export const AIImageModal: React.FC = () => {
                   <select
                     value={cloudModel}
                     onChange={(e) => setCloudModel(e.target.value as AICloudModel)}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-indigo-600"
+                    className="w-full rounded-xl border border-[#e5e9ee] bg-slate-50 hover:bg-slate-100 px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#73b9b7]"
                   >
                     {AI_CLOUD_MODELS.map((m) => (
                       <option key={m.id} value={m.id}>
@@ -428,7 +428,7 @@ export const AIImageModal: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setPrompt(enhancePromptText(prompt, creationType, artStyle))}
-                    className="text-[10px] font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200 flex items-center gap-1 transition"
+                    className="text-[10px] font-bold text-[#087477] hover:text-[#087477] bg-[#e5f4f3] px-2 py-0.5 rounded-full border border-[#b7dddd] flex items-center gap-1 transition"
                     title="Expand short prompt with studio details"
                   >
                     <Sparkles size={10} /> Magic Enhance
@@ -447,7 +447,7 @@ export const AIImageModal: React.FC = () => {
                   }
                 }}
                 placeholder="Describe subject, lighting, mood, or sticker object..."
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 focus:bg-white p-2.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 resize-none transition"
+                className="w-full rounded-xl border border-[#e5e9ee] bg-slate-50 focus:bg-white p-2.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-[#087f83]/20 focus:border-[#73b9b7] resize-none transition"
               />
 
               {showNegative && (
@@ -456,7 +456,7 @@ export const AIImageModal: React.FC = () => {
                   value={negativePrompt}
                   onChange={(e) => setNegativePrompt(e.target.value)}
                   placeholder="Avoid (e.g. blurry, text, watermark, background)..."
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] text-slate-700 outline-none focus:border-indigo-500"
+                  className="w-full rounded-xl border border-[#e5e9ee] bg-slate-50 px-2.5 py-1.5 text-[11px] text-slate-700 outline-none focus:border-[#b7dddd]"
                 />
               )}
 
@@ -466,7 +466,7 @@ export const AIImageModal: React.FC = () => {
                     key={i}
                     type="button"
                     onClick={() => setPrompt(preset)}
-                    className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 hover:bg-indigo-50 hover:text-indigo-800 text-slate-600 border border-slate-200/70 transition truncate max-w-[185px]"
+                    className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 hover:bg-[#e5f4f3] hover:text-[#087477] text-slate-600 border border-[#e5e9ee]/70 transition truncate max-w-[185px]"
                     title={preset}
                   >
                     + {preset}
@@ -484,7 +484,7 @@ export const AIImageModal: React.FC = () => {
                 <select
                   value={artStyle}
                   onChange={(e) => setArtStyle(e.target.value as AIArtStyle)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-2 py-1.5 text-[11px] font-medium outline-none focus:border-indigo-600"
+                  className="w-full rounded-xl border border-[#e5e9ee] bg-slate-50 px-2 py-1.5 text-[11px] font-medium outline-none focus:border-[#73b9b7]"
                 >
                   {AI_ART_STYLES.map((s) => (
                     <option key={s.id} value={s.id}>
@@ -500,7 +500,7 @@ export const AIImageModal: React.FC = () => {
                 <select
                   value={ratioId}
                   onChange={(e) => setRatioId(e.target.value as AIAspectRatio)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-2 py-1.5 text-[11px] font-medium outline-none focus:border-indigo-600"
+                  className="w-full rounded-xl border border-[#e5e9ee] bg-slate-50 px-2 py-1.5 text-[11px] font-medium outline-none focus:border-[#73b9b7]"
                 >
                   {ASPECT_RATIOS.map((r) => (
                     <option key={r.id} value={r.id}>
@@ -513,7 +513,7 @@ export const AIImageModal: React.FC = () => {
                 <label className="block text-[10.5px] font-bold text-slate-600 mb-1">
                   Variations
                 </label>
-                <div className="grid grid-cols-2 gap-1 bg-slate-100 p-0.5 rounded-xl border border-slate-200/70">
+                <div className="grid grid-cols-2 gap-1 bg-slate-100 p-0.5 rounded-xl border border-[#e5e9ee]/70">
                   {([1, 2] as const).map((cnt) => (
                     <button
                       key={cnt}
@@ -521,7 +521,7 @@ export const AIImageModal: React.FC = () => {
                       onClick={() => setBatchCount(cnt)}
                       className={`py-1 rounded-lg text-[11px] font-bold transition ${
                         batchCount === cnt
-                          ? 'bg-white text-indigo-800 shadow-2xs'
+                          ? 'bg-white text-[#087477] shadow-2xs'
                           : 'text-slate-600'
                       }`}
                     >
@@ -538,7 +538,7 @@ export const AIImageModal: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowProceduralOpts(!showProceduralOpts)}
-                  className="w-full flex items-center justify-between text-[11px] font-bold text-slate-600 hover:text-indigo-700 py-1"
+                  className="w-full flex items-center justify-between text-[11px] font-bold text-slate-600 hover:text-[#087477] py-1"
                 >
                   <span className="flex items-center gap-1.5">
                     <SlidersHorizontal size={12} />
@@ -559,8 +559,8 @@ export const AIImageModal: React.FC = () => {
                           onClick={() => setMotif(m.id)}
                           className={`py-1 px-1.5 rounded-lg border text-[10px] font-semibold transition ${
                             motif === m.id
-                              ? 'border-indigo-500 bg-indigo-50 text-indigo-800'
-                              : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600'
+                              ? 'border-[#b7dddd] bg-[#e5f4f3] text-[#087477]'
+                              : 'border-[#e5e9ee] bg-slate-50 hover:bg-slate-100 text-slate-600'
                           }`}
                         >
                           {m.label}
@@ -579,7 +579,7 @@ export const AIImageModal: React.FC = () => {
                           max={10}
                           value={complexity}
                           onChange={(e) => setComplexity(Number(e.target.value))}
-                          className="w-full accent-indigo-600 cursor-pointer"
+                          className="w-full accent-[#087f83] cursor-pointer"
                         />
                       </div>
                       <div>
@@ -593,7 +593,7 @@ export const AIImageModal: React.FC = () => {
                           max={100}
                           value={grain}
                           onChange={(e) => setGrain(Number(e.target.value))}
-                          className="w-full accent-indigo-600 cursor-pointer"
+                          className="w-full accent-[#087f83] cursor-pointer"
                         />
                       </div>
                     </div>
@@ -603,7 +603,7 @@ export const AIImageModal: React.FC = () => {
                           type="checkbox"
                           checked={useCustomPalette}
                           onChange={(e) => setUseCustomPalette(e.target.checked)}
-                          className="accent-indigo-600 rounded"
+                          className="accent-[#087f83] rounded"
                         />
                         <span>Custom Colors</span>
                       </label>
@@ -612,13 +612,13 @@ export const AIImageModal: React.FC = () => {
                           type="checkbox"
                           checked={hdPrint}
                           onChange={(e) => setHdPrint(e.target.checked)}
-                          className="accent-indigo-600 rounded"
+                          className="accent-[#087f83] rounded"
                         />
                         <span>2× Print-HD</span>
                       </label>
                     </div>
                     {useCustomPalette && (
-                      <div className="grid grid-cols-4 gap-1.5 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
+                      <div className="grid grid-cols-4 gap-1.5 bg-slate-50 p-1.5 rounded-xl border border-[#e5e9ee]">
                         {(
                           [
                             { key: 'bg1', label: 'BG 1' },
@@ -634,7 +634,7 @@ export const AIImageModal: React.FC = () => {
                               onChange={(e) =>
                                 setCustomPalette((p) => ({ ...p, [item.key]: e.target.value }))
                               }
-                              className="w-6 h-6 rounded-full border border-slate-200 cursor-pointer p-0"
+                              className="w-6 h-6 rounded-full border border-[#e5e9ee] cursor-pointer p-0"
                             />
                             <span className="text-[9px] text-slate-500 font-semibold">{item.label}</span>
                           </div>
@@ -656,7 +656,7 @@ export const AIImageModal: React.FC = () => {
                   setSeed(nextSeed);
                   handleGenerate(nextSeed);
                 }}
-                className="flex-1 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white text-xs font-bold shadow-sm flex items-center justify-center gap-2 transition cursor-pointer"
+                className="flex-1 py-2.5 px-4 rounded-xl bg-[#087f83] hover:bg-[#06696c] disabled:bg-indigo-400 text-white text-xs font-bold shadow-sm flex items-center justify-center gap-2 transition cursor-pointer"
               >
                 {isGenerating ? (
                   <>
@@ -690,7 +690,7 @@ export const AIImageModal: React.FC = () => {
                     handleGenerate(nextSeed);
                   }}
                   title="New Random Variation"
-                  className="p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 transition"
+                  className="p-2.5 rounded-xl border border-[#e5e9ee] bg-slate-50 hover:bg-slate-100 text-slate-600 transition"
                 >
                   <RefreshCw size={15} />
                 </button>
@@ -700,7 +700,7 @@ export const AIImageModal: React.FC = () => {
 
           {/* Right Column: Live Output Canvas, Cutout Tool & Gallery */}
           <div className="md:col-span-7 p-5 bg-slate-50 flex flex-col justify-between gap-3.5">
-            <div className="flex-1 flex flex-col items-center justify-center min-h-[290px] rounded-2xl border-2 border-dashed border-slate-200 bg-white p-4 relative overflow-hidden">
+            <div className="flex-1 flex flex-col items-center justify-center min-h-[290px] rounded-2xl border-2 border-dashed border-[#e5e9ee] bg-white p-4 relative overflow-hidden">
               {currentResult ? (
                 <div className="flex flex-col items-center gap-2.5 w-full">
                   <div className="flex items-center justify-between w-full gap-2 flex-wrap">
@@ -708,7 +708,7 @@ export const AIImageModal: React.FC = () => {
                       className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
                         currentResult.source === 'cloud'
                           ? 'bg-sky-100 text-sky-800'
-                          : 'bg-purple-100 text-purple-800'
+                          : 'bg-[#e5f4f3] text-[#087477]'
                       }`}
                     >
                       {currentResult.modelLabel ||
@@ -723,7 +723,7 @@ export const AIImageModal: React.FC = () => {
                         className={`px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 border transition cursor-pointer ${
                           currentResult.bgRemoved
                             ? 'bg-rose-50 border-rose-200 text-rose-700 hover:bg-rose-100'
-                            : 'bg-indigo-50 border-indigo-200 text-indigo-800 hover:bg-indigo-100'
+                            : 'bg-[#e5f4f3] border-[#b7dddd] text-[#087477] hover:bg-[#e5f4f3]'
                         }`}
                         title="Remove background cleanly to preview and insert as transparent cutout or die-cut sticker"
                       >
@@ -745,7 +745,7 @@ export const AIImageModal: React.FC = () => {
 
                   {/* Preview Canvas (Checkerboard when BG removed) */}
                   <div
-                    className="rounded-xl overflow-hidden border border-slate-200 shadow-md flex items-center justify-center"
+                    className="rounded-xl overflow-hidden border border-[#e5e9ee] shadow-md flex items-center justify-center"
                     style={
                       currentResult.bgRemoved
                         ? {
@@ -774,8 +774,8 @@ export const AIImageModal: React.FC = () => {
                           onClick={() => setCurrentResult(bItem)}
                           className={`flex items-center gap-1.5 px-2 py-1 rounded-xl border text-[10px] font-bold transition cursor-pointer ${
                             currentResult.seed === bItem.seed
-                              ? 'border-indigo-600 bg-indigo-50 text-indigo-800'
-                              : 'border-slate-200 bg-white text-slate-600'
+                              ? 'border-indigo-600 bg-[#e5f4f3] text-[#087477]'
+                              : 'border-[#e5e9ee] bg-white text-slate-600'
                           }`}
                         >
                           <img
@@ -798,7 +798,7 @@ export const AIImageModal: React.FC = () => {
                 </div>
               ) : (
                 <div className="text-center max-w-sm space-y-2">
-                  <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-700 flex items-center justify-center mx-auto">
+                  <div className="w-12 h-12 rounded-2xl bg-[#e5f4f3] text-[#087477] flex items-center justify-center mx-auto">
                     <Wand2 size={22} />
                   </div>
                   <p className="text-xs font-bold text-slate-700">
@@ -824,7 +824,7 @@ export const AIImageModal: React.FC = () => {
                         setErrorMsg(null);
                         handleGenerate();
                       }}
-                      className="px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-bold text-[10px] whitespace-nowrap hover:bg-indigo-700 transition cursor-pointer flex-shrink-0"
+                      className="px-2.5 py-1 rounded-lg bg-[#087f83] text-white font-bold text-[10px] whitespace-nowrap hover:bg-[#06696c] transition cursor-pointer flex-shrink-0"
                     >
                       Switch to Flux.1 Free
                     </button>
@@ -852,7 +852,7 @@ export const AIImageModal: React.FC = () => {
                         className={`w-12 h-12 rounded-lg overflow-hidden border-2 flex-shrink-0 transition cursor-pointer ${
                           currentResult === item
                             ? 'border-indigo-600 shadow-xs'
-                            : 'border-slate-200 opacity-80 hover:opacity-100'
+                            : 'border-[#e5e9ee] opacity-80 hover:opacity-100'
                         }`}
                         title={item.prompt}
                       >
@@ -867,12 +867,12 @@ export const AIImageModal: React.FC = () => {
                 </div>
               )}
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 flex-wrap">
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#e5e9ee] flex-wrap">
                 <button
                   type="button"
                   disabled={!currentResult}
                   onClick={handleDownload}
-                  className="py-2 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition"
+                  className="py-2 px-3 rounded-xl border border-[#e5e9ee] bg-white hover:bg-slate-100 disabled:opacity-40 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition"
                 >
                   <Download size={13} />
                   <span>Download</span>
@@ -881,7 +881,7 @@ export const AIImageModal: React.FC = () => {
                   type="button"
                   disabled={!currentResult}
                   onClick={handleSetAsBackground}
-                  className="py-2 px-3 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 disabled:opacity-40 text-indigo-800 text-xs font-semibold transition cursor-pointer"
+                  className="py-2 px-3 rounded-xl border border-[#b7dddd] bg-[#e5f4f3] hover:bg-[#e5f4f3] disabled:opacity-40 text-[#087477] text-xs font-semibold transition cursor-pointer"
                 >
                   Set as BG
                 </button>
@@ -899,7 +899,7 @@ export const AIImageModal: React.FC = () => {
                   type="button"
                   disabled={!currentResult}
                   onClick={() => handleInsert(false)}
-                  className="py-2 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white text-xs font-bold shadow-sm flex items-center gap-1.5 transition cursor-pointer"
+                  className="py-2 px-4 rounded-xl bg-[#087f83] hover:bg-[#06696c] disabled:bg-slate-300 text-white text-xs font-bold shadow-sm flex items-center gap-1.5 transition cursor-pointer"
                 >
                   <ImagePlus size={13} />
                   <span>Insert onto Page</span>

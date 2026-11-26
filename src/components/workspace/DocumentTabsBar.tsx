@@ -75,13 +75,13 @@ export const DocumentTabsBar: React.FC = () => {
   const ctxTab = ctxIdx >= 0 ? workspaceTabs[ctxIdx] : null;
 
   return (
-    <div className="h-7 bg-slate-200/90 border-t border-slate-300/90 px-1.5 flex items-center gap-1 select-none flex-shrink-0 relative z-30">
-      {/* Left: Excel-style Scroll Chevrons & All Sheets Button */}
-      <div className="flex items-center border-r border-slate-300/80 pr-1 mr-0.5 flex-shrink-0">
+    <div className="h-[34px] bg-white border-t border-[#e5e9ee] px-2 flex items-center gap-1 select-none flex-shrink-0 relative z-30">
+      {/* Left: Scroll Chevrons & All Sheets Button */}
+      <div className="flex items-center border-r border-[#e5e9ee] pr-1.5 mr-0.5 flex-shrink-0">
         <button
           type="button"
           onClick={() => scrollTabs(-160)}
-          className="p-1 rounded hover:bg-slate-300/60 text-slate-600 transition cursor-pointer"
+          className="p-1 rounded-[6px] hover:bg-[#eef5f5] hover:text-[#087477] text-[#778391] transition cursor-pointer"
           title="Scroll sheet tabs left"
         >
           <ChevronLeft size={13} />
@@ -89,7 +89,7 @@ export const DocumentTabsBar: React.FC = () => {
         <button
           type="button"
           onClick={() => scrollTabs(160)}
-          className="p-1 rounded hover:bg-slate-300/60 text-slate-600 transition cursor-pointer"
+          className="p-1 rounded-[6px] hover:bg-[#eef5f5] hover:text-[#087477] text-[#778391] transition cursor-pointer"
           title="Scroll sheet tabs right"
         >
           <ChevronRight size={13} />
@@ -101,7 +101,7 @@ export const DocumentTabsBar: React.FC = () => {
             setContextMenu(null);
             setIsAllSheetsOpen((o) => !o);
           }}
-          className="p-1 rounded hover:bg-slate-300/60 text-slate-600 transition cursor-pointer"
+          className="p-1 rounded-[6px] hover:bg-[#eef5f5] hover:text-[#087477] text-[#778391] transition cursor-pointer"
           title="All Sheets"
         >
           <List size={12} />
@@ -112,9 +112,9 @@ export const DocumentTabsBar: React.FC = () => {
       {isAllSheetsOpen && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className="absolute bottom-8 left-2 w-64 bg-white rounded-xl shadow-xl border border-slate-200 p-1.5 z-50 space-y-0.5 max-h-64 overflow-y-auto"
+          className="absolute bottom-9 left-2 w-64 bg-white rounded-[12px] shadow-[0_8px_28px_rgba(28,44,58,0.12)] border border-[#e5e9ee] p-1.5 z-50 space-y-0.5 max-h-64 overflow-y-auto"
         >
-          <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+          <div className="px-2 py-1 text-[10px] font-bold text-[#9aa4ae] uppercase tracking-[0.09em]">
             Open Sheets ({workspaceTabs.length})
           </div>
           {workspaceTabs.map((t) => {
@@ -127,20 +127,20 @@ export const DocumentTabsBar: React.FC = () => {
                   switchWorkspaceTab(t.id);
                   setIsAllSheetsOpen(false);
                 }}
-                className={`w-full px-2 py-1.5 rounded-lg text-left text-[11px] flex items-center justify-between transition ${
+                className={`w-full px-2 py-1.5 rounded-[8px] text-left text-[11px] flex items-center justify-between transition cursor-pointer ${
                   isCur
-                    ? 'bg-emerald-50 text-emerald-900 font-bold'
-                    : 'text-slate-700 hover:bg-slate-100'
+                    ? 'bg-[#e5f4f3] text-[#087477] font-semibold'
+                    : 'text-[#202833] hover:bg-[#eef5f5]'
                 }`}
               >
                 <span className="flex items-center gap-2 truncate">
                   <span
                     className="w-2 h-2 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: t.tabColor || '#059669' }}
+                    style={{ backgroundColor: t.tabColor || '#087f83' }}
                   />
                   <span className="truncate">{t.project.name.replace(/\.pub$/i, '')}</span>
                 </span>
-                <span className="text-[10px] text-slate-400">{t.project.pages.length}p</span>
+                <span className="text-[10px] text-[#9aa4ae] tabular-nums">{t.project.pages.length}p</span>
               </button>
             );
           })}
@@ -150,13 +150,13 @@ export const DocumentTabsBar: React.FC = () => {
       {/* Sheet Tabs Strip */}
       <div
         ref={scrollRef}
-        className="flex items-stretch h-full overflow-x-auto flex-1 min-w-0 no-scrollbar"
+        className="flex items-center gap-1 h-full overflow-x-auto flex-1 min-w-0 no-scrollbar py-1"
       >
         {workspaceTabs.map((tab) => {
           const isActive = tab.id === activeTabId;
           const displayName = tab.project.name.replace(/\.pub$/i, '');
           const isEditing = editingTabId === tab.id;
-          const accentColor = tab.tabColor || '#059669';
+          const accentColor = tab.tabColor || '#087f83';
 
           return (
             <div
@@ -177,17 +177,15 @@ export const DocumentTabsBar: React.FC = () => {
                 });
               }}
               title={`${tab.project.name} (${tab.project.pages.length}p) — Double-click to rename, Right-click for sheet options`}
-              style={{
-                borderBottom: isActive
-                  ? `2.5px solid ${accentColor}`
-                  : tab.tabColor
-                  ? `2px solid ${tab.tabColor}`
-                  : undefined,
-              }}
-              className={`group relative flex items-center gap-1.5 h-full px-3 text-[11px] cursor-pointer transition-colors max-w-[190px] flex-shrink-0 border-r border-slate-300/80 ${
+              style={
+                tab.tabColor
+                  ? { borderBottom: `2px solid ${accentColor}` }
+                  : undefined
+              }
+              className={`group relative flex items-center gap-1.5 h-full px-2.5 rounded-[6px] text-[11px] cursor-pointer transition-colors max-w-[190px] flex-shrink-0 ${
                 isActive
-                  ? 'bg-white text-slate-900 font-bold shadow-[0_-1px_3px_rgba(0,0,0,0.06)] z-10'
-                  : 'bg-slate-200/40 text-slate-600 font-medium hover:bg-slate-100/80 hover:text-slate-900'
+                  ? 'bg-[#e5f4f3] text-[#087477] font-semibold'
+                  : 'bg-transparent text-[#52606c] font-medium hover:bg-[#eef5f5] hover:text-[#202833]'
               }`}
             >
               {isEditing ? (
@@ -202,14 +200,14 @@ export const DocumentTabsBar: React.FC = () => {
                     else if (e.key === 'Escape') setEditingTabId(null);
                   }}
                   onClick={(e) => e.stopPropagation()}
-                  className="w-28 px-1 py-0 text-[11px] bg-emerald-50 border border-emerald-500 rounded outline-none text-slate-900 font-semibold"
+                  className="w-28 px-1 py-0 text-[11px] bg-white border border-[#73b9b7] rounded outline-none text-[#202833] font-semibold"
                 />
               ) : (
                 <span className="truncate">{displayName}</span>
               )}
               <span
-                className={`text-[9px] px-1 rounded ${
-                  isActive ? 'bg-slate-100 text-slate-600' : 'text-slate-400'
+                className={`text-[9px] px-1 rounded tabular-nums ${
+                  isActive ? 'bg-white/80 text-[#087477]' : 'text-[#9aa4ae]'
                 }`}
               >
                 {tab.project.pages.length}p
@@ -220,7 +218,7 @@ export const DocumentTabsBar: React.FC = () => {
                   e.stopPropagation();
                   closeWorkspaceTab(tab.id);
                 }}
-                className="p-0.5 rounded-full hover:bg-rose-100 hover:text-rose-600 text-slate-400 opacity-0 group-hover:opacity-100 transition"
+                className="p-0.5 rounded-full hover:bg-rose-100 hover:text-rose-600 text-[#9aa4ae] opacity-0 group-hover:opacity-100 transition"
                 title={workspaceTabs.length > 1 ? 'Close sheet' : 'Reset to blank sheet'}
               >
                 <X size={10} />
@@ -229,12 +227,12 @@ export const DocumentTabsBar: React.FC = () => {
           );
         })}
 
-        {/* Classic Excel Circular '+' New Sheet Button */}
-        <div className="flex items-center px-1.5 flex-shrink-0">
+        {/* New Sheet Button */}
+        <div className="flex items-center px-1 flex-shrink-0">
           <button
             type="button"
             onClick={() => createNewTab()}
-            className="w-5 h-5 rounded-full border border-slate-400/80 bg-white/80 hover:bg-emerald-600 hover:border-emerald-600 hover:text-white text-slate-600 flex items-center justify-center transition shadow-2xs cursor-pointer"
+            className="w-5 h-5 rounded-[6px] border border-[#e5e9ee] bg-[#f8fafb] hover:bg-[#e5f4f3] hover:border-[#b7dddd] hover:text-[#087477] text-[#778391] flex items-center justify-center transition cursor-pointer"
             title="New Sheet (Blank Publication)"
           >
             <Plus size={12} />

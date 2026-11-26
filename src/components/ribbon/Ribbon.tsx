@@ -21,12 +21,12 @@ export const Ribbon: React.FC = () => {
   ] as const;
 
   return (
-    <div className="w-full bg-white border-b border-slate-200/90 flex flex-col select-none flex-shrink-0 z-30 shadow-xs">
+    <div className="w-full bg-white border-b border-[#e5e9ee] flex flex-col select-none flex-shrink-0 z-30">
       {/* Topmost Titlebar & Search */}
       <QuickAccessToolbar />
 
-      {/* Modern Segmented Navigation Bar */}
-      <div className="flex items-center justify-between px-3 py-1 bg-slate-50/90 border-b border-slate-200/70">
+      {/* Calm Tab Strip */}
+      <div className="flex items-center justify-between px-4 py-1.5 bg-white border-b border-[#e5e9ee]">
         <div className="flex items-center gap-1">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
@@ -37,10 +37,10 @@ export const Ribbon: React.FC = () => {
                   setActiveTab(tab.id);
                   if (isCollapsed) setIsCollapsed(false);
                 }}
-                className={`px-3 py-1 rounded-full text-xs font-semibold tracking-wide transition-all ${
+                className={`px-3 py-1 rounded-[8px] text-xs font-semibold transition-all cursor-pointer ${
                   isActive
-                    ? 'bg-indigo-600 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                    ? 'bg-[#e5f4f3] text-[#087477]'
+                    : 'text-[#52606c] hover:text-[#202833] hover:bg-[#eef5f5]'
                 }`}
               >
                 {tab.label}
@@ -52,7 +52,7 @@ export const Ribbon: React.FC = () => {
         {/* Ribbon Collapse Toggle */}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-md transition"
+          className="p-1 text-[#778391] hover:text-[#087477] hover:bg-[#eef5f5] rounded-[6px] transition cursor-pointer"
           title={isCollapsed ? 'Expand Ribbon' : 'Collapse Ribbon'}
         >
           {isCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
@@ -61,7 +61,7 @@ export const Ribbon: React.FC = () => {
 
       {/* Ribbon Command Strip Contents */}
       {!isCollapsed && (
-        <div className="bg-white min-h-[96px] flex items-center px-1 overflow-x-auto transition-all animate-in slide-in-from-top-1 duration-150">
+        <div className="bg-white min-h-[84px] flex items-center px-2 overflow-x-auto transition-all animate-in slide-in-from-top-1 duration-150">
           {activeTab === 'home' && <HomeTab />}
           {activeTab === 'insert' && <InsertTab />}
           {activeTab === 'page-design' && <PageDesignTab />}

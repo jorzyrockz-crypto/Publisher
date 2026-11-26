@@ -11,7 +11,6 @@ import {
   LayoutGrid,
   Search,
   CheckCircle2,
-  Sparkles,
   Command,
 } from 'lucide-react';
 
@@ -53,22 +52,43 @@ export const QuickAccessToolbar: React.FC = () => {
   );
 
   return (
-    <div className="h-10 bg-gradient-to-r from-[#312e81] via-[#4338ca] to-[#4f46e5] text-white flex items-center justify-between px-3 select-none text-xs border-b border-indigo-900/40 shadow-sm relative z-40">
-      {/* Left: File & Quick Action Icons */}
-      <div className="flex items-center gap-1.5">
-        {/* Backstage File Button */}
+    <div className="h-[58px] bg-white text-[#202833] flex items-center justify-between px-4 select-none text-xs border-b border-[#e5e9ee] relative z-40">
+      {/* Left: Brand Emblem, Title, Document Name & Ghost Quick Actions */}
+      <div className="flex items-center gap-2 min-w-0">
+        {/* Brand Emblem + Publisher Studio (opens Backstage / File) */}
         <button
           onClick={() => setIsBackstageOpen(true)}
-          className="bg-white/15 hover:bg-white/25 active:scale-95 text-white font-semibold px-3 py-1 rounded-full text-xs flex items-center gap-1.5 transition-all shadow-xs backdrop-blur-md mr-1 border border-white/20"
+          className="flex items-center gap-2.5 px-1.5 py-1 -ml-1.5 rounded-[8px] hover:bg-[#eef5f5] transition-colors group cursor-pointer"
+          title="Open File & Templates (Backstage)"
         >
-          <LayoutGrid size={13} className="text-indigo-200" />
-          <span>File</span>
+          <div className="w-[29px] h-[29px] rounded-[9px] bg-gradient-to-br from-[#0c9c9c] to-[#075f77] text-white flex items-center justify-center shadow-2xs flex-shrink-0">
+            <LayoutGrid size={14} />
+          </div>
+          <span className="font-semibold text-[13px] tracking-[-0.01em] text-[#202833] group-hover:text-[#087477] whitespace-nowrap">
+            Publisher Studio
+          </span>
         </button>
+
+        <div className="w-[1px] h-4 bg-[#e5e9ee] mx-0.5 flex-shrink-0" />
+
+        {/* Document Title & Saved Locally */}
+        <div className="hidden md:flex items-center gap-1.5 min-w-0">
+          <span className="truncate max-w-[160px] font-medium text-[#46515e]">
+            {project.name}
+          </span>
+          <span className="hidden lg:inline-flex items-center gap-1 text-[11px] text-[#87919b] whitespace-nowrap">
+            <span>•</span>
+            <CheckCircle2 size={11} className="text-[#087f83]" />
+            <span>Saved locally</span>
+          </span>
+        </div>
+
+        <div className="hidden md:block w-[1px] h-4 bg-[#e5e9ee] mx-0.5 flex-shrink-0" />
 
         {/* Save */}
         <button
           onClick={() => saveProjectToFile(project)}
-          className="p-1.5 hover:bg-white/15 active:scale-95 rounded-lg transition-all text-white/90 hover:text-white"
+          className="p-1.5 hover:bg-[#eef5f5] text-[#52606c] hover:text-[#087477] active:scale-95 rounded-[8px] transition-all cursor-pointer"
           title="Save Publication (.pub)"
         >
           <Save size={15} />
@@ -78,10 +98,10 @@ export const QuickAccessToolbar: React.FC = () => {
         <button
           onClick={undo}
           disabled={!canUndo}
-          className={`p-1.5 rounded-lg transition-all ${
+          className={`p-1.5 rounded-[8px] transition-all ${
             canUndo
-              ? 'hover:bg-white/15 active:scale-95 text-white/90 hover:text-white'
-              : 'text-white/35 cursor-not-allowed'
+              ? 'hover:bg-[#eef5f5] text-[#52606c] hover:text-[#087477] active:scale-95 cursor-pointer'
+              : 'text-[#9aa4ae]/50 cursor-not-allowed'
           }`}
           title="Undo (Ctrl+Z)"
         >
@@ -92,32 +112,27 @@ export const QuickAccessToolbar: React.FC = () => {
         <button
           onClick={redo}
           disabled={!canRedo}
-          className={`p-1.5 rounded-lg transition-all ${
+          className={`p-1.5 rounded-[8px] transition-all ${
             canRedo
-              ? 'hover:bg-white/15 active:scale-95 text-white/90 hover:text-white'
-              : 'text-white/35 cursor-not-allowed'
+              ? 'hover:bg-[#eef5f5] text-[#52606c] hover:text-[#087477] active:scale-95 cursor-pointer'
+              : 'text-[#9aa4ae]/50 cursor-not-allowed'
           }`}
           title="Redo (Ctrl+Y)"
         >
           <Redo2 size={15} />
         </button>
-
-        <div className="w-[1px] h-3.5 bg-white/20 mx-1" />
-
-        {/* Saved Status Indicator */}
-        <div className="hidden lg:flex items-center gap-1 text-[11px] text-indigo-200/90 font-medium bg-indigo-900/40 px-2 py-0.5 rounded-full border border-indigo-700/50">
-          <CheckCircle2 size={11} className="text-indigo-300" />
-          <span>Saved</span>
-        </div>
       </div>
 
-      {/* Center: Interactive Search / Command Bar (Microsoft 365 style) */}
-      <div className="relative max-w-xs md:max-w-md w-full mx-4">
+      {/* Center: Calm Light Command Search Bar */}
+      <div className="relative max-w-xs md:max-w-sm w-full mx-4">
         <div className="relative">
-          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/60 pointer-events-none" />
+          <Search
+            size={13}
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#9aa4ae] pointer-events-none"
+          />
           <input
             type="text"
-            placeholder="Search commands, templates, tools... (Ctrl+K)"
+            placeholder="Search commands, tools... (Ctrl+K)"
             value={searchQuery}
             onFocus={() => setIsSearchOpen(true)}
             onBlur={() => setTimeout(() => setIsSearchOpen(false), 200)}
@@ -125,9 +140,9 @@ export const QuickAccessToolbar: React.FC = () => {
               setSearchQuery(e.target.value);
               setIsSearchOpen(true);
             }}
-            className="w-full bg-white/15 hover:bg-white/20 focus:bg-white text-white focus:text-slate-800 placeholder-white/60 focus:placeholder-slate-400 pl-8 pr-12 py-1 rounded-full text-[11px] outline-none border border-white/20 focus:border-indigo-600 transition-all shadow-inner"
+            className="w-full bg-[#f8fafb] hover:bg-[#f3f5f7] focus:bg-white text-[#202833] placeholder-[#9aa4ae] pl-8 pr-12 py-1.5 rounded-[8px] text-[11.5px] outline-none border border-[#e5e9ee] focus:border-[#73b9b7] transition-all"
           />
-          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 text-[9px] bg-white/20 text-white/80 px-1.5 py-0.5 rounded font-mono pointer-events-none">
+          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 text-[9.5px] bg-[#f3f5f7] border border-[#e5e9ee] text-[#778391] px-1.5 py-0.5 rounded-[6px] font-mono pointer-events-none">
             <Command size={9} />
             <span>K</span>
           </div>
@@ -135,8 +150,8 @@ export const QuickAccessToolbar: React.FC = () => {
 
         {/* Search Results Dropdown */}
         {isSearchOpen && (
-          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl p-1.5 z-50 text-slate-800 animate-in fade-in duration-100">
-            <div className="text-[10px] font-semibold text-slate-400 px-2 py-1 uppercase tracking-wider">
+          <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-[#e5e9ee] rounded-[12px] shadow-[0_8px_28px_rgba(28,44,58,0.12)] p-1.5 z-50 text-[#202833] animate-in fade-in duration-100">
+            <div className="text-[10px] font-bold text-[#9aa4ae] px-2 py-1 uppercase tracking-[0.09em]">
               Quick Commands
             </div>
             {filteredActions.map((item, idx) => (
@@ -147,9 +162,9 @@ export const QuickAccessToolbar: React.FC = () => {
                   setIsSearchOpen(false);
                   setSearchQuery('');
                 }}
-                className="w-full text-left px-2.5 py-1.5 hover:bg-indigo-50 hover:text-indigo-800 rounded-lg text-xs flex items-center gap-2 transition"
+                className="w-full text-left px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] rounded-[8px] text-xs flex items-center gap-2 transition cursor-pointer"
               >
-                <span className="w-5 h-5 rounded-md bg-slate-100 flex items-center justify-center font-bold text-slate-600 text-[11px]">
+                <span className="w-5 h-5 rounded-[6px] bg-[#f3f5f7] flex items-center justify-center font-bold text-[#52606c] text-[11px]">
                   {item.icon}
                 </span>
                 <span className="font-medium">{item.label}</span>
@@ -159,37 +174,24 @@ export const QuickAccessToolbar: React.FC = () => {
         )}
       </div>
 
-      {/* Right: Modern Actions & Document Title */}
+      {/* Right: Ghost Print + Botanical Teal Export CTA */}
       <div className="flex items-center gap-2">
-        {/* Document Title */}
-        <div className="hidden xl:flex items-center gap-1.5 text-xs text-white/90 font-medium">
-          <span className="truncate max-w-[150px]">{project.name}</span>
-        </div>
-
-        {/* Quick Export PDF pill */}
-        <button
-          onClick={() => exportToPdf(project)}
-          className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-white/15 hover:bg-white/25 active:scale-95 text-white rounded-full font-medium text-[11px] transition border border-white/20 shadow-xs"
-          title="Export to PDF"
-        >
-          <FileDown size={13} className="text-indigo-200" />
-          <span>Export PDF</span>
-        </button>
-
-        {/* Print */}
         <button
           onClick={triggerPrint}
-          className="p-1.5 hover:bg-white/15 active:scale-95 rounded-lg transition-all text-white/90 hover:text-white"
+          className="p-1.5 hover:bg-[#eef5f5] text-[#52606c] hover:text-[#087477] active:scale-95 rounded-[8px] transition-all cursor-pointer"
           title="Print Document"
         >
-          <Printer size={15} />
+          <Printer size={16} />
         </button>
 
-        {/* Studio Badge */}
-        <div className="flex items-center gap-1 bg-indigo-950/40 border border-indigo-600/40 text-indigo-200 px-2 py-0.5 rounded-full text-[10px] font-semibold">
-          <Sparkles size={10} className="text-amber-300" />
-          <span>STUDIO</span>
-        </div>
+        <button
+          onClick={() => exportToPdf(project)}
+          className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#087f83] hover:bg-[#06696c] active:scale-95 text-white rounded-[8px] font-semibold text-xs transition shadow-2xs cursor-pointer"
+          title="Export to PDF"
+        >
+          <FileDown size={14} />
+          <span>Export</span>
+        </button>
       </div>
     </div>
   );

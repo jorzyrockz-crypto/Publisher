@@ -58,44 +58,40 @@ export const HomeTab: React.FC = () => {
       : null;
 
   return (
-    <div className="flex items-center h-24 px-3 py-1 gap-3 text-xs text-slate-700 overflow-x-auto select-none">
+    <div className="flex items-center h-20 px-3 py-1 gap-3 text-xs text-[#202833] overflow-x-auto select-none">
       {/* 1. Clipboard Group */}
-      <div className="flex flex-col items-center justify-between h-full py-1 pr-3 border-r border-slate-200 flex-shrink-0">
-        <div className="flex items-center gap-1.5 my-auto">
+      <div className="flex flex-col items-center justify-between h-full py-1 pr-3 border-r border-[#e5e9ee] flex-shrink-0">
+        <div className="flex items-center gap-1 my-auto">
           <button
             onClick={duplicateSelectedElements}
             disabled={selectedElementIds.length === 0}
-            className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl disabled:opacity-40 transition-all group"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] disabled:opacity-40 text-xs font-medium text-[#202833] transition-all cursor-pointer"
             title="Duplicate Selected (Ctrl+D)"
           >
-            <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-xs">
-              <Copy size={16} />
-            </div>
-            <span className="text-[10px] font-medium mt-1 text-slate-600">Duplicate</span>
+            <Copy size={15} className="text-[#087f83]" />
+            <span>Duplicate</span>
           </button>
 
           <button
             onClick={deleteSelectedElements}
             disabled={selectedElementIds.length === 0}
-            className="flex flex-col items-center p-1.5 hover:bg-red-50 active:scale-95 rounded-xl disabled:opacity-40 text-red-600 transition-all group"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-red-50 active:scale-95 rounded-[8px] disabled:opacity-40 text-xs font-medium text-red-600 transition-all cursor-pointer"
             title="Delete Selected"
           >
-            <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center group-hover:bg-red-600 group-hover:text-white transition-all shadow-xs text-slate-500">
-              <Trash2 size={16} />
-            </div>
-            <span className="text-[10px] font-medium mt-1">Delete</span>
+            <Trash2 size={15} />
+            <span>Delete</span>
           </button>
         </div>
-        <span className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider">Clipboard</span>
+        <span className="text-[10px] text-[#9aa4ae] font-bold uppercase tracking-[0.09em]">Clipboard</span>
       </div>
 
       {/* 2. Font Group */}
-      <div className="flex flex-col justify-between h-full py-1 px-3 border-r border-slate-200 flex-shrink-0 min-w-[220px]">
+      <div className="flex flex-col justify-between h-full py-1 px-3 border-r border-[#e5e9ee] flex-shrink-0 min-w-[220px]">
         <div className="space-y-1.5 my-auto">
           {/* Top row: Font family & Size */}
           <div className="flex items-center gap-1.5">
             <FontSelector
-              value={selectedTextElement?.fontFamily || 'Segoe UI'}
+              value={selectedTextElement?.fontFamily || 'Inter'}
               onChange={(fontFamily) => updateSelectedElements({ fontFamily })}
               className="w-36"
             />
@@ -104,7 +100,7 @@ export const HomeTab: React.FC = () => {
               type="number"
               min={8}
               max={120}
-              className="bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg px-2 py-1 text-xs outline-none w-14 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium transition text-center"
+              className="bg-[#f8fafb] hover:bg-[#f3f5f7] border border-[#e5e9ee] rounded-[8px] px-2 py-1 text-xs outline-none w-14 focus:bg-white focus:border-[#73b9b7] font-medium transition text-center tabular-nums"
               value={selectedTextElement?.fontSize || 16}
               onChange={(e) => updateSelectedElements({ fontSize: Number(e.target.value) })}
             />
@@ -112,17 +108,17 @@ export const HomeTab: React.FC = () => {
 
           {/* Bottom row: Bold, Italic, Underline, Color, WordArt */}
           <div className="flex items-center gap-1">
-            <div className="flex items-center bg-slate-100/80 p-0.5 rounded-lg border border-slate-200/60">
+            <div className="flex items-center bg-[#f3f5f7] p-0.5 rounded-[8px] border border-[#e5e9ee]">
               <button
                 onClick={() =>
                   updateSelectedElements({
                     fontWeight: selectedTextElement?.fontWeight === 'bold' ? 'normal' : 'bold',
                   })
                 }
-                className={`p-1 rounded-md transition-all ${
+                className={`p-1 rounded-[6px] transition-all cursor-pointer ${
                   selectedTextElement?.fontWeight === 'bold'
-                    ? 'bg-white shadow-xs text-indigo-800 font-bold'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                    ? 'bg-[#e5f4f3] text-[#087477] font-bold'
+                    : 'text-[#52606c] hover:text-[#202833] hover:bg-white/60'
                 }`}
                 title="Bold"
               >
@@ -134,10 +130,10 @@ export const HomeTab: React.FC = () => {
                     fontStyle: selectedTextElement?.fontStyle === 'italic' ? 'normal' : 'italic',
                   })
                 }
-                className={`p-1 rounded-md transition-all ${
+                className={`p-1 rounded-[6px] transition-all cursor-pointer ${
                   selectedTextElement?.fontStyle === 'italic'
-                    ? 'bg-white shadow-xs text-indigo-800'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                    ? 'bg-[#e5f4f3] text-[#087477]'
+                    : 'text-[#52606c] hover:text-[#202833] hover:bg-white/60'
                 }`}
                 title="Italic"
               >
@@ -150,10 +146,10 @@ export const HomeTab: React.FC = () => {
                       selectedTextElement?.textDecoration === 'underline' ? 'none' : 'underline',
                   })
                 }
-                className={`p-1 rounded-md transition-all ${
+                className={`p-1 rounded-[6px] transition-all cursor-pointer ${
                   selectedTextElement?.textDecoration === 'underline'
-                    ? 'bg-white shadow-xs text-indigo-800'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                    ? 'bg-[#e5f4f3] text-[#087477]'
+                    : 'text-[#52606c] hover:text-[#202833] hover:bg-white/60'
                 }`}
                 title="Underline"
               >
@@ -161,15 +157,15 @@ export const HomeTab: React.FC = () => {
               </button>
             </div>
 
-            <div className="w-[1px] h-4 bg-slate-200 mx-1" />
+            <div className="w-[1px] h-4 bg-[#e5e9ee] mx-1" />
 
             {/* Modern color swatch */}
             <div className="flex items-center gap-1.5" title="Font Color">
               <div className="relative flex items-center justify-center">
                 <input
                   type="color"
-                  className="w-6 h-6 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0"
-                  value={selectedTextElement?.color || '#0f172a'}
+                  className="w-6 h-6 rounded-[6px] border border-[#e5e9ee] cursor-pointer overflow-hidden p-0"
+                  value={selectedTextElement?.color || '#202833'}
                   onChange={(e) => updateSelectedElements({ color: e.target.value })}
                 />
               </div>
@@ -183,33 +179,33 @@ export const HomeTab: React.FC = () => {
                   wordArtStyle: selectedTextElement?.isWordArt ? 'none' : 'rainbow',
                 })
               }
-              className={`p-1.5 rounded-lg transition-all flex items-center gap-1 ml-1 ${
+              className={`p-1.5 rounded-[8px] transition-all flex items-center gap-1 ml-1 cursor-pointer ${
                 selectedTextElement?.isWordArt
-                  ? 'bg-amber-100 text-amber-800 ring-1 ring-amber-300'
-                  : 'hover:bg-slate-100 text-slate-600'
+                  ? 'bg-[#e5f4f3] text-[#087477] border border-[#b7dddd]'
+                  : 'hover:bg-[#eef5f5] text-[#52606c]'
               }`}
               title="WordArt Styles"
             >
-              <Sparkles size={14} className="text-amber-500" />
+              <Sparkles size={14} className="text-[#087f83]" />
             </button>
           </div>
         </div>
-        <span className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider text-center">Font</span>
+        <span className="text-[10px] text-[#9aa4ae] font-bold uppercase tracking-[0.09em] text-center">Font</span>
       </div>
 
       {/* 3. Paragraph Group */}
-      <div className="flex flex-col justify-between h-full py-1 px-3 border-r border-slate-200 flex-shrink-0">
+      <div className="flex flex-col justify-between h-full py-1 px-3 border-r border-[#e5e9ee] flex-shrink-0">
         <div className="space-y-1.5 my-auto">
           {/* Alignment Segmented Control */}
-          <div className="flex items-center bg-slate-100/80 p-0.5 rounded-lg border border-slate-200/60">
+          <div className="flex items-center bg-[#f3f5f7] p-0.5 rounded-[8px] border border-[#e5e9ee]">
             {(['left', 'center', 'right', 'justify'] as const).map((align) => (
               <button
                 key={align}
                 onClick={() => updateSelectedElements({ textAlign: align })}
-                className={`p-1 rounded-md transition-all ${
+                className={`p-1 rounded-[6px] transition-all cursor-pointer ${
                   selectedTextElement?.textAlign === align
-                    ? 'bg-white shadow-xs text-indigo-800'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                    ? 'bg-[#e5f4f3] text-[#087477]'
+                    : 'text-[#52606c] hover:text-[#202833] hover:bg-white/60'
                 }`}
                 title={`Align ${align}`}
               >
@@ -229,20 +225,20 @@ export const HomeTab: React.FC = () => {
                   columns: (((selectedTextElement?.columns || 1) % 3) + 1) as 1 | 2 | 3,
                 })
               }
-              className="flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition shadow-2xs"
+              className="flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-[8px] border border-[#e5e9ee] bg-[#f8fafb] hover:bg-[#eef5f5] hover:text-[#087477] transition cursor-pointer tabular-nums"
               title="Toggle Multi-Columns"
             >
-              <Columns size={12} className="text-indigo-700" />
+              <Columns size={12} className="text-[#087f83]" />
               <span>{selectedTextElement?.columns || 1} Col</span>
             </button>
             <button
               onClick={() =>
                 updateSelectedElements({ dropCap: !selectedTextElement?.dropCap })
               }
-              className={`text-[11px] font-medium px-2 py-0.5 rounded-lg border transition shadow-2xs ${
+              className={`text-[11px] font-medium px-2 py-0.5 rounded-[8px] border transition cursor-pointer ${
                 selectedTextElement?.dropCap
-                  ? 'bg-indigo-50 border-indigo-300 text-indigo-800 font-bold'
-                  : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'
+                  ? 'bg-[#e5f4f3] border-[#b7dddd] text-[#087477] font-semibold'
+                  : 'bg-[#f8fafb] border-[#e5e9ee] hover:bg-[#eef5f5] text-[#52606c]'
               }`}
               title="Toggle Large Initial Drop Cap"
             >
@@ -250,22 +246,20 @@ export const HomeTab: React.FC = () => {
             </button>
           </div>
         </div>
-        <span className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider text-center">Paragraph</span>
+        <span className="text-[10px] text-[#9aa4ae] font-bold uppercase tracking-[0.09em] text-center">Paragraph</span>
       </div>
 
       {/* 4. Objects Group */}
-      <div className="flex flex-col justify-between h-full py-1 px-3 border-r border-slate-200 flex-shrink-0">
-        <div className="flex items-center gap-2 my-auto relative">
+      <div className="flex flex-col justify-between h-full py-1 px-3 border-r border-[#e5e9ee] flex-shrink-0">
+        <div className="flex items-center gap-1 my-auto relative">
           {/* Draw Text Box */}
           <button
             onClick={() => addTextBox()}
-            className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
             title="Draw Text Box"
           >
-            <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-xs">
-              <Type size={16} />
-            </div>
-            <span className="text-[10px] font-medium mt-1 text-slate-600">Text Box</span>
+            <Type size={15} className="text-[#087f83]" />
+            <span>Text Box</span>
           </button>
 
           {/* Shapes Dropdown */}
@@ -273,15 +267,12 @@ export const HomeTab: React.FC = () => {
             <button
               ref={shapesBtnRef}
               onClick={() => setIsShapesOpen(!isShapesOpen)}
-              className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
               title="Insert Shapes"
             >
-              <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-xs">
-                <Shapes size={16} />
-              </div>
-              <span className="text-[10px] font-medium mt-1 text-slate-600 flex items-center">
-                Shapes <ChevronDown size={9} className="ml-0.5" />
-              </span>
+              <Shapes size={15} className="text-[#087f83]" />
+              <span>Shapes</span>
+              <ChevronDown size={10} className="text-[#9aa4ae]" />
             </button>
 
             <FloatingDropdown
@@ -297,7 +288,7 @@ export const HomeTab: React.FC = () => {
                     addShape(item.type);
                     setIsShapesOpen(false);
                   }}
-                  className="p-2 hover:bg-indigo-50 rounded-xl text-center text-[10px] font-medium text-slate-700 flex flex-col items-center gap-1 transition"
+                  className="p-2 hover:bg-[#eef5f5] hover:text-[#087477] rounded-[8px] text-center text-[10px] font-medium text-[#202833] flex flex-col items-center gap-1 transition cursor-pointer"
                 >
                   <ShapePreviewIcon shapeType={item.type} size={24} />
                   <span className="truncate w-full">{item.label}</span>
@@ -325,49 +316,45 @@ export const HomeTab: React.FC = () => {
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
             title="Insert Picture"
           >
-            <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-xs">
-              <ImageIcon size={16} />
-            </div>
-            <span className="text-[10px] font-medium mt-1 text-slate-600">Picture</span>
+            <ImageIcon size={15} className="text-[#087f83]" />
+            <span>Picture</span>
           </button>
 
           <button
             onClick={() => addPicturePlaceholder()}
-            className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
             title="Insert Picture Placeholder"
           >
-            <div className="w-8 h-8 rounded-xl bg-sky-50 border border-dashed border-sky-400 text-sky-700 flex items-center justify-center group-hover:bg-sky-600 group-hover:text-white transition-all shadow-xs">
-              <ImagePlus size={16} />
-            </div>
-            <span className="text-[10px] font-medium mt-1 text-slate-600">Placeholder</span>
+            <ImagePlus size={15} className="text-[#087f83]" />
+            <span>Placeholder</span>
           </button>
         </div>
-        <span className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider text-center">Objects</span>
+        <span className="text-[10px] text-[#9aa4ae] font-bold uppercase tracking-[0.09em] text-center">Objects</span>
       </div>
 
       {/* 5. Arrange Group */}
-      <div className="flex flex-col justify-between h-full py-1 px-3 flex-shrink-0">
+      <div className="flex flex-col justify-between h-full py-1 px-3 border-r border-[#e5e9ee] flex-shrink-0">
         <div className="space-y-1.5 my-auto">
           <div className="flex items-center gap-1.5">
             <button
               onClick={bringToFront}
               disabled={selectedElementIds.length === 0}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-[11px] font-medium disabled:opacity-40 transition shadow-2xs"
+              className="flex items-center gap-1 px-2 py-1 rounded-[8px] border border-[#e5e9ee] bg-[#f8fafb] hover:bg-[#eef5f5] hover:text-[#087477] text-[11px] font-medium disabled:opacity-40 transition cursor-pointer"
               title="Bring to Front"
             >
-              <BringToFront size={13} className="text-indigo-700" />
+              <BringToFront size={13} className="text-[#087f83]" />
               <span>Forward</span>
             </button>
             <button
               onClick={sendToBack}
               disabled={selectedElementIds.length === 0}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-[11px] font-medium disabled:opacity-40 transition shadow-2xs"
+              className="flex items-center gap-1 px-2 py-1 rounded-[8px] border border-[#e5e9ee] bg-[#f8fafb] hover:bg-[#eef5f5] hover:text-[#087477] text-[11px] font-medium disabled:opacity-40 transition cursor-pointer"
               title="Send to Back"
             >
-              <SendToBack size={13} className="text-slate-600" />
+              <SendToBack size={13} className="text-[#52606c]" />
               <span>Backward</span>
             </button>
           </div>
@@ -377,17 +364,17 @@ export const HomeTab: React.FC = () => {
               ref={alignBtnRef}
               onClick={() => setIsAlignOpen(!isAlignOpen)}
               disabled={selectedElementIds.length === 0}
-              className="flex items-center justify-between w-full px-2.5 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-[11px] font-medium disabled:opacity-40 transition shadow-2xs"
+              className="flex items-center justify-between w-full px-2.5 py-1 rounded-[8px] border border-[#e5e9ee] bg-[#f8fafb] hover:bg-[#eef5f5] hover:text-[#087477] text-[11px] font-medium disabled:opacity-40 transition cursor-pointer"
             >
               <span>Align</span>
-              <ChevronDown size={11} className="text-slate-400" />
+              <ChevronDown size={11} className="text-[#9aa4ae]" />
             </button>
 
             <FloatingDropdown
               isOpen={isAlignOpen}
               onClose={() => setIsAlignOpen(false)}
               anchorRef={alignBtnRef}
-              className="p-1.5 w-44 space-y-0.5 text-xs text-slate-700"
+              className="p-1.5 w-44 space-y-0.5 text-xs text-[#202833]"
             >
               {(['left', 'center', 'right', 'top', 'middle', 'bottom'] as const).map(
                 (alignment) => (
@@ -397,19 +384,19 @@ export const HomeTab: React.FC = () => {
                       alignSelected(alignment);
                       setIsAlignOpen(false);
                     }}
-                    className="w-full text-left px-2.5 py-1.5 hover:bg-indigo-50 hover:text-indigo-800 rounded-lg text-xs capitalize transition"
+                    className="w-full text-left px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] rounded-[8px] text-xs capitalize transition cursor-pointer"
                   >
                     Align {alignment}
                   </button>
                 )
               )}
-              <div className="border-t border-slate-100 my-1" />
+              <div className="border-t border-[#e5e9ee] my-1" />
               <button
                 onClick={() => {
                   distributeSelected('horizontal');
                   setIsAlignOpen(false);
                 }}
-                className="w-full text-left px-2.5 py-1.5 hover:bg-indigo-50 hover:text-indigo-800 rounded-lg text-xs transition"
+                className="w-full text-left px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] rounded-[8px] text-xs transition cursor-pointer"
               >
                 Distribute Horizontally
               </button>
@@ -418,14 +405,14 @@ export const HomeTab: React.FC = () => {
                   distributeSelected('vertical');
                   setIsAlignOpen(false);
                 }}
-                className="w-full text-left px-2.5 py-1.5 hover:bg-indigo-50 hover:text-indigo-800 rounded-lg text-xs transition"
+                className="w-full text-left px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] rounded-[8px] text-xs transition cursor-pointer"
               >
                 Distribute Vertically
               </button>
             </FloatingDropdown>
           </div>
         </div>
-        <span className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider text-center">Arrange</span>
+        <span className="text-[10px] text-[#9aa4ae] font-bold uppercase tracking-[0.09em] text-center">Arrange</span>
       </div>
 
       {/* Design Ideas Group */}
@@ -437,16 +424,14 @@ export const HomeTab: React.FC = () => {
               setIsRightPanelOpen(true);
               setRightPanelTab('design-ideas');
             }}
-            className="flex flex-col items-center p-1.5 hover:bg-indigo-50/70 active:scale-95 rounded-xl transition-all group"
-            title="Open Design Recommendations Panel (PowerPoint Designer / Slides Explore style)"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#e5f4f3] hover:bg-[#d5ecea] text-[#087477] border border-[#b7dddd] active:scale-95 rounded-[8px] text-xs font-semibold transition-all cursor-pointer"
+            title="Open Design Recommendations Panel"
           >
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center shadow-xs group-hover:shadow-md transition-all">
-              <Sparkles size={16} />
-            </div>
-            <span className="text-[10px] font-semibold mt-1 text-indigo-800">Design Ideas</span>
+            <Sparkles size={15} />
+            <span>Design Ideas</span>
           </button>
         </div>
-        <span className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider text-center">Designer</span>
+        <span className="text-[10px] text-[#9aa4ae] font-bold uppercase tracking-[0.09em] text-center">Designer</span>
       </div>
     </div>
   );

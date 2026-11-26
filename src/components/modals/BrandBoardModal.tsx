@@ -53,23 +53,23 @@ export const BrandBoardModal: React.FC = () => {
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-slate-900/55 flex items-center justify-center p-4 select-none"
+      className="fixed inset-0 z-50 bg-[#15232d]/35 backdrop-blur-[2px] flex items-center justify-center p-4 select-none"
       onClick={() => setIsBrandBoardModalOpen(false)}
     >
       <div
-        className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden"
+        className="bg-white rounded-[15px] shadow-[0_20px_70px_rgba(21,35,45,0.22)] border border-[#e5e9ee] max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+        <div className="px-6 py-4 border-b border-[#e5e9ee] flex items-center justify-between bg-slate-50">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white flex items-center justify-center shadow-sm">
+            <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-[#0c9c9c] to-[#075f77] text-white flex items-center justify-center shadow-sm">
               <LayoutGrid size={18} />
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
                 <span>Brand Planning Board — Magic Multi-Size</span>
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#e5f4f3] text-[#087477]">
                   Smart Reflow
                 </span>
               </h2>
@@ -89,7 +89,7 @@ export const BrandBoardModal: React.FC = () => {
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
           {/* Composition Style Selector */}
-          <div className="flex items-center justify-between flex-wrap gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
+          <div className="flex items-center justify-between flex-wrap gap-2 bg-slate-50 p-3 rounded-2xl border border-[#e5e9ee]">
             <div>
               <div className="text-xs font-bold text-slate-700">Intelligent Designer Style</div>
               <div className="text-[10.5px] text-slate-400">
@@ -110,7 +110,7 @@ export const BrandBoardModal: React.FC = () => {
                   onClick={() => setLayoutStyle(opt.id)}
                   className={`px-3 py-1 rounded-lg text-[11px] font-semibold transition ${
                     layoutStyle === opt.id
-                      ? 'bg-white text-indigo-800 shadow-2xs'
+                      ? 'bg-white text-[#087477] shadow-2xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -126,21 +126,21 @@ export const BrandBoardModal: React.FC = () => {
               <button
                 type="button"
                 onClick={selectSocialSuite}
-                className="px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-800 text-xs font-semibold transition cursor-pointer"
+                className="px-3 py-1.5 rounded-xl bg-[#e5f4f3] hover:bg-[#e5f4f3] border border-[#b7dddd] text-[#087477] text-xs font-semibold transition cursor-pointer"
               >
                 + Social Media Suite
               </button>
               <button
                 type="button"
                 onClick={selectPrintSuite}
-                className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-semibold transition cursor-pointer"
+                className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-[#e5e9ee] text-slate-700 text-xs font-semibold transition cursor-pointer"
               >
                 + Print & Cards Suite
               </button>
               <button
                 type="button"
                 onClick={selectWebBrandKit}
-                className="px-3 py-1.5 rounded-xl bg-violet-50 hover:bg-violet-100 border border-violet-200 text-violet-800 text-xs font-semibold transition cursor-pointer"
+                className="px-3 py-1.5 rounded-xl bg-[#e5f4f3] hover:bg-[#e5f4f3] border border-[#b7dddd] text-[#087477] text-xs font-semibold transition cursor-pointer"
               >
                 + Web & Brand Kit
               </button>
@@ -176,8 +176,8 @@ export const BrandBoardModal: React.FC = () => {
                         onClick={() => toggleSize(size.name)}
                         className={`p-3 rounded-2xl border text-left flex items-center gap-3 transition cursor-pointer ${
                           isChecked
-                            ? 'border-indigo-600 bg-indigo-50/70 ring-1 ring-indigo-500/30 shadow-2xs'
-                            : 'border-slate-200 bg-white hover:border-indigo-400 hover:bg-slate-50'
+                            ? 'border-indigo-600 bg-[#e5f4f3] ring-1 ring-[#087f83]/30 shadow-2xs'
+                            : 'border-[#e5e9ee] bg-white hover:border-[#b7dddd] hover:bg-slate-50'
                         }`}
                       >
                         <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
@@ -201,7 +201,7 @@ export const BrandBoardModal: React.FC = () => {
                         <div
                           className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 border ${
                             isChecked
-                              ? 'bg-indigo-600 border-indigo-600 text-white'
+                              ? 'bg-[#087f83] border-indigo-600 text-white'
                               : 'border-slate-300 bg-white'
                           }`}
                         >
@@ -217,7 +217,7 @@ export const BrandBoardModal: React.FC = () => {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+        <div className="px-6 py-4 border-t border-[#e5e9ee] bg-slate-50 flex items-center justify-between">
           <span className="text-xs text-slate-500">
             Selected: <strong>{selectedSizes.length}</strong> artboards (each can be deleted or moved on canvas)
           </span>
@@ -225,7 +225,7 @@ export const BrandBoardModal: React.FC = () => {
             type="button"
             disabled={selectedSizes.length === 0}
             onClick={handleGenerate}
-            className="py-2 px-5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white text-xs font-bold shadow-sm flex items-center gap-1.5 transition cursor-pointer"
+            className="py-2 px-5 rounded-xl bg-[#087f83] hover:bg-[#06696c] disabled:bg-slate-300 text-white text-xs font-bold shadow-sm flex items-center gap-1.5 transition cursor-pointer"
           >
             <Sparkles size={14} />
             <span>Generate {selectedSizes.length} Brand Artboards</span>
