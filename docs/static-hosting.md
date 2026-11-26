@@ -18,6 +18,7 @@ on GitHub Pages.
 | AI Type Studio (headline ideas) | same function as production (`api/ai.js`) | ⚠ needs the serverless relay — see below |
 | Museum art (AIC + Cleveland) | same function as production (`api/openaccess.js`) | ⚠ needs the serverless relay — see below |
 | Pexels photos | same function as production (`api/pexels.js`) | ⚠ needs the relay + `PEXELS_API_KEY`; hidden unless one exists |
+| Openclipart vectors | same function as production (`api/openclipart.js`) | ⚠ needs the serverless relay — see below |
 
 Every resolver returns an ordered candidate list, so a failed request silently
 falls through to the next strategy instead of breaking the search.
@@ -177,6 +178,34 @@ credits both museums under the results anyway.
 Rejected candidates, for the record: Openclipart's `format=json` endpoint now
 returns HTML (scraping only), the Met's collection API refused automated
 requests during review, and Pexels/Europeana/Smithsonian all need keys.
+
+## Openclipart (free SVG vectors)
+
+The only source in the panel that returns **real vectors**: 100k+ clip-art files,
+every one dedicated to the public domain (CC0) — no attribution, no key, no quota.
+An SVG stays sharp at any print size, which no photo source can claim.
+
+Two wrinkles, both handled in `api/openclipart.js`:
+
+1. **No JSON API any more.** `?format=json` returns the HTML search page, so the
+   relay parses it. The parse is anchored on the `<img>` tag — its `src` carries
+   the clipart id and its `alt` the title, so both come from the same tag and
+   cannot be mixed up between neighbours. The detail link supplies the slug only
+   when it names the same id. If their template moves, the parse yields **zero**
+   items rather than junk, and `mode=diag&probe=1` reports `parserHealthy`.
+2. **Bytes, not hotlinks.** Thumbnails and SVGs are both relayed (`mode=thumb`,
+   `mode=svg`), cached 30 days immutable; the panel stores the SVG as a data URL,
+   so a placed drawing survives without Openclipart.
+
+```
+GET /api/openclipart?mode=search&q=flower&page=1
+GET /api/openclipart?mode=thumb&id=351216
+GET /api/openclipart?mode=svg&id=351216
+GET /api/openclipart?mode=diag&probe=1
+```
+
+A download that answers with HTML (bot check) or zero bytes is rejected with a
+message instead of becoming a broken image on the page.
 
 ## Pexels
 
