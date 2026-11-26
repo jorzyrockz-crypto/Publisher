@@ -201,7 +201,8 @@ const TextRenderer: React.FC<{
           padding: `${element.padding}px`,
           color: element.color,
           fontFamily: element.fontFamily,
-          fontSize: `${element.fontSize}px`,
+          // Paint at the fitted size so typing inside a shrunk box does not jump.
+          fontSize: `${layout.fontSize}px`,
           fontWeight: element.fontWeight,
           fontStyle: element.fontStyle,
           textDecoration: element.textDecoration,
