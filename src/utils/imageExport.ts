@@ -5,19 +5,21 @@ export async function exportToImage(
   page: Page,
   format: 'png' | 'jpeg',
   filename: string,
-  elementPrefix = 'print-capture-'
+  elementPrefix = 'print-capture-',
+  transparent = false
 ): Promise<void> {
   const pageEl =
     document.getElementById(`${elementPrefix}${page.id}`) ||
     document.getElementById(`print-page-${page.id}`);
   if (!pageEl) return;
 
+  const useAlpha = format === 'png' && transparent;
   const canvas = await renderPageToCanvas(
     pageEl,
     page.width,
     page.height,
     2,
-    page.backgroundColor || '#ffffff'
+    useAlpha ? null : page.backgroundColor || '#ffffff'
   );
   const dataUrl = canvas.toDataURL(`image/${format}`, 0.95);
 

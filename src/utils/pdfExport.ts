@@ -60,7 +60,7 @@ export async function renderPageToCanvas(
   width: number,
   height: number,
   scale = 2,
-  backgroundColor = '#ffffff'
+  backgroundColor: string | null = '#ffffff'
 ): Promise<HTMLCanvasElement> {
   return html2canvas(element, {
     scale,

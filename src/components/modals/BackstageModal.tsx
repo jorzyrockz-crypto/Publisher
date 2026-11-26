@@ -172,6 +172,8 @@ export const BackstageModal: React.FC = () => {
   const [showAllPrintSheets, setShowAllPrintSheets] = useState<boolean>(false);
   const [isPreparingPrint, setIsPreparingPrint] = useState<boolean>(false);
   const [printCapturePages, setPrintCapturePages] = useState<Page[] | null>(null);
+  const [transparentPng, setTransparentPng] = useState<boolean>(false);
+  const [isTransparentCapture, setIsTransparentCapture] = useState<boolean>(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -190,9 +192,11 @@ export const BackstageModal: React.FC = () => {
 
   const runWithOffscreenCapture = async (
     pagesToCapture: Page[],
-    action: () => Promise<void>
+    action: () => Promise<void>,
+    transparent = false
   ) => {
     setIsPreparingPrint(true);
+    setIsTransparentCapture(transparent);
     setPrintCapturePages(pagesToCapture);
 
     await new Promise<void>((res) => window.requestAnimationFrame(() => res()));
@@ -202,6 +206,7 @@ export const BackstageModal: React.FC = () => {
       await action();
     } finally {
       setIsPreparingPrint(false);
+      setIsTransparentCapture(false);
       setPrintCapturePages(null);
     }
   };
@@ -1036,14 +1041,33 @@ export const BackstageModal: React.FC = () => {
                   <p className="text-xs text-slate-500 mt-1 leading-relaxed">
                     Lossless high-definition raster image of the currently selected page.
                   </p>
+                  <label className="mt-3 flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={transparentPng}
+                      onChange={(e) => setTransparentPng(e.target.checked)}
+                      className="accent-indigo-600 rounded"
+                    />
+                    <span>Transparent Background</span>
+                  </label>
                 </div>
                 <button
                   disabled={isPreparingPrint}
                   onClick={() =>
-                    runWithOffscreenCapture([activePage], async () => {
-                      await exportToImage(activePage, 'png', activePage.name, 'print-capture-');
-                      confetti({ particleCount: 35 });
-                    })
+                    runWithOffscreenCapture(
+                      [activePage],
+                      async () => {
+                        await exportToImage(
+                          activePage,
+                          'png',
+                          activePage.name,
+                          'print-capture-',
+                          transparentPng
+                        );
+                        confetti({ particleCount: 35 });
+                      },
+                      transparentPng
+                    )
                   }
                   className="mt-6 w-full py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
                 >
@@ -1325,8 +1349,8 @@ export const BackstageModal: React.FC = () => {
                   position: 'relative',
                   width: `${pg.width}px`,
                   height: `${pg.height}px`,
-                  backgroundColor: pg.backgroundColor || '#ffffff',
-                  ...buildPatternBackgroundStyle(pg.backgroundPattern),
+                  backgroundColor: isTransparentCapture ? 'transparent' : pg.backgroundColor || '#ffffff',
+                  ...(isTransparentCapture ? {} : buildPatternBackgroundStyle(pg.backgroundPattern)),
                   overflow: 'hidden',
                 }}
               >
