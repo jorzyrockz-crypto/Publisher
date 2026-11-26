@@ -45,6 +45,7 @@ interface PublisherContextType {
   isWordArtModalOpen: boolean;
   isBuildingBlocksModalOpen: boolean;
   isAIImageModalOpen: boolean;
+  isStockArtPanelOpen: boolean;
   isCollageModalOpen: boolean;
   editingCollageState: {
     meta: import('../utils/borderArtStyles').CollageMeta;
@@ -102,6 +103,7 @@ interface PublisherContextType {
   setIsWordArtModalOpen: (open: boolean) => void;
   setIsBuildingBlocksModalOpen: (open: boolean) => void;
   setIsAIImageModalOpen: (open: boolean) => void;
+  setIsStockArtPanelOpen: (open: boolean) => void;
   setIsCollageModalOpen: (open: boolean) => void;
   openCollageEditor: (opts: {
     meta: import('../utils/borderArtStyles').CollageMeta;
@@ -368,6 +370,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [isWordArtModalOpen, setIsWordArtModalOpen] = useState(false);
   const [isBuildingBlocksModalOpen, setIsBuildingBlocksModalOpen] = useState(false);
   const [isAIImageModalOpen, setIsAIImageModalOpen] = useState(false);
+  const [isStockArtPanelOpen, setIsStockArtPanelOpen] = useState(false);
   const [isCollageModalOpen, setIsCollageModalOpenState] = useState(false);
   const [editingCollageState, setEditingCollageState] = useState<{
     meta: import('../utils/borderArtStyles').CollageMeta;
@@ -2403,6 +2406,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         isWordArtModalOpen,
         isBuildingBlocksModalOpen,
         isAIImageModalOpen,
+        isStockArtPanelOpen,
         isCollageModalOpen,
         editingCollageState,
         isBrandBoardModalOpen,
@@ -2465,6 +2469,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setIsWordArtModalOpen,
         setIsBuildingBlocksModalOpen,
         setIsAIImageModalOpen,
+        setIsStockArtPanelOpen,
         setIsCollageModalOpen,
         openCollageEditor,
         replaceCollageGroup,

@@ -5,6 +5,7 @@ import { DocumentTabsBar } from './components/workspace/DocumentTabsBar';
 import { PageThumbnails } from './components/sidebar/PageThumbnails';
 import { CanvasArea } from './components/canvas/CanvasArea';
 import { PropertiesPanel } from './components/sidebar/PropertiesPanel';
+import { StockArtPanel } from './components/sidebar/StockArtPanel';
 import { StatusBar } from './components/statusbar/StatusBar';
 import { BackstageModal } from './components/modals/BackstageModal';
 import { WordArtPickerModal } from './components/modals/WordArtPickerModal';
@@ -24,6 +25,7 @@ export const AppContent: React.FC = () => {
       <div className="flex flex-1 w-full min-h-0 overflow-hidden relative">
         <PageThumbnails />
         <CanvasArea />
+        <StockArtPanel />
         <PropertiesPanel />
       </div>
 

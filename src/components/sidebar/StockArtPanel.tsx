@@ -1,0 +1,598 @@
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { usePublisher } from '../../context/PublisherContext';
+import { SAMPLE_GRAPHICS } from '../../constants/sampleGraphics';
+import {
+  ClipartFreeItem,
+  fetchClipartAsDataUrl,
+  fetchIconifyAsDataUrl,
+  fetchWikimediaAsDataUrl,
+  getSavedClipartFreeKey,
+  IconifyItem,
+  saveClipartFreeKey,
+  searchClipartFree,
+  searchIconify,
+  searchWikimedia,
+  toProxiedClipartUrl,
+  toProxiedWikimediaUrl,
+  WikimediaItem,
+} from '../../utils/clipartSearch';
+import {
+  Images,
+  Search,
+  X,
+  KeyRound,
+  Loader2,
+  Sparkles,
+  AlertCircle,
+  Sticker,
+} from 'lucide-react';
+
+type StockSourceFilter = 'all' | 'builtin' | 'clipartfree' | 'iconify' | 'wikimedia';
+
+interface UnifiedStockItem {
+  uid: string;
+  source: 'builtin' | 'clipartfree' | 'iconify' | 'wikimedia';
+  sourceLabel: string;
+  title: string;
+  thumbUrl: string;
+  isSvg: boolean;
+  width: number;
+  height: number;
+  rawBuiltinSrc?: string;
+  rawClipartFree?: ClipartFreeItem;
+  rawIconify?: IconifyItem;
+  rawWikimedia?: WikimediaItem;
+}
+
+const QUICK_SEARCH_CHIPS = [
+  'graduation',
+  'trophy',
+  'cat',
+  'floral',
+  'star',
+  'certificate',
+  'ribbon',
+  'book',
+];
+
+export const StockArtPanel: React.FC = () => {
+  const { isStockArtPanelOpen, setIsStockArtPanelOpen, addImage, activePage } = usePublisher();
+
+  const [query, setQuery] = useState('graduation');
+  const [sourceFilter, setSourceFilter] = useState<StockSourceFilter>('all');
+  const [svgOnly, setSvgOnly] = useState(false);
+
+  const [clipartApiKey, setClipartApiKey] = useState<string>(
+    () => getSavedClipartFreeKey() || 'cf_12a1b9727cf3c4f4e3d3fafc0e01e0ddd2eb714f'
+  );
+  const [showKeyBar, setShowKeyBar] = useState(false);
+
+  // Per-source results & loading states so fast sources render immediately
+  const [builtinItems, setBuiltinItems] = useState<UnifiedStockItem[]>([]);
+  const [cfItems, setCfItems] = useState<UnifiedStockItem[]>([]);
+  const [iconifyItems, setIconifyItems] = useState<UnifiedStockItem[]>([]);
+  const [wikiItems, setWikiItems] = useState<UnifiedStockItem[]>([]);
+
+  const [loadingSources, setLoadingSources] = useState({
+    clipartfree: false,
+    iconify: false,
+    wikimedia: false,
+  });
+  const [sourceErrors, setSourceErrors] = useState<string[]>([]);
+  const [insertingUid, setInsertingUid] = useState<string | null>(null);
+
+  const abortRef = useRef<AbortController | null>(null);
+  const hasAutoSearchedRef = useRef(false);
+
+  const runUnifiedSearch = (overrideQuery?: string) => {
+    const q = (overrideQuery ?? query).trim();
+    if (!q) {
+      // If empty query, show all built-in graphics
+      setBuiltinItems(
+        SAMPLE_GRAPHICS.map((g) => ({
+          uid: `builtin-${g.id}`,
+          source: 'builtin',
+          sourceLabel: 'Built-in',
+          title: g.name,
+          thumbUrl: g.src,
+          isSvg: g.src.startsWith('data:image/svg+xml'),
+          width: 200,
+          height: 200,
+          rawBuiltinSrc: g.src,
+        }))
+      );
+      return;
+    }
+
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setSourceErrors([]);
+    setLoadingSources({ clipartfree: true, iconify: true, wikimedia: true });
+
+    // 1. Built-in (instant local filter)
+    const lowerQ = q.toLowerCase();
+    const matchedBuiltin = SAMPLE_GRAPHICS.filter(
+      (g) => g.name.toLowerCase().includes(lowerQ) || g.category.toLowerCase().includes(lowerQ)
+    ).map((g) => ({
+      uid: `builtin-${g.id}`,
+      source: 'builtin' as const,
+      sourceLabel: 'Built-in',
+      title: g.name,
+      thumbUrl: g.src,
+      isSvg: g.src.startsWith('data:image/svg+xml'),
+      width: 200,
+      height: 200,
+      rawBuiltinSrc: g.src,
+    }));
+    setBuiltinItems(matchedBuiltin);
+
+    // 2. Clipart.Free (CC0)
+    searchClipartFree(q, { apiKey: clipartApiKey, signal: controller.signal })
+      .then((res) => {
+        if (controller.signal.aborted) return;
+        const mapped: UnifiedStockItem[] = (res.results || []).slice(0, 18).map((item) => ({
+          uid: `cf-${item.slug}`,
+          source: 'clipartfree',
+          sourceLabel: 'Clipart.Free',
+          title: item.title || item.slug,
+          thumbUrl: toProxiedClipartUrl(item.png_urls?.['400'] || item.svg_url),
+          isSvg: Boolean(item.svg_url),
+          width: item.width || 220,
+          height: item.height || 220,
+          rawClipartFree: item,
+        }));
+        setCfItems(mapped);
+      })
+      .catch((err) => {
+        if (controller.signal.aborted) return;
+        setCfItems([]);
+        setSourceErrors((prev) => [
+          ...prev,
+          `Clipart.Free: ${err instanceof Error ? err.message : 'Error'}`,
+        ]);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setLoadingSources((s) => ({ ...s, clipartfree: false }));
+        }
+      });
+
+    // 3. Iconify (200k+ SVG icons & color illustrations)
+    searchIconify(q, { limit: 24, signal: controller.signal })
+      .then((res) => {
+        if (controller.signal.aborted) return;
+        const mapped: UnifiedStockItem[] = res.items.map((item) => ({
+          uid: `iconify-${item.id}`,
+          source: 'iconify',
+          sourceLabel: 'Iconify',
+          title: item.name.replace(/-/g, ' '),
+          thumbUrl: item.previewUrl,
+          isSvg: true,
+          width: 140,
+          height: 140,
+          rawIconify: item,
+        }));
+        setIconifyItems(mapped);
+      })
+      .catch((err) => {
+        if (controller.signal.aborted) return;
+        setIconifyItems([]);
+        setSourceErrors((prev) => [
+          ...prev,
+          `Iconify: ${err instanceof Error ? err.message : 'Error'}`,
+        ]);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setLoadingSources((s) => ({ ...s, iconify: false }));
+        }
+      });
+
+    // 4. Wikimedia Commons (SVGs & CC/PD media)
+    searchWikimedia(q, { filter: 'all', limit: 16, signal: controller.signal })
+      .then((items) => {
+        if (controller.signal.aborted) return;
+        const mapped: UnifiedStockItem[] = items.map((item) => ({
+          uid: `wiki-${item.pageid}`,
+          source: 'wikimedia',
+          sourceLabel: 'Wikimedia',
+          title: item.cleanTitle,
+          thumbUrl: toProxiedWikimediaUrl(item.thumbUrl),
+          isSvg: item.mime === 'image/svg+xml',
+          width: item.width || 240,
+          height: item.height || 240,
+          rawWikimedia: item,
+        }));
+        setWikiItems(mapped);
+      })
+      .catch((err) => {
+        if (controller.signal.aborted) return;
+        setWikiItems([]);
+        setSourceErrors((prev) => [
+          ...prev,
+          `Wikimedia: ${err instanceof Error ? err.message : 'Error'}`,
+        ]);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setLoadingSources((s) => ({ ...s, wikimedia: false }));
+        }
+      });
+  };
+
+  // Auto-run initial unified search when the panel first opens
+  useEffect(() => {
+    if (isStockArtPanelOpen && !hasAutoSearchedRef.current) {
+      hasAutoSearchedRef.current = true;
+      runUnifiedSearch(query);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isStockArtPanelOpen]);
+
+  // Interleave results when viewing "All Sources" so users see diverse results from every source right away
+  const combinedResults = useMemo(() => {
+    let list: UnifiedStockItem[] = [];
+    if (sourceFilter === 'all') {
+      const buckets = [builtinItems, cfItems, iconifyItems, wikiItems];
+      const maxLen = Math.max(...buckets.map((b) => b.length), 0);
+      for (let i = 0; i < maxLen; i++) {
+        for (const bucket of buckets) {
+          if (bucket[i]) list.push(bucket[i]);
+        }
+      }
+    } else if (sourceFilter === 'builtin') {
+      list = builtinItems;
+    } else if (sourceFilter === 'clipartfree') {
+      list = cfItems;
+    } else if (sourceFilter === 'iconify') {
+      list = iconifyItems;
+    } else {
+      list = wikiItems;
+    }
+
+    if (svgOnly) {
+      list = list.filter((item) => item.isSvg);
+    }
+    return list;
+  }, [sourceFilter, svgOnly, builtinItems, cfItems, iconifyItems, wikiItems]);
+
+  const isAnyLoading =
+    loadingSources.clipartfree || loadingSources.iconify || loadingSources.wikimedia;
+
+  const handleInsertItem = async (item: UnifiedStockItem, asSticker = false) => {
+    setInsertingUid(item.uid);
+    try {
+      let dataUrl = '';
+      if (item.source === 'builtin' && item.rawBuiltinSrc) {
+        dataUrl = item.rawBuiltinSrc;
+      } else if (item.source === 'clipartfree' && item.rawClipartFree) {
+        dataUrl = await fetchClipartAsDataUrl(item.rawClipartFree);
+      } else if (item.source === 'iconify' && item.rawIconify) {
+        dataUrl = await fetchIconifyAsDataUrl(item.rawIconify);
+      } else if (item.source === 'wikimedia' && item.rawWikimedia) {
+        dataUrl = await fetchWikimediaAsDataUrl(item.rawWikimedia);
+      }
+
+      if (!dataUrl) return;
+
+      const maxDim = asSticker ? 180 : 220;
+      const ratio = item.width && item.height ? item.width / item.height : 1;
+      const width = Math.max(48, ratio >= 1 ? maxDim : Math.round(maxDim * ratio));
+      const height = Math.max(48, ratio >= 1 ? Math.round(maxDim / ratio) : maxDim);
+
+      addImage(dataUrl, {
+        name: item.title.slice(0, 32),
+        width,
+        height,
+        x: Math.round((activePage.width - width) / 2),
+        y: Math.round((activePage.height - height) / 2),
+        objectFit: item.isSvg || asSticker ? 'contain' : 'cover',
+        ...(asSticker
+          ? {
+              effectPreset: 'sticker' as const,
+              isSticker: true,
+              stickerOutlineColor: '#ffffff',
+              stickerOutlineWidth: 5,
+              stickerFinish: 'matte' as const,
+              borderWidth: 0,
+            }
+          : {}),
+      });
+    } catch (err) {
+      setSourceErrors((prev) => [
+        ...prev,
+        `Insert failed: ${err instanceof Error ? err.message : 'Error'}`,
+      ]);
+    } finally {
+      setInsertingUid(null);
+    }
+  };
+
+  if (!isStockArtPanelOpen) return null;
+
+  const totalAllCount =
+    builtinItems.length + cfItems.length + iconifyItems.length + wikiItems.length;
+
+  return (
+    <aside className="w-80 bg-white border-l border-slate-200 flex flex-col h-full shadow-xs flex-shrink-0 z-20 select-none">
+      {/* Inspector-style Header */}
+      <div className="px-3.5 py-2.5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 text-white flex items-center justify-center shadow-xs">
+            <Images size={14} />
+          </div>
+          <div>
+            <h3 className="text-xs font-bold text-slate-800 leading-tight">
+              Stock Art & Clipart
+            </h3>
+            <p className="text-[10px] text-slate-500 leading-tight">
+              Unified search across 4 sources
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setShowKeyBar(!showKeyBar)}
+            title="Clipart.Free API Key Settings"
+            className={`p-1.5 rounded-lg border transition ${
+              showKeyBar
+                ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
+                : 'border-transparent text-slate-400 hover:text-slate-700 hover:bg-slate-200/60'
+            }`}
+          >
+            <KeyRound size={13} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsStockArtPanelOpen(false)}
+            title="Close Stock Art Panel"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      </div>
+
+      {/* Search & Filters */}
+      <div className="p-3 border-b border-slate-100 space-y-2.5 bg-white">
+        {showKeyBar && (
+          <div className="p-2 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+            <label className="block text-[10px] font-bold text-slate-600">
+              Clipart.Free API Key (cf_...)
+            </label>
+            <div className="flex items-center gap-1.5">
+              <input
+                type="password"
+                value={clipartApiKey}
+                onChange={(e) => {
+                  setClipartApiKey(e.target.value);
+                  saveClipartFreeKey(e.target.value);
+                }}
+                placeholder="cf_..."
+                className="flex-1 bg-white px-2 py-1 rounded-lg border border-slate-200 text-[11px] outline-none focus:border-indigo-500"
+              />
+              <button
+                type="button"
+                onClick={() => setShowKeyBar(false)}
+                className="px-2 py-1 rounded-lg bg-indigo-600 text-white text-[10px] font-bold"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        )}
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            runUnifiedSearch();
+          }}
+          className="flex items-center gap-1.5"
+        >
+          <div className="relative flex-1">
+            <Search
+              size={13}
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+            />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search cliparts, icons, photos..."
+              className="w-full pl-8 pr-2.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-xs text-slate-700 outline-none focus:border-indigo-500 transition"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={isAnyLoading}
+            className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-xs font-bold flex items-center gap-1 transition shadow-xs cursor-pointer"
+          >
+            {isAnyLoading ? <Loader2 size={13} className="animate-spin" /> : 'Search'}
+          </button>
+        </form>
+
+        {/* Quick Keyword Chips */}
+        <div className="flex items-center gap-1 flex-wrap">
+          {QUICK_SEARCH_CHIPS.map((chip) => (
+            <button
+              key={chip}
+              type="button"
+              onClick={() => {
+                setQuery(chip);
+                runUnifiedSearch(chip);
+              }}
+              className={`px-2 py-0.5 rounded-full text-[10px] font-semibold transition cursor-pointer ${
+                query.toLowerCase() === chip
+                  ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              {chip}
+            </button>
+          ))}
+        </div>
+
+        {/* Source Filter Tabs */}
+        <div className="flex items-center gap-1 flex-wrap pt-0.5">
+          {(
+            [
+              { id: 'all', label: `All (${totalAllCount})` },
+              { id: 'builtin', label: `Built-in (${builtinItems.length})` },
+              { id: 'clipartfree', label: `CF (${cfItems.length})` },
+              { id: 'iconify', label: `Iconify (${iconifyItems.length})` },
+              { id: 'wikimedia', label: `Wiki (${wikiItems.length})` },
+            ] as const
+          ).map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setSourceFilter(tab.id)}
+              className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition cursor-pointer ${
+                sourceFilter === tab.id
+                  ? 'bg-indigo-600 text-white shadow-2xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => setSvgOnly(!svgOnly)}
+            title="Show only recolorable Vector SVGs"
+            className={`ml-auto px-2 py-0.5 rounded-lg text-[10px] font-bold border transition cursor-pointer flex items-center gap-1 ${
+              svgOnly
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                : 'bg-white border-slate-200 text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <Sparkles size={10} />
+            <span>SVG Only</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Results Area */}
+      <div className="flex-1 overflow-y-auto p-3 space-y-2.5 bg-slate-50/50">
+        {sourceErrors.length > 0 && (
+          <div className="p-2 rounded-xl bg-amber-50 border border-amber-200 text-[10px] text-amber-800 space-y-0.5">
+            {sourceErrors.map((err, i) => (
+              <div key={i} className="flex items-start gap-1.5">
+                <AlertCircle size={12} className="flex-shrink-0 mt-0.5" />
+                <span>{err}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {isAnyLoading && (
+          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-indigo-50 border border-indigo-100 text-[10.5px] text-indigo-700 font-medium">
+            <Loader2 size={12} className="animate-spin flex-shrink-0" />
+            <span>
+              Searching{' '}
+              {[
+                loadingSources.clipartfree && 'Clipart.Free',
+                loadingSources.iconify && 'Iconify',
+                loadingSources.wikimedia && 'Wikimedia',
+              ]
+                .filter(Boolean)
+                .join(', ')}
+              ...
+            </span>
+          </div>
+        )}
+
+        {combinedResults.length === 0 && !isAnyLoading ? (
+          <div className="py-12 text-center space-y-1.5 px-4">
+            <Images size={26} className="mx-auto text-slate-300" />
+            <p className="text-xs font-semibold text-slate-600">No matching graphics found</p>
+            <p className="text-[11px] text-slate-400">
+              Try a broader keyword like <strong>star</strong>, <strong>cat</strong>, or{' '}
+              <strong>trophy</strong>.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-2">
+            {combinedResults.map((item) => {
+              const isInserting = insertingUid === item.uid;
+              return (
+                <div
+                  key={item.uid}
+                  className="group relative flex flex-col rounded-xl bg-white border border-slate-200/90 hover:border-indigo-400 hover:shadow-sm transition overflow-hidden"
+                >
+                  {/* Clickable Card Body */}
+                  <button
+                    type="button"
+                    disabled={isInserting}
+                    onClick={() => handleInsertItem(item, false)}
+                    title={`Click to insert "${item.title}" (${item.sourceLabel})`}
+                    className="flex flex-col items-center p-2 text-left w-full cursor-pointer disabled:opacity-60"
+                  >
+                    <div className="w-full h-20 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden p-1.5 relative">
+                      <img
+                        src={item.thumbUrl}
+                        alt={item.title}
+                        loading="lazy"
+                        className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform"
+                      />
+                      {/* Source Badge */}
+                      <span
+                        className={`absolute top-1 left-1 px-1.5 py-0.2 rounded text-[8px] font-bold uppercase tracking-tight ${
+                          item.source === 'builtin'
+                            ? 'bg-purple-100 text-purple-800'
+                            : item.source === 'clipartfree'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : item.source === 'iconify'
+                            ? 'bg-sky-100 text-sky-800'
+                            : 'bg-amber-100 text-amber-800'
+                        }`}
+                      >
+                        {item.source === 'clipartfree'
+                          ? 'CF'
+                          : item.source === 'wikimedia'
+                          ? 'Wiki'
+                          : item.sourceLabel}
+                      </span>
+                      {item.isSvg && (
+                        <span className="absolute top-1 right-1 px-1 py-0.2 rounded bg-indigo-600 text-white text-[8px] font-bold">
+                          SVG
+                        </span>
+                      )}
+                    </div>
+                    <span className="mt-1.5 text-[10px] font-semibold text-slate-700 truncate w-full text-center">
+                      {isInserting ? 'Inserting...' : item.title}
+                    </span>
+                  </button>
+
+                  {/* Hover Quick Sticker Action */}
+                  {!isInserting && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleInsertItem(item, true);
+                      }}
+                      title="Insert as Die-Cut Sticker"
+                      className="opacity-0 group-hover:opacity-100 absolute bottom-7 right-2 px-1.5 py-0.5 rounded-md bg-slate-900/85 hover:bg-indigo-600 text-white text-[9px] font-bold flex items-center gap-0.5 transition cursor-pointer shadow-xs"
+                    >
+                      <Sticker size={9} />
+                      <span>Sticker</span>
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Footer Tip */}
+      <div className="px-3 py-2 border-t border-slate-200 bg-slate-50 text-[10px] text-slate-500 flex items-center justify-between">
+        <span>Click to insert • SVG items can be recolored</span>
+      </div>
+    </aside>
+  );
+};
