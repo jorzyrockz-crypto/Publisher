@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import {
   DocumentProject,
   Page,
@@ -152,14 +152,32 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return JSON.parse(JSON.stringify(TEMPLATES[0].project));
   });
 
-  // Auto-save project to localStorage
+  // Debounced auto-save project to localStorage so drag/resize/slider updates never block the main thread
+  const latestProjectRef = useRef(project);
+  latestProjectRef.current = project;
+
   useEffect(() => {
-    try {
-      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(project));
-    } catch {
-      // ignore quota errors
-    }
+    const timer = window.setTimeout(() => {
+      try {
+        localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(latestProjectRef.current));
+      } catch {
+        // ignore quota errors
+      }
+    }, 500);
+    return () => window.clearTimeout(timer);
   }, [project]);
+
+  useEffect(() => {
+    const flushSave = () => {
+      try {
+        localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(latestProjectRef.current));
+      } catch {
+        // ignore quota errors
+      }
+    };
+    window.addEventListener('beforeunload', flushSave);
+    return () => window.removeEventListener('beforeunload', flushSave);
+  }, []);
 
   const [historyPast, setHistoryPast] = useState<DocumentProject[]>([]);
   const [historyFuture, setHistoryFuture] = useState<DocumentProject[]>([]);

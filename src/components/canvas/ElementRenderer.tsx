@@ -22,14 +22,15 @@ interface ElementRendererProps {
   onTableCellChange?: (row: number, col: number, value: string) => void;
 }
 
-export const ElementRenderer: React.FC<ElementRendererProps> = ({
-  element,
-  isSelected,
-  pageNumber = 1,
-  totalPages = 1,
-  onTextChange,
-  onTableCellChange,
-}) => {
+export const ElementRenderer: React.FC<ElementRendererProps> = React.memo(
+  ({
+    element,
+    isSelected,
+    pageNumber = 1,
+    totalPages = 1,
+    onTextChange,
+    onTableCellChange,
+  }) => {
   const renderInner = () => {
     switch (element.type) {
       case 'text':
@@ -80,7 +81,13 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({
       {renderInner()}
     </div>
   );
-};
+  },
+  (prev, next) =>
+    prev.element === next.element &&
+    prev.isSelected === next.isSelected &&
+    prev.pageNumber === next.pageNumber &&
+    prev.totalPages === next.totalPages
+);
 
 const TextRenderer: React.FC<{
   element: TextElement;

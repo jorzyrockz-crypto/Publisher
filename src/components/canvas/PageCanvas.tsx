@@ -242,7 +242,14 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
       )
       .map((el) => ({ id: el.id, startX: el.x, startY: el.y, width: el.width, height: el.height }));
 
-    const handleWindowMouseMove = (moveEvent: MouseEvent) => {
+    let rafId: number | null = null;
+    let latestMoveEvent: MouseEvent | null = null;
+
+    const applyDragMove = () => {
+      rafId = null;
+      const moveEvent = latestMoveEvent;
+      if (!moveEvent) return;
+
       const deltaX = (moveEvent.clientX - startClientX) / zoom;
       const deltaY = (moveEvent.clientY - startClientY) / zoom;
 
@@ -280,7 +287,18 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
       updateElementsBatch(updatesById);
     };
 
+    const handleWindowMouseMove = (moveEvent: MouseEvent) => {
+      latestMoveEvent = moveEvent;
+      if (rafId === null) {
+        rafId = window.requestAnimationFrame(applyDragMove);
+      }
+    };
+
     const handleWindowMouseUp = () => {
+      if (rafId !== null) {
+        window.cancelAnimationFrame(rafId);
+        rafId = null;
+      }
       setActiveAlignGuideH(undefined);
       setActiveAlignGuideV(undefined);
       window.removeEventListener('mousemove', handleWindowMouseMove);

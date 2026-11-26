@@ -21,7 +21,7 @@ export const Ribbon: React.FC = () => {
   ] as const;
 
   return (
-    <div className="w-full bg-white/95 backdrop-blur-md border-b border-slate-200/90 flex flex-col select-none flex-shrink-0 z-30 shadow-xs">
+    <div className="w-full bg-white border-b border-slate-200/90 flex flex-col select-none flex-shrink-0 z-30 shadow-xs">
       {/* Topmost Titlebar & Search */}
       <QuickAccessToolbar />
 

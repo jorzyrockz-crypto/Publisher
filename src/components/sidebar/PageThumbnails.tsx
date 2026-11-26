@@ -91,7 +91,7 @@ export const PageThumbnails: React.FC = () => {
 
   if (!isLeftPanelOpen) {
     return (
-      <div className="w-9 bg-white/95 backdrop-blur-md border-r border-slate-200 flex flex-col items-center py-2.5 gap-3 h-full select-none flex-shrink-0 z-20 shadow-2xs">
+      <div className="w-9 bg-white border-r border-slate-200 flex flex-col items-center py-2.5 gap-3 h-full select-none flex-shrink-0 z-20 shadow-2xs">
         <button
           onClick={() => setIsLeftPanelOpen(true)}
           className="p-1.5 rounded-lg text-slate-600 hover:text-emerald-800 hover:bg-emerald-50 transition"
@@ -111,7 +111,7 @@ export const PageThumbnails: React.FC = () => {
   }
 
   return (
-    <div className="w-56 bg-white/95 backdrop-blur-md border-r border-slate-200 flex flex-col h-full select-none flex-shrink-0 z-20 shadow-2xs transition-all">
+    <div className="w-56 bg-white border-r border-slate-200 flex flex-col h-full select-none flex-shrink-0 z-20 shadow-2xs transition-all">
       {/* Segmented Header Tabs: Pages | Layers */}
       <div className="p-2 border-b border-slate-200/80 bg-slate-50/70 flex items-center gap-1">
         <div className="flex-1 grid grid-cols-2 bg-slate-200/70 p-0.5 rounded-xl">
