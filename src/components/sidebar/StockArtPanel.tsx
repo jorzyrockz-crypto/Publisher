@@ -292,6 +292,11 @@ export const StockArtPanel: React.FC = () => {
   // Set when the deployment has no PEXELS_API_KEY: a quiet notice, because a
   // missing key in a fresh deployment is a setup step, not a failure.
   const [pexelsUnavailable, setPexelsUnavailable] = useState(false);
+  // Pexels paused new API key issuance (their own API page says so), so a fresh
+  // deployment will never have one. Rather than leave a tab that only ever says
+  // "add a key", ask the relay once and hide the source unless it is configured.
+  // `null` means "not asked yet" — the tab stays hidden until the answer is in.
+  const [pexelsConfigured, setPexelsConfigured] = useState<boolean | null>(null);
 
   const [loadingSources, setLoadingSources] = useState({
     clipartfree: false,
@@ -482,7 +487,8 @@ export const StockArtPanel: React.FC = () => {
       });
   };
 
-  const pxEnabled = !disabledSources.includes('pexels');
+  // `pexelsConfigured === true` only; unknown and false both keep it off.
+  const pxEnabled = pexelsConfigured === true && !disabledSources.includes('pexels');
 
   const mapPexelsItems = (items: PexelsItem[]): UnifiedStockItem[] =>
     items.map((item) => ({
@@ -802,6 +808,24 @@ export const StockArtPanel: React.FC = () => {
     runPexelsSearch(q, 1, false, controller.signal);
   };
 
+  // Ask the relay once whether this deployment holds a PEXELS_API_KEY. No key,
+  // no upstream call, no cost — `mode=diag` only reports what the function sees.
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/pexels?mode=diag', { headers: { Accept: 'application/json' } })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { configured?: boolean } | null) => {
+        if (!cancelled) setPexelsConfigured(Boolean(data?.configured));
+      })
+      .catch(() => {
+        // No relay (static hosting) or offline: leave the source hidden.
+        if (!cancelled) setPexelsConfigured(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Auto-run initial unified search when the panel first opens, and reactively debounce live typing
   useEffect(() => {
     if (!isStockArtPanelOpen) return;
@@ -1016,7 +1040,7 @@ export const StockArtPanel: React.FC = () => {
               Stock Art & Clipart
             </h3>
             <p className="text-[10px] text-[#5b6673] leading-tight">
-              Unified search across 9 sources
+              Unified search across {pexelsConfigured === true ? 9 : 8} sources
             </p>
           </div>
         </div>
@@ -1197,10 +1221,16 @@ export const StockArtPanel: React.FC = () => {
                   : `Uns (${unItems.length})`,
               },
               { id: 'openart', label: `Art (${oaItems.length})` },
-              {
-                id: 'pexels',
-                label: disabledSources.includes('pexels') ? 'Pex (off)' : `Pex (${pxItems.length})`,
-              },
+              ...(pexelsConfigured === true
+                ? [
+                    {
+                      id: 'pexels' as const,
+                      label: disabledSources.includes('pexels')
+                        ? 'Pex (off)'
+                        : `Pex (${pxItems.length})`,
+                    },
+                  ]
+                : []),
             ] as const
           ).map((tab) => (
             <button
@@ -1382,14 +1412,6 @@ export const StockArtPanel: React.FC = () => {
             <div className="flex-1 min-w-0 space-y-1">
               <span className="block leading-snug">{PEXELS_PROXY_HINT}</span>
               <div className="flex items-center gap-1.5">
-                <a
-                  href="https://www.pexels.com/api/"
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="px-1.5 py-0.5 rounded-[5px] bg-white border border-[#e5e9ee] font-semibold hover:bg-[#f4f2ff] transition"
-                >
-                  Get a free key
-                </a>
                 <button
                   type="button"
                   onClick={() => runPexelsSearch(query, 1)}

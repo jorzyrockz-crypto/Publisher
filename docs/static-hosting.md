@@ -17,7 +17,7 @@ on GitHub Pages.
 | Unsplash (stock photos) | same function as production (`api/unsplash.js`) | ⚠ needs the serverless relay for search only — see below |
 | AI Type Studio (headline ideas) | same function as production (`api/ai.js`) | ⚠ needs the serverless relay — see below |
 | Museum art (AIC + Cleveland) | same function as production (`api/openaccess.js`) | ⚠ needs the serverless relay — see below |
-| Pexels photos | same function as production (`api/pexels.js`) | ⚠ needs the relay + `PEXELS_API_KEY` |
+| Pexels photos | same function as production (`api/pexels.js`) | ⚠ needs the relay + `PEXELS_API_KEY`; hidden unless one exists |
 
 Every resolver returns an ordered candidate list, so a failed request silently
 falls through to the next strategy instead of breaking the search.
@@ -180,14 +180,22 @@ requests during review, and Pexels/Europeana/Smithsonian all need keys.
 
 ## Pexels
 
-Free photos under the Pexels License, with the largest catalogue of the keyed
-sources. Needs a key — free, instant, no card:
+> **Pexels paused new API key issuance.** Their API page reads "New API key
+> issuance is currently paused and cannot be requested" (first seen late Sept
+> 2026, still true in November). Keys issued before the pause keep working.
+> Nothing here is broken if you cannot get one.
 
-1. https://www.pexels.com/api/ → **Get Started** → copy the key.
-2. Vercel → project → Settings → Environment Variables → `PEXELS_API_KEY`
+The relay and panel source stay in the tree for existing keys, but the source is
+**self-hiding**: on mount the panel asks `GET /api/pexels?mode=diag`, and the tab
+only appears when the deployment actually holds a key — no dead tab, no notice
+telling you to visit a page that cannot issue keys.
+
+To turn it on if you already have a key (or the pause ends):
+
+1. Vercel → project → Settings → Environment Variables → `PEXELS_API_KEY`
    (type *sensitive*, targets **Production** and **Preview**).
-3. Redeploy. `GET /api/pexels?mode=diag&probe=1` should report
-   `{"configured":true,"upstreamStatus":200,"quota":{…}}`.
+2. Redeploy. `GET /api/pexels?mode=diag&probe=1` should report
+   `{"configured":true,"upstreamStatus":200,"quota":{…}}` and the tab appears.
 
 ```
 GET /api/pexels?mode=search&q=cat&page=1&per_page=18&orientation=landscape
