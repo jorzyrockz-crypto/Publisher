@@ -171,13 +171,15 @@ export const BackstageModal: React.FC = () => {
   const [activeSheetIdx, setActiveSheetIdx] = useState<number>(0);
   const [showAllPrintSheets, setShowAllPrintSheets] = useState<boolean>(false);
   const [isPreparingPrint, setIsPreparingPrint] = useState<boolean>(false);
-  const [printCapturePages, setPrintCapturePages] = useState<Page[] | null>(null);
   const [transparentPng, setTransparentPng] = useState<boolean>(false);
-  const [isTransparentCapture, setIsTransparentCapture] = useState<boolean>(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isBackstageOpen) return null;
+
+  const activeMasterElements = project.masterPage?.showOnAllPages
+    ? project.masterPage.elements
+    : [];
 
   const resolveSelectedPrintPages = (): Page[] => {
     if (printSettings.rangeMode === 'current') {
@@ -190,34 +192,22 @@ export const BackstageModal: React.FC = () => {
     return project.pages;
   };
 
-  const runWithOffscreenCapture = async (
-    pagesToCapture: Page[],
-    action: () => Promise<void>,
-    transparent = false
-  ) => {
+  const runExportOrPrintTask = async (action: () => Promise<void>) => {
     setIsPreparingPrint(true);
-    setIsTransparentCapture(transparent);
-    setPrintCapturePages(pagesToCapture);
-
-    await new Promise<void>((res) => window.requestAnimationFrame(() => res()));
-    await new Promise<void>((res) => window.setTimeout(res, 80));
-
     try {
       await action();
     } finally {
       setIsPreparingPrint(false);
-      setIsTransparentCapture(false);
-      setPrintCapturePages(null);
     }
   };
 
   const handlePrintNow = async () => {
     const pagesToPrint = resolveSelectedPrintPages();
-    await runWithOffscreenCapture(pagesToPrint, async () => {
+    await runExportOrPrintTask(async () => {
       if (printSettings.printerName === 'Save as PDF') {
-        await exportToPdf({ ...project, pages: pagesToPrint }, 'print-capture-');
+        await exportToPdf({ ...project, pages: pagesToPrint });
       } else {
-        await executePrintJob(pagesToPrint, printSettings, 'print-capture-');
+        await executePrintJob(pagesToPrint, printSettings);
       }
     });
   };
@@ -604,8 +594,8 @@ export const BackstageModal: React.FC = () => {
                       type="button"
                       disabled={isPreparingPrint}
                       onClick={() =>
-                        runWithOffscreenCapture(project.pages, async () => {
-                          await exportToPdf(project, 'print-capture-');
+                        runExportOrPrintTask(async () => {
+                          await exportToPdf(project);
                           confetti({ particleCount: 35 });
                         })
                       }
@@ -1020,8 +1010,8 @@ export const BackstageModal: React.FC = () => {
                 <button
                   disabled={isPreparingPrint}
                   onClick={() =>
-                    runWithOffscreenCapture(project.pages, async () => {
-                      await exportToPdf(project, 'print-capture-');
+                    runExportOrPrintTask(async () => {
+                      await exportToPdf(project);
                       confetti({ particleCount: 35 });
                     })
                   }
@@ -1054,20 +1044,16 @@ export const BackstageModal: React.FC = () => {
                 <button
                   disabled={isPreparingPrint}
                   onClick={() =>
-                    runWithOffscreenCapture(
-                      [activePage],
-                      async () => {
-                        await exportToImage(
-                          activePage,
-                          'png',
-                          activePage.name,
-                          'print-capture-',
-                          transparentPng
-                        );
-                        confetti({ particleCount: 35 });
-                      },
-                      transparentPng
-                    )
+                    runExportOrPrintTask(async () => {
+                      await exportToImage(
+                        activePage,
+                        'png',
+                        activePage.name,
+                        transparentPng,
+                        activeMasterElements
+                      );
+                      confetti({ particleCount: 35 });
+                    })
                   }
                   className="mt-6 w-full py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
                 >
@@ -1089,8 +1075,14 @@ export const BackstageModal: React.FC = () => {
                 <button
                   disabled={isPreparingPrint}
                   onClick={() =>
-                    runWithOffscreenCapture([activePage], async () => {
-                      await exportToImage(activePage, 'jpeg', activePage.name, 'print-capture-');
+                    runExportOrPrintTask(async () => {
+                      await exportToImage(
+                        activePage,
+                        'jpeg',
+                        activePage.name,
+                        false,
+                        activeMasterElements
+                      );
                       confetti({ particleCount: 35 });
                     })
                   }
@@ -1323,89 +1315,6 @@ export const BackstageModal: React.FC = () => {
               ))}
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Offscreen Full-Resolution Staging Container for Multi-Page Print Capture */}
-      {printCapturePages && (
-        <div
-          style={{
-            position: 'fixed',
-            left: '-100000px',
-            top: 0,
-            pointerEvents: 'none',
-            opacity: 1,
-          }}
-        >
-          {printCapturePages.map((pg, idx) => {
-            const connectors = pg.elements.filter(
-              (el): el is ConnectorElement => el.type === 'connector' && el.visible !== false
-            );
-            return (
-              <div
-                key={`cap-${pg.id}`}
-                id={`print-capture-${pg.id}`}
-                style={{
-                  position: 'relative',
-                  width: `${pg.width}px`,
-                  height: `${pg.height}px`,
-                  backgroundColor: isTransparentCapture ? 'transparent' : pg.backgroundColor || '#ffffff',
-                  ...(isTransparentCapture ? {} : buildPatternBackgroundStyle(pg.backgroundPattern)),
-                  overflow: 'hidden',
-                }}
-              >
-                {pg.elements
-                  .filter((el) => el.visible !== false && el.type !== 'connector')
-                  .map((el) => (
-                    <div
-                      key={el.id}
-                      style={{
-                        position: 'absolute',
-                        left: `${el.x}px`,
-                        top: `${el.y}px`,
-                        width: `${el.width}px`,
-                        height: `${el.height}px`,
-                        transform: `rotate(${el.rotation}deg)`,
-                        transformOrigin: 'center center',
-                        zIndex: el.zIndex,
-                        opacity: el.opacity !== undefined ? el.opacity : 1,
-                      }}
-                    >
-                      <ElementRenderer
-                        element={el}
-                        isSelected={false}
-                        pageNumber={idx + 1}
-                        totalPages={project.pages.length}
-                      />
-                    </div>
-                  ))}
-                {connectors.length > 0 && (
-                  <svg
-                    width={pg.width}
-                    height={pg.height}
-                    style={{ position: 'absolute', inset: 0, zIndex: 45, overflow: 'visible' }}
-                  >
-                    {connectors.map((conn) => {
-                      const fromEl = pg.elements.find((e) => e.id === conn.fromId);
-                      const toEl = pg.elements.find((e) => e.id === conn.toId);
-                      if (!fromEl || !toEl) return null;
-                      return (
-                        <line
-                          key={conn.id}
-                          x1={fromEl.x + fromEl.width / 2}
-                          y1={fromEl.y + fromEl.height / 2}
-                          x2={toEl.x + toEl.width / 2}
-                          y2={toEl.y + toEl.height / 2}
-                          stroke={conn.strokeColor}
-                          strokeWidth={conn.strokeWidth || 3}
-                        />
-                      );
-                    })}
-                  </svg>
-                )}
-              </div>
-            );
-          })}
         </div>
       )}
     </div>

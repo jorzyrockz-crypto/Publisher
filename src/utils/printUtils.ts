@@ -1,5 +1,5 @@
 import { Page } from '../types/publisher';
-import { renderPageToCanvas } from './pdfExport';
+import { renderPageModelToCanvas } from './canvasRenderer';
 
 export interface PrintSettings {
   printerName: 'System Print Dialog' | 'Save as PDF' | 'Office Color LaserJet' | 'Photo Inkjet Pro';
@@ -79,23 +79,17 @@ export function chunkPagesIntoSheets(pages: Page[], perSheet: 1 | 2 | 4): Page[]
  */
 export async function executePrintJob(
   pages: Page[],
-  settings: PrintSettings,
-  elementPrefix = 'print-capture-'
+  settings: PrintSettings
 ): Promise<void> {
   if (pages.length === 0) return;
 
   const capturedImages: { page: Page; dataUrl: string }[] = [];
   for (const pg of pages) {
-    const domEl =
-      document.getElementById(`${elementPrefix}${pg.id}`) ||
-      document.getElementById(`print-page-${pg.id}`);
-    if (domEl) {
-      const canvas = await renderPageToCanvas(domEl, pg.width, pg.height, 2);
-      capturedImages.push({
-        page: pg,
-        dataUrl: canvas.toDataURL('image/png'),
-      });
-    }
+    const canvas = await renderPageModelToCanvas(pg, settings.qualityDpi >= 300 ? 2 : 1.5, false);
+    capturedImages.push({
+      page: pg,
+      dataUrl: canvas.toDataURL('image/png'),
+    });
   }
 
   if (capturedImages.length === 0) {

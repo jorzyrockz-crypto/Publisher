@@ -1,43 +1,46 @@
-import { DocumentProject, Page } from '../types/publisher';
-import { renderPageToCanvas } from './pdfExport';
+import { DocumentProject, Page, PublisherElement } from '../types/publisher';
+import { renderPageModelToCanvas } from './canvasRenderer';
 
 export async function exportToImage(
   page: Page,
   format: 'png' | 'jpeg',
   filename: string,
-  elementPrefix = 'print-capture-',
-  transparent = false
+  transparent = false,
+  masterElements: PublisherElement[] = []
 ): Promise<void> {
-  const pageEl =
-    document.getElementById(`${elementPrefix}${page.id}`) ||
-    document.getElementById(`print-page-${page.id}`);
-  if (!pageEl) return;
-
   const useAlpha = format === 'png' && transparent;
-  const canvas = await renderPageToCanvas(
-    pageEl,
-    page.width,
-    page.height,
-    2,
-    useAlpha ? null : page.backgroundColor || '#ffffff'
-  );
-  const dataUrl = canvas.toDataURL(`image/${format}`, 0.95);
+  const canvas = await renderPageModelToCanvas(page, 2, useAlpha, masterElements);
 
-  const link = document.createElement('a');
-  link.download = `${filename}.${format}`;
-  link.href = dataUrl;
-  link.click();
-}
+  const blob: Blob = await new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (b) => (b ? resolve(b) : reject(new Error('Canvas toBlob failed'))),
+      `image/${format}`,
+      0.95
+    );
+  });
 
-export function saveProjectToFile(project: DocumentProject): void {
-  const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(project, null, 2));
+  const url = URL.createObjectURL(blob);
+  const safeName = (filename || page.name || 'export').replace(/[^\w\-. ]+/g, '_');
   const link = document.createElement('a');
-  link.setAttribute('href', dataStr);
-  const safeName = project.name.endsWith('.pub') ? project.name : `${project.name}.pub`;
-  link.setAttribute('download', safeName);
+  link.download = `${safeName}.${format}`;
+  link.href = url;
   document.body.appendChild(link);
   link.click();
   link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+export function saveProjectToFile(project: DocumentProject): void {
+  const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  const safeName = project.name.endsWith('.pub') ? project.name : `${project.name}.pub`;
+  link.href = url;
+  link.download = safeName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
 
 export function loadProjectFromFile(file: File): Promise<DocumentProject> {
