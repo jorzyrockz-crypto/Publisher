@@ -25,6 +25,11 @@ import {
   searchOpenverse,
 } from '../../utils/openverseSearch';
 import {
+  OpenclipartItem,
+  fetchOpenclipartSvgAsDataUrl,
+  searchOpenclipart,
+} from '../../utils/openclipartVectors';
+import {
   OpenAccessItem,
   fetchOpenAccessAsDataUrl,
   searchOpenAccess,
@@ -78,7 +83,8 @@ type StockSourceFilter =
   | 'pixabay'
   | 'unsplash'
   | 'openart'
-  | 'pexels';
+  | 'pexels'
+  | 'oclipart';
 
 interface UnifiedStockItem {
   uid: string;
@@ -91,7 +97,8 @@ interface UnifiedStockItem {
     | 'pixabay'
     | 'unsplash'
     | 'openart'
-    | 'pexels';
+    | 'pexels'
+    | 'oclipart';
   sourceLabel: string;
   title: string;
   thumbUrl: string;
@@ -107,6 +114,7 @@ interface UnifiedStockItem {
   rawUnsplash?: UnsplashItem;
   rawOpenAccess?: OpenAccessItem;
   rawPexels?: PexelsItem;
+  rawOpenclipart?: OpenclipartItem;
   /** Photographer credit — required wherever Pixabay results are shown. */
   credit?: string;
 }
@@ -298,6 +306,13 @@ export const StockArtPanel: React.FC = () => {
   // `null` means "not asked yet" — the tab stays hidden until the answer is in.
   const [pexelsConfigured, setPexelsConfigured] = useState<boolean | null>(null);
 
+  // Openclipart: the only true-vector source. Keyless, CC0, and the reason the
+  // panel can offer clip art that stays sharp at poster size.
+  const [ocItems, setOcItems] = useState<UnifiedStockItem[]>([]);
+  const [ocPage, setOcPage] = useState(1);
+  const [ocTotal, setOcTotal] = useState(0);
+  const [ocLoadingMore, setOcLoadingMore] = useState(false);
+
   const [loadingSources, setLoadingSources] = useState({
     clipartfree: false,
     iconify: false,
@@ -307,6 +322,7 @@ export const StockArtPanel: React.FC = () => {
     unsplash: false,
     openart: false,
     pexels: false,
+    oclipart: false,
   });
   const [sourceErrors, setSourceErrors] = useState<string[]>([]);
   // Sources the user chose not to retry (persisted), e.g. because the host has
@@ -327,6 +343,7 @@ export const StockArtPanel: React.FC = () => {
   const unAbortRef = useRef<AbortController | null>(null);
   const oaAbortRef = useRef<AbortController | null>(null);
   const pxAbortRef = useRef<AbortController | null>(null);
+  const ocAbortRef = useRef<AbortController | null>(null);
   const hasAutoSearchedRef = useRef(false);
 
   const setSourceDisabled = (source: string, disabled: boolean) => {
@@ -487,6 +504,65 @@ export const StockArtPanel: React.FC = () => {
       });
   };
 
+  const mapOpenclipartItems = (items: OpenclipartItem[]): UnifiedStockItem[] =>
+    items.map((item) => ({
+      uid: `oc-${item.id}`,
+      source: 'oclipart' as const,
+      sourceLabel: 'Openclipart',
+      title: item.title,
+      thumbUrl: item.thumbUrl,
+      isSvg: true,
+      // CC0 clip art has no intrinsic pixel size: keep it square and let the
+      // vector scale, so inserts are not forced into a photo aspect ratio.
+      width: 1000,
+      height: 1000,
+      rawOpenclipart: item,
+    }));
+
+  /** Runs only the Openclipart leg — keyless, so it is always attempted. */
+  const runOpenclipartSearch = (q: string, page = 1, keepItems = false, signal?: AbortSignal) => {
+    if (!q) {
+      setOcItems([]);
+      setOcTotal(0);
+      setLoadingSources((prev) => ({ ...prev, oclipart: false }));
+      return;
+    }
+    if (!signal) {
+      ocAbortRef.current?.abort();
+      const controller = new AbortController();
+      ocAbortRef.current = controller;
+      signal = controller.signal;
+    }
+    if (page === 1) setLoadingSources((s) => ({ ...s, oclipart: true }));
+    else setOcLoadingMore(true);
+
+    searchOpenclipart(q, { page, signal })
+      .then((res) => {
+        if (signal?.aborted) return;
+        setOcTotal(res.total);
+        setOcPage(page);
+        const next = mapOpenclipartItems(res.items);
+        setOcItems((prev) => {
+          if (!keepItems || page === 1) return next;
+          const seen = new Set(prev.map((i) => i.uid));
+          return [...prev, ...next.filter((i) => !seen.has(i.uid))];
+        });
+      })
+      .catch((err) => {
+        if (signal?.aborted) return;
+        if (page === 1) setOcItems([]);
+        setSourceErrors((prev) => [
+          ...prev,
+          `Openclipart: ${err instanceof Error ? err.message : 'Error'}`,
+        ]);
+      })
+      .finally(() => {
+        if (signal?.aborted) return;
+        setLoadingSources((s) => ({ ...s, oclipart: false }));
+        setOcLoadingMore(false);
+      });
+  };
+
   // `pexelsConfigured === true` only; unknown and false both keep it off.
   const pxEnabled = pexelsConfigured === true && !disabledSources.includes('pexels');
 
@@ -641,6 +717,7 @@ export const StockArtPanel: React.FC = () => {
       unsplash: unEnabled,
       openart: true,
       pexels: pxEnabled,
+      oclipart: true,
     });
 
     // 1. Built-in (instant local filter)
@@ -806,6 +883,10 @@ export const StockArtPanel: React.FC = () => {
     // 9. Pexels — free photos through the relay. Quietly absent until the
     // deployment has a PEXELS_API_KEY.
     runPexelsSearch(q, 1, false, controller.signal);
+
+    // 10. Openclipart — CC0 SVG clip art, keyless. True vectors, so no search is
+    // really complete without it.
+    runOpenclipartSearch(q, 1, false, controller.signal);
   };
 
   // Ask the relay once whether this deployment holds a PEXELS_API_KEY. No key,
@@ -855,6 +936,7 @@ export const StockArtPanel: React.FC = () => {
         unItems,
         oaItems,
         pxItems,
+        ocItems,
       ];
       const maxLen = Math.max(...buckets.map((b) => b.length), 0);
       for (let i = 0; i < maxLen; i++) {
@@ -878,6 +960,8 @@ export const StockArtPanel: React.FC = () => {
       list = oaItems;
     } else if (sourceFilter === 'pexels') {
       list = pxItems;
+    } else if (sourceFilter === 'oclipart') {
+      list = ocItems;
     } else {
       list = wikiItems;
     }
@@ -898,6 +982,7 @@ export const StockArtPanel: React.FC = () => {
     unItems,
     oaItems,
     pxItems,
+    ocItems,
   ]);
 
   const isAnyLoading =
@@ -908,7 +993,8 @@ export const StockArtPanel: React.FC = () => {
     loadingSources.pixabay ||
     loadingSources.unsplash ||
     loadingSources.openart ||
-    loadingSources.pexels;
+    loadingSources.pexels ||
+    loadingSources.oclipart;
 
   const handleInsertItem = async (item: UnifiedStockItem, asSticker = false) => {
     setInsertingUid(item.uid);
@@ -924,6 +1010,10 @@ export const StockArtPanel: React.FC = () => {
         dataUrl = await fetchWikimediaAsDataUrl(item.rawWikimedia);
       } else if (item.source === 'openverse' && item.rawOpenverse) {
         dataUrl = await fetchOpenverseAsDataUrl(item.rawOpenverse);
+      } else if (item.source === 'oclipart' && item.rawOpenclipart) {
+        // CC0 vector: stored as an SVG data URL, so it scales without a trace of
+        // pixelation in the PNG and PDF exports.
+        dataUrl = await fetchOpenclipartSvgAsDataUrl(item.rawOpenclipart);
       } else if (item.source === 'pexels' && item.rawPexels) {
         // Bytes, not a hotlink: the document must keep working without Pexels.
         dataUrl = await fetchPexelsAsDataUrl(item.rawPexels);
@@ -1011,7 +1101,8 @@ export const StockArtPanel: React.FC = () => {
     pbItems.length +
     unItems.length +
     oaItems.length +
-    pxItems.length;
+    pxItems.length +
+    ocItems.length;
 
   return (
     <aside
@@ -1040,7 +1131,7 @@ export const StockArtPanel: React.FC = () => {
               Stock Art & Clipart
             </h3>
             <p className="text-[10px] text-[#5b6673] leading-tight">
-              Unified search across {pexelsConfigured === true ? 9 : 8} sources
+              Unified search across {pexelsConfigured === true ? 10 : 9} sources
             </p>
           </div>
         </div>
@@ -1221,6 +1312,7 @@ export const StockArtPanel: React.FC = () => {
                   : `Uns (${unItems.length})`,
               },
               { id: 'openart', label: `Art (${oaItems.length})` },
+              { id: 'oclipart', label: `Vec (${ocItems.length})` },
               ...(pexelsConfigured === true
                 ? [
                     {
@@ -1519,6 +1611,7 @@ export const StockArtPanel: React.FC = () => {
                 loadingSources.unsplash && 'Unsplash',
                 loadingSources.openart && 'Museum art',
                 loadingSources.pexels && 'Pexels',
+                loadingSources.oclipart && 'Openclipart',
               ]
                 .filter(Boolean)
                 .join(', ')}
@@ -1582,6 +1675,8 @@ export const StockArtPanel: React.FC = () => {
                             ? 'bg-teal-100 text-teal-800'
                             : item.source === 'pexels'
                             ? 'bg-emerald-100 text-emerald-800'
+                            : item.source === 'oclipart'
+                            ? 'bg-indigo-100 text-indigo-800'
                             : 'bg-amber-100 text-amber-800'
                         }`}
                       >
@@ -1597,6 +1692,8 @@ export const StockArtPanel: React.FC = () => {
                           ? 'Art'
                           : item.source === 'pexels'
                           ? 'Pex'
+                          : item.source === 'oclipart'
+                          ? 'Vec'
                           : item.sourceLabel}
                       </span>
                       {item.isSvg && (
@@ -1654,6 +1751,30 @@ export const StockArtPanel: React.FC = () => {
                     Pixabay
                   </a>
                   , used under the Pixabay Content License. Search results are cached for 24 hours.
+                </>
+              }
+            />
+          )}
+
+          {sourceFilter === 'oclipart' && ocItems.length > 0 && (
+            <ResultPaging
+              total={ocTotal}
+              page={ocPage}
+              perPage={48}
+              loading={ocLoadingMore}
+              onMore={() => runOpenclipartSearch(query, ocPage + 1, true)}
+              credit={
+                <>
+                  SVG clip art dedicated to the public domain by{' '}
+                  <a
+                    href="https://openclipart.org/"
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="font-semibold text-[#5c4bb8] hover:underline"
+                  >
+                    Openclipart
+                  </a>{' '}
+                  (CC0).
                 </>
               }
             />

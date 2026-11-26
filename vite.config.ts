@@ -6,6 +6,7 @@ import unsplashHandler from './api/unsplash.js'
 import aiHandler from './api/ai.js'
 import openAccessHandler from './api/openaccess.js'
 import pexelsHandler from './api/pexels.js'
+import openclipartHandler from './api/openclipart.js'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -32,6 +33,7 @@ export default defineConfig({
         mount('/api/ai', aiHandler);
         mount('/api/openaccess', openAccessHandler);
         mount('/api/pexels', pexelsHandler);
+        mount('/api/openclipart', openclipartHandler);
       },
     },
   ],
