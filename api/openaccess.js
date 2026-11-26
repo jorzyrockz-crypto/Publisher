@@ -205,10 +205,15 @@ export default async function handler(req, res) {
     bySource.set(item.source, bucket);
   }
   const interleaved = [];
-  for (let i = 0; i < limit; i += 1) {
+  for (let i = 0; interleaved.length < limit; i += 1) {
+    let added = false;
     for (const bucket of bySource.values()) {
-      if (bucket[i]) interleaved.push(bucket[i]);
+      if (bucket[i] && interleaved.length < limit) {
+        interleaved.push(bucket[i]);
+        added = true;
+      }
     }
+    if (!added) break;
   }
 
   sendJson(
