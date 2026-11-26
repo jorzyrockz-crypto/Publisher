@@ -2204,8 +2204,8 @@ export const PropertiesPanel: React.FC = () => {
               <span>Picture Tools</span>
             </div>
 
-            {/* Replace image */}
-            <div>
+            {/* Replace or Clear Picture Placeholder */}
+            <div className="space-y-1.5">
               <input
                 type="file"
                 ref={fileInputRef}
@@ -2218,10 +2218,12 @@ export const PropertiesPanel: React.FC = () => {
                     reader.onload = (event) => {
                       updateElement(selectedElement.id, {
                         src: event.target?.result as string,
+                        name: file.name.replace(/\.[^.]+$/, '') || selectedElement.name,
                       });
                     };
                     reader.readAsDataURL(file);
                   }
+                  e.target.value = '';
                 }}
               />
               <button
@@ -2229,8 +2231,26 @@ export const PropertiesPanel: React.FC = () => {
                 className="w-full py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 shadow-xs"
               >
                 <Upload size={13} />
-                <span>Replace Picture...</span>
+                <span>
+                  {(selectedElement as ImageElement).src
+                    ? 'Replace Picture...'
+                    : 'Load Photo into Placeholder...'}
+                </span>
               </button>
+              {(selectedElement as ImageElement).src && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    updateElement(selectedElement.id, {
+                      src: '',
+                      name: 'Picture Placeholder',
+                    })
+                  }
+                  className="w-full py-1.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-[11px] flex items-center justify-center gap-1.5 transition"
+                >
+                  <span>Clear to Placeholder</span>
+                </button>
+              )}
             </div>
 
             {/* BorderArt (Customizable Collage Frames) */}

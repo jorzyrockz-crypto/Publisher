@@ -24,6 +24,7 @@ import {
   ChevronDown,
   Columns,
   Shapes,
+  ImagePlus,
 } from 'lucide-react';
 
 export const HomeTab: React.FC = () => {
@@ -40,6 +41,7 @@ export const HomeTab: React.FC = () => {
     addTextBox,
     addShape,
     addImage,
+    addPicturePlaceholder,
   } = usePublisher();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -328,6 +330,17 @@ export const HomeTab: React.FC = () => {
               <ImageIcon size={16} />
             </div>
             <span className="text-[10px] font-medium mt-1 text-slate-600">Picture</span>
+          </button>
+
+          <button
+            onClick={() => addPicturePlaceholder()}
+            className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
+            title="Insert Picture Placeholder"
+          >
+            <div className="w-8 h-8 rounded-xl bg-sky-50 border border-dashed border-sky-400 text-sky-700 flex items-center justify-center group-hover:bg-sky-600 group-hover:text-white transition-all shadow-xs">
+              <ImagePlus size={16} />
+            </div>
+            <span className="text-[10px] font-medium mt-1 text-slate-600">Placeholder</span>
           </button>
         </div>
         <span className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider text-center">Objects</span>

@@ -19,6 +19,7 @@ import {
   Images,
   Wand2,
   LayoutGrid,
+  ImagePlus,
 } from 'lucide-react';
 
 export const InsertTab: React.FC = () => {
@@ -28,6 +29,7 @@ export const InsertTab: React.FC = () => {
     duplicateActivePage,
     addShape,
     addImage,
+    addPicturePlaceholder,
     addElementsBatch,
     addTable,
     addAccent,
@@ -41,10 +43,12 @@ export const InsertTab: React.FC = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const tableBtnRef = useRef<HTMLButtonElement>(null);
+  const placeholderBtnRef = useRef<HTMLButtonElement>(null);
   const stockBtnRef = useRef<HTMLButtonElement>(null);
   const qrBtnRef = useRef<HTMLButtonElement>(null);
   const [tableGridHover, setTableGridHover] = useState<{ r: number; c: number }>({ r: 3, c: 3 });
   const [isTableDropdownOpen, setIsTableDropdownOpen] = useState(false);
+  const [isPlaceholderOpen, setIsPlaceholderOpen] = useState(false);
   const [isStockOpen, setIsStockOpen] = useState(false);
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [qrMode, setQrMode] = useState<'url' | 'wifi' | 'email' | 'phone'>('url');
@@ -234,6 +238,89 @@ export const InsertTab: React.FC = () => {
             </div>
             <span className="text-[10px] font-medium mt-1 text-slate-600">Picture</span>
           </button>
+
+          {/* Picture Placeholder with Shape/Ratio Presets */}
+          <div className="relative">
+            <button
+              ref={placeholderBtnRef}
+              onClick={() => setIsPlaceholderOpen(!isPlaceholderOpen)}
+              className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
+              title="Insert Empty Picture Placeholder (Drag & drop or customize anytime)"
+            >
+              <div className="w-8 h-8 rounded-xl bg-sky-50 border border-dashed border-sky-400 text-sky-700 flex items-center justify-center group-hover:bg-sky-600 group-hover:text-white transition-all shadow-xs">
+                <ImagePlus size={16} />
+              </div>
+              <span className="text-[10px] font-medium mt-1 text-slate-600">Placeholder</span>
+            </button>
+
+            <FloatingDropdown
+              isOpen={isPlaceholderOpen}
+              onClose={() => setIsPlaceholderOpen(false)}
+              anchorRef={placeholderBtnRef}
+              className="p-2.5 w-52 space-y-1"
+            >
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1 pb-1">
+                Insert Picture Placeholder
+              </div>
+              {[
+                { label: 'Standard (4:3)', opts: { width: 240, height: 180, maskShape: 'none' as const } },
+                { label: 'Square (1:1)', opts: { width: 200, height: 200, maskShape: 'none' as const } },
+                { label: 'Widescreen (16:9)', opts: { width: 288, height: 162, maskShape: 'none' as const } },
+                { label: 'Portrait (3:4)', opts: { width: 180, height: 240, maskShape: 'none' as const } },
+                { label: 'Circle Portrait', opts: { width: 180, height: 180, maskShape: 'circle' as const } },
+              ].map((preset) => (
+                <button
+                  key={preset.label}
+                  onClick={() => {
+                    addPicturePlaceholder(preset.opts);
+                    setIsPlaceholderOpen(false);
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-indigo-50 hover:text-indigo-800 text-[11px] font-semibold text-slate-700 transition flex items-center justify-between"
+                >
+                  <span>{preset.label}</span>
+                  <span className="text-[9.5px] text-slate-400 font-normal">
+                    {preset.opts.width}×{preset.opts.height}
+                  </span>
+                </button>
+              ))}
+              <div className="pt-1 border-t border-slate-100">
+                <button
+                  onClick={() => {
+                    const availW = Math.max(
+                      200,
+                      activePage.width - activePage.margins.left - activePage.margins.right
+                    );
+                    const gap = 16;
+                    const slotW = Math.floor((availW - gap * 2) / 3);
+                    const slotH = Math.round(slotW * 0.8);
+                    const baseZ =
+                      activePage.elements.reduce((acc, el) => Math.max(acc, el.zIndex), 0) + 1;
+                    const slots: ImageElement[] = [0, 1, 2].map((col) => ({
+                      id: `ph-row-${Date.now()}-${col}`,
+                      type: 'image',
+                      name: `Photo Slot ${col + 1}`,
+                      src: '',
+                      x: Math.round(activePage.margins.left + col * (slotW + gap)),
+                      y: Math.round(activePage.margins.top + (col % 2) * 14),
+                      width: slotW,
+                      height: slotH,
+                      rotation: 0,
+                      zIndex: baseZ + col,
+                      objectFit: 'cover',
+                      aspectRatioLocked: true,
+                      borderRadius: 10,
+                      maskShape: 'none',
+                    }));
+                    addElementsBatch(slots);
+                    setIsPlaceholderOpen(false);
+                  }}
+                  className="w-full text-center py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-800 text-[11px] font-bold transition"
+                >
+                  + Staggered 3-Slot Row
+                </button>
+              </div>
+            </FloatingDropdown>
+          </div>
 
           {/* Free Hybrid AI Image Studio */}
           <button

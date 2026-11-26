@@ -62,6 +62,7 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
     undo,
     redo,
     removeGuide,
+    fillPlaceholderFromImageElement,
   } = usePublisher();
 
   const [contextMenu, setContextMenu] = useState<{
@@ -73,6 +74,7 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
   const [activeAlignGuideH, setActiveAlignGuideH] = useState<number | undefined>();
   const [activeAlignGuideV, setActiveAlignGuideV] = useState<number | undefined>();
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
+  const [dragOverPlaceholderId, setDragOverPlaceholderId] = useState<string | null>(null);
   const [marquee, setMarquee] = useState<{
     startX: number;
     startY: number;
@@ -266,11 +268,42 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
 
     let rafId: number | null = null;
     let latestMoveEvent: MouseEvent | null = null;
+    let activeDropTargetId: string | null = null;
+    const canDropIntoPlaceholder =
+      element.type === 'image' && Boolean(element.src) && initialElementsPos.length === 1;
+
+    const findHoveredPlaceholder = (clientX: number, clientY: number): string | null => {
+      if (!canDropIntoPlaceholder || !canvasRef.current) return null;
+      const rect = canvasRef.current.getBoundingClientRect();
+      const px = (clientX - rect.left) / zoom;
+      const py = (clientY - rect.top) / zoom;
+      const hit = [...pool]
+        .reverse()
+        .find(
+          (el) =>
+            el.id !== element.id &&
+            el.type === 'image' &&
+            !el.src &&
+            el.visible !== false &&
+            !el.locked &&
+            px >= el.x &&
+            px <= el.x + el.width &&
+            py >= el.y &&
+            py <= el.y + el.height
+        );
+      return hit ? hit.id : null;
+    };
 
     const applyDragMove = () => {
       rafId = null;
       const moveEvent = latestMoveEvent;
       if (!moveEvent) return;
+
+      const nextTargetId = findHoveredPlaceholder(moveEvent.clientX, moveEvent.clientY);
+      if (nextTargetId !== activeDropTargetId) {
+        activeDropTargetId = nextTargetId;
+        setDragOverPlaceholderId(nextTargetId);
+      }
 
       const deltaX = (moveEvent.clientX - startClientX) / zoom;
       const deltaY = (moveEvent.clientY - startClientY) / zoom;
@@ -323,6 +356,11 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
       }
       setActiveAlignGuideH(undefined);
       setActiveAlignGuideV(undefined);
+      setDragOverPlaceholderId(null);
+      if (activeDropTargetId) {
+        fillPlaceholderFromImageElement(element.id, activeDropTargetId);
+        activeDropTargetId = null;
+      }
       window.removeEventListener('mousemove', handleWindowMouseMove);
       window.removeEventListener('mouseup', handleWindowMouseUp);
     };
@@ -681,7 +719,59 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
                 }
                 selectElement(element.id, false);
                 setEditingTextId(element.id);
+              } else if (element.type === 'image' && !element.src && !element.locked) {
+                e.stopPropagation();
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = (ev) => {
+                  const file = (ev.target as HTMLInputElement).files?.[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (rev) => {
+                      updateElement(element.id, {
+                        src: String(rev.target?.result || ''),
+                        name: file.name.replace(/\.[^.]+$/, '') || element.name,
+                      });
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                };
+                input.click();
               }
+            }}
+            onDragOver={(e) => {
+              if (element.type === 'image' && !element.locked && e.dataTransfer?.types.includes('Files')) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (dragOverPlaceholderId !== element.id) {
+                  setDragOverPlaceholderId(element.id);
+                }
+              }
+            }}
+            onDragLeave={(e) => {
+              if (dragOverPlaceholderId === element.id && !e.currentTarget.contains(e.relatedTarget as Node)) {
+                setDragOverPlaceholderId(null);
+              }
+            }}
+            onDrop={(e) => {
+              if (element.type !== 'image' || element.locked) return;
+              const file = Array.from(e.dataTransfer?.files || []).find((f) =>
+                f.type.startsWith('image/')
+              );
+              if (!file) return;
+              e.preventDefault();
+              e.stopPropagation();
+              setDragOverPlaceholderId(null);
+              const reader = new FileReader();
+              reader.onload = (rev) => {
+                updateElement(element.id, {
+                  src: String(rev.target?.result || ''),
+                  name: file.name.replace(/\.[^.]+$/, '') || element.name,
+                });
+                selectElement(element.id, false);
+              };
+              reader.readAsDataURL(file);
             }}
             onMouseDown={(e) => {
               // If already selected text box or in text edit mode, allow native I-beam caret & text selection!
@@ -709,9 +799,13 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
             <ElementRenderer
               element={element}
               isSelected={isSelected && isActivePage && !element.locked}
+              isDropTarget={dragOverPlaceholderId === element.id}
               pageNumber={targetPageIndex + 1}
               totalPages={project.pages.length}
               onTextChange={(newText) => updateElement(element.id, { text: newText })}
+              onImageReplace={(src, name) =>
+                updateElement(element.id, { src, ...(name ? { name } : {}) })
+              }
               onTableCellChange={(row, col, val) => {
                 if (element.type === 'table') {
                   const newData = element.data.map((r, rIdx) =>

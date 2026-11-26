@@ -10,26 +10,30 @@ import {
   LineElement,
   QRElement,
 } from '../../types/publisher';
-import { Scissors, Quote, Award, QrCode } from 'lucide-react';
+import { Scissors, Quote, Award, QrCode, ImagePlus, Upload } from 'lucide-react';
 import { buildWavyRectPath } from '../../utils/shapePaths';
 
 interface ElementRendererProps {
   element: PublisherElement;
   isSelected: boolean;
+  isDropTarget?: boolean;
   pageNumber?: number;
   totalPages?: number;
   onTextChange?: (newText: string) => void;
   onTableCellChange?: (row: number, col: number, value: string) => void;
+  onImageReplace?: (src: string, name?: string) => void;
 }
 
 export const ElementRenderer: React.FC<ElementRendererProps> = React.memo(
   ({
     element,
     isSelected,
+    isDropTarget = false,
     pageNumber = 1,
     totalPages = 1,
     onTextChange,
     onTableCellChange,
+    onImageReplace,
   }) => {
   const renderInner = () => {
     switch (element.type) {
@@ -46,7 +50,13 @@ export const ElementRenderer: React.FC<ElementRendererProps> = React.memo(
       case 'shape':
         return <ShapeRenderer element={element} />;
       case 'image':
-        return <ImageRenderer element={element} />;
+        return (
+          <ImageRenderer
+            element={element}
+            isDropTarget={isDropTarget}
+            onImageReplace={onImageReplace}
+          />
+        );
       case 'table':
         return (
           <TableRenderer
@@ -748,7 +758,12 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
   );
 };
 
-const ImageRenderer: React.FC<{ element: ImageElement }> = ({ element }) => {
+const ImageRenderer: React.FC<{
+  element: ImageElement;
+  isDropTarget?: boolean;
+  onImageReplace?: (src: string, name?: string) => void;
+}> = ({ element, isDropTarget = false, onImageReplace }) => {
+  const placeholderInputRef = useRef<HTMLInputElement>(null);
   const getFilterStyle = () => {
     const filters: string[] = [];
     if (element.brightness !== undefined && element.brightness !== 100) {
@@ -1078,9 +1093,79 @@ const ImageRenderer: React.FC<{ element: ImageElement }> = ({ element }) => {
             }}
           />
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center bg-slate-100 text-slate-400 border border-dashed border-slate-300">
-            <span className="text-xs font-semibold">Picture Placeholder</span>
-            <span className="text-[10px] text-slate-400">Click to load image</span>
+          <div
+            className={`w-full h-full relative flex flex-col items-center justify-center overflow-hidden transition-colors ${
+              isDropTarget
+                ? 'bg-indigo-50/90 border-2 border-indigo-500 ring-4 ring-indigo-300/60 text-indigo-700'
+                : 'bg-slate-100/90 border border-dashed border-slate-300 text-slate-500'
+            }`}
+            style={{ filter: getFilterStyle() }}
+          >
+            {/* Subtle diagonal placeholder guides */}
+            <svg
+              className="absolute inset-0 w-full h-full pointer-events-none opacity-45"
+              preserveAspectRatio="none"
+              viewBox="0 0 100 100"
+            >
+              <line x1="0" y1="0" x2="100" y2="100" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="3 3" />
+              <line x1="100" y1="0" x2="0" y2="100" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="3 3" />
+            </svg>
+
+            <input
+              ref={placeholderInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file && onImageReplace) {
+                  const reader = new FileReader();
+                  reader.onload = (ev) => {
+                    onImageReplace(
+                      String(ev.target?.result || ''),
+                      file.name.replace(/\.[^.]+$/, '')
+                    );
+                  };
+                  reader.readAsDataURL(file);
+                }
+                e.target.value = '';
+              }}
+            />
+
+            <div className="relative z-10 flex flex-col items-center gap-1.5 px-2 text-center">
+              <div
+                className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-xs ${
+                  isDropTarget
+                    ? 'bg-indigo-600 text-white scale-110 transition-transform'
+                    : 'bg-white/95 border border-slate-200 text-indigo-600'
+                }`}
+              >
+                {isDropTarget ? <Upload size={17} /> : <ImagePlus size={17} />}
+              </div>
+              <span className="text-[11px] font-bold tracking-tight">
+                {isDropTarget ? 'Drop Image to Fill' : element.name || 'Picture Placeholder'}
+              </span>
+              {!isDropTarget && element.width >= 110 && element.height >= 95 && (
+                <>
+                  {onImageReplace && (
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        placeholderInputRef.current?.click();
+                      }}
+                      className="px-2.5 py-1 rounded-full bg-white hover:bg-indigo-600 text-indigo-700 hover:text-white border border-indigo-200 text-[10px] font-bold shadow-xs transition cursor-pointer"
+                    >
+                      Choose Photo
+                    </button>
+                  )}
+                  <span className="text-[9.5px] text-slate-400">
+                    Drag photo here • {Math.round(element.width)}×{Math.round(element.height)}
+                  </span>
+                </>
+              )}
+            </div>
           </div>
         )}
       </div>

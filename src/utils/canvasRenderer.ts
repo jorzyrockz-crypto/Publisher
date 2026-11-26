@@ -503,8 +503,19 @@ async function drawImageElement(ctx: CanvasRenderingContext2D, el: ImageElement)
     ctx.drawImage(img, dx, dy, drawW, drawH);
     ctx.filter = 'none';
   } else {
-    ctx.fillStyle = '#f1f5f9';
+    ctx.fillStyle = '#f8fafc';
     ctx.fillRect(0, 0, innerW, innerH);
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 4]);
+    ctx.strokeRect(2, 2, Math.max(4, innerW - 4), Math.max(4, innerH - 4));
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(innerW, innerH);
+    ctx.moveTo(innerW, 0);
+    ctx.lineTo(0, innerH);
+    ctx.stroke();
+    ctx.setLineDash([]);
   }
   ctx.restore();
 

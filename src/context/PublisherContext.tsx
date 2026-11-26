@@ -143,6 +143,8 @@ interface PublisherContextType {
   addTextBox: (options?: Partial<TextElement>) => void;
   addShape: (shapeType: ShapeType, options?: Partial<ShapeElement>) => void;
   addImage: (src: string, options?: Partial<ImageElement>) => void;
+  addPicturePlaceholder: (options?: Partial<ImageElement>) => void;
+  fillPlaceholderFromImageElement: (sourceId: string, targetPlaceholderId: string) => void;
   addTable: (rows: number, cols: number, options?: Partial<TableElement>) => void;
   addAccent: (accentType: AccentElement['accentType'], options?: Partial<AccentElement>) => void;
   addLine: (options?: Partial<LineElement>) => void;
@@ -1255,6 +1257,63 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     [activePage, addElement]
   );
 
+  const addPicturePlaceholder = useCallback(
+    (options?: Partial<ImageElement>) => {
+      const placeholderImg: ImageElement = {
+        id: `ph-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        type: 'image',
+        name: 'Picture Placeholder',
+        src: '',
+        x: activePage.margins.left + 40,
+        y: activePage.margins.top + 40,
+        width: 240,
+        height: 180,
+        rotation: 0,
+        zIndex: 8,
+        objectFit: 'cover',
+        aspectRatioLocked: true,
+        borderRadius: 8,
+        maskShape: 'none',
+        ...options,
+      };
+      addElement(placeholderImg);
+    },
+    [activePage, addElement]
+  );
+
+  const fillPlaceholderFromImageElement = useCallback(
+    (sourceId: string, targetPlaceholderId: string) => {
+      const sourceEl = currentElements.find(
+        (el): el is ImageElement => el.id === sourceId && el.type === 'image'
+      );
+      const targetEl = currentElements.find(
+        (el): el is ImageElement => el.id === targetPlaceholderId && el.type === 'image'
+      );
+      if (!sourceEl || !targetEl || !sourceEl.src || sourceEl.id === targetEl.id) return;
+
+      const nextName =
+        !targetEl.name || targetEl.name === 'Picture Placeholder'
+          ? sourceEl.name || targetEl.name
+          : targetEl.name;
+
+      const updated = currentElements
+        .filter((el) => el.id !== sourceId)
+        .map((el) =>
+          el.id === targetPlaceholderId
+            ? ({
+                ...el,
+                src: sourceEl.src,
+                name: nextName,
+              } as PublisherElement)
+            : el
+        );
+
+      commitCurrentElements(updated);
+      setSelectedElementIds([targetPlaceholderId]);
+    },
+    [currentElements, commitCurrentElements]
+  );
+
   const addTable = useCallback(
     (rows: number, cols: number, options?: Partial<TableElement>) => {
       const data: string[][] = [];
@@ -1700,6 +1759,8 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         addTextBox,
         addShape,
         addImage,
+        addPicturePlaceholder,
+        fillPlaceholderFromImageElement,
         addTable,
         addAccent,
         addLine,
