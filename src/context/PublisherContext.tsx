@@ -12,8 +12,10 @@ import {
   AccentElement,
   LineElement,
   QRElement,
+  ConnectorElement,
   ShapeType,
 } from '../types/publisher';
+import { buildMergedPartFromShape } from '../utils/shapePaths';
 import { TEMPLATES } from '../constants/templates';
 import { PAGE_SIZES } from '../constants/pageSizes';
 import { COLOR_SCHEMES } from '../constants/colorSchemes';
@@ -102,6 +104,9 @@ interface PublisherContextType {
   sendToBack: () => void;
   alignSelected: (alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => void;
   distributeSelected: (axis: 'horizontal' | 'vertical') => void;
+  mergeSelectedShapes: (op: 'union' | 'combine' | 'subtract' | 'intersect') => void;
+  autoConnectSelectedShapes: (style?: 'straight' | 'elbow' | 'curved') => void;
+  addConnectedDiagramStep: (style?: 'straight' | 'elbow' | 'curved') => void;
 
   // Quick factory helpers
   addTextBox: (options?: Partial<TextElement>) => void;
@@ -1018,6 +1023,162 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     });
   }, [activePage, addTextBox]);
 
+  // Merge 2+ selected shapes (Union, Combine, Subtract, Intersect)
+  const mergeSelectedShapes = useCallback(
+    (op: 'union' | 'combine' | 'subtract' | 'intersect') => {
+      const shapes = currentElements.filter(
+        (el): el is ShapeElement =>
+          selectedElementIds.includes(el.id) && el.type === 'shape'
+      );
+      if (shapes.length < 2) return;
+
+      const minX = Math.min(...shapes.map((s) => s.x));
+      const minY = Math.min(...shapes.map((s) => s.y));
+      const maxX = Math.max(...shapes.map((s) => s.x + s.width));
+      const maxY = Math.max(...shapes.map((s) => s.y + s.height));
+
+      const base = shapes[0];
+      const mergedParts = shapes.flatMap((s) =>
+        s.shapeType === 'merged' && s.mergedParts
+          ? s.mergedParts.map((p) => ({
+              ...p,
+              x: p.x + (s.x - minX),
+              y: p.y + (s.y - minY),
+            }))
+          : [buildMergedPartFromShape(s, minX, minY)]
+      );
+
+      const mergedShape: ShapeElement = {
+        id: `shp-merged-${Date.now()}`,
+        type: 'shape',
+        name: `Merged (${op})`,
+        shapeType: 'merged',
+        x: Math.round(minX),
+        y: Math.round(minY),
+        width: Math.max(20, Math.round(maxX - minX)),
+        height: Math.max(20, Math.round(maxY - minY)),
+        rotation: 0,
+        zIndex: Math.max(...shapes.map((s) => s.zIndex)),
+        fillColor: base.fillColor,
+        fillType: base.fillType,
+        gradientColor2: base.gradientColor2,
+        gradientAngle: base.gradientAngle,
+        strokeColor: base.strokeColor,
+        strokeWidth: base.strokeWidth,
+        strokeDash: base.strokeDash,
+        shadow: base.shadow,
+        glow: base.glow,
+        glowColor: base.glowColor,
+        glowSize: base.glowSize,
+        mergeOp: op,
+        mergedParts,
+      };
+
+      const remaining = currentElements.filter(
+        (el) => !shapes.some((s) => s.id === el.id)
+      );
+      commitCurrentElements([...remaining, mergedShape]);
+      setSelectedElementIds([mergedShape.id]);
+    },
+    [currentElements, selectedElementIds, commitCurrentElements]
+  );
+
+  // Auto-connect 2+ selected elements with smart diagram connectors
+  const autoConnectSelectedShapes = useCallback(
+    (style: 'straight' | 'elbow' | 'curved' = 'elbow') => {
+      const selected = currentElements.filter((el) =>
+        selectedElementIds.includes(el.id) && el.type !== 'connector'
+      );
+      if (selected.length < 2) return;
+
+      // Sort left-to-right / top-to-bottom for natural diagram flow
+      const ordered = [...selected].sort((a, b) =>
+        Math.abs(a.x - b.x) > 40 ? a.x - b.x : a.y - b.y
+      );
+
+      const maxZ = currentElements.reduce((acc, el) => Math.max(acc, el.zIndex), 0);
+      const connectors: ConnectorElement[] = [];
+
+      for (let i = 0; i < ordered.length - 1; i++) {
+        const fromEl = ordered[i];
+        const toEl = ordered[i + 1];
+        connectors.push({
+          id: `conn-${Date.now()}-${i}`,
+          type: 'connector',
+          name: `Connector ${i + 1}`,
+          fromId: fromEl.id,
+          toId: toEl.id,
+          connectorStyle: style,
+          x: 0,
+          y: 0,
+          width: 10,
+          height: 10,
+          rotation: 0,
+          zIndex: maxZ + 1 + i,
+          strokeColor: activeScheme.primary,
+          strokeWidth: 2.5,
+          strokeDash: 'solid',
+          arrowEnd: true,
+        });
+      }
+
+      commitCurrentElements([...currentElements, ...connectors]);
+    },
+    [currentElements, selectedElementIds, activeScheme, commitCurrentElements]
+  );
+
+  // Spawn a connected next-step diagram node from the currently selected element
+  const addConnectedDiagramStep = useCallback(
+    (style: 'straight' | 'elbow' | 'curved' = 'elbow') => {
+      if (selectedElementIds.length !== 1) return;
+      const source = currentElements.find((el) => el.id === selectedElementIds[0]);
+      if (!source || source.type === 'connector') return;
+
+      const maxZ = currentElements.reduce((acc, el) => Math.max(acc, el.zIndex), 0);
+      const nextShape: ShapeElement = {
+        id: `shp-${Date.now()}`,
+        type: 'shape',
+        name: 'Diagram Step',
+        shapeType: source.type === 'shape' ? source.shapeType : 'rounded-rect',
+        x: Math.round(source.x + source.width + 70),
+        y: Math.round(source.y),
+        width: source.width,
+        height: source.height,
+        rotation: 0,
+        zIndex: maxZ + 1,
+        fillColor: source.type === 'shape' ? source.fillColor : activeScheme.primary,
+        strokeColor: source.type === 'shape' ? source.strokeColor : activeScheme.dark,
+        strokeWidth: 2,
+        cornerRadius: 12,
+        label: 'Next Step',
+        labelColor: '#ffffff',
+      };
+
+      const connector: ConnectorElement = {
+        id: `conn-${Date.now()}`,
+        type: 'connector',
+        name: 'Diagram Connector',
+        fromId: source.id,
+        toId: nextShape.id,
+        connectorStyle: style,
+        x: 0,
+        y: 0,
+        width: 10,
+        height: 10,
+        rotation: 0,
+        zIndex: maxZ + 2,
+        strokeColor: activeScheme.primary,
+        strokeWidth: 2.5,
+        strokeDash: 'solid',
+        arrowEnd: true,
+      };
+
+      commitCurrentElements([...currentElements, nextShape, connector]);
+      setSelectedElementIds([nextShape.id]);
+    },
+    [selectedElementIds, currentElements, activeScheme, commitCurrentElements]
+  );
+
   // Zoom
   const setZoom = useCallback((newZoom: number) => {
     setZoomState(Math.min(3.0, Math.max(0.2, newZoom)));
@@ -1128,6 +1289,9 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         sendToBack,
         alignSelected,
         distributeSelected,
+        mergeSelectedShapes,
+        autoConnectSelectedShapes,
+        addConnectedDiagramStep,
 
         addTextBox,
         addShape,

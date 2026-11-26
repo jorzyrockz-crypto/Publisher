@@ -1,4 +1,4 @@
-export type ElementType = 'text' | 'shape' | 'image' | 'table' | 'accent' | 'line' | 'qr';
+export type ElementType = 'text' | 'shape' | 'image' | 'table' | 'accent' | 'line' | 'qr' | 'connector';
 
 export type ShapeType =
   | 'rectangle'
@@ -18,7 +18,8 @@ export type ShapeType =
   | 'trapezoid'
   | 'pentagon'
   | 'cross'
-  | 'cloud';
+  | 'cloud'
+  | 'merged';
 
 export type WordArtStyle =
   | 'none'
@@ -99,6 +100,18 @@ export interface ShapeElement extends BaseElement {
   strokeDash?: 'solid' | 'dashed' | 'dotted';
   cornerRadius?: number;
   adjustValue?: number; // PowerPoint yellow handle morph parameter (0 to 1)
+  waveEdge?: 'none' | 'top' | 'bottom' | 'left' | 'right';
+  waveAmplitude?: number;
+  waveFrequency?: number;
+  mergeOp?: 'union' | 'combine' | 'subtract' | 'intersect';
+  mergedParts?: {
+    d: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    rotation: number;
+  }[];
   shadow?: boolean;
   shadowColor?: string;
   shadowBlur?: number;
@@ -181,6 +194,18 @@ export interface QRElement extends BaseElement {
   bgColor: string;
 }
 
+export interface ConnectorElement extends BaseElement {
+  type: 'connector';
+  fromId: string;
+  toId: string;
+  connectorStyle: 'straight' | 'elbow' | 'curved';
+  strokeColor: string;
+  strokeWidth: number;
+  strokeDash?: 'solid' | 'dashed' | 'dotted';
+  arrowEnd?: boolean;
+  arrowStart?: boolean;
+}
+
 export type PublisherElement =
   | TextElement
   | ShapeElement
@@ -188,7 +213,8 @@ export type PublisherElement =
   | TableElement
   | AccentElement
   | LineElement
-  | QRElement;
+  | QRElement
+  | ConnectorElement;
 
 export interface PageGuide {
   id: string;

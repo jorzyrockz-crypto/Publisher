@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
 import {
   TextElement,
@@ -13,6 +13,9 @@ import {
 import { PAGE_SIZES } from '../../constants/pageSizes';
 import { TABLE_THEMES } from '../../constants/tableThemes';
 import { FontSelector } from '../common/FontSelector';
+import { FloatingDropdown } from '../common/FloatingDropdown';
+import { ShapePreviewIcon } from '../common/ShapePreviewIcon';
+import { SHAPE_CATALOG } from '../../utils/shapePaths';
 import {
   Type,
   Square,
@@ -36,6 +39,10 @@ import {
   RotateCcw,
   PanelRightClose,
   PanelRightOpen,
+  ChevronDown,
+  GitMerge,
+  Workflow,
+  Waves,
 } from 'lucide-react';
 
 export const PropertiesPanel: React.FC = () => {
@@ -48,6 +55,9 @@ export const PropertiesPanel: React.FC = () => {
     selectedElementIds,
     updateElement,
     toggleElementLock,
+    mergeSelectedShapes,
+    autoConnectSelectedShapes,
+    addConnectedDiagramStep,
     setPageSize,
     setPageOrientation,
     setPageMargins,
@@ -55,6 +65,8 @@ export const PropertiesPanel: React.FC = () => {
   } = usePublisher();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const shapePickerBtnRef = useRef<HTMLButtonElement>(null);
+  const [isShapePickerOpen, setIsShapePickerOpen] = useState(false);
 
   const elementsPool = isEditingMaster
     ? project.masterPage?.elements || []
@@ -104,8 +116,71 @@ export const PropertiesPanel: React.FC = () => {
       </div>
 
       <div className="p-3.5 space-y-4">
+        {/* Multi-Selection: Merge Shapes & Diagram Auto-Connect */}
+        {selectedElementIds.length >= 2 && (
+          <div className="space-y-4">
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3 shadow-2xs">
+              <div className="font-bold text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-100">
+                <GitMerge size={14} className="text-emerald-700" />
+                <span>Merge Shapes ({selectedElementIds.length} selected)</span>
+              </div>
+              <p className="text-[10.5px] text-slate-500">
+                Combine overlapping shapes just like PowerPoint:
+              </p>
+              <div className="grid grid-cols-2 gap-1.5">
+                {(
+                  [
+                    { op: 'union', label: 'Union' },
+                    { op: 'combine', label: 'Combine' },
+                    { op: 'subtract', label: 'Subtract' },
+                    { op: 'intersect', label: 'Intersect' },
+                  ] as const
+                ).map((item) => (
+                  <button
+                    key={item.op}
+                    onClick={() => mergeSelectedShapes(item.op)}
+                    className="py-1.5 px-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-400 hover:text-emerald-800 text-xs font-semibold transition"
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3 shadow-2xs">
+              <div className="font-bold text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-100">
+                <Workflow size={14} className="text-emerald-700" />
+                <span>Diagram Auto-Connect</span>
+              </div>
+              <p className="text-[10.5px] text-slate-500">
+                Connect selected objects with smart arrows that auto-follow when moved:
+              </p>
+              <div className="grid grid-cols-3 gap-1.5">
+                <button
+                  onClick={() => autoConnectSelectedShapes('straight')}
+                  className="py-1.5 px-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-800 text-[11px] font-semibold transition"
+                >
+                  Straight
+                </button>
+                <button
+                  onClick={() => autoConnectSelectedShapes('elbow')}
+                  className="py-1.5 px-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-800 text-[11px] font-semibold transition"
+                >
+                  Elbow
+                </button>
+                <button
+                  onClick={() => autoConnectSelectedShapes('curved')}
+                  className="py-1.5 px-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-800 text-[11px] font-semibold transition"
+                >
+                  Curved
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Case 1: Page Properties (No Element Selected) */}
-        {!selectedElement && (
+        {selectedElementIds.length === 0 && (
           <div className="space-y-4">
             <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3.5 shadow-2xs">
               <div className="font-bold text-slate-800 flex items-center justify-between pb-2 border-b border-slate-100">
@@ -456,40 +531,145 @@ export const PropertiesPanel: React.FC = () => {
               <span>Shape Formatting</span>
             </div>
 
-            {/* Shape Type Selector */}
+            {/* Visual Shape Geometry Preview Picker */}
             <div>
               <label className="block text-[11px] font-semibold text-slate-500 mb-1.5">
                 Shape Geometry
               </label>
-              <select
-                className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-medium transition cursor-pointer"
-                value={(selectedElement as ShapeElement).shapeType}
-                onChange={(e) =>
-                  updateElement(selectedElement.id, {
-                    shapeType: e.target.value as ShapeType,
-                  })
-                }
+              <button
+                ref={shapePickerBtnRef}
+                type="button"
+                onClick={() => setIsShapePickerOpen(!isShapePickerOpen)}
+                className="w-full flex items-center justify-between bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-medium transition cursor-pointer"
               >
-                <option value="rectangle">Rectangle</option>
-                <option value="rounded-rect">Rounded Rectangle</option>
-                <option value="circle">Oval / Circle</option>
-                <option value="triangle">Triangle</option>
-                <option value="star">5-Point Star</option>
-                <option value="badge-burst">Starburst Seal</option>
-                <option value="hexagon">Hexagon</option>
-                <option value="banner">Ribbon Banner</option>
-                <option value="callout">Speech Callout</option>
-                <option value="arrow-right">Block Arrow</option>
-                <option value="arrow-double">Double Arrow</option>
-                <option value="parallelogram">Parallelogram</option>
-                <option value="trapezoid">Trapezoid</option>
-                <option value="pentagon">Pentagon</option>
-                <option value="cross">Cross / Plus</option>
-                <option value="cloud">Cloud</option>
-                <option value="diamond">Diamond</option>
-                <option value="heart">Heart</option>
-              </select>
+                <div className="flex items-center gap-2">
+                  <ShapePreviewIcon
+                    shapeType={
+                      (selectedElement as ShapeElement).shapeType === 'merged'
+                        ? 'star'
+                        : (selectedElement as ShapeElement).shapeType
+                    }
+                    size={20}
+                  />
+                  <span>
+                    {SHAPE_CATALOG.find(
+                      (c) => c.type === (selectedElement as ShapeElement).shapeType
+                    )?.label ||
+                      ((selectedElement as ShapeElement).shapeType === 'merged'
+                        ? 'Merged Shape'
+                        : (selectedElement as ShapeElement).shapeType)}
+                  </span>
+                </div>
+                <ChevronDown size={12} className="text-slate-400" />
+              </button>
+
+              <FloatingDropdown
+                isOpen={isShapePickerOpen}
+                onClose={() => setIsShapePickerOpen(false)}
+                anchorRef={shapePickerBtnRef}
+                className="p-2.5 w-64 grid grid-cols-3 gap-1.5 max-h-72 overflow-y-auto"
+              >
+                {SHAPE_CATALOG.map((item) => {
+                  const isCurrent = (selectedElement as ShapeElement).shapeType === item.type;
+                  return (
+                    <button
+                      key={item.type}
+                      onClick={() => {
+                        updateElement(selectedElement.id, { shapeType: item.type });
+                        setIsShapePickerOpen(false);
+                      }}
+                      className={`p-2 rounded-xl flex flex-col items-center gap-1 text-[10px] font-semibold transition border ${
+                        isCurrent
+                          ? 'bg-emerald-50 border-emerald-500 text-emerald-800'
+                          : 'border-transparent hover:bg-slate-100 text-slate-700'
+                      }`}
+                    >
+                      <ShapePreviewIcon shapeType={item.type} size={24} />
+                      <span className="truncate w-full text-center">{item.label}</span>
+                    </button>
+                  );
+                })}
+              </FloatingDropdown>
             </div>
+
+            {/* Wavy Side Edge (e.g. Make Rectangle Top Side a Wave) */}
+            {(selectedElement as ShapeElement).shapeType === 'rectangle' && (
+              <div className="bg-emerald-50/50 border border-emerald-200/70 rounded-xl p-2.5 space-y-2">
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-900">
+                  <Waves size={13} className="text-emerald-700" />
+                  <span>Wave Side Edge</span>
+                </div>
+                <div className="grid grid-cols-5 gap-1 bg-white p-0.5 rounded-lg border border-emerald-200/60">
+                  {(['none', 'top', 'bottom', 'left', 'right'] as const).map((edge) => (
+                    <button
+                      key={edge}
+                      onClick={() =>
+                        updateElement(selectedElement.id, { waveEdge: edge })
+                      }
+                      className={`py-1 rounded text-[10px] font-semibold capitalize transition ${
+                        ((selectedElement as ShapeElement).waveEdge || 'none') === edge
+                          ? 'bg-emerald-600 text-white'
+                          : 'text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      {edge}
+                    </button>
+                  ))}
+                </div>
+
+                {(selectedElement as ShapeElement).waveEdge &&
+                  (selectedElement as ShapeElement).waveEdge !== 'none' && (
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <div>
+                        <div className="flex justify-between text-[9.5px] text-slate-500 font-medium">
+                          <span>Height</span>
+                          <span>{(selectedElement as ShapeElement).waveAmplitude ?? 18}px</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={4}
+                          max={60}
+                          value={(selectedElement as ShapeElement).waveAmplitude ?? 18}
+                          onChange={(e) =>
+                            updateElement(selectedElement.id, {
+                              waveAmplitude: Number(e.target.value),
+                            })
+                          }
+                          className="w-full accent-emerald-600 cursor-pointer"
+                        />
+                      </div>
+                      <div>
+                        <div className="flex justify-between text-[9.5px] text-slate-500 font-medium">
+                          <span>Waves</span>
+                          <span>{(selectedElement as ShapeElement).waveFrequency ?? 2}</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={1}
+                          max={8}
+                          value={(selectedElement as ShapeElement).waveFrequency ?? 2}
+                          onChange={(e) =>
+                            updateElement(selectedElement.id, {
+                              waveFrequency: Number(e.target.value),
+                            })
+                          }
+                          className="w-full accent-emerald-600 cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                  )}
+              </div>
+            )}
+
+            {/* Quick Diagram Next Step */}
+            <button
+              onClick={() => addConnectedDiagramStep('elbow')}
+              className="w-full py-1.5 px-3 rounded-xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold flex items-center justify-center gap-1.5 transition"
+              title="Spawn a connected diagram node with an auto-following arrow"
+            >
+              <Workflow size={13} />
+              <span>+ Add Connected Diagram Step</span>
+            </button>
 
             {/* PowerPoint Quick Shape Styles */}
             <div>

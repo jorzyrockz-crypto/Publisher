@@ -11,6 +11,7 @@ import {
   QRElement,
 } from '../../types/publisher';
 import { Scissors, Quote, Award, QrCode } from 'lucide-react';
+import { buildWavyRectPath } from '../../utils/shapePaths';
 
 interface ElementRendererProps {
   element: PublisherElement;
@@ -249,6 +250,25 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
   const renderSvgShape = () => {
     switch (shapeType) {
       case 'rectangle':
+        if (element.waveEdge && element.waveEdge !== 'none') {
+          return (
+            <path
+              d={buildWavyRectPath(
+                width,
+                height,
+                strokeWidth,
+                element.waveEdge,
+                element.waveAmplitude ?? 18,
+                element.waveFrequency ?? 2
+              )}
+              fill={effectiveFill}
+              stroke={strokeColor}
+              strokeWidth={strokeWidth}
+              strokeDasharray={dashArray}
+              strokeLinejoin="round"
+            />
+          );
+        }
         return (
           <rect
             x={strokeWidth / 2}
@@ -524,6 +544,140 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
             strokeDasharray={dashArray}
           />
         );
+      case 'merged': {
+        const parts = element.mergedParts || [];
+        if (parts.length === 0) return null;
+        const op = element.mergeOp || 'union';
+        const maskId = `merge-mask-${element.id}`;
+        const clipId = `merge-clip-${element.id}`;
+
+        const renderPartTransform = (p: (typeof parts)[0]) =>
+          `translate(${p.x}, ${p.y}) rotate(${p.rotation}, ${p.width / 2}, ${p.height / 2})`;
+
+        if (op === 'subtract' && parts.length >= 2) {
+          return (
+            <>
+              <defs>
+                <mask id={maskId}>
+                  <path
+                    d={parts[0].d}
+                    transform={renderPartTransform(parts[0])}
+                    fill="#ffffff"
+                  />
+                  {parts.slice(1).map((p, idx) => (
+                    <path
+                      key={idx}
+                      d={p.d}
+                      transform={renderPartTransform(p)}
+                      fill="#000000"
+                    />
+                  ))}
+                </mask>
+              </defs>
+              <g mask={`url(#${maskId})`}>
+                <path
+                  d={parts[0].d}
+                  transform={renderPartTransform(parts[0])}
+                  fill={effectiveFill}
+                  stroke={strokeColor}
+                  strokeWidth={strokeWidth}
+                  strokeDasharray={dashArray}
+                />
+              </g>
+            </>
+          );
+        }
+
+        if (op === 'intersect' && parts.length >= 2) {
+          return (
+            <>
+              <defs>
+                <clipPath id={clipId}>
+                  <path d={parts[1].d} transform={renderPartTransform(parts[1])} />
+                </clipPath>
+              </defs>
+              <g clipPath={`url(#${clipId})`}>
+                <path
+                  d={parts[0].d}
+                  transform={renderPartTransform(parts[0])}
+                  fill={effectiveFill}
+                  stroke={strokeColor}
+                  strokeWidth={strokeWidth}
+                  strokeDasharray={dashArray}
+                />
+              </g>
+            </>
+          );
+        }
+
+        if (op === 'combine' && parts.length >= 2) {
+          return (
+            <>
+              <defs>
+                <mask id={`${maskId}-a`}>
+                  <rect width={width} height={height} fill="#ffffff" />
+                  {parts.slice(1).map((p, idx) => (
+                    <path
+                      key={idx}
+                      d={p.d}
+                      transform={renderPartTransform(p)}
+                      fill="#000000"
+                    />
+                  ))}
+                </mask>
+                <mask id={`${maskId}-b`}>
+                  <rect width={width} height={height} fill="#ffffff" />
+                  <path
+                    d={parts[0].d}
+                    transform={renderPartTransform(parts[0])}
+                    fill="#000000"
+                  />
+                </mask>
+              </defs>
+              <g>
+                <path
+                  d={parts[0].d}
+                  transform={renderPartTransform(parts[0])}
+                  fill={effectiveFill}
+                  stroke={strokeColor}
+                  strokeWidth={strokeWidth}
+                  strokeDasharray={dashArray}
+                  mask={`url(#${maskId}-a)`}
+                />
+                {parts.slice(1).map((p, idx) => (
+                  <path
+                    key={idx}
+                    d={p.d}
+                    transform={renderPartTransform(p)}
+                    fill={effectiveFill}
+                    stroke={strokeColor}
+                    strokeWidth={strokeWidth}
+                    strokeDasharray={dashArray}
+                    mask={`url(#${maskId}-b)`}
+                  />
+                ))}
+              </g>
+            </>
+          );
+        }
+
+        // Union
+        return (
+          <g>
+            {parts.map((p, idx) => (
+              <path
+                key={idx}
+                d={p.d}
+                transform={renderPartTransform(p)}
+                fill={effectiveFill}
+                stroke={strokeColor}
+                strokeWidth={strokeWidth}
+                strokeDasharray={dashArray}
+              />
+            ))}
+          </g>
+        );
+      }
       default:
         return null;
     }

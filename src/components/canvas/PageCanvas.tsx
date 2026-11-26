@@ -3,7 +3,7 @@ import { usePublisher } from '../../context/PublisherContext';
 import { ElementRenderer } from './ElementRenderer';
 import { SelectionBox } from './SelectionBox';
 import { calculateSnap } from '../../utils/snapping';
-import { PublisherElement, Page } from '../../types/publisher';
+import { PublisherElement, Page, ConnectorElement } from '../../types/publisher';
 import {
   Copy,
   Clipboard,
@@ -450,9 +450,113 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
           </div>
         ))}
 
+      {/* Live Auto-Connect Diagram Connectors Overlay */}
+      <svg
+        className="absolute inset-0 pointer-events-none"
+        width={targetPage.width}
+        height={targetPage.height}
+        style={{ zIndex: 45, overflow: 'visible' }}
+      >
+        <defs>
+          {displayedElements
+            .filter((el): el is ConnectorElement => el.type === 'connector' && el.visible !== false)
+            .map((conn) => (
+              <marker
+                key={`mk-${conn.id}`}
+                id={`arrow-${conn.id}`}
+                viewBox="0 0 10 10"
+                refX="8"
+                refY="5"
+                markerWidth="6"
+                markerHeight="6"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 1 L 10 5 L 0 9 z" fill={conn.strokeColor} />
+              </marker>
+            ))}
+        </defs>
+        {displayedElements
+          .filter((el): el is ConnectorElement => el.type === 'connector' && el.visible !== false)
+          .map((conn) => {
+            const fromEl = displayedElements.find((e) => e.id === conn.fromId);
+            const toEl = displayedElements.find((e) => e.id === conn.toId);
+            if (!fromEl || !toEl) return null;
+
+            const fromCx = fromEl.x + fromEl.width / 2;
+            const fromCy = fromEl.y + fromEl.height / 2;
+            const toCx = toEl.x + toEl.width / 2;
+            const toCy = toEl.y + toEl.height / 2;
+            const dx = toCx - fromCx;
+            const dy = toCy - fromCy;
+
+            // Choose nearest edge ports (left/right vs top/bottom)
+            let x1 = fromCx;
+            let y1 = fromCy;
+            let x2 = toCx;
+            let y2 = toCy;
+
+            if (Math.abs(dx) >= Math.abs(dy)) {
+              x1 = dx >= 0 ? fromEl.x + fromEl.width : fromEl.x;
+              x2 = dx >= 0 ? toEl.x : toEl.x + toEl.width;
+            } else {
+              y1 = dy >= 0 ? fromEl.y + fromEl.height : fromEl.y;
+              y2 = dy >= 0 ? toEl.y : toEl.y + toEl.height;
+            }
+
+            let d = `M ${x1} ${y1} L ${x2} ${y2}`;
+            if (conn.connectorStyle === 'elbow') {
+              if (Math.abs(dx) >= Math.abs(dy)) {
+                const midX = (x1 + x2) / 2;
+                d = `M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`;
+              } else {
+                const midY = (y1 + y2) / 2;
+                d = `M ${x1} ${y1} L ${x1} ${midY} L ${x2} ${midY} L ${x2} ${y2}`;
+              }
+            } else if (conn.connectorStyle === 'curved') {
+              if (Math.abs(dx) >= Math.abs(dy)) {
+                const midX = (x1 + x2) / 2;
+                d = `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`;
+              } else {
+                const midY = (y1 + y2) / 2;
+                d = `M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`;
+              }
+            }
+
+            const isConnSelected = selectedElementIds.includes(conn.id);
+            const dash =
+              conn.strokeDash === 'dashed'
+                ? '7 4'
+                : conn.strokeDash === 'dotted'
+                ? '2 4'
+                : undefined;
+
+            return (
+              <g
+                key={conn.id}
+                className="pointer-events-auto cursor-pointer"
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  selectElement(conn.id, e.shiftKey || e.ctrlKey);
+                }}
+              >
+                {/* Invisible wider hit target */}
+                <path d={d} fill="none" stroke="transparent" strokeWidth={14} />
+                <path
+                  d={d}
+                  fill="none"
+                  stroke={isConnSelected ? '#059669' : conn.strokeColor}
+                  strokeWidth={isConnSelected ? conn.strokeWidth + 1.5 : conn.strokeWidth}
+                  strokeDasharray={dash}
+                  markerEnd={conn.arrowEnd !== false ? `url(#arrow-${conn.id})` : undefined}
+                />
+              </g>
+            );
+          })}
+      </svg>
+
       {/* Render Document Elements */}
       {displayedElements
-        .filter((el) => el.visible !== false)
+        .filter((el) => el.visible !== false && el.type !== 'connector')
         .map((element) => {
         const isSelected = selectedElementIds.includes(element.id);
         const isEditingThisText =

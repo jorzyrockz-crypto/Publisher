@@ -3,6 +3,8 @@ import { usePublisher } from '../../context/PublisherContext';
 import { TextElement, ShapeType } from '../../types/publisher';
 import { FloatingDropdown } from '../common/FloatingDropdown';
 import { FontSelector } from '../common/FontSelector';
+import { ShapePreviewIcon } from '../common/ShapePreviewIcon';
+import { SHAPE_CATALOG } from '../../utils/shapePaths';
 import {
   Copy,
   Trash2,
@@ -282,40 +284,19 @@ export const HomeTab: React.FC = () => {
               isOpen={isShapesOpen}
               onClose={() => setIsShapesOpen(false)}
               anchorRef={shapesBtnRef}
-              className="p-2.5 grid grid-cols-4 gap-1.5 w-64"
+              className="p-2.5 grid grid-cols-4 gap-1.5 w-72 max-h-72 overflow-y-auto"
             >
-              {(
-                [
-                  'rectangle',
-                  'rounded-rect',
-                  'circle',
-                  'triangle',
-                  'star',
-                  'badge-burst',
-                  'hexagon',
-                  'diamond',
-                  'heart',
-                  'banner',
-                  'callout',
-                  'arrow-right',
-                  'arrow-double',
-                  'parallelogram',
-                  'trapezoid',
-                  'pentagon',
-                  'cross',
-                  'cloud',
-                ] as ShapeType[]
-              ).map((shape) => (
+              {SHAPE_CATALOG.map((item) => (
                 <button
-                  key={shape}
+                  key={item.type}
                   onClick={() => {
-                    addShape(shape);
+                    addShape(item.type);
                     setIsShapesOpen(false);
                   }}
-                  className="p-2 hover:bg-emerald-50 rounded-xl text-center text-[10px] capitalize font-medium text-slate-700 flex flex-col items-center gap-1 transition"
+                  className="p-2 hover:bg-emerald-50 rounded-xl text-center text-[10px] font-medium text-slate-700 flex flex-col items-center gap-1 transition"
                 >
-                  <Square size={16} className="text-emerald-700" />
-                  <span className="truncate w-full">{shape.replace('-', ' ')}</span>
+                  <ShapePreviewIcon shapeType={item.type} size={24} />
+                  <span className="truncate w-full">{item.label}</span>
                 </button>
               ))}
             </FloatingDropdown>
