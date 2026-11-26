@@ -139,7 +139,12 @@ export function parseSearchPage(html, page, perPage) {
   // already walk the whole result set", since their page sizes vary by result.
   const fetchedSoFar = page * Math.max(1, items.length);
   const hasMore = pageCount > 0 ? page < pageCount : total > fetchedSoFar;
-  return { items, total, hasMore, pageCount };
+  const clipartIndex = text.search(/clipart/i);
+  const textSample =
+    clipartIndex >= 0
+      ? text.slice(Math.max(0, clipartIndex - 60), clipartIndex + 80).trim()
+      : text.slice(0, 140).trim();
+  return { items, total, hasMore, pageCount, textSample };
 }
 
 async function fetchSearch(query, page) {
@@ -173,6 +178,11 @@ export default async function handler(req, res) {
         out.htmlBytes = result.html.length;
         out.parsed = result.items.length;
         out.total = result.total;
+        out.pageCount = result.pageCount;
+        out.hasMore = result.hasMore;
+        // The flattened header/pager text around the numbers, so a parse failure
+        // can be diagnosed from the deployment instead of by guessing.
+        out.headerSample = result.textSample;
         out.first = result.items[0] ? { id: result.items[0].id, title: result.items[0].title } : null;
         // A page that parses to zero means the markup moved and the regex needs
         // adjusting — worth knowing before users see an empty panel.
@@ -257,6 +267,7 @@ export default async function handler(req, res) {
         perPage: result.perPage,
         total: result.total,
         hasMore: result.hasMore,
+        pageCount: result.pageCount,
         items: result.items,
       },
       // Their search page is static enough to cache for a day.
