@@ -90,7 +90,8 @@ Logic lives in `src/utils/documentPalette.ts`; the UI is `src/components/common/
 ### 8. Performance & Static Hosting
 - **Code-split bundle**: the editor shell loads first; every modal (`Backstage`, `AI Image`, `Collage`, `Mail Merge`, `Brand Board/Kits`, `Shortcuts`) and the export stack (jsPDF, html2canvas, JSZip) are lazy chunks. Initial JS dropped from ~1.9 MB to ~0.9 MB (−52%).
 - **Auto-fit on load**: the artboard measures the real viewport on first paint and zooms to frame Page 1 exactly — no clipped pages on 1280×800 laptops.
-- **Works on GitHub Pages**: Cloud AI (Pollinations), Iconify and Wikimedia are called directly from production builds (all CORS-enabled); Clipart.Free can use an optional CORS proxy. See [docs/static-hosting.md](docs/static-hosting.md) and [`workers/clipart-proxy.js`](workers/clipart-proxy.js).
+- **Works on GitHub Pages and Vercel**: Cloud AI (Pollinations), Iconify, Wikimedia and Openverse are called directly from production builds (all CORS-enabled); Clipart.Free can use an optional CORS proxy. See [docs/static-hosting.md](docs/static-hosting.md) and [`workers/clipart-proxy.js`](workers/clipart-proxy.js).
+- **Vercel**: the `studiopress` project builds fine (`npm run build` → `dist/`), but push-to-deploy is disabled and Deployment Protection gates non-production URLs behind a Vercel login — see the [Vercel checklist](docs/static-hosting.md#vercel-checklist-project-studiopress) before assuming the deployment is broken.
 
 ---
 

@@ -92,3 +92,60 @@ Prefer Vercel? Create `api/clipart-free/[...path].js` that forwards to
   `dist/`.
 - `dist/` is git-ignored — only the Actions artifact is published.
 - Deep links are irrelevant (single screen app), so no SPA 404 shim needed.
+
+## Vercel checklist (project `studiopress`)
+
+The project is `studiopress` in team `jorzyrockz-cryptos-projects`
+(`prj_urOoVH6gb6XuFziG0t1fAsczqRe3`), linked to
+`github.com/jorzyrockz-crypto/Publisher`, framework preset **Vite**, build
+command `npm run build` (`tsc -b && vite build`), output `dist/`, Node 26.x.
+The build itself is fine — three subtle project settings are what make the
+deployment *look* broken:
+
+1. **Push-to-deploy is off.**
+   `gitProviderOptions.createDeployments = "disabled"` and
+   `disableRepositoryDispatchEvents = true`, so no commit ever triggers a
+   build and the site silently keeps the last imported commit forever.
+   Fix in the dashboard: *Project → Settings → Git → enable automatic
+   deployments for the repository* (or reconnect the GitHub app).
+2. **Production branch mismatch.** Vercel tracks `main`, but this repo's
+   default branch is `master` (and feature work happens on
+   `arena/*` branches). Fix under *Settings → Git → Production Branch →
+   `master`*, otherwise even a re-enabled integration would promote the wrong
+   branch.
+3. **Deployment Protection hides non-production URLs.**
+   `ssoProtection = { deploymentType: "all_except_custom_domains" }` sends
+   every preview/branch URL to `vercel.com/login` ("Protected Deployment –
+   Vercel"), which reads exactly like a broken app when a link is opened
+   outside the owner's browser. Production aliases (`studiopress-blue.vercel.app`)
+   stay public; if previews must be shareable, set
+   *Settings → Deployment Protection → Vercel Authentication → Disabled* (or
+   *Standard Protection*) and note that any custom domain is exempt.
+
+### Shipping a fix while push-to-deploy is off
+
+Build the branch straight from git — no token or local CLI needed:
+
+```js
+create_deployment({
+  project: 'prj_urOoVH6gb6XuFziG0t1fAsczqRe3',
+  team_id: 'team_eA9LcgxPsThx7dVBiXwEqUen',
+  git_source: { type: 'github', repoId: '1473150842', ref: '<branch>' },
+  target: 'production',   // omit for a preview
+})
+```
+
+Verify the promotion by matching the CSS hash in `dist/index.html` against
+`https://studiopress-blue.vercel.app/assets/index-<hash>.css` — a 200 with the
+same hash proves the live site is your commit.
+
+### Why the static build behaves differently from `npm run dev`
+
+Vercel serves `dist/` only: there is no dev server, so every `/api/*` rewrite
+in `vite.config.ts` (`/api/pollinations`, `/api/clipart-free`,
+`/api/wikimedia-*`) is **404**. The app therefore calls
+`image.pollinations.ai`, `commons.wikimedia.org`, `api.iconify.design` and
+`api.openverse.org` directly (all CORS-enabled) and resolves Clipart.Free
+through `src/utils/apiEndpoints.ts` (browser-first candidate order). Anything
+that still needs a same-origin proxy must be pointed at the Cloudflare Worker,
+never at `/api/…`.
