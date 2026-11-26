@@ -17,7 +17,7 @@ const GROUPS: ShortcutGroup[] = [
     title: 'File & Export',
     rows: [
       { keys: ['Ctrl', 'S'], label: 'Save publication (.pub)' },
-      { keys: ['Ctrl', 'P'], label: 'Print / Save as PDF' },
+      { keys: ['Ctrl', 'P'], label: 'Open Print publication settings' },
       { keys: ['Ctrl', 'K'], label: 'Command search' },
       { keys: ['?'], label: 'This shortcuts cheatsheet' },
     ],

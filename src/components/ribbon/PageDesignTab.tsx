@@ -23,7 +23,7 @@ export const PageDesignTab: React.FC = () => {
     setPageMargins,
     setPageBackgroundColor,
     setColorScheme,
-    setIsBackstageOpen,
+    openBackstage,
     setIsBrandBoardModalOpen,
     setIsBrandKitModalOpen,
     activeBrandKit,
@@ -47,7 +47,7 @@ export const PageDesignTab: React.FC = () => {
       <div className="flex flex-col justify-between h-full py-1 pr-2 border-r border-[#e5e9ee] flex-shrink-0">
         <div className="my-auto flex items-center gap-1">
           <button
-            onClick={() => setIsBackstageOpen(true)}
+            onClick={() => openBackstage('new')}
             className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#f4f2ff] hover:text-[#5c4bb8] active:scale-95 rounded-[8px] text-xs font-medium text-[#161a22] transition-all cursor-pointer"
             title="Browse Templates"
           >

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
+﻿import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import {
   DocumentProject,
   Page,
@@ -18,6 +18,7 @@ import {
   QRElement,
   ConnectorElement,
   ShapeType,
+  BackstageSection,
 } from '../types/publisher';
 import { buildMergedPartFromShape } from '../utils/shapePaths';
 import { TEMPLATES } from '../constants/templates';
@@ -41,6 +42,9 @@ interface PublisherContextType {
   pan: { x: number; y: number };
   activeTab: 'home' | 'insert' | 'page-design' | 'mailings' | 'view';
   isBackstageOpen: boolean;
+  /** Active File (Backstage) section — shared so any button can deep-link. */
+  backstageSection: BackstageSection;
+  setBackstageSection: (section: BackstageSection) => void;
   isMailMergeOpen: boolean;
   isWordArtModalOpen: boolean;
   isBuildingBlocksModalOpen: boolean;
@@ -99,6 +103,8 @@ interface PublisherContextType {
   padToBookletMultiple: () => void;
   setActiveTab: (tab: 'home' | 'insert' | 'page-design' | 'mailings' | 'view') => void;
   setIsBackstageOpen: (open: boolean) => void;
+  /** Opens the File view on a specific section (e.g. 'print'). */
+  openBackstage: (section?: BackstageSection) => void;
   setIsMailMergeOpen: (open: boolean) => void;
   setIsWordArtModalOpen: (open: boolean) => void;
   setIsBuildingBlocksModalOpen: (open: boolean) => void;
@@ -364,6 +370,14 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const [activeTab, setActiveTab] = useState<'home' | 'insert' | 'page-design' | 'mailings' | 'view'>('home');
   const [isBackstageOpen, setIsBackstageOpen] = useState(false);
+  // The File view section lives here so the toolbar, ribbon and status bar can
+  // deep-link straight to Print / Export / New without prop drilling.
+  const [backstageSection, setBackstageSection] = useState<BackstageSection>('new');
+
+  const openBackstage = useCallback((section?: BackstageSection) => {
+    if (section) setBackstageSection(section);
+    setIsBackstageOpen(true);
+  }, []);
   const [tarpapelOverlayVisible, setTarpapelOverlayVisible] = useState(false);
   const [printSettings, setPrintSettings] = useState<PrintSettings>(DEFAULT_PRINT_SETTINGS);
   const [isMailMergeOpen, setIsMailMergeOpen] = useState(false);
@@ -2409,6 +2423,8 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         pan,
         activeTab,
         isBackstageOpen,
+        backstageSection,
+        setBackstageSection,
         isMailMergeOpen,
         isWordArtModalOpen,
         isBuildingBlocksModalOpen,
@@ -2472,6 +2488,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         padToBookletMultiple,
         setActiveTab,
         setIsBackstageOpen,
+        openBackstage,
         setIsMailMergeOpen,
         setIsWordArtModalOpen,
         setIsBuildingBlocksModalOpen,

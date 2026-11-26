@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+﻿import React, { useRef, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
 import { TEMPLATES, TemplateDefinition } from '../../constants/templates';
 import { ElementRenderer } from '../canvas/ElementRenderer';
@@ -159,6 +159,8 @@ export const BackstageModal: React.FC = () => {
     project,
     activePage,
     isBackstageOpen,
+    backstageSection,
+    setBackstageSection,
     setIsBackstageOpen,
     loadTemplate,
     setProject,
@@ -173,9 +175,10 @@ export const BackstageModal: React.FC = () => {
     matchPageToTarpapelRatio,
   } = usePublisher();
 
-  const [activeSection, setActiveSection] = useState<
-    'info' | 'new' | 'open' | 'save' | 'print' | 'export'
-  >('new');
+  // Section is owned by the context so e.g. the toolbar Print button can jump
+  // straight to File ▸ Print even when the File view is closed.
+  const activeSection = backstageSection;
+  const setActiveSection = setBackstageSection;
   const [templateGroupFilter, setTemplateGroupFilter] = useState<string>('All');
   const [templateSearch, setTemplateSearch] = useState<string>('');
   const [previewTemplate, setPreviewTemplate] = useState<TemplateDefinition | null>(null);

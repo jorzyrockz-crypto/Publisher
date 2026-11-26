@@ -120,7 +120,7 @@ cheatsheet with a live filter.
 | Shortcut | Action |
 | --- | --- |
 | `Ctrl + S` | Save publication (`.pub`) |
-| `Ctrl + P` | Print / Save as PDF |
+| `Ctrl + P` | Open **File ▸ Print Publication** |
 | `Ctrl + K` | Command search |
 | `Ctrl + Z` / `Ctrl + Y` | Undo / Redo |
 | `Ctrl + C` / `Ctrl + V` | Copy / Paste |

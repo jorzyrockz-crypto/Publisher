@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
-import { saveProjectToFile, triggerPrint } from '../../utils/imageExport';
+import { saveProjectToFile } from '../../utils/imageExport';
 import { exportToPdf } from '../../utils/pdfExport';
 import { openShortcutsModal } from '../../utils/uiEvents';
 import {
@@ -31,6 +31,7 @@ export const QuickAccessToolbar: React.FC = () => {
     setIsEditingMaster,
     setIsMailMergeOpen,
     setIsWordArtModalOpen,
+    openBackstage,
   } = usePublisher();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -53,13 +54,15 @@ export const QuickAccessToolbar: React.FC = () => {
         e.preventDefault();
         saveProjectToFile(project);
       } else if (key === 'p') {
+        // Print publication: open the File ▸ Print tab rather than the bare
+        // browser dialog, so page ranges / booklet / bleed settings are reachable.
         e.preventDefault();
-        triggerPrint();
+        openBackstage('print');
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [project]);
+  }, [project, openBackstage]);
 
   const quickActions = [
     { label: 'Add Text Box', icon: 'T', action: () => addTextBox() },
@@ -207,9 +210,10 @@ export const QuickAccessToolbar: React.FC = () => {
         </button>
 
         <button
-          onClick={triggerPrint}
+          onClick={() => openBackstage('print')}
           className="p-1.5 hover:bg-[#f4f2ff] text-[#4a5661] hover:text-[#5c4bb8] active:scale-95 rounded-[8px] transition-all cursor-pointer"
-          title="Print Document"
+          title="Print publication — opens File ▸ Print (Ctrl+P)"
+          aria-label="Print publication"
         >
           <Printer size={16} />
         </button>
