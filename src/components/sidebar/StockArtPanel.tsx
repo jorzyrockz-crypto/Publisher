@@ -41,6 +41,14 @@ import {
   unsplashCreditUrl,
 } from '../../utils/unsplashSearch';
 import {
+  PexelsItem,
+  PexelsNotConfiguredError,
+  PexelsOrientation,
+  PEXELS_PROXY_HINT,
+  fetchPexelsAsDataUrl,
+  searchPexels,
+} from '../../utils/pexelsSearch';
+import {
   PixabayItem,
   PixabayImageType,
   PixabayNotConfiguredError,
@@ -69,7 +77,8 @@ type StockSourceFilter =
   | 'openverse'
   | 'pixabay'
   | 'unsplash'
-  | 'openart';
+  | 'openart'
+  | 'pexels';
 
 interface UnifiedStockItem {
   uid: string;
@@ -81,7 +90,8 @@ interface UnifiedStockItem {
     | 'openverse'
     | 'pixabay'
     | 'unsplash'
-    | 'openart';
+    | 'openart'
+    | 'pexels';
   sourceLabel: string;
   title: string;
   thumbUrl: string;
@@ -96,6 +106,7 @@ interface UnifiedStockItem {
   rawPixabay?: PixabayItem;
   rawUnsplash?: UnsplashItem;
   rawOpenAccess?: OpenAccessItem;
+  rawPexels?: PexelsItem;
   /** Photographer credit — required wherever Pixabay results are shown. */
   credit?: string;
 }
@@ -191,6 +202,13 @@ const PIXABAY_SHAPE_OPTIONS = [
   { id: 'vertical', label: 'Portrait' },
 ] as const;
 
+const PEXELS_SHAPE_OPTIONS = [
+  { id: 'all', label: 'Any' },
+  { id: 'landscape', label: 'Landscape' },
+  { id: 'portrait', label: 'Portrait' },
+  { id: 'square', label: 'Square' },
+] as const;
+
 const UNSPLASH_SHAPE_OPTIONS = [
   { id: 'all', label: 'Any' },
   { id: 'landscape', label: 'Landscape' },
@@ -263,6 +281,18 @@ export const StockArtPanel: React.FC = () => {
   const [oaPage, setOaPage] = useState(1);
   const [oaLoadingMore, setOaLoadingMore] = useState(false);
 
+  // Pexels: key lives on the server, exactly like Pixabay. 200 requests/hour on
+  // the free tier, which is why the relay caches and the panel asks for a page at
+  // a time.
+  const [pxItems, setPxItems] = useState<UnifiedStockItem[]>([]);
+  const [pxOrientation, setPxOrientation] = useState<PexelsOrientation>('all');
+  const [pxPage, setPxPage] = useState(1);
+  const [pxTotal, setPxTotal] = useState(0);
+  const [pxLoadingMore, setPxLoadingMore] = useState(false);
+  // Set when the deployment has no PEXELS_API_KEY: a quiet notice, because a
+  // missing key in a fresh deployment is a setup step, not a failure.
+  const [pexelsUnavailable, setPexelsUnavailable] = useState(false);
+
   const [loadingSources, setLoadingSources] = useState({
     clipartfree: false,
     iconify: false,
@@ -271,6 +301,7 @@ export const StockArtPanel: React.FC = () => {
     pixabay: false,
     unsplash: false,
     openart: false,
+    pexels: false,
   });
   const [sourceErrors, setSourceErrors] = useState<string[]>([]);
   // Sources the user chose not to retry (persisted), e.g. because the host has
@@ -290,6 +321,7 @@ export const StockArtPanel: React.FC = () => {
   const pbAbortRef = useRef<AbortController | null>(null);
   const unAbortRef = useRef<AbortController | null>(null);
   const oaAbortRef = useRef<AbortController | null>(null);
+  const pxAbortRef = useRef<AbortController | null>(null);
   const hasAutoSearchedRef = useRef(false);
 
   const setSourceDisabled = (source: string, disabled: boolean) => {
@@ -450,6 +482,70 @@ export const StockArtPanel: React.FC = () => {
       });
   };
 
+  const pxEnabled = !disabledSources.includes('pexels');
+
+  const mapPexelsItems = (items: PexelsItem[]): UnifiedStockItem[] =>
+    items.map((item) => ({
+      uid: `px-${item.id}`,
+      source: 'pexels' as const,
+      sourceLabel: 'Pexels',
+      title: item.title,
+      thumbUrl: item.thumbUrl,
+      isSvg: false,
+      width: item.width,
+      height: item.height,
+      rawPexels: item,
+      credit: item.photographer,
+    }));
+
+  /** Runs only the Pexels leg — used by its shape chips and pagination. */
+  const runPexelsSearch = (q: string, page = 1, keepItems = false, signal?: AbortSignal) => {
+    if (!pxEnabled || !q) {
+      setPxItems([]);
+      setPxTotal(0);
+      setLoadingSources((prev) => ({ ...prev, pexels: false }));
+      return;
+    }
+    if (!signal) {
+      pxAbortRef.current?.abort();
+      const controller = new AbortController();
+      pxAbortRef.current = controller;
+      signal = controller.signal;
+    }
+    if (page === 1) setLoadingSources((s) => ({ ...s, pexels: true }));
+    else setPxLoadingMore(true);
+
+    searchPexels(q, { page, perPage: 18, orientation: pxOrientation, signal })
+      .then((res) => {
+        if (signal?.aborted) return;
+        setPexelsUnavailable(false);
+        setPxTotal(res.total);
+        setPxPage(page);
+        const next = mapPexelsItems(res.items);
+        setPxItems((prev) => {
+          if (!keepItems || page === 1) return next;
+          const seen = new Set(prev.map((i) => i.uid));
+          return [...prev, ...next.filter((i) => !seen.has(i.uid))];
+        });
+      })
+      .catch((err) => {
+        if (signal?.aborted) return;
+        if (err instanceof PexelsNotConfiguredError) {
+          setPexelsUnavailable(true);
+          setPxItems([]);
+          setPxTotal(0);
+          return;
+        }
+        if (page === 1) setPxItems([]);
+        setSourceErrors((prev) => [...prev, `Pexels: ${err instanceof Error ? err.message : 'Error'}`]);
+      })
+      .finally(() => {
+        if (signal?.aborted) return;
+        setLoadingSources((s) => ({ ...s, pexels: false }));
+        setPxLoadingMore(false);
+      });
+  };
+
   const runOpenAccessSearch = (q: string, page = 1, keepItems = false, signal?: AbortSignal) => {
     if (!q) {
       setOaItems([]);
@@ -538,6 +634,7 @@ export const StockArtPanel: React.FC = () => {
       pixabay: pbEnabled,
       unsplash: unEnabled,
       openart: true,
+      pexels: pxEnabled,
     });
 
     // 1. Built-in (instant local filter)
@@ -699,6 +796,10 @@ export const StockArtPanel: React.FC = () => {
     // 8. Public-domain museum art — keyless, CC0, and the best source in the
     // panel for engravings, ornaments and botanical plates.
     runOpenAccessSearch(q, 1, false, controller.signal);
+
+    // 9. Pexels — free photos through the relay. Quietly absent until the
+    // deployment has a PEXELS_API_KEY.
+    runPexelsSearch(q, 1, false, controller.signal);
   };
 
   // Auto-run initial unified search when the panel first opens, and reactively debounce live typing
@@ -729,6 +830,7 @@ export const StockArtPanel: React.FC = () => {
         pbItems,
         unItems,
         oaItems,
+        pxItems,
       ];
       const maxLen = Math.max(...buckets.map((b) => b.length), 0);
       for (let i = 0; i < maxLen; i++) {
@@ -750,6 +852,8 @@ export const StockArtPanel: React.FC = () => {
       list = unItems;
     } else if (sourceFilter === 'openart') {
       list = oaItems;
+    } else if (sourceFilter === 'pexels') {
+      list = pxItems;
     } else {
       list = wikiItems;
     }
@@ -769,6 +873,7 @@ export const StockArtPanel: React.FC = () => {
     pbItems,
     unItems,
     oaItems,
+    pxItems,
   ]);
 
   const isAnyLoading =
@@ -778,7 +883,8 @@ export const StockArtPanel: React.FC = () => {
     loadingSources.openverse ||
     loadingSources.pixabay ||
     loadingSources.unsplash ||
-    loadingSources.openart;
+    loadingSources.openart ||
+    loadingSources.pexels;
 
   const handleInsertItem = async (item: UnifiedStockItem, asSticker = false) => {
     setInsertingUid(item.uid);
@@ -794,6 +900,9 @@ export const StockArtPanel: React.FC = () => {
         dataUrl = await fetchWikimediaAsDataUrl(item.rawWikimedia);
       } else if (item.source === 'openverse' && item.rawOpenverse) {
         dataUrl = await fetchOpenverseAsDataUrl(item.rawOpenverse);
+      } else if (item.source === 'pexels' && item.rawPexels) {
+        // Bytes, not a hotlink: the document must keep working without Pexels.
+        dataUrl = await fetchPexelsAsDataUrl(item.rawPexels);
       } else if (item.source === 'openart' && item.rawOpenAccess) {
         dataUrl = await fetchOpenAccessAsDataUrl(item.rawOpenAccess);
       } else if (item.source === 'unsplash' && item.rawUnsplash) {
@@ -812,7 +921,10 @@ export const StockArtPanel: React.FC = () => {
       const maxDim =
         asSticker
           ? 180
-          : item.source === 'pixabay' || item.source === 'unsplash' || item.source === 'openart'
+          : item.source === 'pixabay' ||
+              item.source === 'unsplash' ||
+              item.source === 'openart' ||
+              item.source === 'pexels'
             ? 280
             : 220;
       const ratio = item.width && item.height ? item.width / item.height : 1;
@@ -874,7 +986,8 @@ export const StockArtPanel: React.FC = () => {
     ovItems.length +
     pbItems.length +
     unItems.length +
-    oaItems.length;
+    oaItems.length +
+    pxItems.length;
 
   return (
     <aside
@@ -903,7 +1016,7 @@ export const StockArtPanel: React.FC = () => {
               Stock Art & Clipart
             </h3>
             <p className="text-[10px] text-[#5b6673] leading-tight">
-              Unified search across 8 sources
+              Unified search across 9 sources
             </p>
           </div>
         </div>
@@ -1084,6 +1197,10 @@ export const StockArtPanel: React.FC = () => {
                   : `Uns (${unItems.length})`,
               },
               { id: 'openart', label: `Art (${oaItems.length})` },
+              {
+                id: 'pexels',
+                label: disabledSources.includes('pexels') ? 'Pex (off)' : `Pex (${pxItems.length})`,
+              },
             ] as const
           ).map((tab) => (
             <button
@@ -1143,6 +1260,32 @@ export const StockArtPanel: React.FC = () => {
                 className="font-semibold text-[#5c4bb8] hover:underline"
               >
                 Powered by Pixabay
+              </a>
+            </p>
+          </div>
+        )}
+
+        {/* Pexels' shape filter. The API guidelines require a visible link back
+            to Pexels wherever its results are shown. */}
+        {sourceFilter === 'pexels' && (
+          <div className="space-y-1.5 pt-0.5">
+            <FilterChipRow
+              label="Shape"
+              options={PEXELS_SHAPE_OPTIONS}
+              value={pxOrientation}
+              onChange={(value) => {
+                setPxOrientation(value);
+                runPexelsSearch(query, 1);
+              }}
+            />
+            <p className="text-[9.5px] text-right">
+              <a
+                href="https://www.pexels.com/"
+                target="_blank"
+                rel="noreferrer noopener"
+                className="font-semibold text-[#5c4bb8] hover:underline"
+              >
+                Photos provided by Pexels
               </a>
             </p>
           </div>
@@ -1233,6 +1376,42 @@ export const StockArtPanel: React.FC = () => {
           </div>
         )}
 
+        {pexelsUnavailable && (sourceFilter === 'pexels' || sourceFilter === 'all') && (
+          <div className="p-1.5 rounded-[8px] bg-[#f8fafb] border border-[#e5e9ee] text-[10px] text-[#4a5661] flex items-start gap-1.5">
+            <AlertCircle size={12} className="flex-shrink-0 mt-0.5 text-[#8a8fa3]" />
+            <div className="flex-1 min-w-0 space-y-1">
+              <span className="block leading-snug">{PEXELS_PROXY_HINT}</span>
+              <div className="flex items-center gap-1.5">
+                <a
+                  href="https://www.pexels.com/api/"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="px-1.5 py-0.5 rounded-[5px] bg-white border border-[#e5e9ee] font-semibold hover:bg-[#f4f2ff] transition"
+                >
+                  Get a free key
+                </a>
+                <button
+                  type="button"
+                  onClick={() => runPexelsSearch(query, 1)}
+                  className="px-1.5 py-0.5 rounded-[5px] bg-white border border-[#e5e9ee] font-semibold hover:bg-[#f4f2ff] transition cursor-pointer"
+                >
+                  Retry
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSourceDisabled('pexels', true);
+                    setPexelsUnavailable(false);
+                  }}
+                  className="px-1.5 py-0.5 rounded-[5px] bg-white border border-[#e5e9ee] font-semibold hover:bg-[#f4f2ff] transition cursor-pointer"
+                >
+                  Hide
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {pixabayUnavailable && (sourceFilter === 'pixabay' || sourceFilter === 'all') && (
           <div className="p-1.5 rounded-[8px] bg-[#f8fafb] border border-[#e5e9ee] text-[10px] text-[#4a5661] flex items-start gap-1.5">
             <AlertCircle size={12} className="flex-shrink-0 mt-0.5 text-[#8a8fa3]" />
@@ -1317,6 +1496,7 @@ export const StockArtPanel: React.FC = () => {
                 loadingSources.pixabay && 'Pixabay',
                 loadingSources.unsplash && 'Unsplash',
                 loadingSources.openart && 'Museum art',
+                loadingSources.pexels && 'Pexels',
               ]
                 .filter(Boolean)
                 .join(', ')}
@@ -1378,6 +1558,8 @@ export const StockArtPanel: React.FC = () => {
                             ? 'bg-neutral-900 text-white'
                             : item.source === 'openart'
                             ? 'bg-teal-100 text-teal-800'
+                            : item.source === 'pexels'
+                            ? 'bg-emerald-100 text-emerald-800'
                             : 'bg-amber-100 text-amber-800'
                         }`}
                       >
@@ -1391,6 +1573,8 @@ export const StockArtPanel: React.FC = () => {
                           ? 'Uns'
                           : item.source === 'openart'
                           ? 'Art'
+                          : item.source === 'pexels'
+                          ? 'Pex'
                           : item.sourceLabel}
                       </span>
                       {item.isSvg && (
@@ -1448,6 +1632,30 @@ export const StockArtPanel: React.FC = () => {
                     Pixabay
                   </a>
                   , used under the Pixabay Content License. Search results are cached for 24 hours.
+                </>
+              }
+            />
+          )}
+
+          {sourceFilter === 'pexels' && pxItems.length > 0 && (
+            <ResultPaging
+              total={pxTotal}
+              page={pxPage}
+              perPage={18}
+              loading={pxLoadingMore}
+              onMore={() => runPexelsSearch(query, pxPage + 1, true)}
+              credit={
+                <>
+                  Free photos under the{' '}
+                  <a
+                    href="https://www.pexels.com/license/"
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="font-semibold text-[#5c4bb8] hover:underline"
+                  >
+                    Pexels License
+                  </a>
+                  .
                 </>
               }
             />

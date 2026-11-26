@@ -17,6 +17,7 @@ on GitHub Pages.
 | Unsplash (stock photos) | same function as production (`api/unsplash.js`) | ⚠ needs the serverless relay for search only — see below |
 | AI Type Studio (headline ideas) | same function as production (`api/ai.js`) | ⚠ needs the serverless relay — see below |
 | Museum art (AIC + Cleveland) | same function as production (`api/openaccess.js`) | ⚠ needs the serverless relay — see below |
+| Pexels photos | same function as production (`api/pexels.js`) | ⚠ needs the relay + `PEXELS_API_KEY` |
 
 Every resolver returns an ordered candidate list, so a failed request silently
 falls through to the next strategy instead of breaking the search.
@@ -176,6 +177,34 @@ credits both museums under the results anyway.
 Rejected candidates, for the record: Openclipart's `format=json` endpoint now
 returns HTML (scraping only), the Met's collection API refused automated
 requests during review, and Pexels/Europeana/Smithsonian all need keys.
+
+## Pexels
+
+Free photos under the Pexels License, with the largest catalogue of the keyed
+sources. Needs a key — free, instant, no card:
+
+1. https://www.pexels.com/api/ → **Get Started** → copy the key.
+2. Vercel → project → Settings → Environment Variables → `PEXELS_API_KEY`
+   (type *sensitive*, targets **Production** and **Preview**).
+3. Redeploy. `GET /api/pexels?mode=diag&probe=1` should report
+   `{"configured":true,"upstreamStatus":200,"quota":{…}}`.
+
+```
+GET /api/pexels?mode=search&q=cat&page=1&per_page=18&orientation=landscape
+GET /api/pexels?mode=curated&page=1
+GET /api/pexels?mode=image&url=https%3A%2F%2Fimages.pexels.com%2F…
+GET /api/pexels?mode=diag[&probe=1]
+```
+
+Without the key the relay answers `503 {code:"not_configured"}` and the panel
+shows a quiet "Get a free key / Retry / Hide" notice — the other eight sources
+keep working.
+
+Quota is 200 requests/hour and 20,000/month, so search responses are cached one
+hour at the edge and `mode=diag&probe=1` reports `X-Ratelimit-Remaining`.
+Inserts are built from the original with `w=1600` and relayed as bytes; the API
+guidelines require a visible "Photos provided by Pexels" link, which the panel
+renders under the results, and photographer credit on each card.
 
 ### 2. Other static hosts (GitHub Pages, S3…)
 
