@@ -177,6 +177,18 @@ const TextRenderer: React.FC<{
     fontWeight: element.fontWeight,
     fontStyle: element.fontStyle,
     textDecoration: element.textDecoration,
+    textTransform: element.textTransform || 'none',
+    fontVariant: element.fontVariant || 'normal',
+    letterSpacing: element.letterSpacing ? `${element.letterSpacing}px` : undefined,
+    wordSpacing: element.wordSpacing ? `${element.wordSpacing}px` : undefined,
+    textIndent: element.textIndent ? `${element.textIndent}px` : undefined,
+    WebkitTextStroke: element.textStrokeWidth
+      ? `${element.textStrokeWidth}px ${element.textStrokeColor || '#000000'}`
+      : undefined,
+    textShadow: element.shadow
+      ? `2px 3px ${element.shadowBlur ?? 6}px ${element.shadowColor || 'rgba(0,0,0,0.35)'}`
+      : undefined,
+    transform: element.baselineShift ? `translateY(${-element.baselineShift}px)` : undefined,
     textAlign: element.textAlign,
     lineHeight: element.lineHeight,
     columnCount: element.columns,

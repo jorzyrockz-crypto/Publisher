@@ -87,6 +87,7 @@ export const PropertiesPanel: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const shapePickerBtnRef = useRef<HTMLButtonElement>(null);
   const [isShapePickerOpen, setIsShapePickerOpen] = useState(false);
+  const [typoTab, setTypoTab] = useState<'character' | 'paragraph' | 'effects'>('character');
 
   const elementsPool = isEditingMaster
     ? project.masterPage?.elements || []
@@ -524,218 +525,687 @@ export const PropertiesPanel: React.FC = () => {
           </div>
         )}
 
-        {/* Case 2: Text Frame Properties */}
-        {selectedElement && selectedElement.type === 'text' && (
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3.5 shadow-2xs">
-            <div className="font-bold text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-100">
-              <Type size={14} className="text-emerald-700" />
-              <span>Typography</span>
-            </div>
-
-            {/* Font Family */}
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-500 mb-1.5">
-                Font Family
-              </label>
-              <FontSelector
-                value={(selectedElement as TextElement).fontFamily}
-                onChange={(fontFamily) =>
-                  updateElement(selectedElement.id, { fontFamily })
-                }
-                className="w-full rounded-xl px-2.5 py-1.5"
-              />
-            </div>
-
-            {/* Font Size & Color */}
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-500 mb-1.5">
-                  Size
-                </label>
-                <input
-                  type="number"
-                  min={8}
-                  max={120}
-                  className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-medium transition text-center"
-                  value={(selectedElement as TextElement).fontSize}
-                  onChange={(e) =>
-                    updateElement(selectedElement.id, {
-                      fontSize: Number(e.target.value),
-                    })
-                  }
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-500 mb-1.5">
-                  Color
-                </label>
-                <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
-                  <input
-                    type="color"
-                    className="w-6 h-6 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0 shadow-2xs"
-                    value={(selectedElement as TextElement).color}
-                    onChange={(e) =>
-                      updateElement(selectedElement.id, { color: e.target.value })
-                    }
-                  />
-                  <span className="font-mono text-[10px] text-slate-600 font-semibold truncate">
-                    {(selectedElement as TextElement).color}
-                  </span>
+        {/* Case 2: Text Frame Properties (Adobe-style Character, Paragraph & Effects) */}
+        {selectedElement && selectedElement.type === 'text' && (() => {
+          const textEl = selectedElement as TextElement;
+          return (
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3.5 shadow-2xs">
+              <div className="font-bold text-slate-800 flex items-center justify-between pb-2 border-b border-slate-100">
+                <div className="flex items-center gap-1.5">
+                  <Type size={14} className="text-emerald-700" />
+                  <span>Typography</span>
                 </div>
+                <span className="text-[10px] font-medium text-slate-400">Adobe Pro</span>
               </div>
-            </div>
 
-            {/* Alignment & Style Buttons */}
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-500 mb-1.5">
-                Alignment & Format
-              </label>
-              <div className="flex items-center justify-between bg-slate-100/80 p-1 rounded-xl border border-slate-200/60">
-                {(['left', 'center', 'right', 'justify'] as const).map((align) => (
+              {/* Adobe-style Panel Switcher: Character | Paragraph | Frame */}
+              <div className="grid grid-cols-3 gap-1 bg-slate-100/90 p-1 rounded-xl border border-slate-200/60">
+                {(
+                  [
+                    { id: 'character', label: 'Character' },
+                    { id: 'paragraph', label: 'Paragraph' },
+                    { id: 'effects', label: 'Effects' },
+                  ] as const
+                ).map((tab) => (
                   <button
-                    key={align}
-                    onClick={() => updateElement(selectedElement.id, { textAlign: align })}
-                    className={`p-1.5 rounded-lg transition-all ${
-                      (selectedElement as TextElement).textAlign === align
-                        ? 'bg-white shadow-xs text-emerald-800'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                    }`}
-                  >
-                    {align === 'left' && <AlignLeft size={13} />}
-                    {align === 'center' && <AlignCenter size={13} />}
-                    {align === 'right' && <AlignRight size={13} />}
-                    {align === 'justify' && <AlignJustify size={13} />}
-                  </button>
-                ))}
-                <div className="w-[1px] h-4 bg-slate-300 mx-0.5" />
-                <button
-                  onClick={() =>
-                    updateElement(selectedElement.id, {
-                      fontWeight:
-                        (selectedElement as TextElement).fontWeight === 'bold' ? 'normal' : 'bold',
-                    })
-                  }
-                  className={`p-1.5 rounded-lg transition-all ${
-                    (selectedElement as TextElement).fontWeight === 'bold'
-                      ? 'bg-white shadow-xs text-emerald-800 font-bold'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                  }`}
-                >
-                  <Bold size={13} />
-                </button>
-                <button
-                  onClick={() =>
-                    updateElement(selectedElement.id, {
-                      fontStyle:
-                        (selectedElement as TextElement).fontStyle === 'italic'
-                          ? 'normal'
-                          : 'italic',
-                    })
-                  }
-                  className={`p-1.5 rounded-lg transition-all ${
-                    (selectedElement as TextElement).fontStyle === 'italic'
-                      ? 'bg-white shadow-xs text-emerald-800'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                  }`}
-                >
-                  <Italic size={13} />
-                </button>
-                <button
-                  onClick={() =>
-                    updateElement(selectedElement.id, {
-                      textDecoration:
-                        (selectedElement as TextElement).textDecoration === 'underline'
-                          ? 'none'
-                          : 'underline',
-                    })
-                  }
-                  className={`p-1.5 rounded-lg transition-all ${
-                    (selectedElement as TextElement).textDecoration === 'underline'
-                      ? 'bg-white shadow-xs text-emerald-800'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                  }`}
-                >
-                  <Underline size={13} />
-                </button>
-              </div>
-            </div>
-
-            {/* Multi-Columns */}
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-500 mb-1.5">
-                Columns
-              </label>
-              <div className="grid grid-cols-3 gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60">
-                {([1, 2, 3] as const).map((col) => (
-                  <button
-                    key={col}
-                    onClick={() => updateElement(selectedElement.id, { columns: col })}
-                    className={`py-1 rounded-lg text-xs font-semibold transition-all ${
-                      (selectedElement as TextElement).columns === col
+                    key={tab.id}
+                    onClick={() => setTypoTab(tab.id)}
+                    className={`py-1 rounded-lg text-[11px] font-semibold transition-all ${
+                      typoTab === tab.id
                         ? 'bg-white text-emerald-800 shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    {col} {col === 1 ? 'Col' : 'Cols'}
+                    {tab.label}
                   </button>
                 ))}
               </div>
-            </div>
 
-            {/* Drop Cap Toggle */}
-            <div
-              onClick={() =>
-                updateElement(selectedElement.id, {
-                  dropCap: !(selectedElement as TextElement).dropCap,
-                })
-              }
-              className="flex items-center justify-between pt-1 cursor-pointer hover:opacity-90"
-            >
-              <div>
-                <span className="font-semibold text-slate-800">Drop Cap</span>
-                <p className="text-[10px] text-slate-400">Large decorative initial</p>
-              </div>
-              <div
-                className={`fluent-switch ${
-                  (selectedElement as TextElement).dropCap ? 'active' : ''
-                }`}
-              >
-                <div className="fluent-switch-knob" />
-              </div>
-            </div>
+              {typoTab === 'character' && (
+                <div className="space-y-3">
+                  {/* Font Family */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                      Font Family
+                    </label>
+                    <FontSelector
+                      value={textEl.fontFamily}
+                      onChange={(fontFamily) =>
+                        updateElement(textEl.id, { fontFamily })
+                      }
+                      className="w-full rounded-xl px-2.5 py-1.5"
+                    />
+                  </div>
 
-            {/* WordArt Style */}
-            <div className="pt-2 border-t border-slate-100">
-              <label className="block text-[11px] font-semibold text-slate-500 mb-1.5 flex items-center gap-1">
-                <Sparkles size={13} className="text-amber-500" />
-                <span>WordArt Styling</span>
-              </label>
-              <select
-                className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-medium transition cursor-pointer"
-                value={(selectedElement as TextElement).wordArtStyle || 'none'}
-                onChange={(e) => {
-                  const style = e.target.value as WordArtStyle;
-                  updateElement(selectedElement.id, {
-                    isWordArt: style !== 'none',
-                    wordArtStyle: style,
-                  });
-                }}
-              >
-                <option value="none">Standard Text</option>
-                <option value="gold3d">Gold 3D Extrusion</option>
-                <option value="rainbow">Rainbow Gradient</option>
-                <option value="outline">Cyan Bold Outline</option>
-                <option value="retro">Retro Pop 3D</option>
-                <option value="neon-glow">Neon Cyber Glow</option>
-                <option value="chrome">Chrome Metallic</option>
-                <option value="fire">Blazing Fire</option>
-                <option value="comic-pop">Comic Pop Art</option>
-                <option value="emerald-3d">Emerald 3D Block</option>
-                <option value="sunset-gradient">Sunset Vibe</option>
-              </select>
+                  {/* Font Weight & Size */}
+                  <div className="grid grid-cols-5 gap-2">
+                    <div className="col-span-3">
+                      <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                        Weight / Style
+                      </label>
+                      <select
+                        className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-medium transition cursor-pointer"
+                        value={textEl.fontWeight}
+                        onChange={(e) =>
+                          updateElement(textEl.id, {
+                            fontWeight: e.target.value as TextElement['fontWeight'],
+                          })
+                        }
+                      >
+                        <option value="300">Light (300)</option>
+                        <option value="normal">Regular (400)</option>
+                        <option value="500">Medium (500)</option>
+                        <option value="600">SemiBold (600)</option>
+                        <option value="bold">Bold (700)</option>
+                        <option value="800">ExtraBold (800)</option>
+                        <option value="900">Black (900)</option>
+                      </select>
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                        Size (px)
+                      </label>
+                      <input
+                        type="number"
+                        min={6}
+                        max={240}
+                        className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-medium transition text-center"
+                        value={textEl.fontSize}
+                        onChange={(e) =>
+                          updateElement(textEl.id, {
+                            fontSize: Math.max(6, Number(e.target.value) || 12),
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  {/* Leading (Line Height) & Tracking (Letter Spacing) */}
+                  <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
+                    <div>
+                      <div className="flex justify-between text-[10.5px] text-slate-500 font-semibold mb-1">
+                        <span title="Leading (Line Height)">A/A Leading</span>
+                        <span className="font-mono">{(textEl.lineHeight ?? 1.4).toFixed(2)}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0.75}
+                        max={3}
+                        step={0.05}
+                        value={textEl.lineHeight ?? 1.4}
+                        onChange={(e) =>
+                          updateElement(textEl.id, { lineHeight: Number(e.target.value) })
+                        }
+                        className="w-full accent-emerald-600 cursor-pointer"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex justify-between text-[10.5px] text-slate-500 font-semibold mb-1">
+                        <span title="Tracking (Letter Spacing)">VA Tracking</span>
+                        <span className="font-mono">{textEl.letterSpacing ?? 0}px</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={-4}
+                        max={24}
+                        step={0.5}
+                        value={textEl.letterSpacing ?? 0}
+                        onChange={(e) =>
+                          updateElement(textEl.id, { letterSpacing: Number(e.target.value) })
+                        }
+                        className="w-full accent-emerald-600 cursor-pointer"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Word Spacing & Baseline Shift */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <div className="flex justify-between text-[10.5px] text-slate-500 font-semibold mb-1">
+                        <span>Word Space</span>
+                        <span className="font-mono">{textEl.wordSpacing ?? 0}px</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={-4}
+                        max={24}
+                        step={1}
+                        value={textEl.wordSpacing ?? 0}
+                        onChange={(e) =>
+                          updateElement(textEl.id, { wordSpacing: Number(e.target.value) })
+                        }
+                        className="w-full accent-emerald-600 cursor-pointer"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex justify-between text-[10.5px] text-slate-500 font-semibold mb-1">
+                        <span>Baseline</span>
+                        <span className="font-mono">
+                          {(textEl.baselineShift ?? 0) > 0 ? `+${textEl.baselineShift}` : textEl.baselineShift ?? 0}px
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min={-16}
+                        max={16}
+                        step={1}
+                        value={textEl.baselineShift ?? 0}
+                        onChange={(e) =>
+                          updateElement(textEl.id, { baselineShift: Number(e.target.value) })
+                        }
+                        className="w-full accent-emerald-600 cursor-pointer"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Style & OpenType Case Buttons */}
+                  <div className="pt-1 border-t border-slate-100 space-y-1.5">
+                    <label className="block text-[10.5px] font-semibold text-slate-500">
+                      Format & Case
+                    </label>
+                    <div className="grid grid-cols-4 gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60">
+                      <button
+                        onClick={() =>
+                          updateElement(textEl.id, {
+                            fontWeight: textEl.fontWeight === 'bold' ? 'normal' : 'bold',
+                          })
+                        }
+                        title="Bold"
+                        className={`py-1 rounded-lg flex items-center justify-center transition ${
+                          textEl.fontWeight === 'bold' || textEl.fontWeight === '800' || textEl.fontWeight === '900'
+                            ? 'bg-white shadow-xs text-emerald-800 font-bold'
+                            : 'text-slate-600 hover:bg-white/60'
+                        }`}
+                      >
+                        <Bold size={13} />
+                      </button>
+                      <button
+                        onClick={() =>
+                          updateElement(textEl.id, {
+                            fontStyle: textEl.fontStyle === 'italic' ? 'normal' : 'italic',
+                          })
+                        }
+                        title="Italic"
+                        className={`py-1 rounded-lg flex items-center justify-center transition ${
+                          textEl.fontStyle === 'italic'
+                            ? 'bg-white shadow-xs text-emerald-800'
+                            : 'text-slate-600 hover:bg-white/60'
+                        }`}
+                      >
+                        <Italic size={13} />
+                      </button>
+                      <button
+                        onClick={() =>
+                          updateElement(textEl.id, {
+                            textDecoration:
+                              textEl.textDecoration === 'underline' ? 'none' : 'underline',
+                          })
+                        }
+                        title="Underline"
+                        className={`py-1 rounded-lg flex items-center justify-center transition ${
+                          textEl.textDecoration === 'underline'
+                            ? 'bg-white shadow-xs text-emerald-800'
+                            : 'text-slate-600 hover:bg-white/60'
+                        }`}
+                      >
+                        <Underline size={13} />
+                      </button>
+                      <button
+                        onClick={() =>
+                          updateElement(textEl.id, {
+                            textDecoration:
+                              textEl.textDecoration === 'line-through' ? 'none' : 'line-through',
+                          })
+                        }
+                        title="Strikethrough"
+                        className={`py-1 rounded-lg text-xs font-bold line-through transition ${
+                          textEl.textDecoration === 'line-through'
+                            ? 'bg-white shadow-xs text-emerald-800'
+                            : 'text-slate-600 hover:bg-white/60'
+                        }`}
+                      >
+                        S
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60">
+                      <button
+                        onClick={() =>
+                          updateElement(textEl.id, {
+                            textTransform:
+                              textEl.textTransform === 'uppercase' ? 'none' : 'uppercase',
+                            fontVariant: 'normal',
+                          })
+                        }
+                        title="All Caps (TT)"
+                        className={`py-1 rounded-lg text-[10.5px] font-bold transition ${
+                          textEl.textTransform === 'uppercase'
+                            ? 'bg-white shadow-xs text-emerald-800'
+                            : 'text-slate-600 hover:bg-white/60'
+                        }`}
+                      >
+                        TT
+                      </button>
+                      <button
+                        onClick={() =>
+                          updateElement(textEl.id, {
+                            fontVariant:
+                              textEl.fontVariant === 'small-caps' ? 'normal' : 'small-caps',
+                            textTransform: 'none',
+                          })
+                        }
+                        title="Small Caps"
+                        className={`py-1 rounded-lg text-[10.5px] font-bold transition ${
+                          textEl.fontVariant === 'small-caps'
+                            ? 'bg-white shadow-xs text-emerald-800'
+                            : 'text-slate-600 hover:bg-white/60'
+                        }`}
+                      >
+                        Tt<span className="text-[8px]">CAP</span>
+                      </button>
+                      <button
+                        onClick={() =>
+                          updateElement(textEl.id, {
+                            textTransform:
+                              textEl.textTransform === 'capitalize' ? 'none' : 'capitalize',
+                            fontVariant: 'normal',
+                          })
+                        }
+                        title="Title Case"
+                        className={`py-1 rounded-lg text-[10.5px] font-bold transition ${
+                          textEl.textTransform === 'capitalize'
+                            ? 'bg-white shadow-xs text-emerald-800'
+                            : 'text-slate-600 hover:bg-white/60'
+                        }`}
+                      >
+                        Aa
+                      </button>
+                      <button
+                        onClick={() =>
+                          updateElement(textEl.id, {
+                            textTransform:
+                              textEl.textTransform === 'lowercase' ? 'none' : 'lowercase',
+                            fontVariant: 'normal',
+                          })
+                        }
+                        title="Lowercase"
+                        className={`py-1 rounded-lg text-[10.5px] font-bold transition ${
+                          textEl.textTransform === 'lowercase'
+                            ? 'bg-white shadow-xs text-emerald-800'
+                            : 'text-slate-600 hover:bg-white/60'
+                        }`}
+                      >
+                        tt
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Fill Color & Text Stroke */}
+                  <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
+                    <div>
+                      <label className="block text-[10.5px] font-semibold text-slate-500 mb-1">
+                        Fill Color
+                      </label>
+                      <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
+                        <input
+                          type="color"
+                          className="w-6 h-6 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0"
+                          value={textEl.color}
+                          onChange={(e) =>
+                            updateElement(textEl.id, { color: e.target.value })
+                          }
+                        />
+                        <span className="font-mono text-[10px] text-slate-600 font-semibold truncate">
+                          {textEl.color}
+                        </span>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[10.5px] font-semibold text-slate-500 mb-1">
+                        Outline ({textEl.textStrokeWidth ?? 0}px)
+                      </label>
+                      <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
+                        <input
+                          type="color"
+                          className="w-6 h-6 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0"
+                          value={textEl.textStrokeColor || '#000000'}
+                          onChange={(e) =>
+                            updateElement(textEl.id, {
+                              textStrokeColor: e.target.value,
+                              textStrokeWidth: textEl.textStrokeWidth || 1,
+                            })
+                          }
+                        />
+                        <input
+                          type="number"
+                          min={0}
+                          max={8}
+                          step={0.5}
+                          value={textEl.textStrokeWidth ?? 0}
+                          onChange={(e) =>
+                            updateElement(textEl.id, {
+                              textStrokeWidth: Math.max(0, Number(e.target.value) || 0),
+                            })
+                          }
+                          className="w-full bg-transparent text-[11px] font-mono text-slate-700 outline-none text-center"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {typoTab === 'paragraph' && (
+                <div className="space-y-3">
+                  {/* Horizontal Alignment */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-500 mb-1.5">
+                      Horizontal Alignment
+                    </label>
+                    <div className="grid grid-cols-4 gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60">
+                      {(['left', 'center', 'right', 'justify'] as const).map((align) => (
+                        <button
+                          key={align}
+                          onClick={() => updateElement(textEl.id, { textAlign: align })}
+                          className={`py-1.5 rounded-lg flex items-center justify-center transition-all ${
+                            textEl.textAlign === align
+                              ? 'bg-white shadow-xs text-emerald-800'
+                              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                          }`}
+                        >
+                          {align === 'left' && <AlignLeft size={13} />}
+                          {align === 'center' && <AlignCenter size={13} />}
+                          {align === 'right' && <AlignRight size={13} />}
+                          {align === 'justify' && <AlignJustify size={13} />}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Vertical Frame Alignment */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-500 mb-1.5">
+                      Vertical Frame Alignment
+                    </label>
+                    <div className="grid grid-cols-3 gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60">
+                      {(['top', 'middle', 'bottom'] as const).map((vAlign) => (
+                        <button
+                          key={vAlign}
+                          onClick={() => updateElement(textEl.id, { verticalAlign: vAlign })}
+                          className={`py-1 rounded-lg text-[11px] font-semibold capitalize transition-all ${
+                            textEl.verticalAlign === vAlign
+                              ? 'bg-white text-emerald-800 shadow-xs'
+                              : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          {vAlign}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* First-Line Indent */}
+                  <div>
+                    <div className="flex justify-between text-[10.5px] text-slate-500 font-semibold mb-1">
+                      <span>First-Line Indent</span>
+                      <span className="font-mono">{textEl.textIndent ?? 0}px</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={64}
+                      step={2}
+                      value={textEl.textIndent ?? 0}
+                      onChange={(e) =>
+                        updateElement(textEl.id, { textIndent: Number(e.target.value) })
+                      }
+                      className="w-full accent-emerald-600 cursor-pointer"
+                    />
+                  </div>
+
+                  {/* Multi-Columns & Column Gap */}
+                  <div className="pt-1 border-t border-slate-100 space-y-2">
+                    <label className="block text-[11px] font-semibold text-slate-500">
+                      Columns & Gutter
+                    </label>
+                    <div className="grid grid-cols-3 gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60">
+                      {([1, 2, 3] as const).map((col) => (
+                        <button
+                          key={col}
+                          onClick={() => updateElement(textEl.id, { columns: col })}
+                          className={`py-1 rounded-lg text-xs font-semibold transition-all ${
+                            textEl.columns === col
+                              ? 'bg-white text-emerald-800 shadow-xs'
+                              : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          {col} {col === 1 ? 'Col' : 'Cols'}
+                        </button>
+                      ))}
+                    </div>
+                    {textEl.columns > 1 && (
+                      <div>
+                        <div className="flex justify-between text-[10px] text-slate-500 font-medium mb-0.5">
+                          <span>Column Gutter</span>
+                          <span>{textEl.columnGap ?? 16}px</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={4}
+                          max={48}
+                          value={textEl.columnGap ?? 16}
+                          onChange={(e) =>
+                            updateElement(textEl.id, { columnGap: Number(e.target.value) })
+                          }
+                          className="w-full accent-emerald-600 cursor-pointer"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Drop Cap Toggle */}
+                  <div
+                    onClick={() =>
+                      updateElement(textEl.id, { dropCap: !textEl.dropCap })
+                    }
+                    className="flex items-center justify-between pt-2 border-t border-slate-100 cursor-pointer hover:opacity-90"
+                  >
+                    <div>
+                      <span className="font-semibold text-slate-800">Drop Cap</span>
+                      <p className="text-[10px] text-slate-400">Large decorative initial</p>
+                    </div>
+                    <div className={`fluent-switch ${textEl.dropCap ? 'active' : ''}`}>
+                      <div className="fluent-switch-knob" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {typoTab === 'effects' && (
+                <div className="space-y-3">
+                  {/* WordArt Style */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-500 mb-1.5 flex items-center gap-1">
+                      <Sparkles size={13} className="text-amber-500" />
+                      <span>WordArt Styling</span>
+                    </label>
+                    <select
+                      className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-medium transition cursor-pointer"
+                      value={textEl.wordArtStyle || 'none'}
+                      onChange={(e) => {
+                        const style = e.target.value as WordArtStyle;
+                        updateElement(textEl.id, {
+                          isWordArt: style !== 'none',
+                          wordArtStyle: style,
+                        });
+                      }}
+                    >
+                      <option value="none">Standard Text</option>
+                      <option value="gold3d">Gold 3D Extrusion</option>
+                      <option value="rainbow">Rainbow Gradient</option>
+                      <option value="outline">Cyan Bold Outline</option>
+                      <option value="retro">Retro Pop 3D</option>
+                      <option value="neon-glow">Neon Cyber Glow</option>
+                      <option value="chrome">Chrome Metallic</option>
+                      <option value="fire">Blazing Fire</option>
+                      <option value="comic-pop">Comic Pop Art</option>
+                      <option value="emerald-3d">Emerald 3D Block</option>
+                      <option value="sunset-gradient">Sunset Vibe</option>
+                    </select>
+                  </div>
+
+                  {/* Text Drop Shadow */}
+                  <div className="pt-2 border-t border-slate-100 space-y-2">
+                    <div
+                      onClick={() => updateElement(textEl.id, { shadow: !textEl.shadow })}
+                      className="flex items-center justify-between cursor-pointer hover:opacity-90"
+                    >
+                      <div>
+                        <span className="font-semibold text-slate-800">Text Drop Shadow</span>
+                        <p className="text-[10px] text-slate-400">Soft depth behind characters</p>
+                      </div>
+                      <div className={`fluent-switch ${textEl.shadow ? 'active' : ''}`}>
+                        <div className="fluent-switch-knob" />
+                      </div>
+                    </div>
+                    {textEl.shadow && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
+                          <input
+                            type="color"
+                            className="w-5 h-5 rounded-full border border-slate-200 cursor-pointer p-0"
+                            value={textEl.shadowColor || '#000000'}
+                            onChange={(e) =>
+                              updateElement(textEl.id, { shadowColor: e.target.value })
+                            }
+                          />
+                          <span className="text-[10px] text-slate-600 font-semibold">Shadow</span>
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-[10px] text-slate-500">
+                            <span>Blur</span>
+                            <span>{textEl.shadowBlur ?? 6}px</span>
+                          </div>
+                          <input
+                            type="range"
+                            min={0}
+                            max={24}
+                            value={textEl.shadowBlur ?? 6}
+                            onChange={(e) =>
+                              updateElement(textEl.id, { shadowBlur: Number(e.target.value) })
+                            }
+                            className="w-full accent-emerald-600 cursor-pointer"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Text Frame Inset, Fill & Border */}
+                  <div className="pt-2 border-t border-slate-100 space-y-2.5">
+                    <label className="block text-[11px] font-semibold text-slate-500">
+                      Text Frame Box
+                    </label>
+                    <div>
+                      <div className="flex justify-between text-[10px] text-slate-500 font-medium mb-0.5">
+                        <span>Frame Inset (Padding)</span>
+                        <span>{textEl.padding ?? 8}px</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0}
+                        max={48}
+                        value={textEl.padding ?? 8}
+                        onChange={(e) =>
+                          updateElement(textEl.id, { padding: Number(e.target.value) })
+                        }
+                        className="w-full accent-emerald-600 cursor-pointer"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-500 mb-1">
+                          Frame Fill
+                        </label>
+                        <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200">
+                          <input
+                            type="color"
+                            className="w-5 h-5 rounded-full border border-slate-200 cursor-pointer p-0"
+                            value={
+                              textEl.backgroundColor && textEl.backgroundColor !== 'transparent'
+                                ? textEl.backgroundColor
+                                : '#ffffff'
+                            }
+                            onChange={(e) =>
+                              updateElement(textEl.id, { backgroundColor: e.target.value })
+                            }
+                          />
+                          <button
+                            onClick={() =>
+                              updateElement(textEl.id, { backgroundColor: 'transparent' })
+                            }
+                            className="text-[10px] text-slate-500 hover:text-slate-800 px-1 font-medium"
+                            title="Clear Fill"
+                          >
+                            None
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-500 mb-1">
+                          Border ({textEl.borderWidth ?? 0}px)
+                        </label>
+                        <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200">
+                          <input
+                            type="color"
+                            className="w-5 h-5 rounded-full border border-slate-200 cursor-pointer p-0"
+                            value={textEl.borderColor || '#cbd5e1'}
+                            onChange={(e) =>
+                              updateElement(textEl.id, {
+                                borderColor: e.target.value,
+                                borderWidth: textEl.borderWidth || 1,
+                              })
+                            }
+                          />
+                          <input
+                            type="number"
+                            min={0}
+                            max={12}
+                            value={textEl.borderWidth ?? 0}
+                            onChange={(e) =>
+                              updateElement(textEl.id, {
+                                borderWidth: Math.max(0, Number(e.target.value) || 0),
+                              })
+                            }
+                            className="w-full bg-transparent text-[11px] font-mono text-slate-700 outline-none text-center"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-[10px] text-slate-500 font-medium mb-0.5">
+                        <span>Frame Corner Radius</span>
+                        <span>{textEl.borderRadius ?? 0}px</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0}
+                        max={40}
+                        value={textEl.borderRadius ?? 0}
+                        onChange={(e) =>
+                          updateElement(textEl.id, { borderRadius: Number(e.target.value) })
+                        }
+                        className="w-full accent-emerald-600 cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Case 3: Shape Properties */}
         {selectedElement && selectedElement.type === 'shape' && (
