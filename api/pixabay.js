@@ -120,6 +120,31 @@ export default async function handler(req, res) {
     return;
   }
 
+  // Fetches this function's own image route over real HTTP, so a relay that
+  // answers 200 with the right bytes proves the whole binary path, including
+  // how the platform writes the body back.
+  if (mode === 'selfcheck') {
+    const target = requestUrl.searchParams.get('url') || '';
+    const origin = `${requestUrl.protocol}//${requestUrl.host}`;
+    const probeUrl = `${origin}/api/pixabay?mode=image&url=${encodeURIComponent(target)}`;
+    try {
+      const res2 = await fetch(probeUrl, { headers: { 'User-Agent': USER_AGENT } });
+      const buf = Buffer.from(await res2.arrayBuffer());
+      sendJson(res, 200, {
+        relayUrl: probeUrl.slice(0, 160),
+        status: res2.status,
+        contentType: res2.headers.get('content-type'),
+        cacheControl: res2.headers.get('cache-control'),
+        bytes: buf.length,
+        looksLikeJpeg: buf.length > 2 && buf[0] === 0xff && buf[1] === 0xd8,
+        bodyHead: res2.ok ? null : buf.toString('utf8').slice(0, 200),
+      });
+    } catch (error) {
+      sendJson(res, 200, { relayUrl: probeUrl.slice(0, 160), error: String(error) });
+    }
+    return;
+  }
+
   if (mode === 'image') {
     const target = requestUrl.searchParams.get('url') || '';
     let parsed;
@@ -149,7 +174,6 @@ export default async function handler(req, res) {
       const bytes = Buffer.from(await upstream.arrayBuffer());
       res.statusCode = 200;
       res.setHeader('Content-Type', upstream.headers.get('content-type') || 'image/jpeg');
-      res.setHeader('Content-Length', String(bytes.length));
       // The app turns these bytes into a data URL immediately; nothing hotlinks
       // this route later, so it can be cached hard.
       res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=604800, immutable');
