@@ -228,7 +228,7 @@ export const BackstageModal: React.FC = () => {
             <Sparkles size={12} className="text-amber-300" />
             <span>StudioPress</span>
           </div>
-          <p className="text-[10px] text-indigo-200/80">365 Modern Web Edition</p>
+          <p className="text-[10px] text-indigo-200/80">Modern Web Studio</p>
         </div>
       </div>
 

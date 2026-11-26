@@ -185,10 +185,10 @@ export const QuickAccessToolbar: React.FC = () => {
           <Printer size={15} />
         </button>
 
-        {/* Modern 365 Badge */}
+        {/* Studio Badge */}
         <div className="flex items-center gap-1 bg-indigo-950/40 border border-indigo-600/40 text-indigo-200 px-2 py-0.5 rounded-full text-[10px] font-semibold">
           <Sparkles size={10} className="text-amber-300" />
-          <span>365</span>
+          <span>STUDIO</span>
         </div>
       </div>
     </div>
