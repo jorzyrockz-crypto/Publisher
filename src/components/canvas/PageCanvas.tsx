@@ -63,6 +63,7 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
     redo,
     removeGuide,
     fillPlaceholderFromImageElement,
+    openCollageEditor,
   } = usePublisher();
 
   const [contextMenu, setContextMenu] = useState<{
@@ -712,6 +713,22 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
               opacity: element.opacity !== undefined ? element.opacity : 1,
             }}
             onDoubleClick={(e) => {
+              if (element.collageMeta && !element.locked) {
+                e.stopPropagation();
+                const groupMembers = element.groupId
+                  ? displayedElements.filter((el) => el.groupId === element.groupId)
+                  : [element];
+                const originX = Math.min(...groupMembers.map((el) => el.x));
+                const originY = Math.min(...groupMembers.map((el) => el.y));
+                openCollageEditor({
+                  meta: element.collageMeta,
+                  groupId: element.groupId,
+                  elementId: element.id,
+                  originX,
+                  originY,
+                });
+                return;
+              }
               if (element.type === 'text' && !element.locked) {
                 e.stopPropagation();
                 if (!isActivePage && !isEditingMaster) {

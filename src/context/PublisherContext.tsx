@@ -38,6 +38,13 @@ interface PublisherContextType {
   isBuildingBlocksModalOpen: boolean;
   isAIImageModalOpen: boolean;
   isCollageModalOpen: boolean;
+  editingCollageState: {
+    meta: import('../utils/borderArtStyles').CollageMeta;
+    groupId?: string;
+    elementId?: string;
+    originX: number;
+    originY: number;
+  } | null;
   isBrandBoardModalOpen: boolean;
   isBrandKitModalOpen: boolean;
   brandKits: BrandKit[];
@@ -70,6 +77,18 @@ interface PublisherContextType {
   setIsBuildingBlocksModalOpen: (open: boolean) => void;
   setIsAIImageModalOpen: (open: boolean) => void;
   setIsCollageModalOpen: (open: boolean) => void;
+  openCollageEditor: (opts: {
+    meta: import('../utils/borderArtStyles').CollageMeta;
+    groupId?: string;
+    elementId?: string;
+    originX: number;
+    originY: number;
+  }) => void;
+  replaceCollageGroup: (
+    nextElements: PublisherElement[],
+    groupId?: string,
+    elementId?: string
+  ) => void;
   setIsBrandBoardModalOpen: (open: boolean) => void;
   setIsBrandKitModalOpen: (open: boolean) => void;
   saveBrandKit: (kit: BrandKit) => void;
@@ -228,7 +247,31 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [isWordArtModalOpen, setIsWordArtModalOpen] = useState(false);
   const [isBuildingBlocksModalOpen, setIsBuildingBlocksModalOpen] = useState(false);
   const [isAIImageModalOpen, setIsAIImageModalOpen] = useState(false);
-  const [isCollageModalOpen, setIsCollageModalOpen] = useState(false);
+  const [isCollageModalOpen, setIsCollageModalOpenState] = useState(false);
+  const [editingCollageState, setEditingCollageState] = useState<{
+    meta: import('../utils/borderArtStyles').CollageMeta;
+    groupId?: string;
+    elementId?: string;
+    originX: number;
+    originY: number;
+  } | null>(null);
+  const setIsCollageModalOpen = useCallback((open: boolean) => {
+    setIsCollageModalOpenState(open);
+    if (!open) setEditingCollageState(null);
+  }, []);
+  const openCollageEditor = useCallback(
+    (opts: {
+      meta: import('../utils/borderArtStyles').CollageMeta;
+      groupId?: string;
+      elementId?: string;
+      originX: number;
+      originY: number;
+    }) => {
+      setEditingCollageState(opts);
+      setIsCollageModalOpenState(true);
+    },
+    []
+  );
   const [isBrandBoardModalOpen, setIsBrandBoardModalOpen] = useState(false);
   const [isBrandKitModalOpen, setIsBrandKitModalOpen] = useState(false);
 
@@ -791,9 +834,27 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       let maxZ = currentElements.reduce((acc, el) => Math.max(acc, el.zIndex), 0);
       const withZ = elements.map((el) => {
         maxZ += 1;
-        return { ...el, zIndex: maxZ };
+        return { ...el, zIndex: el.zIndex > 0 ? maxZ + el.zIndex - 1 : maxZ };
       });
       commitCurrentElements([...currentElements, ...withZ]);
+      setSelectedElementIds(withZ.map((el) => el.id));
+    },
+    [currentElements, commitCurrentElements]
+  );
+
+  const replaceCollageGroup = useCallback(
+    (nextElements: PublisherElement[], groupId?: string, elementId?: string) => {
+      const remaining = currentElements.filter((el) => {
+        if (groupId && el.groupId === groupId) return false;
+        if (!groupId && elementId && el.id === elementId) return false;
+        return true;
+      });
+      let maxZ = remaining.reduce((acc, el) => Math.max(acc, el.zIndex), 0);
+      const withZ = nextElements.map((el, i) => ({
+        ...el,
+        zIndex: maxZ + (el.zIndex > 0 ? el.zIndex : i + 1),
+      }));
+      commitCurrentElements([...remaining, ...withZ]);
       setSelectedElementIds(withZ.map((el) => el.id));
     },
     [currentElements, commitCurrentElements]
@@ -1664,6 +1725,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         isBuildingBlocksModalOpen,
         isAIImageModalOpen,
         isCollageModalOpen,
+        editingCollageState,
         isBrandBoardModalOpen,
         isBrandKitModalOpen,
         brandKits,
@@ -1695,6 +1757,8 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setIsBuildingBlocksModalOpen,
         setIsAIImageModalOpen,
         setIsCollageModalOpen,
+        openCollageEditor,
+        replaceCollageGroup,
         setIsBrandBoardModalOpen,
         setIsBrandKitModalOpen,
         saveBrandKit,

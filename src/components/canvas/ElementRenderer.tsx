@@ -787,6 +787,13 @@ const ImageRenderer: React.FC<{
     if (element.hueRotate !== undefined && element.hueRotate !== 0) {
       filters.push(`hue-rotate(${element.hueRotate}deg)`);
     }
+    if (element.effectPreset === 'retro-film') {
+      filters.push('sepia(35%) contrast(112%) saturate(90%) brightness(102%)');
+    } else if (element.effectPreset === 'duotone-pop') {
+      filters.push('saturate(175%) contrast(125%) brightness(104%)');
+    } else if (element.effectPreset === 'cartoon') {
+      filters.push('contrast(130%) saturate(135%)');
+    }
     return filters.length > 0 ? filters.join(' ') : undefined;
   };
 
@@ -1087,7 +1094,15 @@ const ImageRenderer: React.FC<{
               height: '100%',
               objectFit: element.objectFit || 'cover',
               objectPosition: `${50 + panX}% ${50 + panY}%`,
-              transform: imgScale !== 1 ? `scale(${imgScale})` : undefined,
+              transform:
+                [
+                  imgScale !== 1 ? `scale(${imgScale})` : '',
+                  element.imageRotation ? `rotate(${element.imageRotation}deg)` : '',
+                  element.flipH ? 'scaleX(-1)' : '',
+                  element.flipV ? 'scaleY(-1)' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ') || undefined,
               filter: getFilterStyle(),
               pointerEvents: 'none',
             }}

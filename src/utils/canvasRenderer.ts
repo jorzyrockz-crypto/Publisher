@@ -466,6 +466,13 @@ async function drawImageElement(ctx: CanvasRenderingContext2D, el: ImageElement)
     if (el.sepia) filters.push(`sepia(${el.sepia}%)`);
     if (el.blur) filters.push(`blur(${el.blur}px)`);
     if (el.hueRotate) filters.push(`hue-rotate(${el.hueRotate}deg)`);
+    if (el.effectPreset === 'retro-film') {
+      filters.push('sepia(35%) contrast(112%) saturate(90%) brightness(102%)');
+    } else if (el.effectPreset === 'duotone-pop') {
+      filters.push('saturate(175%) contrast(125%) brightness(104%)');
+    } else if (el.effectPreset === 'cartoon') {
+      filters.push('contrast(130%) saturate(135%)');
+    }
     if (filters.length > 0) ctx.filter = filters.join(' ');
 
     const zoom = el.imageScale || 1;
@@ -500,7 +507,15 @@ async function drawImageElement(ctx: CanvasRenderingContext2D, el: ImageElement)
     const panYRatio = (50 + (el.panY || 0)) / 100;
     const dx = (innerW - drawW) * panXRatio;
     const dy = (innerH - drawH) * panYRatio;
+    ctx.save();
+    if (el.imageRotation || el.flipH || el.flipV) {
+      ctx.translate(innerW / 2, innerH / 2);
+      if (el.imageRotation) ctx.rotate((el.imageRotation * Math.PI) / 180);
+      if (el.flipH || el.flipV) ctx.scale(el.flipH ? -1 : 1, el.flipV ? -1 : 1);
+      ctx.translate(-innerW / 2, -innerH / 2);
+    }
     ctx.drawImage(img, dx, dy, drawW, drawH);
+    ctx.restore();
     ctx.filter = 'none';
   } else {
     ctx.fillStyle = '#f8fafc';

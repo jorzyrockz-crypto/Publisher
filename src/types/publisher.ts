@@ -1,3 +1,5 @@
+import type { CollageMeta } from '../utils/borderArtStyles';
+
 export type ElementType = 'text' | 'shape' | 'image' | 'table' | 'accent' | 'line' | 'qr' | 'connector';
 
 export type ShapeType =
@@ -81,6 +83,7 @@ export interface BaseElement {
   flipH?: boolean;
   flipV?: boolean;
   blendMode?: 'normal' | 'multiply' | 'screen' | 'overlay' | 'darken';
+  collageMeta?: CollageMeta;
 }
 
 export interface TextElement extends BaseElement {
@@ -180,6 +183,7 @@ export interface ImageElement extends BaseElement {
   hueRotate?: number; // 0 to 360
   objectFit?: 'cover' | 'contain' | 'fill';
   imageScale?: number; // 1 to 2.5
+  imageRotation?: 0 | 90 | 180 | 270;
   panX?: number; // -50 to 50
   panY?: number; // -50 to 50
   shadow?: boolean;
