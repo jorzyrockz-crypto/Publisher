@@ -29,6 +29,7 @@ export const IS_STATIC_HOST = !env.DEV;
 
 export const CLIPART_PROXY_STORAGE_KEY = 'studiopress_clipart_proxy_url';
 export const WIKIMEDIA_PROXY_STORAGE_KEY = 'studiopress_wikimedia_proxy_url';
+export const POLLINATIONS_KEY_STORAGE_KEY = 'studiopress_pollinations_api_key';
 
 function readStorage(key: string): string | null {
   try {
@@ -88,14 +89,46 @@ export function saveWikimediaProxyBase(url: string): void {
 /* ------------------------------------------------------------------ */
 
 /**
+ * Optional Pollinations key. Anonymous generation is now throttled or rejected
+ * outright (HTTP 401/402/500), so a key can be pasted in the UI
+ * (`studiopress_pollinations_api_key`) or inlined at build time with
+ * `VITE_POLLINATIONS_API_KEY`.
+ */
+export function getPollinationsKey(): string {
+  const stored = readStorage(POLLINATIONS_KEY_STORAGE_KEY);
+  if (stored !== null) return stored.trim();
+  return String(env.VITE_POLLINATIONS_API_KEY || '').trim();
+}
+
+export function savePollinationsKey(key: string): void {
+  writeStorage(POLLINATIONS_KEY_STORAGE_KEY, key);
+}
+
+/**
  * Candidate URLs for a Pollinations request.
+ *
+ * Order: legacy keyless host (still the fastest when it answers), the current
+ * `gen.pollinations.ai` API, then the Vite dev proxy. The key, when present, is
+ * appended as `?key=` — that form survives `<img src>` requests, which cannot
+ * send an Authorization header.
+ *
  * @param pathAndQuery e.g. `/prompt/a%20cat?model=flux&width=768`
  */
 export function resolvePollinationsUrls(pathAndQuery: string): string[] {
+  const key = getPollinationsKey();
+  const withKey = (url: string): string => {
+    if (!key || /[?&]key=/.test(url)) return url;
+    return `${url}${url.includes('?') ? '&' : '?'}key=${encodeURIComponent(key)}`;
+  };
+
   const direct = `https://image.pollinations.ai${pathAndQuery}`;
+  const gen = pathAndQuery.startsWith('/prompt/')
+    ? `https://gen.pollinations.ai/image/${pathAndQuery.slice('/prompt/'.length)}`
+    : `https://gen.pollinations.ai${pathAndQuery}`;
   const devProxy = `/api/pollinations${pathAndQuery}`;
 
-  return IS_STATIC_HOST ? unique([direct, devProxy]) : unique([devProxy, direct]);
+  const ordered = IS_STATIC_HOST ? [direct, gen, devProxy] : [devProxy, direct, gen];
+  return unique(ordered).map(withKey);
 }
 
 /* ------------------------------------------------------------------ */

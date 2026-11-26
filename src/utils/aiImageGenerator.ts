@@ -800,8 +800,22 @@ export async function generateCloudAIImage(
   // We fetch at 768x768 (free & fast) and then crop to the user's requested aspect ratio (e.g. 800x600, 600x800, 960x540).
   // Development goes through the Vite proxy (bypasses CORS & adblock); a static
   // production build calls the CORS-enabled public endpoint directly.
-  const endpoints = resolvePollinationsUrls(
-    `/prompt/${encoded}?model=flux&width=768&height=768&seed=${options.seed}&nologo=true`
+  // Pollinations retires models without notice (its /models list dropped `flux`
+  // in Nov 2026), so try the requested model first and fall back to whatever is
+  // still being served. The candidate list is flattened: the loop below already
+  // walks it until one answers.
+  const modelCandidates = Array.from(
+    new Set(
+      [options.cloudModel === 'gemini' ? 'flux' : options.cloudModel || 'flux', 'flux', 'sana'].filter(
+        Boolean
+      ) as string[]
+    )
+  );
+
+  const endpoints = modelCandidates.flatMap((model) =>
+    resolvePollinationsUrls(
+      `/prompt/${encoded}?model=${model}&width=768&height=768&seed=${options.seed}&nologo=true`
+    )
   );
 
   const timeoutController = new AbortController();
@@ -827,7 +841,17 @@ export async function generateCloudAIImage(
           continue;
         }
         if (!res.ok) {
-          lastErr = new Error(`HTTP_${res.status}`);
+          // 401/403: Pollinations now wants a key for generation.
+          // 402: the key has no pollen credits. 5xx: upstream model outage.
+          lastErr = new Error(
+            res.status === 401 || res.status === 403
+              ? 'AUTH_REQUIRED'
+              : res.status === 402
+                ? 'PAYMENT_REQUIRED'
+                : res.status >= 500
+                  ? `UPSTREAM_${res.status}`
+                  : `HTTP_${res.status}`
+          );
           continue;
         }
         const blob = await res.blob();

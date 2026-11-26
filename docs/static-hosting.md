@@ -155,3 +155,30 @@ in `vite.config.ts` (`/api/pollinations`, `/api/clipart-free`,
 through `src/utils/apiEndpoints.ts` (browser-first candidate order). Anything
 that still needs a same-origin proxy must be pointed at the Cloudflare Worker,
 never at `/api/…`.
+
+## Cloud AI images (Pollinations) — key now required
+
+As of Nov 2026 Pollinations gates **generation** behind an API key; only model
+listing (`/models`) answers anonymously, and generation without a key returns
+`401/402/500`. Its model list no longer contains `flux` (it currently reports
+just `sana`), so requesting a retired model also fails.
+
+What the app does now:
+
+- Tries the requested model, then falls back to `flux` → `sana`, over three
+  hosts: `image.pollinations.ai/prompt/…`, `gen.pollinations.ai/image/…`, then
+  the Vite dev proxy.
+- Sends the key as `?key=…` (the `Authorization` header is impossible for
+  `<img>`-style loads). Two places to supply it:
+  - **Runtime:** AI Image modal → *+ API Keys* → paste a key from
+    `enter.pollinations.ai`. Stored in `localStorage`
+    (`studiopress_pollinations_api_key`); never leaves the browser except to
+    Pollinations itself.
+  - **Build time:** `VITE_POLLINATIONS_API_KEY` (Vercel → Settings →
+    Environment Variables, then redeploy). Note this inlines the key into the
+    public bundle — prefer the runtime field, or use a `pk_` app key.
+- Maps failures to readable copy: `AUTH_REQUIRED`, `PAYMENT_REQUIRED`,
+  `UPSTREAM_5xx` (upstream outage) instead of a bare `HTTP_500`.
+
+Hybrid and Offline Art engines are unaffected — they run fully in the browser
+and need no key or network.
