@@ -98,86 +98,249 @@
   transform: scale(1.3);
 }
 
-/* Modern WordArt typography styles */
+/* WordArt styles — generated from src/utils/wordArt.ts by scripts/wordart-css.ts.
+   Do not edit by hand: run `npm run wordart:css`. */
+.wordart-gold3d {
+  font-weight: 800;
+  background: linear-gradient(180deg, #fde68a 0%, #f59e0b 45%, #b45309 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 2px #7c2d12;
+  paint-order: stroke fill;
+  filter:
+    drop-shadow(0px 2px 3px rgba(120,53,15,0.35))
+    drop-shadow(0px 4px 10px rgba(0,0,0,0.18));
+}
+
 .wordart-rainbow {
+  font-weight: 900;
   background: linear-gradient(135deg, #f43f5e 0%, #fb923c 25%, #facc15 50%, #10b981 75%, #3b82f6 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  font-weight: 900;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
-}
-
-.wordart-gold3d {
-  background: linear-gradient(180deg, #fef08a 0%, #eab308 50%, #a16207 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  font-weight: 800;
-  filter: drop-shadow(0 2px 2px rgba(161, 98, 7, 0.4)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+  filter:
+    drop-shadow(0px 2px 4px rgba(0,0,0,0.15));
 }
 
 .wordart-outline {
+  font-weight: 900;
   color: #ffffff;
   -webkit-text-stroke: 2px #0f766e;
-  font-weight: 900;
-  filter: drop-shadow(2px 3px 0px rgba(15, 118, 110, 0.3));
+  paint-order: stroke fill;
+  filter:
+    drop-shadow(2px 3px 0px rgba(15,118,110,0.3));
 }
 
 .wordart-retro {
-  color: #ec4899;
   font-weight: 800;
-  text-shadow: 3px 3px 0px #06b6d4, 5px 5px 0px #3b82f6;
+  color: #ec4899;
+  filter:
+    drop-shadow(3px 3px 0px #06b6d4)
+    drop-shadow(5px 5px 0px #3b82f6);
 }
 
 .wordart-neon-glow {
-  color: #e0f2fe;
   font-weight: 900;
-  text-shadow: 0 0 6px #38bdf8, 0 0 14px #0284c7, 0 0 28px #ec4899;
+  color: #e0f2fe;
+  filter:
+    drop-shadow(0px 0px 6px #38bdf8)
+    drop-shadow(0px 0px 14px #0284c7)
+    drop-shadow(0px 0px 28px #ec4899);
 }
 
 .wordart-chrome {
-  background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 45%, #475569 52%, #e2e8f0 100%);
+  font-weight: 900;
+  background: linear-gradient(180deg, #ffffff 0%, #dbe3ec 32%, #93a4b8 49%, #38455c 50%, #7c8ba1 62%, #c3cedd 80%, #f2f6fa 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  font-weight: 900;
-  filter: drop-shadow(0 2px 3px rgba(15, 23, 42, 0.45));
+  -webkit-text-stroke: 1.5px #1e293b;
+  paint-order: stroke fill;
+  filter:
+    drop-shadow(0px 2px 3px rgba(15,23,42,0.45));
 }
 
 .wordart-fire {
+  font-weight: 900;
   background: linear-gradient(180deg, #fef08a 0%, #f97316 55%, #dc2626 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  font-weight: 900;
-  filter: drop-shadow(0 3px 8px rgba(239, 68, 68, 0.55));
+  filter:
+    drop-shadow(0px 3px 8px rgba(239,68,68,0.55));
 }
 
 .wordart-comic-pop {
+  font-weight: 900;
   color: #facc15;
   -webkit-text-stroke: 2px #0f172a;
-  font-weight: 900;
-  text-shadow: 4px 4px 0px #0f172a;
+  paint-order: stroke fill;
+  filter:
+    drop-shadow(4px 4px 0px #0f172a);
 }
 
 .wordart-emerald-3d {
+  font-weight: 900;
   color: #10b981;
-  font-weight: 900;
-  text-shadow: 1px 1px 0 #065f46, 2px 2px 0 #064e3b, 3px 3px 0 #022c22, 4px 5px 8px rgba(0, 0, 0, 0.35);
-}
-
-.wordart-gradient-blue {
-  background: linear-gradient(180deg, #93c5fd 0%, #3b82f6 48%, #1d4ed8 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  font-weight: 900;
-  filter: drop-shadow(0 2px 4px rgba(29, 78, 216, 0.35));
+  filter:
+    drop-shadow(1px 1px 0px #065f46)
+    drop-shadow(2px 2px 0px #064e3b)
+    drop-shadow(3px 3px 0px #022c22)
+    drop-shadow(4px 5px 8px rgba(0,0,0,0.35));
 }
 
 .wordart-sunset-gradient {
+  font-weight: 900;
   background: linear-gradient(135deg, #ec4899 0%, #f97316 55%, #facc15 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  font-weight: 900;
-  filter: drop-shadow(0 2px 4px rgba(236, 72, 153, 0.3));
+  filter:
+    drop-shadow(0px 2px 4px rgba(236,72,153,0.3));
 }
+
+.wordart-gradient-blue {
+  font-weight: 900;
+  background: linear-gradient(180deg, #93c5fd 0%, #3b82f6 48%, #1d4ed8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter:
+    drop-shadow(0px 2px 4px rgba(29,78,216,0.35));
+}
+
+.wordart-cinematic {
+  font-weight: 900;
+  background: linear-gradient(178deg, #fff4d6 0%, #f0b45a 34%, #c8842e 62%, #f7e2b2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 3px #1b1206;
+  paint-order: stroke fill;
+  filter:
+    drop-shadow(0px 3px 10px rgba(255,176,74,0.45))
+    drop-shadow(0px 10px 26px rgba(0,0,0,0.55));
+}
+
+.wordart-holographic {
+  font-weight: 900;
+  background: linear-gradient(135deg, #a78bfa 0%, #22d3ee 20%, #f8fafc 44%, #f472b6 46%, #fde68a 70%, #c4b5fd 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 2px #160f2e;
+  paint-order: stroke fill;
+  filter:
+    drop-shadow(0px 0px 12px rgba(34,211,238,0.5))
+    drop-shadow(0px 2px 4px rgba(10,10,30,0.45));
+}
+
+.wordart-varsity {
+  font-weight: 900;
+  color: #dc2626;
+  -webkit-text-stroke: 4px #ffffff;
+  paint-order: stroke fill;
+  filter:
+    drop-shadow(4px 4px 0px #1e293b);
+}
+
+.wordart-synth-chrome {
+  font-weight: 900;
+  font-style: italic;
+  background: linear-gradient(180deg, #fff9c4 0%, #ffca3a 24%, #ff6ec7 48%, #1e1b4b 50%, #2563eb 72%, #38bdf8 90%, #e0f2fe 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 2px #fef08a;
+  paint-order: stroke fill;
+  filter:
+    drop-shadow(0.8px 1.3px 0px #ff7b00)
+    drop-shadow(1.6px 2.6px 0px #eb6800)
+    drop-shadow(2.4px 3.9px 0px #d75500)
+    drop-shadow(3.2px 5.2px 0px #c24200)
+    drop-shadow(4px 6.5px 0px #ae2f00)
+    drop-shadow(4.8px 7.8px 0px #9a1c00)
+    drop-shadow(0px 10px 16px rgba(0, 0, 0, 0.65))
+    drop-shadow(0px 0px 14px rgba(168, 85, 247, 0.55));
+}
+
+.wordart-liquid-glass {
+  font-weight: 900;
+  background: linear-gradient(175deg, #ffffff 0%, #e0f2fe 28%, #94a3b8 47%, #1e293b 50%, #cbd5e1 68%, #f8fafc 86%, #c4b5fd 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 1.5px #ffffff;
+  paint-order: stroke fill;
+  filter:
+    drop-shadow(0px 1.2px 0px #64748b)
+    drop-shadow(0px 2.4px 0px #48556b)
+    drop-shadow(0px 3.6px 0px #2b364a)
+    drop-shadow(0px 4.8px 0px #0f172a)
+    drop-shadow(0px 8px 14px rgba(15, 23, 42, 0.45))
+    drop-shadow(0px 0px 12px rgba(125, 211, 252, 0.45));
+}
+
+.wordart-rose-gold {
+  font-weight: 900;
+  background: linear-gradient(165deg, #fff7ed 0%, #fed7aa 25%, #f472b6 44%, #831843 48%, #fb7185 65%, #fda4af 85%, #fff1f2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 2px #ffedd5;
+  paint-order: stroke fill;
+  filter:
+    drop-shadow(0.6px 1.2px 0px #be185d)
+    drop-shadow(1.2px 2.4px 0px #a2134c)
+    drop-shadow(1.8px 3.6px 0px #850f3b)
+    drop-shadow(2.4px 4.8px 0px #690a2a)
+    drop-shadow(3px 6px 0px #4c0519)
+    drop-shadow(0px 8px 14px rgba(0, 0, 0, 0.45))
+    drop-shadow(0px 0px 12px rgba(251, 113, 133, 0.4));
+}
+
+.wordart-cyber-acid {
+  font-weight: 900;
+  font-style: italic;
+  background: linear-gradient(135deg, #ecfccb 0%, #a3e635 35%, #22d3ee 70%, #06b6d4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 3px #09090b;
+  paint-order: stroke fill;
+  filter:
+    drop-shadow(1.2px 1.2px 0px #ec4899)
+    drop-shadow(2.4px 2.4px 0px #d23c84)
+    drop-shadow(3.6px 3.6px 0px #b8306e)
+    drop-shadow(4.8px 4.8px 0px #9d2459)
+    drop-shadow(6px 6px 0px #831843)
+    drop-shadow(0px 8px 12px rgba(0, 0, 0, 0.6))
+    drop-shadow(0px 0px 14px rgba(163, 230, 53, 0.5));
+}
+
+.wordart-obsidian-gold {
+  font-weight: 900;
+  background: linear-gradient(155deg, #52525b 0%, #18181b 35%, #f4f4f5 47%, #09090b 51%, #27272a 85%, #71717a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 3px #f59e0b;
+  paint-order: stroke fill;
+  filter:
+    drop-shadow(0.5px 1.1px 0px #b45309)
+    drop-shadow(1px 2.2px 0px #8f4007)
+    drop-shadow(1.5px 3.3px 0px #6a2d05)
+    drop-shadow(2px 4.4px 0px #451a03)
+    drop-shadow(0px 6px 12px rgba(0, 0, 0, 0.5));
+}
+
+.wordart-candy-gloss {
+  font-weight: 900;
+  background: linear-gradient(180deg, #ffffff 0%, #fda4af 14%, #f43f5e 50%, #e11d48 85%, #9f1239 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 4px #ffffff;
+  paint-order: stroke fill;
+  filter:
+    drop-shadow(0px 1.4px 0px #881337)
+    drop-shadow(0px 2.8px 0px #791030)
+    drop-shadow(0px 4.2px 0px #6a0c28)
+    drop-shadow(0px 5.6px 0px #5b0921)
+    drop-shadow(0px 7px 0px #4c0519)
+    drop-shadow(0px 8px 12px rgba(76, 5, 25, 0.4));
+}
+/* end WordArt styles */
+
+/* AI-grade metal: horizon-break gradients, marching extrusion and bloom.
+   Generated from src/utils/wordArt.ts — keep it that way. */
 
 /* Fluent modern toggle switch */
 .fluent-switch {

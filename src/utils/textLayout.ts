@@ -1,5 +1,5 @@
+import { wordArtItalic, wordArtWeight } from './wordArt';
 import type { TextElement } from '../types/publisher';
-import { wordArtWeight } from './wordArt';
 
 /**
  * One layout engine for both the DOM renderer and the canvas exporter.
@@ -111,7 +111,9 @@ export function buildFontString(
   },
   size: number
 ): string {
-  const style = el.fontStyle === 'italic' ? 'italic ' : '';
+  // Some WordArt styles are only right in italic (synthwave, liquid metal),
+  // so the measured font and the painted font have to agree on it too.
+  const style = el.fontStyle === 'italic' || (el.isWordArt && wordArtItalic(el.wordArtStyle)) ? 'italic ' : '';
   // A WordArt style forces a heavier weight, so measurement has to use it too
   // or the wrap and the glyphs disagree.
   const weight =
@@ -158,6 +160,37 @@ function listMarkerFor(
  * Conservative hyphenation: only long words, splitting after a vowel cluster, so
  * we never produce the gibberish of naive width-splitting.
  */
+
+/**
+ * Hard-break a word that is wider than its column, the way CSS `break-word`
+ * does. Without this the canvas painter (and so PNG/PDF export) clipped the
+ * tail of long words while the DOM broke them, so the two never matched.
+ */
+function breakLongWord(
+  word: string,
+  maxWidth: number,
+  font: string,
+  letterSpacing: number
+): string[] {
+  const chunks: string[] = [];
+  let rest = word;
+  let guard = 0;
+  while (rest.length > 1 && guard++ < 64) {
+    let cut = 1;
+    let lastFit = 0;
+    for (; cut <= rest.length; cut += 1) {
+      if (measureRun(rest.slice(0, cut), font, letterSpacing) > maxWidth) break;
+      lastFit = cut;
+    }
+    if (lastFit === 0) lastFit = 1;
+    if (lastFit >= rest.length) break;
+    chunks.push(rest.slice(0, lastFit));
+    rest = rest.slice(lastFit);
+  }
+  if (rest) chunks.push(rest);
+  return chunks;
+}
+
 function hyphenateWord(
   word: string,
   maxWidth: number,
@@ -180,6 +213,42 @@ interface RawLine {
   isParagraphStart: boolean;
   paragraphIndex: number;
   level: number;
+}
+
+/** A glyph box, in element-local pixels. */
+export interface GlyphBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * The box a line's glyphs actually occupy. CSS clips a WordArt gradient to the
+ * inline box of the text, so both renderers have to measure the same rectangle
+ * or a horizon stop lands at a different height in the editor than in the PNG.
+ */
+export function lineGlyphBoxes(layout: TextLayoutResult, top: number): GlyphBox[] {
+  return layout.lines.map((line) => {
+    let x0 = Infinity;
+    let x1 = -Infinity;
+    for (const run of line.runs) {
+      if (!run.text.trim()) continue;
+      x0 = Math.min(x0, run.x);
+      x1 = Math.max(x1, run.x + run.width);
+    }
+    if (!Number.isFinite(x0)) {
+      x0 = layout.textLeft;
+      x1 = layout.textLeft + layout.columnWidth;
+    }
+    const size = line.runs.reduce((max, run) => Math.max(max, run.fontSize), layout.fontSize);
+    return {
+      x: x0,
+      y: top + line.textTop,
+      width: Math.max(1, x1 - x0),
+      height: Math.max(1, size),
+    };
+  });
 }
 
 export interface TextLayoutOptions {
@@ -241,7 +310,10 @@ function buildRawLines(
       const wordWidth = measureRun(word, font, letterSpacing, wordSpacing);
       const spaceWidth =
         current.length > 0 ? measureRun(' ', font, letterSpacing, wordSpacing) : 0;
-      const limit = availableWidth(out.length + current.length, first);
+      // The line being built is the next line of the block; counting words
+      // here made the drop-cap gutter vanish after the first line, so the
+      // text ran under the cap and out of its box.
+      const limit = availableWidth(out.length + (current.length > 0 ? 1 : 0), first);
       const nextWidth = currentWidth + spaceWidth + wordWidth;
       void baseSize;
 
@@ -256,32 +328,44 @@ function buildRawLines(
         current = [word];
         currentWidth = wordWidth;
         const tightLimit = availableWidth(out.length, false);
-        if (el.hyphenate && wordWidth > tightLimit) {
-          const head = hyphenateWord(word, tightLimit, font, letterSpacing);
+        if (wordWidth > tightLimit) {
+          const head = el.hyphenate ? hyphenateWord(word, tightLimit, font, letterSpacing) : null;
           if (head) {
             out.push({ text: head, isParagraphStart: false, paragraphIndex, level });
             current = [];
             currentWidth = 0;
+          } else {
+            const chunks = breakLongWord(word, tightLimit, font, letterSpacing);
+            if (chunks.length > 1) {
+              for (const chunk of chunks.slice(0, -1)) {
+                out.push({ text: chunk, isParagraphStart: false, paragraphIndex, level });
+              }
+              current = [chunks[chunks.length - 1]];
+              currentWidth = measureRun(current[0], font, letterSpacing, wordSpacing);
+            }
           }
         }
         continue;
       }
 
       if (nextWidth > limit && current.length === 0) {
-        if (el.hyphenate) {
-          const head = hyphenateWord(word, limit, font, letterSpacing);
-          if (head) {
-            out.push({ text: head, isParagraphStart: first, paragraphIndex, level });
-            first = false;
-            current = [];
-            currentWidth = 0;
-            continue;
-          }
+        const head = el.hyphenate ? hyphenateWord(word, limit, font, letterSpacing) : null;
+        if (head) {
+          out.push({ text: head, isParagraphStart: first, paragraphIndex, level });
+          first = false;
+          current = [];
+          currentWidth = 0;
+          continue;
         }
-        // A single word wider than the column: keep it whole and let it clip,
-        // exactly as a browser does.
-        current = [current.length > 0 ? `${current.join(' ')} ${word}` : word];
-        currentWidth = nextWidth;
+        // A single word wider than the column breaks across lines, as
+        // `word-break: break-word` does in the editor view.
+        const chunks = breakLongWord(word, limit, font, letterSpacing);
+        for (const chunk of chunks.slice(0, -1)) {
+          out.push({ text: chunk, isParagraphStart: first, paragraphIndex, level });
+          first = false;
+        }
+        current = [chunks[chunks.length - 1] ?? word];
+        currentWidth = measureRun(current[0], font, letterSpacing, wordSpacing);
         continue;
       }
 
@@ -517,6 +601,24 @@ export function layoutText(el: TextElement, options: TextLayoutOptions = {}): Te
           fontSize: baseSize,
           baselineShift,
         });
+      }
+    }
+
+    // Alignment lives in the run geometry, not only in CSS: the canvas / PNG
+    // / PDF exporters draw runs at their x, so a centred or right-aligned
+    // block used to export flush left. List markers and drop caps set their
+    // own indents, so they stay where they are.
+    if ((el.textAlign === 'center' || el.textAlign === 'right') && listStyle === 'none' && !hasDropCap) {
+      const body = runs.filter((run) => run.kind !== 'marker');
+      if (body.length) {
+        const left = Math.min(...body.map((run) => run.x));
+        const right = Math.max(...body.map((run) => run.x + run.width));
+        const columnRight = columnX + columnWidth;
+        const delta =
+          el.textAlign === 'center'
+            ? (columnX + columnRight) / 2 - (left + right) / 2
+            : columnRight - right;
+        if (delta !== 0) for (const run of runs) run.x += delta;
       }
     }
 

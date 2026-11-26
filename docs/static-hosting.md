@@ -13,6 +13,8 @@ on GitHub Pages.
 | Iconify (200k icons) | direct | ✔ direct `api.iconify.design` (CORS-enabled) |
 | Wikimedia Commons | Vite proxy | ✔ direct `upload.wikimedia.org` (CORS-enabled) |
 | Clipart.Free | Vite proxy | ⚠ needs a proxy — see below |
+| Pixabay (stock photos) | same function as production (`api/pixabay.js`) | ⚠ needs the serverless relay — see below |
+| Unsplash (stock photos) | same function as production (`api/unsplash.js`) | ⚠ needs the serverless relay for search only — see below |
 
 Every resolver returns an ordered candidate list, so a failed request silently
 falls through to the next strategy instead of breaking the search.
@@ -40,6 +42,82 @@ Caveat: clipart.free's **static CDN** answers `500` to non-browser requests
 (even with a browser UA, `Accept` and `Referer`), so the `mode=asset` hop only
 relays pages; SVG/PNG previews still load through the browser's own `<img>`
 hotlink, and server-side asset fetching is not possible.
+
+## Pixabay photos on a static host
+
+Pixabay is the panel's only source that **cannot** be called from the browser at
+all: `pixabay.com` sends neither CORS headers on its API nor on its image CDN, so
+a direct `fetch` fails and a hotlinked `<img>` would taint the export canvas
+(`canvasRenderer` loads images with `crossOrigin = 'anonymous'`, and a tainted
+canvas makes `toDataURL` throw). Everything therefore goes through one
+same-origin function, which also keeps the key server-side:
+
+```
+GET /api/pixabay?mode=search&q=cat&page=1&image_type=photo&orientation=horizontal
+GET /api/pixabay?mode=image&url=https%3A%2F%2Fpixabay.com%2Fget%2F…
+GET /api/pixabay?mode=diag
+```
+
+Set it once — **Vercel → Settings → Environment Variables →
+`PIXABAY_API_KEY`** (type *sensitive*, Production + Preview), then redeploy.
+Get a key from your pixabay.com account (Docs → *Get API key*).
+
+`npm run dev` mounts the very same handler through a small Vite middleware, so
+`PIXABAY_API_KEY` in your shell/sandbox environment is enough for local work:
+
+```bash
+PIXABAY_API_KEY=12345678-abcdef npm run dev
+```
+
+Behaviour worth remembering:
+
+- **No key configured** → the relay answers `503 {code:"not_configured"}` and the
+  panel shows a quiet notice instead of an error; the other five sources keep
+  working. Nothing crashes.
+- **`mode=image` is allow-listed** to `pixabay.com` / `cdn.pixabay.com`. It is
+  not an open proxy.
+- **Search responses are cached for 24 h** (`s-maxage=86400`), which Pixabay's
+  terms require; relayed image bytes are cached for a week and then copied into
+  the project as data URLs — nothing hotlinks Pixabay afterwards.
+- **Attribution**: results carry the photographer's name and the panel footer
+  links back to Pixabay, as the Pixabay Content License asks.
+
+On a host that cannot run the function (plain GitHub Pages, S3), Pixabay simply
+stays unavailable — the panel degrades rather than breaking.
+
+## Unsplash photos on a static host
+
+Unsplash's API guidelines pull in a different direction from Pixabay's:
+**hotlink the photos, do not re-host them**, and credit the photographer with
+UTM-tagged links. `images.unsplash.com` sends `Access-Control-Allow-Origin: *`,
+so the browser can both display a photo and fetch its bytes at insert time
+(converting to a data URL inside the user's own document — our server never
+stores an Unsplash file).
+
+Only the two calls that need the access key go through `api/unsplash.js`:
+
+```
+GET /api/unsplash?mode=search&query=cat&page=1&orientation=landscape&order_by=relevant
+GET /api/unsplash?mode=track&url=https%3A%2F%2Fapi.unsplash.com%2Fphotos%2F…%2Fdownload
+GET /api/unsplash?mode=diag
+```
+
+Set it once — **Vercel → Settings → Environment Variables →
+`UNSPLASH_ACCESS_KEY`** (type *sensitive*, Production + Preview), then redeploy.
+The key is on your Unsplash app page (Access Key, not the Secret Key).
+
+- **`mode=track`** is the "download event" Unsplash requires when a user uses a
+  photo; the panel fires it on insert and treats a failure as advisory.
+- **Rate limits**: a demo app gets 50 requests/hour, a production app 5,000.
+  Search responses are edge-cached for an hour (`s-maxage=3600`) to stay well
+  inside that; `mode=diag` reports `x-ratelimit-remaining`.
+- **Attribution** is mandatory: results show the photographer's name, the photo
+  page, the profile and the Unsplash home page all carry
+  `utm_source=studiopress&utm_medium=referral&utm_campaign=api-credit`.
+- **No key configured** → `503 {code:"not_configured"}`, and the panel shows a
+  quiet notice; the other six sources keep working.
+- Never put "Unsplash" in your app's name or icon (their guideline), which is why
+  the app is StudioPress and the tab is just `Uns`.
 
 ### 2. Other static hosts (GitHub Pages, S3…)
 

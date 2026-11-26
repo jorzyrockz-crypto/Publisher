@@ -1,6 +1,8 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import pixabayHandler from './api/pixabay.js'
+import unsplashHandler from './api/unsplash.js'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -8,6 +10,24 @@ export default defineConfig({
   plugins: [
     tailwindcss(),
     react(),
+    {
+      // Serve the real Vercel functions in dev, so `npm run dev` and the
+      // deployed site use identical routing and the same environment variables.
+      name: 'stock-api-dev-functions',
+      configureServer(server) {
+        const mount = (path: string, handler: typeof pixabayHandler) => {
+          server.middlewares.use(path, (req, res, _next) => {
+            handler(req, res).catch((error: unknown) => {
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: String(error) }));
+            });
+          });
+        };
+        mount('/api/pixabay', pixabayHandler);
+        mount('/api/unsplash', unsplashHandler);
+      },
+    },
   ],
   build: {
     chunkSizeWarningLimit: 900,
