@@ -10,6 +10,7 @@ import {
   Magnet,
   Grid,
   LayoutGrid,
+  Sparkles,
 } from 'lucide-react';
 
 export const PageDesignTab: React.FC = () => {
@@ -23,6 +24,9 @@ export const PageDesignTab: React.FC = () => {
     setColorScheme,
     setIsBackstageOpen,
     setIsBrandBoardModalOpen,
+    setIsBrandKitModalOpen,
+    activeBrandKit,
+    applyBrandKit,
     snapToGuides,
     setSnapToGuides,
     gridVisible,
@@ -188,9 +192,20 @@ export const PageDesignTab: React.FC = () => {
         <span className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider text-center">Setup</span>
       </div>
 
-      {/* 3. Color Schemes Group */}
+      {/* 3. Brand Kit & Color Schemes Group */}
       <div className="flex flex-col justify-between h-full py-1 px-3 border-r border-slate-200 flex-shrink-0 relative">
-        <div className="my-auto">
+        <div className="my-auto flex items-center gap-1.5">
+          <button
+            onClick={() => setIsBrandKitModalOpen(true)}
+            className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
+            title={`Open Brand Kit Studio (Active: ${activeBrandKit.name})`}
+          >
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-50 to-violet-100 border border-indigo-200 text-indigo-700 flex items-center justify-center group-hover:from-indigo-600 group-hover:to-violet-600 group-hover:text-white transition-all shadow-xs">
+              <Sparkles size={16} />
+            </div>
+            <span className="text-[10px] font-semibold mt-1 text-indigo-800">Brand Kit</span>
+          </button>
+
           <button
             ref={schemesBtnRef}
             onClick={() => setIsSchemesDropdownOpen(!isSchemesDropdownOpen)}
@@ -203,6 +218,22 @@ export const PageDesignTab: React.FC = () => {
             <span className="text-[10px] font-medium mt-1 text-slate-600 flex items-center">
               Schemes <ChevronDown size={9} className="ml-0.5" />
             </span>
+          </button>
+
+          <button
+            onClick={() => applyBrandKit(activeBrandKit, 'all')}
+            className="hidden sm:flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
+            title={`Apply "${activeBrandKit.name}" to all artboards`}
+          >
+            <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-xs">
+              <div className="grid grid-cols-2 gap-0.5 w-3.5 h-3.5">
+                <span className="rounded-xs" style={{ backgroundColor: activeBrandKit.colors.primary }} />
+                <span className="rounded-xs" style={{ backgroundColor: activeBrandKit.colors.secondary }} />
+                <span className="rounded-xs" style={{ backgroundColor: activeBrandKit.colors.accent }} />
+                <span className="rounded-xs" style={{ backgroundColor: activeBrandKit.colors.dark }} />
+              </div>
+            </div>
+            <span className="text-[10px] font-medium mt-1 text-slate-600">Rebrand All</span>
           </button>
 
           <FloatingDropdown

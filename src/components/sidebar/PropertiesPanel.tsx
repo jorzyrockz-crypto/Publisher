@@ -93,6 +93,9 @@ export const PropertiesPanel: React.FC = () => {
     setPageBackgroundColor,
     setPageBackgroundPattern,
     setIsBrandBoardModalOpen,
+    setIsBrandKitModalOpen,
+    activeBrandKit,
+    applyBrandKit,
   } = usePublisher();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -562,8 +565,65 @@ export const PropertiesPanel: React.FC = () => {
                 </div>
               </div>
 
+              {/* Active Brand Kit Card */}
+              <div className="pt-2.5 border-t border-slate-100 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-slate-600">
+                    Active Brand Kit
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsBrandKitModalOpen(true)}
+                    className="text-[10.5px] font-bold text-indigo-700 hover:underline"
+                  >
+                    Edit / Switch
+                  </button>
+                </div>
+                <div className="p-2.5 rounded-xl border border-slate-200 bg-slate-50/80 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold text-slate-800 truncate">
+                        {activeBrandKit.name}
+                      </div>
+                      <div className="text-[10px] text-slate-400 truncate">
+                        {activeBrandKit.headingFont} + {activeBrandKit.bodyFont}
+                      </div>
+                    </div>
+                    {activeBrandKit.logoSrc && (
+                      <img
+                        src={activeBrandKit.logoSrc}
+                        alt="Brand Logo"
+                        className="w-7 h-7 object-contain rounded"
+                      />
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {[
+                      activeBrandKit.colors.primary,
+                      activeBrandKit.colors.secondary,
+                      activeBrandKit.colors.accent,
+                      activeBrandKit.colors.dark,
+                      activeBrandKit.colors.light,
+                    ].map((hex, i) => (
+                      <span
+                        key={i}
+                        className="w-4 h-4 rounded-full border border-slate-200/80 shadow-2xs"
+                        style={{ backgroundColor: hex }}
+                      />
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => applyBrandKit(activeBrandKit, 'all')}
+                    className="w-full py-1.5 px-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold transition cursor-pointer"
+                  >
+                    Rebrand All Artboards ({project.pages.length})
+                  </button>
+                </div>
+              </div>
+
               {/* Background Color */}
-              <div>
+              <div className="pt-2.5 border-t border-slate-100">
                 <label className="block text-[11px] font-semibold text-slate-500 mb-1.5">
                   Canvas Background
                 </label>

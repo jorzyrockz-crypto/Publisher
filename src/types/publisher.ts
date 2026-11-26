@@ -278,6 +278,23 @@ export interface Page {
   elements: PublisherElement[];
 }
 
+export interface BrandKit {
+  id: string;
+  name: string;
+  logoSrc?: string;
+  headingFont: string;
+  bodyFont: string;
+  isCustom?: boolean;
+  colors: {
+    primary: string;
+    secondary: string;
+    accent: string;
+    dark: string;
+    light: string;
+    background: string;
+  };
+}
+
 export interface DocumentProject {
   id: string;
   name: string;
@@ -285,6 +302,7 @@ export interface DocumentProject {
   activePageIndex: number;
   pageSizeName: string;
   colorScheme: string;
+  activeBrandKitId?: string;
   masterPage?: {
     elements: PublisherElement[];
     showOnAllPages: boolean;

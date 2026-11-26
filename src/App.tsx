@@ -11,6 +11,7 @@ import { MailMergeModal } from './components/modals/MailMergeModal';
 import { AIImageModal } from './components/modals/AIImageModal';
 import { CollageModal } from './components/modals/CollageModal';
 import { BrandBoardModal } from './components/modals/BrandBoardModal';
+import { BrandKitModal } from './components/modals/BrandKitModal';
 
 export const AppContent: React.FC = () => {
   return (
@@ -35,6 +36,7 @@ export const AppContent: React.FC = () => {
       <AIImageModal />
       <CollageModal />
       <BrandBoardModal />
+      <BrandKitModal />
     </div>
   );
 };

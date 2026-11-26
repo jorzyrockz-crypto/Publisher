@@ -6,6 +6,7 @@ import {
   PageMargins,
   PageGuide,
   PageBackgroundPattern,
+  BrandKit,
   TextElement,
   ShapeElement,
   ImageElement,
@@ -19,6 +20,7 @@ import {
 import { buildMergedPartFromShape } from '../utils/shapePaths';
 import { TEMPLATES } from '../constants/templates';
 import { reflowElementsForSize } from '../utils/smartResize';
+import { DEFAULT_BRAND_KITS, rebrandPageWithKit } from '../utils/brandRebrand';
 import { PAGE_SIZES } from '../constants/pageSizes';
 import { COLOR_SCHEMES } from '../constants/colorSchemes';
 
@@ -36,6 +38,9 @@ interface PublisherContextType {
   isAIImageModalOpen: boolean;
   isCollageModalOpen: boolean;
   isBrandBoardModalOpen: boolean;
+  isBrandKitModalOpen: boolean;
+  brandKits: BrandKit[];
+  activeBrandKit: BrandKit;
   rulerVisible: boolean;
   guidesVisible: boolean;
   gridVisible: boolean;
@@ -65,6 +70,14 @@ interface PublisherContextType {
   setIsAIImageModalOpen: (open: boolean) => void;
   setIsCollageModalOpen: (open: boolean) => void;
   setIsBrandBoardModalOpen: (open: boolean) => void;
+  setIsBrandKitModalOpen: (open: boolean) => void;
+  saveBrandKit: (kit: BrandKit) => void;
+  deleteBrandKit: (kitId: string) => void;
+  applyBrandKit: (
+    kit: BrandKit,
+    scope?: 'all' | 'page',
+    options?: { stampLogo?: boolean }
+  ) => void;
   setRulerVisible: (visible: boolean) => void;
   setGuidesVisible: (visible: boolean) => void;
   setGridVisible: (visible: boolean) => void;
@@ -146,6 +159,7 @@ interface PublisherContextType {
 const PublisherContext = createContext<PublisherContextType | null>(null);
 
 const AUTOSAVE_KEY = 'ms_publisher_clone_autosave_v1';
+const BRAND_KITS_STORAGE_KEY = 'studiopress_brand_kits_v1';
 
 export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Load from localStorage autosave if available, otherwise default to Corporate Trifold Brochure
@@ -212,6 +226,31 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [isAIImageModalOpen, setIsAIImageModalOpen] = useState(false);
   const [isCollageModalOpen, setIsCollageModalOpen] = useState(false);
   const [isBrandBoardModalOpen, setIsBrandBoardModalOpen] = useState(false);
+  const [isBrandKitModalOpen, setIsBrandKitModalOpen] = useState(false);
+
+  const [brandKits, setBrandKits] = useState<BrandKit[]>(() => {
+    try {
+      const saved = localStorage.getItem(BRAND_KITS_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {
+      // ignore storage errors
+    }
+    return DEFAULT_BRAND_KITS;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(BRAND_KITS_STORAGE_KEY, JSON.stringify(brandKits));
+    } catch {
+      // ignore quota errors
+    }
+  }, [brandKits]);
+
+  const activeBrandKit =
+    brandKits.find((k) => k.id === project.activeBrandKitId) || brandKits[0];
 
   const [rulerVisible, setRulerVisible] = useState(true);
   const [guidesVisible, setGuidesVisible] = useState(true);
@@ -622,6 +661,39 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         colorScheme: schemeId,
         pages: updatedPages,
         masterPage: updatedMaster,
+      });
+    },
+    [project, commitProject]
+  );
+
+  const saveBrandKit = useCallback((kit: BrandKit) => {
+    setBrandKits((prev) => {
+      const exists = prev.some((k) => k.id === kit.id);
+      return exists ? prev.map((k) => (k.id === kit.id ? kit : k)) : [...prev, kit];
+    });
+  }, []);
+
+  const deleteBrandKit = useCallback((kitId: string) => {
+    setBrandKits((prev) => {
+      const next = prev.filter((k) => k.id !== kitId);
+      return next.length > 0 ? next : DEFAULT_BRAND_KITS;
+    });
+  }, []);
+
+  const applyBrandKit = useCallback(
+    (
+      kit: BrandKit,
+      scope: 'all' | 'page' = 'all',
+      options?: { stampLogo?: boolean }
+    ) => {
+      const nextPages = project.pages.map((pg, idx) => {
+        if (scope === 'page' && idx !== project.activePageIndex) return pg;
+        return rebrandPageWithKit(pg, kit, options);
+      });
+      commitProject({
+        ...project,
+        activeBrandKitId: kit.id,
+        pages: nextPages,
       });
     },
     [project, commitProject]
@@ -1507,6 +1579,9 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         isAIImageModalOpen,
         isCollageModalOpen,
         isBrandBoardModalOpen,
+        isBrandKitModalOpen,
+        brandKits,
+        activeBrandKit,
         rulerVisible,
         guidesVisible,
         gridVisible,
@@ -1535,6 +1610,10 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setIsAIImageModalOpen,
         setIsCollageModalOpen,
         setIsBrandBoardModalOpen,
+        setIsBrandKitModalOpen,
+        saveBrandKit,
+        deleteBrandKit,
+        applyBrandKit,
         setRulerVisible,
         setGuidesVisible,
         setGridVisible,
