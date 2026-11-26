@@ -16,6 +16,7 @@ import { buildShapePatternDataUri } from '../../utils/patternGenerator';
 import { PATTERN_CATALOG } from '../../utils/patternGenerator';
 import { layoutText, verticalOffset } from '../../utils/textLayout';
 import { buildTextEffectPainter } from '../../utils/textEffects';
+import { imageClipPath } from '../../utils/shapeClip';
 
 interface ElementRendererProps {
   element: PublisherElement;
@@ -1108,6 +1109,10 @@ const ImageRenderer: React.FC<{
   };
 
   const getClipPath = () => {
+    if (element.clipPathD) {
+      const clip = imageClipPath(element);
+      return clip ? `path("${clip}")` : undefined;
+    }
     switch (element.maskShape) {
       case 'star':
         return 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)';
@@ -1289,6 +1294,8 @@ const ImageRenderer: React.FC<{
       backgroundImage = `linear-gradient(#ffffff, #ffffff), linear-gradient(135deg, ${artColor}, #fad0c4, ${artColor2}, #c2e9fb)`;
     }
 
+    const clipPathValue = getClipPath();
+
     const stampMask =
       art === 'stamp-postage'
         ? 'radial-gradient(8px at 8px 8px, #0000 98%, #000) -8px -8px / 20px 20px'
@@ -1305,8 +1312,9 @@ const ImageRenderer: React.FC<{
         art === 'puffy-clay'
           ? 'visible'
           : 'hidden',
-      borderRadius: borderRadiusStyle,
-      clipPath: getClipPath(),
+      borderRadius: element.clipPathD ? undefined : borderRadiusStyle,
+      clipPath: clipPathValue,
+      WebkitClipPath: clipPathValue,
       backgroundColor:
         art === 'polaroid' ||
         art === 'classic-frame' ||

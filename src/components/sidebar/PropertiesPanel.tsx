@@ -75,6 +75,7 @@ import {
   PanelRightOpen,
   ChevronDown,
   GitMerge,
+  Scissors,
   Workflow,
   Waves,
   Group,
@@ -115,6 +116,7 @@ export const PropertiesPanel: React.FC = () => {
     bringToFront,
     sendToBack,
     mergeSelectedShapes,
+    clipImagesToShape,
     autoConnectSelectedShapes,
     disconnectSelectedShapes,
     addConnectedDiagramStep,
@@ -649,6 +651,30 @@ export const PropertiesPanel: React.FC = () => {
                 </div>
               </div>
             </InspectorCard>
+
+            {selectedElements.some((el) => el.type === 'image') &&
+              selectedElements.some((el) => el.type === 'shape') && (
+                <InspectorCard className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-2 shadow-2xs">
+                  <div className="font-bold text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-100">
+                    <Scissors size={14} className="text-[#5c4bb8]" />
+                    <span>Clip Image to Shape</span>
+                  </div>
+                  <p className="text-[10.5px] text-slate-500">
+                    Put the selected image inside the selected shape's boundary — any shape,
+                    including a merged one.
+                  </p>
+                  <button
+                    onClick={clipImagesToShape}
+                    className="w-full py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-[#efeafd] hover:border-[#d3c9f9] hover:text-[#5c4bb8] text-xs font-semibold transition"
+                  >
+                    Clip image to shape
+                  </button>
+                  <p className="text-[9.5px] text-slate-400 leading-tight">
+                    The image takes the shape's frame; the shape stays underneath so you can keep
+                    its outline. Reposition the photo with Crop &amp; Frame Fit.
+                  </p>
+                </InspectorCard>
+              )}
 
             <InspectorCard className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3 shadow-2xs">
               <div className="font-bold text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-100">
@@ -4242,7 +4268,15 @@ export const PropertiesPanel: React.FC = () => {
                 ).map((mask) => (
                   <button
                     key={mask}
-                    onClick={() => updateElement(selectedElement.id, { maskShape: mask })}
+                    onClick={() =>
+                      updateElement(selectedElement.id, {
+                        maskShape: mask,
+                        // a preset replaces any custom shape clip
+                        clipPathD: undefined,
+                        clipBaseWidth: undefined,
+                        clipBaseHeight: undefined,
+                      })
+                    }
                     className={`py-1 rounded-lg text-[10px] font-semibold capitalize transition-all ${
                       ((selectedElement as ImageElement).maskShape || 'none') === mask
                         ? 'bg-white text-[#5c4bb8] shadow-xs'
@@ -4253,6 +4287,25 @@ export const PropertiesPanel: React.FC = () => {
                   </button>
                 ))}
               </div>
+              {Boolean((selectedElement as ImageElement).clipPathD) && (
+                <div className="flex items-center justify-between mt-1.5 px-1">
+                  <span className="text-[10px] font-semibold text-[#5c4bb8] flex items-center gap-1">
+                    <Scissors size={11} /> Clipped to a custom shape
+                  </span>
+                  <button
+                    onClick={() =>
+                      updateElement(selectedElement.id, {
+                        clipPathD: undefined,
+                        clipBaseWidth: undefined,
+                        clipBaseHeight: undefined,
+                      })
+                    }
+                    className="text-[10px] font-bold text-slate-500 hover:text-rose-600"
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Frame Fit, Zoom & Pan */}

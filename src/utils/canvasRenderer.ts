@@ -15,6 +15,7 @@ import { buildPatternSvg, buildShapePatternDataUri } from './patternGenerator';
 import { buildWavyRectPath, getShapeSvgPath } from './shapePaths';
 import { buildFontString, layoutText, measureTextWidth, verticalOffset } from './textLayout';
 import { buildTextEffectPainter } from './textEffects';
+import { imageClipPath } from './shapeClip';
 
 function loadImage(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
@@ -600,6 +601,13 @@ async function drawShapeElement(ctx: CanvasRenderingContext2D, el: ShapeElement)
 
 async function drawImageElement(ctx: CanvasRenderingContext2D, el: ImageElement) {
   const { width, height } = el;
+
+  // A custom "clip to shape" applies to everything this element paints.
+  const customClip = imageClipPath(el);
+  if (customClip) {
+    ctx.save();
+    ctx.clip(new Path2D(customClip));
+  }
   const art = el.borderArt || 'none';
   const artColor = el.borderArtColor || el.borderColor || '#ffffff';
   const artColor2 = el.borderArtColor2 || '#4f46e5';
@@ -946,6 +954,8 @@ async function drawImageElement(ctx: CanvasRenderingContext2D, el: ImageElement)
     ctx.fillText(el.borderArtCaption, Math.max(8, (width - mw) / 2), height - 5);
     ctx.restore();
   }
+
+  if (customClip) ctx.restore();
 }
 
 function drawTableElement(ctx: CanvasRenderingContext2D, el: TableElement) {

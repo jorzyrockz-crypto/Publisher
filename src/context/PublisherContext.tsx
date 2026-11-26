@@ -22,6 +22,7 @@ import {
 } from '../types/publisher';
 import { buildMergedPartFromShape } from '../utils/shapePaths';
 import { mergeShapeGeometry } from '../utils/shapeBoolean';
+import { ringsToPath, shapeOutlineRings } from '../utils/shapeClip';
 import { TEMPLATES } from '../constants/templates';
 import { reflowElementsForSize } from '../utils/smartResize';
 import { CompositionStyle } from '../utils/designBlueprints';
@@ -211,6 +212,7 @@ interface PublisherContextType {
   groupSelected: () => void;
   ungroupSelected: () => void;
   mergeSelectedShapes: (op: 'union' | 'combine' | 'subtract' | 'intersect') => void;
+  clipImagesToShape: () => void;
   autoConnectSelectedShapes: (style?: 'straight' | 'elbow' | 'curved') => void;
   disconnectSelectedShapes: () => void;
   addConnectedDiagramStep: (style?: 'straight' | 'elbow' | 'curved') => void;
@@ -2278,6 +2280,39 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     [currentElements, selectedElementIds, commitCurrentElements]
   );
 
+  // Clip the selected image(s) to the selected shape's boundary
+  const clipImagesToShape = useCallback(() => {
+    const selected = currentElements.filter((el) => selectedElementIds.includes(el.id));
+    const shapes = selected.filter((el): el is ShapeElement => el.type === 'shape');
+    const images = selected.filter((el): el is ImageElement => el.type === 'image');
+    if (shapes.length === 0 || images.length === 0) return;
+
+    // Top-most selected shape is the frame.
+    const frame = shapes[shapes.length - 1];
+    const rings = shapeOutlineRings({ ...frame, rotation: 0 });
+    const clipPathD = ringsToPath(rings);
+    if (!clipPathD) return;
+
+    const updates: Record<string, Partial<PublisherElement>> = {};
+    for (const image of images) {
+      updates[image.id] = {
+        x: frame.x,
+        y: frame.y,
+        width: frame.width,
+        height: frame.height,
+        rotation: frame.rotation || 0,
+        clipPathD,
+        clipBaseWidth: frame.width,
+        clipBaseHeight: frame.height,
+        // a preset mask would fight the custom clip
+        maskShape: 'none',
+        // sit directly above the frame so it is visible
+        zIndex: (frame.zIndex || 0) + 0.5,
+      };
+    }
+    updateElementsBatch(updates);
+  }, [currentElements, selectedElementIds, updateElementsBatch]);
+
   // Auto-connect 2+ selected elements (or update existing connector style without duplicating)
   const autoConnectSelectedShapes = useCallback(
     (style: 'straight' | 'elbow' | 'curved' = 'elbow') => {
@@ -2600,6 +2635,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         addConnectedDiagramStep,
 
         addTextBox,
+    clipImagesToShape,
         addShape,
         addImage,
         addPicturePlaceholder,
