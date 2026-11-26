@@ -15,6 +15,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/pollinations/, ''),
       },
+      '/api/clipart-free': {
+        target: 'https://clipart.free',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/clipart-free/, ''),
+      },
     },
   },
 })

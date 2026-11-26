@@ -2,6 +2,15 @@ import React, { useRef, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
 import { SAMPLE_GRAPHICS, StockCategory } from '../../constants/sampleGraphics';
 import { STICKER_CATALOG, StickerCategory } from '../../constants/stickerLibrary';
+import {
+  CLIPART_FREE_CATEGORIES,
+  ClipartFreeItem,
+  fetchClipartAsDataUrl,
+  getSavedClipartFreeKey,
+  saveClipartFreeKey,
+  searchClipartFree,
+  toProxiedClipartUrl,
+} from '../../utils/clipartSearch';
 import { ImageElement } from '../../types/publisher';
 import { FloatingDropdown } from '../common/FloatingDropdown';
 import {
@@ -22,6 +31,10 @@ import {
   LayoutGrid,
   ImagePlus,
   Smile,
+  Globe,
+  KeyRound,
+  Loader2,
+  Search,
 } from 'lucide-react';
 
 export const InsertTab: React.FC = () => {
@@ -62,7 +75,62 @@ export const InsertTab: React.FC = () => {
   const [wifiPass, setWifiPass] = useState('');
   const [stockCategory, setStockCategory] = useState<'All' | StockCategory>('All');
   const [stockSearch, setStockSearch] = useState('');
+  const [stockTab, setStockTab] = useState<'builtin' | 'online'>('builtin');
+  const [clipartApiKey, setClipartApiKey] = useState<string>(
+    () => getSavedClipartFreeKey() || 'cf_12a1b9727cf3c4f4e3d3fafc0e01e0ddd2eb714f'
+  );
+  const [showClipartKeyBar, setShowClipartKeyBar] = useState(false);
+  const [onlineQuery, setOnlineQuery] = useState('cat silhouette');
+  const [onlineCategory, setOnlineCategory] = useState<string>('All');
+  const [onlineResults, setOnlineResults] = useState<ClipartFreeItem[]>([]);
+  const [onlineTotal, setOnlineTotal] = useState<number | null>(null);
+  const [isSearchingOnline, setIsSearchingOnline] = useState(false);
+  const [onlineError, setOnlineError] = useState<string | null>(null);
+  const [insertingSlug, setInsertingSlug] = useState<string | null>(null);
   const [stickerSearch, setStickerSearch] = useState('');
+
+  const handleSearchOnlineClipart = async (overrideQuery?: string, overrideCat?: string) => {
+    const q = (overrideQuery ?? onlineQuery).trim();
+    const cat = overrideCat ?? onlineCategory;
+    if (!q) return;
+    setIsSearchingOnline(true);
+    setOnlineError(null);
+    try {
+      const data = await searchClipartFree(q, {
+        category: cat,
+        apiKey: clipartApiKey,
+      });
+      setOnlineResults(data.results || []);
+      setOnlineTotal(data.total ?? (data.results?.length || 0));
+    } catch (err) {
+      setOnlineError(err instanceof Error ? err.message : 'Failed to search Clipart.Free');
+    } finally {
+      setIsSearchingOnline(false);
+    }
+  };
+
+  const handleInsertOnlineClipart = async (item: ClipartFreeItem) => {
+    setInsertingSlug(item.slug);
+    setOnlineError(null);
+    try {
+      const dataUrl = await fetchClipartAsDataUrl(item);
+      const maxDim = 220;
+      const ratio = item.width && item.height ? item.width / item.height : 1;
+      const width = ratio >= 1 ? maxDim : Math.round(maxDim * ratio);
+      const height = ratio >= 1 ? Math.round(maxDim / ratio) : maxDim;
+      addImage(dataUrl, {
+        name: item.title || item.slug,
+        width: Math.max(48, width),
+        height: Math.max(48, height),
+        objectFit: 'contain',
+      });
+      setIsStockOpen(false);
+    } catch (err) {
+      setOnlineError(err instanceof Error ? err.message : 'Failed to insert clipart');
+    } finally {
+      setInsertingSlug(null);
+    }
+  };
 
   const buildQrPayload = () => {
     if (qrMode === 'wifi') {
@@ -370,74 +438,248 @@ export const InsertTab: React.FC = () => {
               isOpen={isStockOpen}
               onClose={() => setIsStockOpen(false)}
               anchorRef={stockBtnRef}
-              className="p-3 w-88"
+              className="p-3 w-96"
             >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-bold text-slate-700">
-                  Stock Art & Clipart ({SAMPLE_GRAPHICS.length})
-                </span>
-              </div>
-              <input
-                type="text"
-                placeholder="Search clipart (e.g. rocket, cake, sunset)..."
-                value={stockSearch}
-                onChange={(e) => setStockSearch(e.target.value)}
-                className="w-full mb-2 px-2.5 py-1 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-[11px] outline-none focus:border-indigo-500"
-              />
-              <div className="flex items-center gap-1 mb-2.5 flex-wrap">
-                {(
-                  [
-                    'All',
-                    'People',
-                    'Animals',
-                    'Plants',
-                    'Things',
-                    'Education',
-                    'Nature',
-                    'Abstract',
-                    'Business',
-                    'Badges',
-                    'Lifestyle',
-                  ] as const
-                ).map((cat) => (
+              {/* Tab Switcher: Built-in vs Online Clipart.Free */}
+              <div className="flex items-center justify-between gap-2 mb-2.5">
+                <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-xl flex-1">
                   <button
-                    key={cat}
-                    onClick={() => setStockCategory(cat)}
-                    className={`px-2 py-0.5 rounded-full text-[10px] font-semibold transition ${
-                      stockCategory === cat
-                        ? 'bg-indigo-600 text-white'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    type="button"
+                    onClick={() => setStockTab('builtin')}
+                    className={`flex-1 py-1 px-2 rounded-lg text-[10.5px] font-bold transition ${
+                      stockTab === 'builtin'
+                        ? 'bg-white text-indigo-700 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    {cat}
+                    Built-in ({SAMPLE_GRAPHICS.length})
                   </button>
-                ))}
-              </div>
-              <div className="grid grid-cols-3 gap-2 max-h-72 overflow-y-auto pr-1">
-                {SAMPLE_GRAPHICS.filter(
-                  (g) =>
-                    (stockCategory === 'All' || g.category === stockCategory) &&
-                    g.name.toLowerCase().includes(stockSearch.toLowerCase())
-                ).map((g) => (
                   <button
-                    key={g.id}
+                    type="button"
                     onClick={() => {
-                      addImage(g.src, { name: g.name });
-                      setIsStockOpen(false);
+                      setStockTab('online');
+                      if (onlineResults.length === 0 && !isSearchingOnline) {
+                        handleSearchOnlineClipart();
+                      }
                     }}
-                    className="group/item flex flex-col items-center p-1.5 rounded-xl border border-slate-200/80 hover:border-indigo-500 hover:bg-indigo-50/40 transition"
+                    className={`flex-1 py-1 px-2 rounded-lg text-[10.5px] font-bold transition flex items-center justify-center gap-1 ${
+                      stockTab === 'online'
+                        ? 'bg-white text-indigo-700 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
                   >
-                    <img
-                      src={g.src}
-                      alt={g.name}
-                      className="w-full h-14 object-cover rounded-lg mb-1"
-                    />
-                    <span className="text-[10px] font-semibold text-slate-700 truncate w-full text-center">
-                      {g.name}
-                    </span>
+                    <Globe size={11} />
+                    <span>Clipart.Free (CC0)</span>
                   </button>
-                ))}
+                </div>
+                {stockTab === 'online' && (
+                  <button
+                    type="button"
+                    onClick={() => setShowClipartKeyBar(!showClipartKeyBar)}
+                    title="Configure Clipart.Free API Key"
+                    className={`p-1.5 rounded-lg border transition ${
+                      showClipartKeyBar
+                        ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
+                        : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    <KeyRound size={12} />
+                  </button>
+                )}
               </div>
+
+              {stockTab === 'builtin' ? (
+                <>
+                  <input
+                    type="text"
+                    placeholder="Search clipart (e.g. rocket, cake, sunset)..."
+                    value={stockSearch}
+                    onChange={(e) => setStockSearch(e.target.value)}
+                    className="w-full mb-2 px-2.5 py-1 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-[11px] outline-none focus:border-indigo-500"
+                  />
+                  <div className="flex items-center gap-1 mb-2.5 flex-wrap">
+                    {(
+                      [
+                        'All',
+                        'People',
+                        'Animals',
+                        'Plants',
+                        'Things',
+                        'Education',
+                        'Nature',
+                        'Abstract',
+                        'Business',
+                        'Badges',
+                        'Lifestyle',
+                      ] as const
+                    ).map((cat) => (
+                      <button
+                        key={cat}
+                        onClick={() => setStockCategory(cat)}
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-semibold transition ${
+                          stockCategory === cat
+                            ? 'bg-indigo-600 text-white'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 max-h-72 overflow-y-auto pr-1">
+                    {SAMPLE_GRAPHICS.filter(
+                      (g) =>
+                        (stockCategory === 'All' || g.category === stockCategory) &&
+                        g.name.toLowerCase().includes(stockSearch.toLowerCase())
+                    ).map((g) => (
+                      <button
+                        key={g.id}
+                        onClick={() => {
+                          addImage(g.src, { name: g.name });
+                          setIsStockOpen(false);
+                        }}
+                        className="group/item flex flex-col items-center p-1.5 rounded-xl border border-slate-200/80 hover:border-indigo-500 hover:bg-indigo-50/40 transition"
+                      >
+                        <img
+                          src={g.src}
+                          alt={g.name}
+                          className="w-full h-14 object-cover rounded-lg mb-1"
+                        />
+                        <span className="text-[10px] font-semibold text-slate-700 truncate w-full text-center">
+                          {g.name}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <>
+                  {showClipartKeyBar && (
+                    <div className="mb-2 flex items-center gap-1.5 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
+                      <input
+                        type="password"
+                        value={clipartApiKey}
+                        onChange={(e) => {
+                          setClipartApiKey(e.target.value);
+                          saveClipartFreeKey(e.target.value);
+                        }}
+                        placeholder="cf_..."
+                        className="flex-1 bg-white px-2 py-1 rounded-lg border border-slate-200 text-[10.5px] outline-none focus:border-indigo-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowClipartKeyBar(false)}
+                        className="px-2 py-1 rounded-lg bg-indigo-600 text-white text-[10px] font-bold"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  )}
+
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleSearchOnlineClipart();
+                    }}
+                    className="flex items-center gap-1.5 mb-2"
+                  >
+                    <input
+                      type="text"
+                      placeholder="Search thousands of CC0 cliparts..."
+                      value={onlineQuery}
+                      onChange={(e) => setOnlineQuery(e.target.value)}
+                      className="flex-1 px-2.5 py-1 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-[11px] outline-none focus:border-indigo-500"
+                    />
+                    <button
+                      type="submit"
+                      disabled={isSearchingOnline}
+                      className="px-2.5 py-1 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-[11px] font-bold flex items-center gap-1 transition"
+                    >
+                      {isSearchingOnline ? (
+                        <Loader2 size={12} className="animate-spin" />
+                      ) : (
+                        <Search size={12} />
+                      )}
+                      <span>Find</span>
+                    </button>
+                  </form>
+
+                  <div className="flex items-center gap-1 mb-2 flex-wrap">
+                    {CLIPART_FREE_CATEGORIES.map((cat) => (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => {
+                          setOnlineCategory(cat);
+                          handleSearchOnlineClipart(onlineQuery, cat);
+                        }}
+                        className={`px-2 py-0.5 rounded-full text-[9.5px] font-semibold capitalize transition ${
+                          onlineCategory === cat
+                            ? 'bg-indigo-600 text-white'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+
+                  {onlineError && (
+                    <div className="mb-2 px-2.5 py-1.5 rounded-lg bg-rose-50 border border-rose-200 text-[10.5px] text-rose-700">
+                      {onlineError}
+                    </div>
+                  )}
+
+                  {onlineTotal !== null && !onlineError && (
+                    <div className="text-[10px] text-slate-400 font-medium mb-1.5 flex items-center justify-between">
+                      <span>{onlineTotal.toLocaleString()} CC0 results found</span>
+                      <span>Vector SVG • Recolorable</span>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto pr-1">
+                    {isSearchingOnline ? (
+                      <div className="col-span-3 py-10 flex flex-col items-center justify-center text-slate-400 gap-2">
+                        <Loader2 size={20} className="animate-spin text-indigo-500" />
+                        <span className="text-[11px]">Searching Clipart.Free...</span>
+                      </div>
+                    ) : onlineResults.length === 0 ? (
+                      <div className="col-span-3 py-8 text-center text-[11px] text-slate-400">
+                        Enter a keyword above (e.g. cat, trophy, flower) and press Find.
+                      </div>
+                    ) : (
+                      onlineResults.map((item) => {
+                        const thumbUrl = toProxiedClipartUrl(
+                          item.png_urls?.['400'] || item.svg_url
+                        );
+                        const isInserting = insertingSlug === item.slug;
+                        return (
+                          <button
+                            key={item.slug}
+                            type="button"
+                            disabled={isInserting}
+                            onClick={() => handleInsertOnlineClipart(item)}
+                            title={`${item.title} (${item.license})`}
+                            className="group/item relative flex flex-col items-center p-1.5 rounded-xl border border-slate-200/80 hover:border-indigo-500 hover:bg-indigo-50/40 transition disabled:opacity-60"
+                          >
+                            <div className="w-full h-14 flex items-center justify-center bg-slate-50 rounded-lg mb-1 overflow-hidden p-1">
+                              <img
+                                src={thumbUrl}
+                                alt={item.title}
+                                loading="lazy"
+                                className="max-w-full max-h-full object-contain"
+                              />
+                            </div>
+                            <span className="text-[9.5px] font-semibold text-slate-700 truncate w-full text-center">
+                              {isInserting ? 'Inserting...' : item.title}
+                            </span>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </>
+              )}
             </FloatingDropdown>
           </div>
 
