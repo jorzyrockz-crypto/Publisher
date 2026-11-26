@@ -483,7 +483,28 @@ async function drawShapeElement(ctx: CanvasRenderingContext2D, el: ShapeElement)
     }
   }
 
-  if (el.shapeType === 'merged' && el.mergedParts && el.mergedParts.length > 0) {
+  if (el.shapeType === 'merged' && el.mergedPath) {
+    // Export the same single path the canvas shows, scaled like the preview.
+    const p2d = new Path2D(el.mergedPath);
+    ctx.save();
+    const baseW = el.mergedBaseWidth || width || 1;
+    const baseH = el.mergedBaseHeight || height || 1;
+    ctx.scale(width / baseW, height / baseH);
+    if (strokeDash === 'dashed') ctx.setLineDash([8, 4]);
+    else if (strokeDash === 'dotted') ctx.setLineDash([3, 3]);
+    if (patternBgGrad) {
+      ctx.fillStyle = patternBgGrad;
+      ctx.fill(p2d);
+    }
+    ctx.fillStyle = resolvedFillStyle;
+    ctx.fill(p2d);
+    if (strokeWidth > 0 && strokeColor && strokeColor !== 'transparent') {
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = strokeWidth;
+      ctx.stroke(p2d);
+    }
+    ctx.restore();
+  } else if (el.shapeType === 'merged' && el.mergedParts && el.mergedParts.length > 0) {
     ctx.strokeStyle = strokeColor || 'transparent';
     ctx.lineWidth = strokeWidth || 0;
     for (const part of el.mergedParts) {

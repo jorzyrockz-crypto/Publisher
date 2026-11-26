@@ -655,27 +655,48 @@ export const PropertiesPanel: React.FC = () => {
                 <GitMerge size={14} className="text-[#5c4bb8]" />
                 <span>Merge Shapes ({selectedElementIds.length} selected)</span>
               </div>
-              <p className="text-[10.5px] text-slate-500">
-                Combine overlapping shapes just like PowerPoint:
-              </p>
-              <div className="grid grid-cols-2 gap-1.5">
-                {(
-                  [
-                    { op: 'union', label: 'Union' },
-                    { op: 'combine', label: 'Combine' },
-                    { op: 'subtract', label: 'Subtract' },
-                    { op: 'intersect', label: 'Intersect' },
-                  ] as const
-                ).map((item) => (
-                  <button
-                    key={item.op}
-                    onClick={() => mergeSelectedShapes(item.op)}
-                    className="py-1.5 px-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-[#efeafd] hover:border-[#d3c9f9] hover:text-[#5c4bb8] text-xs font-semibold transition"
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
+              {(() => {
+                const selectedShapes = selectedElements.filter((el) => el.type === 'shape');
+                const canMerge = selectedShapes.length >= 2;
+                return (
+                  <>
+                    <p className="text-[10.5px] text-slate-500">
+                      {canMerge
+                        ? 'Real boolean geometry — one path, so it exports and stays crisp:'
+                        : 'Select two or more shapes. Text, images and connectors cannot be merged.'}
+                    </p>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {(
+                        [
+                          { op: 'union', label: 'Union' },
+                          { op: 'combine', label: 'Combine' },
+                          { op: 'subtract', label: 'Subtract' },
+                          { op: 'intersect', label: 'Intersect' },
+                        ] as const
+                      ).map((item) => (
+                        <button
+                          key={item.op}
+                          disabled={!canMerge}
+                          onClick={() => mergeSelectedShapes(item.op)}
+                          className={`py-1.5 px-2.5 rounded-xl border text-xs font-semibold transition ${
+                            canMerge
+                              ? 'border-slate-200 bg-slate-50 hover:bg-[#efeafd] hover:border-[#d3c9f9] hover:text-[#5c4bb8]'
+                              : 'border-slate-100 bg-slate-50/60 text-slate-300 cursor-not-allowed'
+                          }`}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                    {canMerge && (
+                      <p className="text-[9.5px] text-slate-400 leading-tight">
+                        Subtract removes the other shapes from the bottom-most one; the result is a
+                        single editable shape.
+                      </p>
+                    )}
+                  </>
+                );
+              })()}
             </InspectorCard>
 
             {(() => {

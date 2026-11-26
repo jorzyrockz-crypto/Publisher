@@ -21,6 +21,7 @@ import {
   BackstageSection,
 } from '../types/publisher';
 import { buildMergedPartFromShape } from '../utils/shapePaths';
+import { mergeShapeGeometry } from '../utils/shapeBoolean';
 import { TEMPLATES } from '../constants/templates';
 import { reflowElementsForSize } from '../utils/smartResize';
 import { CompositionStyle } from '../utils/designBlueprints';
@@ -2213,14 +2214,31 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
       const base = shapes[0];
       const mergedParts = shapes.flatMap((s) =>
-        s.shapeType === 'merged' && s.mergedParts
-          ? s.mergedParts.map((p) => ({
-              ...p,
-              x: p.x + (s.x - minX),
-              y: p.y + (s.y - minY),
-            }))
+        s.shapeType === 'merged' && (s.mergedPath || s.mergedParts)
+          ? s.mergedPath
+            ? [
+                {
+                  d: s.mergedPath,
+                  x: s.x - minX,
+                  y: s.y - minY,
+                  width: s.width,
+                  height: s.height,
+                  rotation: s.rotation || 0,
+                  // the path is stored in the frame it was generated for
+                  scaleX: s.width / (s.mergedBaseWidth || s.width || 1),
+                  scaleY: s.height / (s.mergedBaseHeight || s.height || 1),
+                },
+              ]
+            : (s.mergedParts || []).map((p) => ({
+                ...p,
+                x: p.x + (s.x - minX),
+                y: p.y + (s.y - minY),
+              }))
           : [buildMergedPartFromShape(s, minX, minY)]
       );
+
+      // One real path: true union / subtract / intersect instead of a mask.
+      const mergedPath = mergeShapeGeometry(mergedParts, op) ?? undefined;
 
       const mergedShape: ShapeElement = {
         id: `shp-merged-${Date.now()}`,
@@ -2245,6 +2263,9 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         glowColor: base.glowColor,
         glowSize: base.glowSize,
         mergeOp: op,
+        mergedPath,
+        mergedBaseWidth: mergedPath ? Math.max(20, Math.round(maxX - minX)) : undefined,
+        mergedBaseHeight: mergedPath ? Math.max(20, Math.round(maxY - minY)) : undefined,
         mergedParts,
       };
 

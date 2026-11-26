@@ -177,6 +177,11 @@ export interface ShapeElement extends BaseElement {
   waveAmplitude?: number;
   waveFrequency?: number;
   mergeOp?: 'union' | 'combine' | 'subtract' | 'intersect';
+  /** Boolean result baked into a single path (merged-local coordinates). */
+  mergedPath?: string;
+  /** Frame the merged path was generated for, so later resizes scale it. */
+  mergedBaseWidth?: number;
+  mergedBaseHeight?: number;
   mergedParts?: {
     d: string;
     x: number;

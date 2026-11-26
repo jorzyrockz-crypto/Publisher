@@ -801,6 +801,25 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
           />
         );
       case 'merged': {
+        // New merges are real geometry: one path, one fill, one outline.
+        if (element.mergedPath) {
+          const baseW = element.mergedBaseWidth || width || 1;
+          const baseH = element.mergedBaseHeight || height || 1;
+          const sx = width / baseW;
+          const sy = height / baseH;
+          return (
+            <path
+              d={element.mergedPath}
+              fillRule="nonzero"
+              fill={overrideFill ?? effectiveFill}
+              stroke={strokeColor}
+              strokeWidth={strokeWidth}
+              strokeDasharray={dashArray}
+              transform={sx !== 1 || sy !== 1 ? `scale(${sx} ${sy})` : undefined}
+            />
+          );
+        }
+
         const parts = element.mergedParts || [];
         if (parts.length === 0) return null;
         const op = element.mergeOp || 'union';
