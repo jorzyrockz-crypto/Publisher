@@ -241,6 +241,28 @@ export interface PageMargins {
   left: number;
 }
 
+export type BackgroundPatternType =
+  | 'none'
+  | 'dots'
+  | 'grid'
+  | 'diagonal-stripes'
+  | 'chevron'
+  | 'hexagon'
+  | 'waves'
+  | 'terrazzo'
+  | 'isometric'
+  | 'checker'
+  | 'crosshatch';
+
+export interface PageBackgroundPattern {
+  type: BackgroundPatternType;
+  color: string;
+  opacity: number;
+  scale: number;
+  strokeWidth: number;
+  rotation: number;
+}
+
 export interface Page {
   id: string;
   name: string;
@@ -250,6 +272,7 @@ export interface Page {
   height: number; // pixels
   orientation: 'portrait' | 'landscape';
   backgroundColor: string;
+  backgroundPattern?: PageBackgroundPattern;
   margins: PageMargins;
   guides: PageGuide[];
   elements: PublisherElement[];

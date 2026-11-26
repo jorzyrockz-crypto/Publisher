@@ -3,6 +3,7 @@ import { usePublisher } from '../../context/PublisherContext';
 import { ElementRenderer } from './ElementRenderer';
 import { SelectionBox } from './SelectionBox';
 import { calculateSnap } from '../../utils/snapping';
+import { buildPatternBackgroundStyle } from '../../utils/patternGenerator';
 import { PublisherElement, Page, ConnectorElement } from '../../types/publisher';
 import {
   Copy,
@@ -343,6 +344,7 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
           width: `${targetPage.width}px`,
           height: `${targetPage.height}px`,
           backgroundColor: targetPage.backgroundColor,
+          ...buildPatternBackgroundStyle(targetPage.backgroundPattern),
           boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
           transform: `scale(${zoom})`,
           transformOrigin: 'top left',

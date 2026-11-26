@@ -7,6 +7,7 @@ import {
   TableElement,
   QRElement,
   ConnectorElement,
+  PageBackgroundPattern,
   WordArtStyle,
   BorderArtStyle,
   ShapeType,
@@ -17,6 +18,12 @@ import { FontSelector } from '../common/FontSelector';
 import { FloatingDropdown } from '../common/FloatingDropdown';
 import { ShapePreviewIcon } from '../common/ShapePreviewIcon';
 import { SHAPE_CATALOG } from '../../utils/shapePaths';
+import {
+  PATTERN_CATALOG,
+  DEFAULT_BACKGROUND_PATTERN,
+  buildPatternBackgroundStyle,
+} from '../../utils/patternGenerator';
+import { COLOR_SCHEMES } from '../../constants/colorSchemes';
 import {
   Type,
   Square,
@@ -84,6 +91,7 @@ export const PropertiesPanel: React.FC = () => {
     setPageOrientation,
     setPageMargins,
     setPageBackgroundColor,
+    setPageBackgroundPattern,
   } = usePublisher();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -551,6 +559,175 @@ export const PropertiesPanel: React.FC = () => {
                     White
                   </button>
                 </div>
+              </div>
+
+              {/* Seamless Background Pattern Generator */}
+              <div className="pt-2.5 border-t border-slate-100 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-[11px] font-semibold text-slate-600">
+                    Background Pattern
+                  </label>
+                  {activePage.backgroundPattern && activePage.backgroundPattern.type !== 'none' && (
+                    <button
+                      onClick={() => setPageBackgroundPattern(undefined)}
+                      className="text-[10.5px] font-semibold text-rose-600 hover:underline"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                {/* Pattern Swatch Grid */}
+                <div className="grid grid-cols-5 gap-1.5">
+                  {PATTERN_CATALOG.map((pat) => {
+                    const currentPat = activePage.backgroundPattern;
+                    const isSelected = currentPat?.type === pat.id;
+                    const swatchPat: PageBackgroundPattern = {
+                      ...(currentPat || DEFAULT_BACKGROUND_PATTERN),
+                      type: pat.id,
+                      scale: 18,
+                      opacity: 0.45,
+                    };
+                    return (
+                      <button
+                        key={pat.id}
+                        type="button"
+                        onClick={() =>
+                          setPageBackgroundPattern({
+                            ...(currentPat || DEFAULT_BACKGROUND_PATTERN),
+                            type: pat.id,
+                          })
+                        }
+                        title={pat.label}
+                        className={`h-10 rounded-lg border transition-all relative overflow-hidden ${
+                          isSelected
+                            ? 'border-indigo-600 ring-2 ring-indigo-500/30 shadow-xs'
+                            : 'border-slate-200 hover:border-indigo-400'
+                        }`}
+                        style={{
+                          backgroundColor: activePage.backgroundColor || '#ffffff',
+                          ...buildPatternBackgroundStyle(swatchPat),
+                        }}
+                      >
+                        <span className="sr-only">{pat.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {activePage.backgroundPattern && activePage.backgroundPattern.type !== 'none' && (() => {
+                  const pat = activePage.backgroundPattern!;
+                  const activeScheme =
+                    COLOR_SCHEMES.find((s) => s.id === project.colorScheme) || COLOR_SCHEMES[0];
+
+                  return (
+                    <div className="space-y-2 pt-1">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={pat.color}
+                          onChange={(e) =>
+                            setPageBackgroundPattern({ ...pat, color: e.target.value })
+                          }
+                          className="w-6 h-6 rounded-full border border-slate-200 cursor-pointer p-0"
+                        />
+                        <span className="font-mono text-[10px] text-slate-600 font-semibold">
+                          {pat.color.toUpperCase()}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setPageBackgroundPattern({ ...pat, color: activeScheme.primary })
+                          }
+                          className="ml-auto text-[10px] font-semibold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition"
+                        >
+                          Match Theme
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <div className="flex justify-between text-[10px] text-slate-500 font-medium mb-0.5">
+                            <span>Tile Size</span>
+                            <span>{pat.scale}px</span>
+                          </div>
+                          <input
+                            type="range"
+                            min={12}
+                            max={120}
+                            value={pat.scale}
+                            onChange={(e) =>
+                              setPageBackgroundPattern({ ...pat, scale: Number(e.target.value) })
+                            }
+                            className="w-full accent-indigo-600 cursor-pointer"
+                          />
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-[10px] text-slate-500 font-medium mb-0.5">
+                            <span>Opacity</span>
+                            <span>{Math.round(pat.opacity * 100)}%</span>
+                          </div>
+                          <input
+                            type="range"
+                            min={5}
+                            max={100}
+                            value={Math.round(pat.opacity * 100)}
+                            onChange={(e) =>
+                              setPageBackgroundPattern({
+                                ...pat,
+                                opacity: Number(e.target.value) / 100,
+                              })
+                            }
+                            className="w-full accent-indigo-600 cursor-pointer"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <div className="flex justify-between text-[10px] text-slate-500 font-medium mb-0.5">
+                            <span>Weight</span>
+                            <span>{pat.strokeWidth}px</span>
+                          </div>
+                          <input
+                            type="range"
+                            min={1}
+                            max={8}
+                            step={0.5}
+                            value={pat.strokeWidth}
+                            onChange={(e) =>
+                              setPageBackgroundPattern({
+                                ...pat,
+                                strokeWidth: Number(e.target.value),
+                              })
+                            }
+                            className="w-full accent-indigo-600 cursor-pointer"
+                          />
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-[10px] text-slate-500 font-medium mb-0.5">
+                            <span>Angle</span>
+                            <span>{pat.rotation}°</span>
+                          </div>
+                          <input
+                            type="range"
+                            min={0}
+                            max={180}
+                            step={5}
+                            value={pat.rotation}
+                            onChange={(e) =>
+                              setPageBackgroundPattern({
+                                ...pat,
+                                rotation: Number(e.target.value),
+                              })
+                            }
+                            className="w-full accent-indigo-600 cursor-pointer"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>

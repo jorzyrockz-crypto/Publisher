@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { PublisherElement } from '../../types/publisher';
 import { ElementRenderer } from '../canvas/ElementRenderer';
+import { buildPatternBackgroundStyle } from '../../utils/patternGenerator';
 
 export const PageThumbnails: React.FC = () => {
   const {
@@ -191,6 +192,7 @@ export const PageThumbnails: React.FC = () => {
                     width: `${Math.round(page.width * effectiveScale)}px`,
                     height: `${Math.round(page.height * effectiveScale)}px`,
                     backgroundColor: page.backgroundColor,
+                    ...buildPatternBackgroundStyle(page.backgroundPattern, effectiveScale),
                   }}
                 >
                   {/* Live Scaled Page Preview (shows real text, shapes, images, tables & master elements) */}

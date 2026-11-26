@@ -5,6 +5,7 @@ import {
   PublisherElement,
   PageMargins,
   PageGuide,
+  PageBackgroundPattern,
   TextElement,
   ShapeElement,
   ImageElement,
@@ -80,6 +81,7 @@ interface PublisherContextType {
   updatePagePosition: (pageIndex: number, x: number, y: number) => void;
   setPageMargins: (margins: PageMargins) => void;
   setPageBackgroundColor: (color: string) => void;
+  setPageBackgroundPattern: (pattern: PageBackgroundPattern | undefined) => void;
   setColorScheme: (schemeId: string) => void;
   loadTemplate: (templateId: string) => void;
 
@@ -398,6 +400,16 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     (backgroundColor: string) => {
       const newPages = project.pages.map((pg, idx) =>
         idx === project.activePageIndex ? { ...pg, backgroundColor } : pg
+      );
+      commitProject({ ...project, pages: newPages });
+    },
+    [project, commitProject]
+  );
+
+  const setPageBackgroundPattern = useCallback(
+    (backgroundPattern: PageBackgroundPattern | undefined) => {
+      const newPages = project.pages.map((pg, idx) =>
+        idx === project.activePageIndex ? { ...pg, backgroundPattern } : pg
       );
       commitProject({ ...project, pages: newPages });
     },
@@ -1400,6 +1412,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         updatePagePosition,
         setPageMargins,
         setPageBackgroundColor,
+        setPageBackgroundPattern,
         setColorScheme,
         loadTemplate,
 
