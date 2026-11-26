@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+﻿import React, { useRef, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
 import {
   TextElement,
@@ -24,6 +24,12 @@ import {
   buildPatternBackgroundStyle,
 } from '../../utils/patternGenerator';
 import { COLOR_SCHEMES } from '../../constants/colorSchemes';
+import {
+  CROP_RATIO_PRESETS,
+  computeAspectCropUpdates,
+  FILTER_EFFECT_PRESETS,
+  BORDER_ART_OPTIONS,
+} from '../../utils/pictureEffects';
 import {
   Type,
   Square,
@@ -71,6 +77,7 @@ export const PropertiesPanel: React.FC = () => {
     setIsRightPanelOpen,
     selectedElementIds,
     updateElement,
+    updateElementsBatch,
     updateSelectedElements,
     deleteSelectedElements,
     duplicateSelectedElements,
@@ -188,6 +195,176 @@ export const PropertiesPanel: React.FC = () => {
         {selectedElementIds.length >= 2 && (
           <div className="space-y-4">
             {/* Group & Selection Actions */}
+            {(() => {
+              const selectedImages = selectedElements.filter(
+                (el): el is ImageElement => el.type === 'image'
+              );
+              if (selectedImages.length < 2) return null;
+              const sampleImg = selectedImages[0];
+
+              const applyToAllSelectedImages = (updates: Partial<ImageElement>) => {
+                const map: Record<string, Partial<ImageElement>> = {};
+                selectedImages.forEach((im) => {
+                  map[im.id] = updates;
+                });
+                updateElementsBatch(map);
+              };
+
+              return (
+                <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3 shadow-2xs">
+                  <div className="font-bold text-slate-800 flex items-center justify-between pb-2 border-b border-slate-100">
+                    <div className="flex items-center gap-1.5">
+                      <ImageIcon size={14} className="text-indigo-700" />
+                      <span>Multi-Picture Tools ({selectedImages.length})</span>
+                    </div>
+                  </div>
+
+                  {/* Batch Aspect Crop */}
+                  <div>
+                    <label className="block text-[10.5px] font-semibold text-slate-500 mb-1">
+                      Crop All to Ratio
+                    </label>
+                    <div className="grid grid-cols-3 gap-1">
+                      {CROP_RATIO_PRESETS.map((cr) => (
+                        <button
+                          key={cr.id}
+                          type="button"
+                          onClick={() => {
+                            const map: Record<string, Partial<ImageElement>> = {};
+                            selectedImages.forEach((im) => {
+                              map[im.id] = computeAspectCropUpdates(
+                                im,
+                                cr.ratio,
+                                activePage.width,
+                                activePage.height
+                              );
+                            });
+                            updateElementsBatch(map);
+                          }}
+                          className="py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-800 text-[10px] font-bold transition"
+                        >
+                          {cr.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Batch BorderArt */}
+                  <div className="pt-2 border-t border-slate-100 space-y-2">
+                    <label className="block text-[10.5px] font-semibold text-slate-500">
+                      Collage BorderArt (All Selected)
+                    </label>
+                    <select
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2 py-1.5 text-xs font-medium outline-none cursor-pointer"
+                      value={sampleImg.borderArt || 'none'}
+                      onChange={(e) => {
+                        const style = e.target.value as BorderArtStyle;
+                        const def = BORDER_ART_OPTIONS.find((b) => b.id === style);
+                        applyToAllSelectedImages({
+                          borderArt: style,
+                          borderArtColor: def?.defaultColor || sampleImg.borderArtColor,
+                          borderArtColor2: def?.defaultColor2 || sampleImg.borderArtColor2,
+                          borderArtPadding: def?.defaultPadding ?? 6,
+                        });
+                      }}
+                    >
+                      {BORDER_ART_OPTIONS.map((b) => (
+                        <option key={b.id} value={b.id}>
+                          {b.label}
+                        </option>
+                      ))}
+                    </select>
+
+                    {sampleImg.borderArt && sampleImg.borderArt !== 'none' && (
+                      <div className="space-y-2 pt-1">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
+                            <input
+                              type="color"
+                              value={sampleImg.borderArtColor || '#ffffff'}
+                              onChange={(e) =>
+                                applyToAllSelectedImages({ borderArtColor: e.target.value })
+                              }
+                              className="w-5 h-5 rounded-full border border-slate-200 cursor-pointer p-0"
+                            />
+                            <span className="text-[10px] text-slate-600 font-semibold">Frame</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
+                            <input
+                              type="color"
+                              value={sampleImg.borderArtColor2 || '#4f46e5'}
+                              onChange={(e) =>
+                                applyToAllSelectedImages({ borderArtColor2: e.target.value })
+                              }
+                              className="w-5 h-5 rounded-full border border-slate-200 cursor-pointer p-0"
+                            />
+                            <span className="text-[10px] text-slate-600 font-semibold">Accent</span>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <div className="flex justify-between text-[9.5px] text-slate-500">
+                              <span>Border</span>
+                              <span>{sampleImg.borderArtWidth ?? 4}px</span>
+                            </div>
+                            <input
+                              type="range"
+                              min={1}
+                              max={16}
+                              value={sampleImg.borderArtWidth ?? 4}
+                              onChange={(e) =>
+                                applyToAllSelectedImages({
+                                  borderArtWidth: Number(e.target.value),
+                                })
+                              }
+                              className="w-full accent-indigo-600 cursor-pointer"
+                            />
+                          </div>
+                          <div>
+                            <div className="flex justify-between text-[9.5px] text-slate-500">
+                              <span>Mat Pad</span>
+                              <span>{sampleImg.borderArtPadding ?? 6}px</span>
+                            </div>
+                            <input
+                              type="range"
+                              min={0}
+                              max={28}
+                              value={sampleImg.borderArtPadding ?? 6}
+                              onChange={(e) =>
+                                applyToAllSelectedImages({
+                                  borderArtPadding: Number(e.target.value),
+                                })
+                              }
+                              className="w-full accent-indigo-600 cursor-pointer"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Batch Stylized Filters */}
+                  <div className="pt-2 border-t border-slate-100 space-y-1.5">
+                    <label className="block text-[10.5px] font-semibold text-slate-500">
+                      Filter &amp; Effect Style (All Selected)
+                    </label>
+                    <div className="grid grid-cols-3 gap-1">
+                      {FILTER_EFFECT_PRESETS.map((preset) => (
+                        <button
+                          key={preset.name}
+                          type="button"
+                          onClick={() => applyToAllSelectedImages(preset.vals)}
+                          className="py-1 px-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-800 text-[9.5px] font-semibold transition truncate"
+                        >
+                          {preset.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
             <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3 shadow-2xs">
               <div className="font-bold text-slate-800 flex items-center justify-between pb-2 border-b border-slate-100">
                 <div className="flex items-center gap-1.5">
@@ -401,7 +578,7 @@ export const PropertiesPanel: React.FC = () => {
               const activeConnectorStyle = existingConnectors[0]?.connectorStyle;
 
               return (
-                <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3 shadow-2xs">
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3 shadow-2xs">
                   <div className="font-bold text-slate-800 flex items-center justify-between pb-2 border-b border-slate-100">
                     <div className="flex items-center gap-1.5">
                       <Workflow size={14} className="text-indigo-700" />
@@ -463,7 +640,7 @@ export const PropertiesPanel: React.FC = () => {
                   <span>Page {project.activePageIndex + 1} Setup</span>
                 </div>
                 <span className="text-[10px] font-mono text-slate-400">
-                  {(activePage.width / 96).toFixed(1)}"×{(activePage.height / 96).toFixed(1)}"
+                  {(activePage.width / 96).toFixed(1)}"Ã—{(activePage.height / 96).toFixed(1)}"
                 </span>
               </div>
 
@@ -792,7 +969,7 @@ export const PropertiesPanel: React.FC = () => {
                         <div>
                           <div className="flex justify-between text-[10px] text-slate-500 font-medium mb-0.5">
                             <span>Angle</span>
-                            <span>{pat.rotation}°</span>
+                            <span>{pat.rotation}Â°</span>
                           </div>
                           <input
                             type="range"
@@ -1839,7 +2016,7 @@ export const PropertiesPanel: React.FC = () => {
                 <div>
                   <div className="flex justify-between text-[10px] text-slate-500 font-medium mb-1">
                     <span>Gradient Angle</span>
-                    <span>{(selectedElement as ShapeElement).gradientAngle ?? 90}°</span>
+                    <span>{(selectedElement as ShapeElement).gradientAngle ?? 90}Â°</span>
                   </div>
                   <input
                     type="range"
@@ -2056,25 +2233,138 @@ export const PropertiesPanel: React.FC = () => {
               </button>
             </div>
 
-            {/* BorderArt */}
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-500 mb-1.5">
+            {/* BorderArt (Customizable Collage Frames) */}
+            <div className="space-y-2">
+              <label className="block text-[11px] font-semibold text-slate-500">
                 BorderArt Decorative Frame
               </label>
               <select
                 className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:bg-white font-medium cursor-pointer"
                 value={(selectedElement as ImageElement).borderArt || 'none'}
-                onChange={(e) =>
+                onChange={(e) => {
+                  const style = e.target.value as BorderArtStyle;
+                  const def = BORDER_ART_OPTIONS.find((b) => b.id === style);
                   updateElement(selectedElement.id, {
-                    borderArt: e.target.value as BorderArtStyle,
-                  })
-                }
+                    borderArt: style,
+                    borderArtColor: def?.defaultColor || (selectedElement as ImageElement).borderArtColor,
+                    borderArtColor2: def?.defaultColor2 || (selectedElement as ImageElement).borderArtColor2,
+                    borderArtPadding: def?.defaultPadding ?? 6,
+                  });
+                }}
               >
-                <option value="none">No BorderArt</option>
-                <option value="double-gold">Double Gold Frame</option>
-                <option value="art-deco">Art Deco Slate</option>
-                <option value="dots-and-dashes">Dashed Green Trim</option>
+                {BORDER_ART_OPTIONS.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.label}
+                  </option>
+                ))}
               </select>
+
+              {(selectedElement as ImageElement).borderArt &&
+                (selectedElement as ImageElement).borderArt !== 'none' && (() => {
+                  const imgEl = selectedElement as ImageElement;
+                  return (
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="flex items-center gap-1.5 bg-white p-1 rounded-lg border border-slate-200">
+                          <input
+                            type="color"
+                            value={imgEl.borderArtColor || '#ffffff'}
+                            onChange={(e) =>
+                              updateElement(imgEl.id, { borderArtColor: e.target.value })
+                            }
+                            className="w-5 h-5 rounded-full border border-slate-200 cursor-pointer p-0"
+                          />
+                          <span className="text-[10px] text-slate-600 font-semibold">Frame</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 bg-white p-1 rounded-lg border border-slate-200">
+                          <input
+                            type="color"
+                            value={imgEl.borderArtColor2 || '#4f46e5'}
+                            onChange={(e) =>
+                              updateElement(imgEl.id, { borderArtColor2: e.target.value })
+                            }
+                            className="w-5 h-5 rounded-full border border-slate-200 cursor-pointer p-0"
+                          />
+                          <span className="text-[10px] text-slate-600 font-semibold">Accent</span>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <div className="flex justify-between text-[9.5px] text-slate-500">
+                            <span>Thickness</span>
+                            <span>{imgEl.borderArtWidth ?? 4}px</span>
+                          </div>
+                          <input
+                            type="range"
+                            min={1}
+                            max={16}
+                            value={imgEl.borderArtWidth ?? 4}
+                            onChange={(e) =>
+                              updateElement(imgEl.id, { borderArtWidth: Number(e.target.value) })
+                            }
+                            className="w-full accent-indigo-600 cursor-pointer"
+                          />
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-[9.5px] text-slate-500">
+                            <span>Mat Pad</span>
+                            <span>{imgEl.borderArtPadding ?? 6}px</span>
+                          </div>
+                          <input
+                            type="range"
+                            min={0}
+                            max={28}
+                            value={imgEl.borderArtPadding ?? 6}
+                            onChange={(e) =>
+                              updateElement(imgEl.id, { borderArtPadding: Number(e.target.value) })
+                            }
+                            className="w-full accent-indigo-600 cursor-pointer"
+                          />
+                        </div>
+                      </div>
+                      {imgEl.borderArt === 'polaroid' && (
+                        <input
+                          type="text"
+                          value={imgEl.borderArtCaption || ''}
+                          onChange={(e) =>
+                            updateElement(imgEl.id, { borderArtCaption: e.target.value })
+                          }
+                          placeholder="Polaroid caption..."
+                          className="w-full px-2 py-1 rounded-lg border border-slate-200 bg-white text-[11px] outline-none focus:border-indigo-500"
+                        />
+                      )}
+                    </div>
+                  );
+                })()}
+            </div>
+
+            {/* Aspect Ratio Size Crop */}
+            <div className="pt-2 border-t border-slate-100 space-y-1.5">
+              <label className="block text-[11px] font-semibold text-slate-500">
+                Crop to Aspect Ratio
+              </label>
+              <div className="grid grid-cols-3 gap-1">
+                {CROP_RATIO_PRESETS.map((cr) => (
+                  <button
+                    key={cr.id}
+                    type="button"
+                    onClick={() =>
+                      updateElement(
+                        selectedElement.id,
+                        computeAspectCropUpdates(
+                          selectedElement as ImageElement,
+                          cr.ratio,
+                          activePage.width,
+                          activePage.height
+                        )
+                      )
+                    }
+                    className="py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-800 text-[10px] font-bold transition"
+                  >
+                    {cr.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Mask Shape */}
@@ -2137,7 +2427,7 @@ export const PropertiesPanel: React.FC = () => {
               <div>
                 <div className="flex justify-between text-[10px] text-slate-500 font-medium mb-0.5">
                   <span>Image Zoom</span>
-                  <span>{((selectedElement as ImageElement).imageScale ?? 1).toFixed(2)}×</span>
+                  <span>{((selectedElement as ImageElement).imageScale ?? 1).toFixed(2)}Ã—</span>
                 </div>
                 <input
                   type="range"
@@ -2188,42 +2478,24 @@ export const PropertiesPanel: React.FC = () => {
               </div>
             </div>
 
-            {/* Filter Presets */}
+            {/* Filter & Stylized Effect Presets */}
             <div className="space-y-1.5 pt-2 border-t border-slate-100">
               <label className="block text-slate-700 font-bold text-[11px]">
-                Quick Filter Presets
+                Style &amp; Filter Presets
               </label>
               <div className="grid grid-cols-3 gap-1">
-                {[
-                  {
-                    name: 'Original',
-                    vals: { brightness: 100, contrast: 100, saturate: 100, grayscale: 0, sepia: 0, blur: 0, hueRotate: 0 },
-                  },
-                  {
-                    name: 'B&W',
-                    vals: { brightness: 105, contrast: 120, saturate: 100, grayscale: 100, sepia: 0, blur: 0, hueRotate: 0 },
-                  },
-                  {
-                    name: 'Vintage',
-                    vals: { brightness: 105, contrast: 95, saturate: 85, grayscale: 0, sepia: 65, blur: 0, hueRotate: 0 },
-                  },
-                  {
-                    name: 'Vivid',
-                    vals: { brightness: 108, contrast: 118, saturate: 155, grayscale: 0, sepia: 0, blur: 0, hueRotate: 0 },
-                  },
-                  {
-                    name: 'Cool',
-                    vals: { brightness: 102, contrast: 110, saturate: 110, grayscale: 0, sepia: 0, blur: 0, hueRotate: 195 },
-                  },
-                  {
-                    name: 'Soft Blur',
-                    vals: { brightness: 108, contrast: 95, saturate: 95, grayscale: 0, sepia: 0, blur: 3, hueRotate: 0 },
-                  },
-                ].map((preset) => (
+                {FILTER_EFFECT_PRESETS.map((preset) => (
                   <button
                     key={preset.name}
+                    type="button"
                     onClick={() => updateElement(selectedElement.id, preset.vals)}
-                    className="py-1 px-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-800 text-[10px] font-semibold transition"
+                    className={`py-1 px-1.5 rounded-lg border text-[10px] font-semibold transition truncate ${
+                      preset.vals.effectPreset &&
+                      preset.vals.effectPreset !== 'none' &&
+                      (selectedElement as ImageElement).effectPreset === preset.vals.effectPreset
+                        ? 'border-indigo-500 bg-indigo-50 text-indigo-800 shadow-2xs'
+                        : 'border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-800'
+                    }`}
                   >
                     {preset.name}
                   </button>
@@ -2243,7 +2515,7 @@ export const PropertiesPanel: React.FC = () => {
                 { label: 'Grayscale', key: 'grayscale', min: 0, max: 100, def: 0, unit: '%' },
                 { label: 'Sepia', key: 'sepia', min: 0, max: 100, def: 0, unit: '%' },
                 { label: 'Blur', key: 'blur', min: 0, max: 10, def: 0, unit: 'px' },
-                { label: 'Hue Shift', key: 'hueRotate', min: 0, max: 360, def: 0, unit: '°' },
+                { label: 'Hue Shift', key: 'hueRotate', min: 0, max: 360, def: 0, unit: 'Â°' },
               ].map((slider) => {
                 const val =
                   ((selectedElement as ImageElement)[slider.key as keyof ImageElement] as number | undefined) ??
@@ -2504,7 +2776,7 @@ export const PropertiesPanel: React.FC = () => {
                     rel="noreferrer"
                     className="text-[10px] font-bold text-indigo-600 hover:underline"
                   >
-                    Test Link ↗
+                    Test Link â†—
                   </a>
                 )}
               </div>

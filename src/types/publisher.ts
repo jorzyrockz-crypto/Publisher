@@ -37,12 +37,26 @@ export type WordArtStyle =
 
 export type BorderArtStyle =
   | 'none'
+  | 'polaroid'
+  | 'washi-tape'
+  | 'filmstrip'
+  | 'stamp-postage'
   | 'stars'
   | 'classic-frame'
   | 'double-gold'
   | 'art-deco'
   | 'dots-and-dashes'
-  | 'certificate-leaf';
+  | 'certificate-leaf'
+  | 'neon-frame';
+
+export type ImageEffectPreset =
+  | 'none'
+  | 'sticker'
+  | 'clay'
+  | 'cartoon'
+  | 'animation'
+  | 'retro-film'
+  | 'duotone-pop';
 
 export interface BaseElement {
   id: string;
@@ -144,6 +158,12 @@ export interface ImageElement extends BaseElement {
   borderWidth?: number;
   borderRadius?: number;
   borderArt?: BorderArtStyle;
+  borderArtColor?: string;
+  borderArtColor2?: string;
+  borderArtWidth?: number;
+  borderArtPadding?: number;
+  borderArtCaption?: string;
+  effectPreset?: ImageEffectPreset;
   maskShape?: 'none' | 'circle' | 'star' | 'rounded' | 'diamond' | 'hexagon' | 'triangle' | 'heart';
   brightness?: number; // 0 to 200
   contrast?: number; // 0 to 200

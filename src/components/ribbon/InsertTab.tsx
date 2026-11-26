@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
 import { SAMPLE_GRAPHICS, StockCategory } from '../../constants/sampleGraphics';
+import { ImageElement } from '../../types/publisher';
 import { FloatingDropdown } from '../common/FloatingDropdown';
 import {
   FilePlus,
@@ -22,10 +23,12 @@ import {
 
 export const InsertTab: React.FC = () => {
   const {
+    activePage,
     addPage,
     duplicateActivePage,
     addShape,
     addImage,
+    addElementsBatch,
     addTable,
     addAccent,
     addLine,
@@ -159,21 +162,66 @@ export const InsertTab: React.FC = () => {
       {/* 3. Illustrations & Media */}
       <div className="flex flex-col justify-between h-full py-1 px-3 border-r border-slate-200 flex-shrink-0">
         <div className="flex items-center gap-2 my-auto">
-          {/* Picture */}
+          {/* Picture (Single or Batch Multiple Import in Staggered Grid) */}
           <input
             type="file"
             ref={fileInputRef}
+            multiple
             accept="image/*"
             className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                  addImage(event.target?.result as string);
-                };
-                reader.readAsDataURL(file);
+            onChange={async (e) => {
+              const files = Array.from(e.target.files || []);
+              if (files.length === 0) return;
+
+              const readDataUrl = (f: File) =>
+                new Promise<string>((resolve) => {
+                  const reader = new FileReader();
+                  reader.onload = (ev) => resolve(String(ev.target?.result || ''));
+                  reader.readAsDataURL(f);
+                });
+
+              if (files.length === 1) {
+                const src = await readDataUrl(files[0]);
+                if (src) addImage(src, { name: files[0].name.replace(/\.[^.]+$/, '') });
+              } else {
+                const urls = (await Promise.all(files.map(readDataUrl))).filter(Boolean);
+                const availW = Math.max(
+                  200,
+                  activePage.width - activePage.margins.left - activePage.margins.right
+                );
+                const cols = urls.length >= 4 ? 3 : 2;
+                const gap = 16;
+                const cellW = Math.min(240, Math.floor((availW - gap * (cols - 1)) / cols));
+                const cellH = Math.round(cellW * 0.78);
+                const baseZ =
+                  activePage.elements.reduce((acc, el) => Math.max(acc, el.zIndex), 0) + 1;
+
+                const batch: ImageElement[] = urls.map((src, idx) => {
+                  const col = idx % cols;
+                  const row = Math.floor(idx / cols);
+                  const staggerOffsetY = (col % 2) * 14;
+                  return {
+                    id: `img-batch-${Date.now()}-${idx}`,
+                    type: 'image',
+                    name: files[idx]?.name.replace(/\.[^.]+$/, '') || `Picture ${idx + 1}`,
+                    src,
+                    x: Math.round(activePage.margins.left + col * (cellW + gap)),
+                    y: Math.round(
+                      activePage.margins.top + row * (cellH + gap) + staggerOffsetY
+                    ),
+                    width: cellW,
+                    height: cellH,
+                    rotation: 0,
+                    zIndex: baseZ + idx,
+                    objectFit: 'cover',
+                    aspectRatioLocked: true,
+                    borderRadius: 6,
+                  };
+                });
+
+                addElementsBatch(batch);
               }
+              e.target.value = '';
             }}
           />
           <button

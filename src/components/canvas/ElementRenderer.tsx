@@ -815,41 +815,203 @@ const ImageRenderer: React.FC<{ element: ImageElement }> = ({ element }) => {
   const panX = element.panX || 0;
   const panY = element.panY || 0;
 
+  const art = element.borderArt || 'none';
+  const artColor = element.borderArtColor || element.borderColor || '#ffffff';
+  const artColor2 = element.borderArtColor2 || '#4f46e5';
+  const artWidth = element.borderArtWidth ?? (art !== 'none' ? 4 : 0);
+  const artPad =
+    element.borderArtPadding ??
+    (art === 'polaroid' ? 10 : art !== 'none' && art !== 'dots-and-dashes' ? 6 : 0);
+  const effect = element.effectPreset || 'none';
+
+  const getOuterEffectStyle = (): React.CSSProperties => {
+    const shadows: string[] = [];
+    if (element.shadow) {
+      shadows.push(`0 8px ${element.shadowBlur || 14}px rgba(0,0,0,0.28)`);
+    }
+    if (effect === 'sticker') {
+      shadows.push('0 0 0 6px #ffffff', '0 10px 20px rgba(15,23,42,0.25)');
+    } else if (effect === 'clay') {
+      shadows.push(
+        '0 12px 24px rgba(15,23,42,0.18)',
+        'inset 0 6px 12px rgba(255,255,255,0.65)',
+        'inset 0 -6px 12px rgba(15,23,42,0.16)'
+      );
+    } else if (effect === 'cartoon') {
+      shadows.push('5px 5px 0 #0f172a');
+    } else if (effect === 'animation') {
+      shadows.push('0 0 18px rgba(56,189,248,0.45)');
+    } else if (art === 'neon-frame') {
+      shadows.push(`0 0 14px ${artColor}`, `0 0 28px ${artColor2}`);
+    } else if (art === 'art-deco') {
+      shadows.push(`0 0 0 3px ${artColor2}`, `0 0 0 6px ${artColor}`);
+    } else if (art === 'double-gold') {
+      shadows.push(`0 0 0 3px ${artColor2}`, `0 0 0 6px ${artColor}`);
+    } else if (art === 'polaroid') {
+      shadows.push('0 8px 20px rgba(15,23,42,0.22)');
+    }
+
+    let outerBorder = element.borderWidth
+      ? `${element.borderWidth}px solid ${element.borderColor || '#cbd5e1'}`
+      : undefined;
+    if (effect === 'cartoon') {
+      outerBorder = '3px solid #0f172a';
+    } else if (art === 'dots-and-dashes') {
+      outerBorder = `${artWidth}px dashed ${artColor}`;
+    } else if (art === 'stamp-postage') {
+      outerBorder = `${artWidth}px dotted ${artColor2}`;
+    } else if (art === 'filmstrip') {
+      outerBorder = `${artWidth}px solid ${artColor}`;
+    } else if (art !== 'none') {
+      outerBorder = `${artWidth}px solid ${artColor}`;
+    }
+
+    return {
+      width: '100%',
+      height: '100%',
+      position: 'relative',
+      overflow: art === 'washi-tape' || effect === 'sticker' ? 'visible' : 'hidden',
+      borderRadius:
+        effect === 'clay' ? '26px' : effect === 'sticker' ? '18px' : getMaskRadius(),
+      clipPath: getClipPath(),
+      backgroundColor:
+        art === 'polaroid' || art === 'classic-frame' || art === 'stamp-postage'
+          ? artColor
+          : art === 'filmstrip'
+          ? artColor
+          : undefined,
+      padding:
+        art === 'polaroid'
+          ? `${artPad}px ${artPad}px ${Math.max(26, artPad * 2.8)}px ${artPad}px`
+          : artPad > 0
+          ? `${artPad}px`
+          : undefined,
+      border: outerBorder,
+      boxShadow: shadows.length > 0 ? shadows.join(', ') : undefined,
+      boxSizing: 'border-box',
+    };
+  };
+
   return (
-    <div
-      style={{
-        width: '100%',
-        height: '100%',
-        overflow: 'hidden',
-        borderRadius: getMaskRadius(),
-        clipPath: getClipPath(),
-        border: element.borderWidth
-          ? `${element.borderWidth}px solid ${element.borderColor || '#cbd5e1'}`
-          : undefined,
-        filter: element.shadow
-          ? `drop-shadow(0 6px ${element.shadowBlur || 12}px rgba(0,0,0,0.28))`
-          : undefined,
-      }}
-      className={getBorderArtClasses()}
-    >
-      {element.src ? (
-        <img
-          src={element.src}
-          alt={element.alt || 'Publication image'}
+    <div style={getOuterEffectStyle()} className={getBorderArtClasses()}>
+      {/* Decorative Corner Accents for Specialized Collage BorderArt */}
+      {art === 'washi-tape' && (
+        <>
+          <div
+            style={{
+              position: 'absolute',
+              top: '-10px',
+              left: '-14px',
+              width: '56px',
+              height: '18px',
+              backgroundColor: artColor,
+              opacity: 0.85,
+              transform: 'rotate(-26deg)',
+              zIndex: 10,
+              boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
+              pointerEvents: 'none',
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              top: '-10px',
+              right: '-14px',
+              width: '56px',
+              height: '18px',
+              backgroundColor: artColor2,
+              opacity: 0.85,
+              transform: 'rotate(24deg)',
+              zIndex: 10,
+              boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
+              pointerEvents: 'none',
+            }}
+          />
+        </>
+      )}
+
+      {art === 'stars' && (
+        <>
+          <span
+            style={{
+              position: 'absolute',
+              top: '2px',
+              left: '4px',
+              color: artColor,
+              fontSize: '14px',
+              zIndex: 10,
+              pointerEvents: 'none',
+            }}
+          >
+            ★
+          </span>
+          <span
+            style={{
+              position: 'absolute',
+              bottom: '2px',
+              right: '4px',
+              color: artColor2,
+              fontSize: '14px',
+              zIndex: 10,
+              pointerEvents: 'none',
+            }}
+          >
+            ★
+          </span>
+        </>
+      )}
+
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          overflow: 'hidden',
+          borderRadius:
+            art === 'polaroid' ? '4px' : effect === 'clay' ? '20px' : undefined,
+          position: 'relative',
+        }}
+      >
+        {element.src ? (
+          <img
+            src={element.src}
+            alt={element.alt || 'Publication image'}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: element.objectFit || 'cover',
+              objectPosition: `${50 + panX}% ${50 + panY}%`,
+              transform: imgScale !== 1 ? `scale(${imgScale})` : undefined,
+              filter: getFilterStyle(),
+              pointerEvents: 'none',
+            }}
+          />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center bg-slate-100 text-slate-400 border border-dashed border-slate-300">
+            <span className="text-xs font-semibold">Picture Placeholder</span>
+            <span className="text-[10px] text-slate-400">Click to load image</span>
+          </div>
+        )}
+      </div>
+
+      {art === 'polaroid' && element.borderArtCaption && (
+        <div
           style={{
-            width: '100%',
-            height: '100%',
-            objectFit: element.objectFit || 'cover',
-            objectPosition: `${50 + panX}% ${50 + panY}%`,
-            transform: imgScale !== 1 ? `scale(${imgScale})` : undefined,
-            filter: getFilterStyle(),
+            position: 'absolute',
+            left: '8px',
+            right: '8px',
+            bottom: '4px',
+            textAlign: 'center',
+            fontSize: '11px',
+            fontWeight: 600,
+            fontFamily: 'Georgia, serif',
+            color: '#334155',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
             pointerEvents: 'none',
           }}
-        />
-      ) : (
-        <div className="w-full h-full flex flex-col items-center justify-center bg-slate-100 text-slate-400 border border-dashed border-slate-300">
-          <span className="text-xs font-semibold">Picture Placeholder</span>
-          <span className="text-[10px] text-slate-400">Click to load image</span>
+        >
+          {element.borderArtCaption}
         </div>
       )}
     </div>
