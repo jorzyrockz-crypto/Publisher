@@ -57,8 +57,14 @@ export class PexelsNotConfiguredError extends Error {
   }
 }
 
+/**
+ * Pexels paused new key issuance (announced on their API page in late Sept 2026,
+ * still paused) — existing keys keep working, new ones cannot be requested. The
+ * panel therefore hides this source entirely unless `mode=diag` reports a key, so
+ * nobody is sent to a page that cannot help them.
+ */
 export const PEXELS_PROXY_HINT =
-  'Pexels needs its server-side relay (api/pexels.js) plus a PEXELS_API_KEY environment variable — a free key takes one click at pexels.com/api. Everything else in the panel works without one.';
+  'Pexels paused new API key issuance, so this deployment has no key and the source stays hidden. Existing Pexels keys still work — add PEXELS_API_KEY in Vercel and this tab appears on its own.';
 
 const RELAY = '/api/pexels';
 
