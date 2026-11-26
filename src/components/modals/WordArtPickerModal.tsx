@@ -64,7 +64,7 @@ export const WordArtPickerModal: React.FC = () => {
               type="text"
               value={wordArtText}
               onChange={(e) => setWordArtText(e.target.value)}
-              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-bold text-slate-800"
+              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-bold text-slate-800"
             />
           </div>
 
@@ -81,7 +81,7 @@ export const WordArtPickerModal: React.FC = () => {
                     s.darkBg ? 'bg-slate-900' : 'bg-slate-50/60'
                   } ${
                     selectedStyle === s.id
-                      ? 'border-emerald-600 ring-2 ring-emerald-600 shadow-xs'
+                      ? 'border-indigo-600 ring-2 ring-indigo-600 shadow-xs'
                       : 'border-slate-200/80 hover:border-slate-300'
                   }`}
                 >
@@ -111,7 +111,7 @@ export const WordArtPickerModal: React.FC = () => {
           </button>
           <button
             onClick={handleInsert}
-            className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold transition shadow-xs"
+            className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-bold transition shadow-xs"
           >
             Insert WordArt
           </button>

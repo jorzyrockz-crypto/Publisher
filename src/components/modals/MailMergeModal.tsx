@@ -152,17 +152,17 @@ export const MailMergeModal: React.FC = () => {
         {/* Content */}
         <div className="p-6 overflow-y-auto space-y-6 text-xs text-slate-700">
           {/* Explanation Banner */}
-          <div className="bg-emerald-50 border border-emerald-200/80 rounded-2xl p-4 text-emerald-950 leading-relaxed shadow-2xs">
-            <span className="font-bold text-emerald-800">Mail Merge Workflow:</span> Place tokens like{' '}
-            <code className="bg-white px-1.5 py-0.5 rounded-md border border-emerald-300 font-mono text-[11px] font-semibold text-emerald-900 shadow-2xs">
+          <div className="bg-indigo-50 border border-indigo-200/80 rounded-2xl p-4 text-indigo-950 leading-relaxed shadow-2xs">
+            <span className="font-bold text-indigo-800">Mail Merge Workflow:</span> Place tokens like{' '}
+            <code className="bg-white px-1.5 py-0.5 rounded-md border border-indigo-300 font-mono text-[11px] font-semibold text-indigo-900 shadow-2xs">
               {'{{FirstName}}'}
             </code>
             ,{' '}
-            <code className="bg-white px-1.5 py-0.5 rounded-md border border-emerald-300 font-mono text-[11px] font-semibold text-emerald-900 shadow-2xs">
+            <code className="bg-white px-1.5 py-0.5 rounded-md border border-indigo-300 font-mono text-[11px] font-semibold text-indigo-900 shadow-2xs">
               {'{{Company}}'}
             </code>{' '}
             or{' '}
-            <code className="bg-white px-1.5 py-0.5 rounded-md border border-emerald-300 font-mono text-[11px] font-semibold text-emerald-900 shadow-2xs">
+            <code className="bg-white px-1.5 py-0.5 rounded-md border border-indigo-300 font-mono text-[11px] font-semibold text-indigo-900 shadow-2xs">
               {'{{Address}}'}
             </code>{' '}
             into any text box. Running the merge will generate individual personalized pages for every
@@ -173,7 +173,7 @@ export const MailMergeModal: React.FC = () => {
           <div>
             <div className="flex justify-between items-center mb-2.5 font-bold text-slate-800 text-sm">
               <span className="flex items-center gap-1.5">
-                <Users size={15} className="text-emerald-700" />
+                <Users size={15} className="text-indigo-700" />
                 <span>Recipient Records ({recipients.length})</span>
               </span>
             </div>
@@ -215,7 +215,7 @@ export const MailMergeModal: React.FC = () => {
           {/* Add Recipient Form */}
           <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80 space-y-2.5 shadow-2xs">
             <span className="font-bold text-slate-700 flex items-center gap-1.5">
-              <UserPlus size={14} className="text-emerald-700" />
+              <UserPlus size={14} className="text-indigo-700" />
               <span>Add Recipient</span>
             </span>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -224,28 +224,28 @@ export const MailMergeModal: React.FC = () => {
                 placeholder="First Name"
                 value={newFirstName}
                 onChange={(e) => setNewFirstName(e.target.value)}
-                className="bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-medium"
+                className="bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium"
               />
               <input
                 type="text"
                 placeholder="Last Name"
                 value={newLastName}
                 onChange={(e) => setNewLastName(e.target.value)}
-                className="bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-medium"
+                className="bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium"
               />
               <input
                 type="text"
                 placeholder="Company"
                 value={newCompany}
                 onChange={(e) => setNewCompany(e.target.value)}
-                className="bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-medium"
+                className="bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium"
               />
               <input
                 type="text"
                 placeholder="Address"
                 value={newAddress}
                 onChange={(e) => setNewAddress(e.target.value)}
-                className="bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-medium"
+                className="bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium"
               />
             </div>
             <button
@@ -299,7 +299,7 @@ export const MailMergeModal: React.FC = () => {
             </button>
             <button
               onClick={handleExecuteMerge}
-              className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5"
+              className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5"
             >
               <Play size={13} />
               <span>Execute Mail Merge</span>

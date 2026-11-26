@@ -285,8 +285,8 @@ export const CanvasArea: React.FC = () => {
                       onMouseDown={(e) => handleArtboardDragStart(idx, e)}
                       className={`artboard-drag-handle mb-1.5 flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold cursor-grab active:cursor-grabbing transition shadow-xs ${
                         isActive
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-white/90 text-slate-600 border border-slate-200 hover:bg-white hover:border-emerald-400'
+                          ? 'bg-indigo-600 text-white'
+                          : 'bg-white/90 text-slate-600 border border-slate-200 hover:bg-white hover:border-indigo-400'
                       }`}
                       title="Drag to move this paper anywhere on the canvas"
                     >
@@ -295,7 +295,7 @@ export const CanvasArea: React.FC = () => {
                       {pg.name && <span className="opacity-80">• {pg.name}</span>}
                       <span
                         className={`ml-1 text-[9.5px] font-mono px-1.5 py-0.2 rounded-full ${
-                          isActive ? 'bg-emerald-700/80 text-emerald-100' : 'bg-slate-100 text-slate-500'
+                          isActive ? 'bg-indigo-700/80 text-indigo-100' : 'bg-slate-100 text-slate-500'
                         }`}
                       >
                         {(pg.width / 96).toFixed(1)}"×{(pg.height / 96).toFixed(1)}"
@@ -324,7 +324,7 @@ export const CanvasArea: React.FC = () => {
                       left: `${(lastCoords.x + lastPg.width + 60) * zoom}px`,
                       top: `${(lastCoords.y + 36) * zoom}px`,
                     }}
-                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl border-2 border-dashed border-slate-300 bg-white/80 hover:bg-white hover:border-emerald-500 text-slate-600 hover:text-emerald-700 font-semibold text-xs transition-all shadow-xs active:scale-95"
+                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl border-2 border-dashed border-slate-300 bg-white/80 hover:bg-white hover:border-indigo-500 text-slate-600 hover:text-indigo-700 font-semibold text-xs transition-all shadow-xs active:scale-95"
                   >
                     <Plus size={15} />
                     <span>Add Artboard</span>
@@ -345,7 +345,7 @@ export const CanvasArea: React.FC = () => {
                       onClick={() => setActivePageIndex(idx)}
                       className={`flex items-center gap-2 px-2.5 py-0.5 rounded-full text-[11px] font-semibold cursor-pointer transition ${
                         isActive
-                          ? 'bg-emerald-600 text-white shadow-xs'
+                          ? 'bg-indigo-600 text-white shadow-xs'
                           : 'bg-white/80 text-slate-600 border border-slate-200 hover:bg-white'
                       }`}
                     >
@@ -363,7 +363,7 @@ export const CanvasArea: React.FC = () => {
 
               <button
                 onClick={addPage}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl border-2 border-dashed border-slate-300 bg-white/70 hover:bg-white hover:border-emerald-500 text-slate-600 hover:text-emerald-700 font-semibold text-xs transition-all shadow-2xs active:scale-95"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl border-2 border-dashed border-slate-300 bg-white/70 hover:bg-white hover:border-indigo-500 text-slate-600 hover:text-indigo-700 font-semibold text-xs transition-all shadow-2xs active:scale-95"
               >
                 <Plus size={15} />
                 <span>Add New Page</span>
@@ -386,7 +386,7 @@ export const CanvasArea: React.FC = () => {
                           onClick={() => setActivePageIndex(idx)}
                           className={`text-[10px] font-bold px-2 py-0.5 rounded-full cursor-pointer ${
                             idx === project.activePageIndex
-                              ? 'bg-emerald-600 text-white'
+                              ? 'bg-indigo-600 text-white'
                               : 'bg-white/80 text-slate-500 border border-slate-200'
                           }`}
                         >
@@ -405,7 +405,7 @@ export const CanvasArea: React.FC = () => {
 
               <button
                 onClick={addPage}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl border-2 border-dashed border-slate-300 bg-white/70 hover:bg-white hover:border-emerald-500 text-slate-600 hover:text-emerald-700 font-semibold text-xs transition-all shadow-2xs active:scale-95"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl border-2 border-dashed border-slate-300 bg-white/70 hover:bg-white hover:border-indigo-500 text-slate-600 hover:text-indigo-700 font-semibold text-xs transition-all shadow-2xs active:scale-95"
               >
                 <Plus size={15} />
                 <span>Add New Page</span>
@@ -425,7 +425,7 @@ export const CanvasArea: React.FC = () => {
                 onClick={() => setToolMode('select')}
                 className={`p-1 rounded-full transition ${
                   !effectivePanMode
-                    ? 'bg-white text-emerald-700 shadow-2xs'
+                    ? 'bg-white text-indigo-700 shadow-2xs'
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
                 title="Select Tool (V)"
@@ -436,7 +436,7 @@ export const CanvasArea: React.FC = () => {
                 onClick={() => setToolMode('pan')}
                 className={`p-1 rounded-full transition ${
                   effectivePanMode
-                    ? 'bg-emerald-600 text-white shadow-2xs'
+                    ? 'bg-indigo-600 text-white shadow-2xs'
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
                 title="Hand / Pan Canvas Tool (H or hold Space)"
@@ -451,7 +451,7 @@ export const CanvasArea: React.FC = () => {
                 onClick={() => setViewMode('artboard')}
                 className={`p-1 rounded-full transition ${
                   viewMode === 'artboard'
-                    ? 'bg-white text-emerald-700 shadow-2xs'
+                    ? 'bg-white text-indigo-700 shadow-2xs'
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
                 title="Freeform Artboards (Move papers & mix sizes)"
@@ -462,7 +462,7 @@ export const CanvasArea: React.FC = () => {
                 onClick={() => setViewMode('single')}
                 className={`p-1 rounded-full transition ${
                   viewMode === 'single'
-                    ? 'bg-white text-emerald-700 shadow-2xs'
+                    ? 'bg-white text-indigo-700 shadow-2xs'
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
                 title="Single Page View"
@@ -473,7 +473,7 @@ export const CanvasArea: React.FC = () => {
                 onClick={() => setViewMode('continuous')}
                 className={`p-1 rounded-full transition ${
                   viewMode === 'continuous'
-                    ? 'bg-white text-emerald-700 shadow-2xs'
+                    ? 'bg-white text-indigo-700 shadow-2xs'
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
                 title="All Pages Vertical Scroll"
@@ -484,7 +484,7 @@ export const CanvasArea: React.FC = () => {
                 onClick={() => setViewMode('spread')}
                 className={`p-1 rounded-full transition ${
                   viewMode === 'spread'
-                    ? 'bg-white text-emerald-700 shadow-2xs'
+                    ? 'bg-white text-indigo-700 shadow-2xs'
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
                 title="2-Page Spread View"
@@ -519,10 +519,10 @@ export const CanvasArea: React.FC = () => {
 
             <button
               onClick={zoomFit}
-              className="flex items-center gap-1 px-2 py-0.5 rounded-full hover:bg-emerald-50 hover:text-emerald-800 text-[11px] font-medium transition"
+              className="flex items-center gap-1 px-2 py-0.5 rounded-full hover:bg-indigo-50 hover:text-indigo-800 text-[11px] font-medium transition"
               title="Fit to Window"
             >
-              <Maximize size={11} className="text-emerald-700" />
+              <Maximize size={11} className="text-indigo-700" />
               <span>Fit</span>
             </button>
           </div>

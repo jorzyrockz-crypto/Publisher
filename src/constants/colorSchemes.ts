@@ -4,7 +4,7 @@ export const COLOR_SCHEMES: ColorScheme[] = [
   {
     id: 'office',
     name: 'Office (Default)',
-    primary: '#0f6b4e',
+    primary: '#4f46e5',
     secondary: '#2e7d32',
     accent: '#f59e0b',
     dark: '#1e293b',

@@ -64,7 +64,7 @@ export const HomeTab: React.FC = () => {
             className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl disabled:opacity-40 transition-all group"
             title="Duplicate Selected (Ctrl+D)"
           >
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-xs">
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-xs">
               <Copy size={16} />
             </div>
             <span className="text-[10px] font-medium mt-1 text-slate-600">Duplicate</span>
@@ -100,7 +100,7 @@ export const HomeTab: React.FC = () => {
               type="number"
               min={8}
               max={120}
-              className="bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg px-2 py-1 text-xs outline-none w-14 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-medium transition text-center"
+              className="bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg px-2 py-1 text-xs outline-none w-14 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium transition text-center"
               value={selectedTextElement?.fontSize || 16}
               onChange={(e) => updateSelectedElements({ fontSize: Number(e.target.value) })}
             />
@@ -117,7 +117,7 @@ export const HomeTab: React.FC = () => {
                 }
                 className={`p-1 rounded-md transition-all ${
                   selectedTextElement?.fontWeight === 'bold'
-                    ? 'bg-white shadow-xs text-emerald-800 font-bold'
+                    ? 'bg-white shadow-xs text-indigo-800 font-bold'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
                 }`}
                 title="Bold"
@@ -132,7 +132,7 @@ export const HomeTab: React.FC = () => {
                 }
                 className={`p-1 rounded-md transition-all ${
                   selectedTextElement?.fontStyle === 'italic'
-                    ? 'bg-white shadow-xs text-emerald-800'
+                    ? 'bg-white shadow-xs text-indigo-800'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
                 }`}
                 title="Italic"
@@ -148,7 +148,7 @@ export const HomeTab: React.FC = () => {
                 }
                 className={`p-1 rounded-md transition-all ${
                   selectedTextElement?.textDecoration === 'underline'
-                    ? 'bg-white shadow-xs text-emerald-800'
+                    ? 'bg-white shadow-xs text-indigo-800'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
                 }`}
                 title="Underline"
@@ -204,7 +204,7 @@ export const HomeTab: React.FC = () => {
                 onClick={() => updateSelectedElements({ textAlign: align })}
                 className={`p-1 rounded-md transition-all ${
                   selectedTextElement?.textAlign === align
-                    ? 'bg-white shadow-xs text-emerald-800'
+                    ? 'bg-white shadow-xs text-indigo-800'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
                 }`}
                 title={`Align ${align}`}
@@ -228,7 +228,7 @@ export const HomeTab: React.FC = () => {
               className="flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition shadow-2xs"
               title="Toggle Multi-Columns"
             >
-              <Columns size={12} className="text-emerald-700" />
+              <Columns size={12} className="text-indigo-700" />
               <span>{selectedTextElement?.columns || 1} Col</span>
             </button>
             <button
@@ -237,7 +237,7 @@ export const HomeTab: React.FC = () => {
               }
               className={`text-[11px] font-medium px-2 py-0.5 rounded-lg border transition shadow-2xs ${
                 selectedTextElement?.dropCap
-                  ? 'bg-emerald-50 border-emerald-300 text-emerald-800 font-bold'
+                  ? 'bg-indigo-50 border-indigo-300 text-indigo-800 font-bold'
                   : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'
               }`}
               title="Toggle Large Initial Drop Cap"
@@ -258,7 +258,7 @@ export const HomeTab: React.FC = () => {
             className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
             title="Draw Text Box"
           >
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-xs">
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-xs">
               <Type size={16} />
             </div>
             <span className="text-[10px] font-medium mt-1 text-slate-600">Text Box</span>
@@ -272,7 +272,7 @@ export const HomeTab: React.FC = () => {
               className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
               title="Insert Shapes"
             >
-              <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-xs">
+              <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-xs">
                 <Shapes size={16} />
               </div>
               <span className="text-[10px] font-medium mt-1 text-slate-600 flex items-center">
@@ -293,7 +293,7 @@ export const HomeTab: React.FC = () => {
                     addShape(item.type);
                     setIsShapesOpen(false);
                   }}
-                  className="p-2 hover:bg-emerald-50 rounded-xl text-center text-[10px] font-medium text-slate-700 flex flex-col items-center gap-1 transition"
+                  className="p-2 hover:bg-indigo-50 rounded-xl text-center text-[10px] font-medium text-slate-700 flex flex-col items-center gap-1 transition"
                 >
                   <ShapePreviewIcon shapeType={item.type} size={24} />
                   <span className="truncate w-full">{item.label}</span>
@@ -324,7 +324,7 @@ export const HomeTab: React.FC = () => {
             className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
             title="Insert Picture"
           >
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-xs">
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-xs">
               <ImageIcon size={16} />
             </div>
             <span className="text-[10px] font-medium mt-1 text-slate-600">Picture</span>
@@ -343,7 +343,7 @@ export const HomeTab: React.FC = () => {
               className="flex items-center gap-1 px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-[11px] font-medium disabled:opacity-40 transition shadow-2xs"
               title="Bring to Front"
             >
-              <BringToFront size={13} className="text-emerald-700" />
+              <BringToFront size={13} className="text-indigo-700" />
               <span>Forward</span>
             </button>
             <button
@@ -382,7 +382,7 @@ export const HomeTab: React.FC = () => {
                       alignSelected(alignment);
                       setIsAlignOpen(false);
                     }}
-                    className="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 hover:text-emerald-800 rounded-lg text-xs capitalize transition"
+                    className="w-full text-left px-2.5 py-1.5 hover:bg-indigo-50 hover:text-indigo-800 rounded-lg text-xs capitalize transition"
                   >
                     Align {alignment}
                   </button>
@@ -394,7 +394,7 @@ export const HomeTab: React.FC = () => {
                   distributeSelected('horizontal');
                   setIsAlignOpen(false);
                 }}
-                className="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 hover:text-emerald-800 rounded-lg text-xs transition"
+                className="w-full text-left px-2.5 py-1.5 hover:bg-indigo-50 hover:text-indigo-800 rounded-lg text-xs transition"
               >
                 Distribute Horizontally
               </button>
@@ -403,7 +403,7 @@ export const HomeTab: React.FC = () => {
                   distributeSelected('vertical');
                   setIsAlignOpen(false);
                 }}
-                className="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 hover:text-emerald-800 rounded-lg text-xs transition"
+                className="w-full text-left px-2.5 py-1.5 hover:bg-indigo-50 hover:text-indigo-800 rounded-lg text-xs transition"
               >
                 Distribute Vertically
               </button>

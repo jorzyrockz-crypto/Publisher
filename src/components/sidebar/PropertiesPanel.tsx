@@ -122,14 +122,14 @@ export const PropertiesPanel: React.FC = () => {
       <div className="w-9 bg-white border-l border-slate-200 flex flex-col items-center py-2.5 gap-3 h-full select-none flex-shrink-0 z-20 shadow-2xs">
         <button
           onClick={() => setIsRightPanelOpen(true)}
-          className="p-1.5 rounded-lg text-slate-600 hover:text-emerald-800 hover:bg-emerald-50 transition"
+          className="p-1.5 rounded-lg text-slate-600 hover:text-indigo-800 hover:bg-indigo-50 transition"
           title="Expand Inspector Panel"
         >
           <PanelRightOpen size={15} />
         </button>
         <div
           onClick={() => setIsRightPanelOpen(true)}
-          className="text-[10px] font-bold tracking-widest text-slate-400 uppercase cursor-pointer hover:text-emerald-700 transition"
+          className="text-[10px] font-bold tracking-widest text-slate-400 uppercase cursor-pointer hover:text-indigo-700 transition"
           style={{ writingMode: 'vertical-rl' }}
         >
           Inspector
@@ -143,7 +143,7 @@ export const PropertiesPanel: React.FC = () => {
       {/* Header */}
       <div className="h-9 px-3.5 flex items-center justify-between font-bold text-xs text-slate-700 border-b border-slate-200/80 bg-slate-50/70">
         <div className="flex items-center gap-2">
-          <Sliders size={14} className="text-emerald-700" />
+          <Sliders size={14} className="text-indigo-700" />
           <span>Inspector</span>
         </div>
         <button
@@ -163,11 +163,11 @@ export const PropertiesPanel: React.FC = () => {
             <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3 shadow-2xs">
               <div className="font-bold text-slate-800 flex items-center justify-between pb-2 border-b border-slate-100">
                 <div className="flex items-center gap-1.5">
-                  <Group size={14} className="text-emerald-700" />
+                  <Group size={14} className="text-indigo-700" />
                   <span>Group ({selectedElementIds.length} items)</span>
                 </div>
                 {isUnifiedGroup && (
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                  <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-bold">
                     Grouped
                   </span>
                 )}
@@ -180,7 +180,7 @@ export const PropertiesPanel: React.FC = () => {
                   className={`flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-xl border text-xs font-semibold transition ${
                     isUnifiedGroup
                       ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
-                      : 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 hover:border-emerald-400'
+                      : 'border-indigo-200 bg-indigo-50 text-indigo-800 hover:bg-indigo-100 hover:border-indigo-400'
                   }`}
                 >
                   <Group size={13} />
@@ -204,7 +204,7 @@ export const PropertiesPanel: React.FC = () => {
               <div className="grid grid-cols-3 gap-1.5">
                 <button
                   onClick={duplicateSelectedElements}
-                  className="flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-800 text-[11px] font-semibold transition"
+                  className="flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-800 text-[11px] font-semibold transition"
                   title="Duplicate Selection"
                 >
                   <Copy size={12} />
@@ -251,7 +251,7 @@ export const PropertiesPanel: React.FC = () => {
                     <button
                       key={item.key}
                       onClick={() => alignSelected(item.key)}
-                      className="py-1 px-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-800 text-[10.5px] font-semibold transition"
+                      className="py-1 px-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-800 text-[10.5px] font-semibold transition"
                     >
                       {item.label}
                     </button>
@@ -261,13 +261,13 @@ export const PropertiesPanel: React.FC = () => {
                   <div className="grid grid-cols-2 gap-1.5">
                     <button
                       onClick={() => distributeSelected('horizontal')}
-                      className="py-1 px-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-800 text-[10.5px] font-semibold transition"
+                      className="py-1 px-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-800 text-[10.5px] font-semibold transition"
                     >
                       Distribute Horiz.
                     </button>
                     <button
                       onClick={() => distributeSelected('vertical')}
-                      className="py-1 px-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-800 text-[10.5px] font-semibold transition"
+                      className="py-1 px-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-800 text-[10.5px] font-semibold transition"
                     >
                       Distribute Vert.
                     </button>
@@ -285,7 +285,7 @@ export const PropertiesPanel: React.FC = () => {
                 <div className="grid grid-cols-4 gap-1">
                   <button
                     onClick={bringToFront}
-                    className="flex flex-col items-center py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-800 text-[9.5px] font-semibold transition"
+                    className="flex flex-col items-center py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-800 text-[9.5px] font-semibold transition"
                     title="Bring to Front"
                   >
                     <ArrowUpToLine size={12} />
@@ -293,7 +293,7 @@ export const PropertiesPanel: React.FC = () => {
                   </button>
                   <button
                     onClick={bringForward}
-                    className="flex flex-col items-center py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-800 text-[9.5px] font-semibold transition"
+                    className="flex flex-col items-center py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-800 text-[9.5px] font-semibold transition"
                     title="Bring Forward"
                   >
                     <ArrowUp size={12} />
@@ -301,7 +301,7 @@ export const PropertiesPanel: React.FC = () => {
                   </button>
                   <button
                     onClick={sendBackward}
-                    className="flex flex-col items-center py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-800 text-[9.5px] font-semibold transition"
+                    className="flex flex-col items-center py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-800 text-[9.5px] font-semibold transition"
                     title="Send Backward"
                   >
                     <ArrowDown size={12} />
@@ -309,7 +309,7 @@ export const PropertiesPanel: React.FC = () => {
                   </button>
                   <button
                     onClick={sendToBack}
-                    className="flex flex-col items-center py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-800 text-[9.5px] font-semibold transition"
+                    className="flex flex-col items-center py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-800 text-[9.5px] font-semibold transition"
                     title="Send to Back"
                   >
                     <ArrowDownToLine size={12} />
@@ -330,7 +330,7 @@ export const PropertiesPanel: React.FC = () => {
                     onChange={(e) =>
                       updateSelectedElements({ opacity: Number(e.target.value) / 100 })
                     }
-                    className="w-full accent-emerald-600 cursor-pointer"
+                    className="w-full accent-indigo-600 cursor-pointer"
                   />
                 </div>
               </div>
@@ -338,7 +338,7 @@ export const PropertiesPanel: React.FC = () => {
 
             <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3 shadow-2xs">
               <div className="font-bold text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-100">
-                <GitMerge size={14} className="text-emerald-700" />
+                <GitMerge size={14} className="text-indigo-700" />
                 <span>Merge Shapes ({selectedElementIds.length} selected)</span>
               </div>
               <p className="text-[10.5px] text-slate-500">
@@ -356,7 +356,7 @@ export const PropertiesPanel: React.FC = () => {
                   <button
                     key={item.op}
                     onClick={() => mergeSelectedShapes(item.op)}
-                    className="py-1.5 px-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-400 hover:text-emerald-800 text-xs font-semibold transition"
+                    className="py-1.5 px-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-400 hover:text-indigo-800 text-xs font-semibold transition"
                   >
                     {item.label}
                   </button>
@@ -376,11 +376,11 @@ export const PropertiesPanel: React.FC = () => {
                 <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3 shadow-2xs">
                   <div className="font-bold text-slate-800 flex items-center justify-between pb-2 border-b border-slate-100">
                     <div className="flex items-center gap-1.5">
-                      <Workflow size={14} className="text-emerald-700" />
+                      <Workflow size={14} className="text-indigo-700" />
                       <span>Diagram Auto-Connect</span>
                     </div>
                     {existingConnectors.length > 0 && (
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                      <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-bold">
                         Connected
                       </span>
                     )}
@@ -403,8 +403,8 @@ export const PropertiesPanel: React.FC = () => {
                         onClick={() => autoConnectSelectedShapes(style.id)}
                         className={`py-1.5 px-2 rounded-xl border text-[11px] font-semibold transition ${
                           activeConnectorStyle === style.id
-                            ? 'border-emerald-500 bg-emerald-50 text-emerald-800 shadow-2xs'
-                            : 'border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-800 text-slate-700'
+                            ? 'border-indigo-500 bg-indigo-50 text-indigo-800 shadow-2xs'
+                            : 'border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-800 text-slate-700'
                         }`}
                       >
                         {style.label}
@@ -431,7 +431,7 @@ export const PropertiesPanel: React.FC = () => {
             <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3.5 shadow-2xs">
               <div className="font-bold text-slate-800 flex items-center justify-between pb-2 border-b border-slate-100">
                 <div className="flex items-center gap-1.5">
-                  <Square size={14} className="text-emerald-700" />
+                  <Square size={14} className="text-indigo-700" />
                   <span>Page {project.activePageIndex + 1} Setup</span>
                 </div>
                 <span className="text-[10px] font-mono text-slate-400">
@@ -445,7 +445,7 @@ export const PropertiesPanel: React.FC = () => {
                   Page Size
                 </label>
                 <select
-                  className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-medium transition cursor-pointer"
+                  className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium transition cursor-pointer"
                   value={
                     PAGE_SIZES.find(
                       (s) => s.width === activePage.width && s.height === activePage.height
@@ -471,7 +471,7 @@ export const PropertiesPanel: React.FC = () => {
                     onClick={() => setPageOrientation('portrait')}
                     className={`py-1 px-2 rounded-lg text-xs font-semibold transition-all ${
                       activePage.orientation === 'portrait'
-                        ? 'bg-white text-emerald-800 shadow-xs'
+                        ? 'bg-white text-indigo-800 shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
@@ -481,7 +481,7 @@ export const PropertiesPanel: React.FC = () => {
                     onClick={() => setPageOrientation('landscape')}
                     className={`py-1 px-2 rounded-lg text-xs font-semibold transition-all ${
                       activePage.orientation === 'landscape'
-                        ? 'bg-white text-emerald-800 shadow-xs'
+                        ? 'bg-white text-indigo-800 shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
@@ -546,7 +546,7 @@ export const PropertiesPanel: React.FC = () => {
                   </span>
                   <button
                     onClick={() => setPageBackgroundColor('#ffffff')}
-                    className="ml-auto text-[11px] font-medium text-emerald-700 hover:underline"
+                    className="ml-auto text-[11px] font-medium text-indigo-700 hover:underline"
                   >
                     White
                   </button>
@@ -563,7 +563,7 @@ export const PropertiesPanel: React.FC = () => {
             <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3.5 shadow-2xs">
               <div className="font-bold text-slate-800 flex items-center justify-between pb-2 border-b border-slate-100">
                 <div className="flex items-center gap-1.5">
-                  <Type size={14} className="text-emerald-700" />
+                  <Type size={14} className="text-indigo-700" />
                   <span>Typography</span>
                 </div>
                 <span className="text-[10px] font-medium text-slate-400">Adobe Pro</span>
@@ -583,7 +583,7 @@ export const PropertiesPanel: React.FC = () => {
                     onClick={() => setTypoTab(tab.id)}
                     className={`py-1 rounded-lg text-[11px] font-semibold transition-all ${
                       typoTab === tab.id
-                        ? 'bg-white text-emerald-800 shadow-xs'
+                        ? 'bg-white text-indigo-800 shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
@@ -615,7 +615,7 @@ export const PropertiesPanel: React.FC = () => {
                         Weight / Style
                       </label>
                       <select
-                        className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-medium transition cursor-pointer"
+                        className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium transition cursor-pointer"
                         value={textEl.fontWeight}
                         onChange={(e) =>
                           updateElement(textEl.id, {
@@ -640,7 +640,7 @@ export const PropertiesPanel: React.FC = () => {
                         type="number"
                         min={6}
                         max={240}
-                        className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-medium transition text-center"
+                        className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium transition text-center"
                         value={textEl.fontSize}
                         onChange={(e) =>
                           updateElement(textEl.id, {
@@ -667,7 +667,7 @@ export const PropertiesPanel: React.FC = () => {
                         onChange={(e) =>
                           updateElement(textEl.id, { lineHeight: Number(e.target.value) })
                         }
-                        className="w-full accent-emerald-600 cursor-pointer"
+                        className="w-full accent-indigo-600 cursor-pointer"
                       />
                     </div>
                     <div>
@@ -684,7 +684,7 @@ export const PropertiesPanel: React.FC = () => {
                         onChange={(e) =>
                           updateElement(textEl.id, { letterSpacing: Number(e.target.value) })
                         }
-                        className="w-full accent-emerald-600 cursor-pointer"
+                        className="w-full accent-indigo-600 cursor-pointer"
                       />
                     </div>
                   </div>
@@ -705,7 +705,7 @@ export const PropertiesPanel: React.FC = () => {
                         onChange={(e) =>
                           updateElement(textEl.id, { wordSpacing: Number(e.target.value) })
                         }
-                        className="w-full accent-emerald-600 cursor-pointer"
+                        className="w-full accent-indigo-600 cursor-pointer"
                       />
                     </div>
                     <div>
@@ -724,7 +724,7 @@ export const PropertiesPanel: React.FC = () => {
                         onChange={(e) =>
                           updateElement(textEl.id, { baselineShift: Number(e.target.value) })
                         }
-                        className="w-full accent-emerald-600 cursor-pointer"
+                        className="w-full accent-indigo-600 cursor-pointer"
                       />
                     </div>
                   </div>
@@ -744,7 +744,7 @@ export const PropertiesPanel: React.FC = () => {
                         title="Bold"
                         className={`py-1 rounded-lg flex items-center justify-center transition ${
                           textEl.fontWeight === 'bold' || textEl.fontWeight === '800' || textEl.fontWeight === '900'
-                            ? 'bg-white shadow-xs text-emerald-800 font-bold'
+                            ? 'bg-white shadow-xs text-indigo-800 font-bold'
                             : 'text-slate-600 hover:bg-white/60'
                         }`}
                       >
@@ -759,7 +759,7 @@ export const PropertiesPanel: React.FC = () => {
                         title="Italic"
                         className={`py-1 rounded-lg flex items-center justify-center transition ${
                           textEl.fontStyle === 'italic'
-                            ? 'bg-white shadow-xs text-emerald-800'
+                            ? 'bg-white shadow-xs text-indigo-800'
                             : 'text-slate-600 hover:bg-white/60'
                         }`}
                       >
@@ -775,7 +775,7 @@ export const PropertiesPanel: React.FC = () => {
                         title="Underline"
                         className={`py-1 rounded-lg flex items-center justify-center transition ${
                           textEl.textDecoration === 'underline'
-                            ? 'bg-white shadow-xs text-emerald-800'
+                            ? 'bg-white shadow-xs text-indigo-800'
                             : 'text-slate-600 hover:bg-white/60'
                         }`}
                       >
@@ -791,7 +791,7 @@ export const PropertiesPanel: React.FC = () => {
                         title="Strikethrough"
                         className={`py-1 rounded-lg text-xs font-bold line-through transition ${
                           textEl.textDecoration === 'line-through'
-                            ? 'bg-white shadow-xs text-emerald-800'
+                            ? 'bg-white shadow-xs text-indigo-800'
                             : 'text-slate-600 hover:bg-white/60'
                         }`}
                       >
@@ -811,7 +811,7 @@ export const PropertiesPanel: React.FC = () => {
                         title="All Caps (TT)"
                         className={`py-1 rounded-lg text-[10.5px] font-bold transition ${
                           textEl.textTransform === 'uppercase'
-                            ? 'bg-white shadow-xs text-emerald-800'
+                            ? 'bg-white shadow-xs text-indigo-800'
                             : 'text-slate-600 hover:bg-white/60'
                         }`}
                       >
@@ -828,7 +828,7 @@ export const PropertiesPanel: React.FC = () => {
                         title="Small Caps"
                         className={`py-1 rounded-lg text-[10.5px] font-bold transition ${
                           textEl.fontVariant === 'small-caps'
-                            ? 'bg-white shadow-xs text-emerald-800'
+                            ? 'bg-white shadow-xs text-indigo-800'
                             : 'text-slate-600 hover:bg-white/60'
                         }`}
                       >
@@ -845,7 +845,7 @@ export const PropertiesPanel: React.FC = () => {
                         title="Title Case"
                         className={`py-1 rounded-lg text-[10.5px] font-bold transition ${
                           textEl.textTransform === 'capitalize'
-                            ? 'bg-white shadow-xs text-emerald-800'
+                            ? 'bg-white shadow-xs text-indigo-800'
                             : 'text-slate-600 hover:bg-white/60'
                         }`}
                       >
@@ -862,7 +862,7 @@ export const PropertiesPanel: React.FC = () => {
                         title="Lowercase"
                         className={`py-1 rounded-lg text-[10.5px] font-bold transition ${
                           textEl.textTransform === 'lowercase'
-                            ? 'bg-white shadow-xs text-emerald-800'
+                            ? 'bg-white shadow-xs text-indigo-800'
                             : 'text-slate-600 hover:bg-white/60'
                         }`}
                       >
@@ -940,7 +940,7 @@ export const PropertiesPanel: React.FC = () => {
                           onClick={() => updateElement(textEl.id, { textAlign: align })}
                           className={`py-1.5 rounded-lg flex items-center justify-center transition-all ${
                             textEl.textAlign === align
-                              ? 'bg-white shadow-xs text-emerald-800'
+                              ? 'bg-white shadow-xs text-indigo-800'
                               : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
                           }`}
                         >
@@ -965,7 +965,7 @@ export const PropertiesPanel: React.FC = () => {
                           onClick={() => updateElement(textEl.id, { verticalAlign: vAlign })}
                           className={`py-1 rounded-lg text-[11px] font-semibold capitalize transition-all ${
                             textEl.verticalAlign === vAlign
-                              ? 'bg-white text-emerald-800 shadow-xs'
+                              ? 'bg-white text-indigo-800 shadow-xs'
                               : 'text-slate-600 hover:text-slate-900'
                           }`}
                         >
@@ -990,7 +990,7 @@ export const PropertiesPanel: React.FC = () => {
                       onChange={(e) =>
                         updateElement(textEl.id, { textIndent: Number(e.target.value) })
                       }
-                      className="w-full accent-emerald-600 cursor-pointer"
+                      className="w-full accent-indigo-600 cursor-pointer"
                     />
                   </div>
 
@@ -1006,7 +1006,7 @@ export const PropertiesPanel: React.FC = () => {
                           onClick={() => updateElement(textEl.id, { columns: col })}
                           className={`py-1 rounded-lg text-xs font-semibold transition-all ${
                             textEl.columns === col
-                              ? 'bg-white text-emerald-800 shadow-xs'
+                              ? 'bg-white text-indigo-800 shadow-xs'
                               : 'text-slate-600 hover:text-slate-900'
                           }`}
                         >
@@ -1028,7 +1028,7 @@ export const PropertiesPanel: React.FC = () => {
                           onChange={(e) =>
                             updateElement(textEl.id, { columnGap: Number(e.target.value) })
                           }
-                          className="w-full accent-emerald-600 cursor-pointer"
+                          className="w-full accent-indigo-600 cursor-pointer"
                         />
                       </div>
                     )}
@@ -1061,7 +1061,7 @@ export const PropertiesPanel: React.FC = () => {
                       <span>WordArt Styling</span>
                     </label>
                     <select
-                      className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-medium transition cursor-pointer"
+                      className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium transition cursor-pointer"
                       value={textEl.wordArtStyle || 'none'}
                       onChange={(e) => {
                         const style = e.target.value as WordArtStyle;
@@ -1080,7 +1080,7 @@ export const PropertiesPanel: React.FC = () => {
                       <option value="chrome">Chrome Metallic</option>
                       <option value="fire">Blazing Fire</option>
                       <option value="comic-pop">Comic Pop Art</option>
-                      <option value="emerald-3d">Emerald 3D Block</option>
+                      <option value="indigo-3d">Emerald 3D Block</option>
                       <option value="sunset-gradient">Sunset Vibe</option>
                     </select>
                   </div>
@@ -1125,7 +1125,7 @@ export const PropertiesPanel: React.FC = () => {
                             onChange={(e) =>
                               updateElement(textEl.id, { shadowBlur: Number(e.target.value) })
                             }
-                            className="w-full accent-emerald-600 cursor-pointer"
+                            className="w-full accent-indigo-600 cursor-pointer"
                           />
                         </div>
                       </div>
@@ -1150,7 +1150,7 @@ export const PropertiesPanel: React.FC = () => {
                         onChange={(e) =>
                           updateElement(textEl.id, { padding: Number(e.target.value) })
                         }
-                        className="w-full accent-emerald-600 cursor-pointer"
+                        className="w-full accent-indigo-600 cursor-pointer"
                       />
                     </div>
 
@@ -1228,7 +1228,7 @@ export const PropertiesPanel: React.FC = () => {
                         onChange={(e) =>
                           updateElement(textEl.id, { borderRadius: Number(e.target.value) })
                         }
-                        className="w-full accent-emerald-600 cursor-pointer"
+                        className="w-full accent-indigo-600 cursor-pointer"
                       />
                     </div>
                   </div>
@@ -1242,7 +1242,7 @@ export const PropertiesPanel: React.FC = () => {
         {selectedElement && selectedElement.type === 'shape' && (
           <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3.5 shadow-2xs">
             <div className="font-bold text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-100">
-              <Square size={14} className="text-emerald-700" />
+              <Square size={14} className="text-indigo-700" />
               <span>Shape Formatting</span>
             </div>
 
@@ -1255,7 +1255,7 @@ export const PropertiesPanel: React.FC = () => {
                 ref={shapePickerBtnRef}
                 type="button"
                 onClick={() => setIsShapePickerOpen(!isShapePickerOpen)}
-                className="w-full flex items-center justify-between bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-medium transition cursor-pointer"
+                className="w-full flex items-center justify-between bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium transition cursor-pointer"
               >
                 <div className="flex items-center gap-2">
                   <ShapePreviewIcon
@@ -1295,7 +1295,7 @@ export const PropertiesPanel: React.FC = () => {
                       }}
                       className={`p-2 rounded-xl flex flex-col items-center gap-1 text-[10px] font-semibold transition border ${
                         isCurrent
-                          ? 'bg-emerald-50 border-emerald-500 text-emerald-800'
+                          ? 'bg-indigo-50 border-indigo-500 text-indigo-800'
                           : 'border-transparent hover:bg-slate-100 text-slate-700'
                       }`}
                     >
@@ -1309,12 +1309,12 @@ export const PropertiesPanel: React.FC = () => {
 
             {/* Wavy Side Edge (e.g. Make Rectangle Top Side a Wave) */}
             {(selectedElement as ShapeElement).shapeType === 'rectangle' && (
-              <div className="bg-emerald-50/50 border border-emerald-200/70 rounded-xl p-2.5 space-y-2">
-                <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-900">
-                  <Waves size={13} className="text-emerald-700" />
+              <div className="bg-indigo-50/50 border border-indigo-200/70 rounded-xl p-2.5 space-y-2">
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-indigo-900">
+                  <Waves size={13} className="text-indigo-700" />
                   <span>Wave Side Edge</span>
                 </div>
-                <div className="grid grid-cols-5 gap-1 bg-white p-0.5 rounded-lg border border-emerald-200/60">
+                <div className="grid grid-cols-5 gap-1 bg-white p-0.5 rounded-lg border border-indigo-200/60">
                   {(['none', 'top', 'bottom', 'left', 'right'] as const).map((edge) => (
                     <button
                       key={edge}
@@ -1323,7 +1323,7 @@ export const PropertiesPanel: React.FC = () => {
                       }
                       className={`py-1 rounded text-[10px] font-semibold capitalize transition ${
                         ((selectedElement as ShapeElement).waveEdge || 'none') === edge
-                          ? 'bg-emerald-600 text-white'
+                          ? 'bg-indigo-600 text-white'
                           : 'text-slate-600 hover:bg-slate-100'
                       }`}
                     >
@@ -1350,7 +1350,7 @@ export const PropertiesPanel: React.FC = () => {
                               waveAmplitude: Number(e.target.value),
                             })
                           }
-                          className="w-full accent-emerald-600 cursor-pointer"
+                          className="w-full accent-indigo-600 cursor-pointer"
                         />
                       </div>
                       <div>
@@ -1368,7 +1368,7 @@ export const PropertiesPanel: React.FC = () => {
                               waveFrequency: Number(e.target.value),
                             })
                           }
-                          className="w-full accent-emerald-600 cursor-pointer"
+                          className="w-full accent-indigo-600 cursor-pointer"
                         />
                       </div>
                     </div>
@@ -1379,7 +1379,7 @@ export const PropertiesPanel: React.FC = () => {
             {/* Quick Diagram Next Step */}
             <button
               onClick={() => addConnectedDiagramStep('elbow')}
-              className="w-full py-1.5 px-3 rounded-xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold flex items-center justify-center gap-1.5 transition"
+              className="w-full py-1.5 px-3 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 text-[11px] font-bold flex items-center justify-center gap-1.5 transition"
               title="Spawn a connected diagram node with an auto-following arrow"
             >
               <Workflow size={13} />
@@ -1433,7 +1433,7 @@ export const PropertiesPanel: React.FC = () => {
                   <button
                     key={preset.name}
                     onClick={() => updateElement(selectedElement.id, preset.apply)}
-                    className="p-1.5 rounded-xl border border-slate-200 hover:border-emerald-500 bg-slate-50/70 flex flex-col items-center gap-1 transition"
+                    className="p-1.5 rounded-xl border border-slate-200 hover:border-indigo-500 bg-slate-50/70 flex flex-col items-center gap-1 transition"
                   >
                     <div
                       className="w-full h-4 rounded-md"
@@ -1460,7 +1460,7 @@ export const PropertiesPanel: React.FC = () => {
                   }
                   className={`py-1 rounded-lg text-[11px] font-semibold transition-all ${
                     ((selectedElement as ShapeElement).fillType || 'solid') === 'solid'
-                      ? 'bg-white text-emerald-800 shadow-xs'
+                      ? 'bg-white text-indigo-800 shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -1476,7 +1476,7 @@ export const PropertiesPanel: React.FC = () => {
                   }
                   className={`py-1 rounded-lg text-[11px] font-semibold transition-all ${
                     (selectedElement as ShapeElement).fillType === 'linear-gradient'
-                      ? 'bg-white text-emerald-800 shadow-xs'
+                      ? 'bg-white text-indigo-800 shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -1516,7 +1516,7 @@ export const PropertiesPanel: React.FC = () => {
                     onClick={() =>
                       updateElement(selectedElement.id, { fillColor: 'transparent' })
                     }
-                    className="ml-auto text-[11px] font-medium text-emerald-700 hover:underline"
+                    className="ml-auto text-[11px] font-medium text-indigo-700 hover:underline"
                   >
                     No Fill
                   </button>
@@ -1539,7 +1539,7 @@ export const PropertiesPanel: React.FC = () => {
                         gradientAngle: Number(e.target.value),
                       })
                     }
-                    className="w-full accent-emerald-600 cursor-pointer"
+                    className="w-full accent-indigo-600 cursor-pointer"
                   />
                 </div>
               )}
@@ -1562,7 +1562,7 @@ export const PropertiesPanel: React.FC = () => {
                       cornerRadius: Number(e.target.value),
                     })
                   }
-                  className="w-full accent-emerald-600 cursor-pointer"
+                  className="w-full accent-indigo-600 cursor-pointer"
                 />
               </div>
             )}
@@ -1683,7 +1683,7 @@ export const PropertiesPanel: React.FC = () => {
                     onChange={(e) =>
                       updateElement(selectedElement.id, { glowSize: Number(e.target.value) })
                     }
-                    className="flex-1 accent-emerald-600 cursor-pointer"
+                    className="flex-1 accent-indigo-600 cursor-pointer"
                   />
                 </div>
               )}
@@ -1711,7 +1711,7 @@ export const PropertiesPanel: React.FC = () => {
         {selectedElement && selectedElement.type === 'image' && (
           <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3.5 shadow-2xs">
             <div className="font-bold text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-100">
-              <ImageIcon size={14} className="text-emerald-700" />
+              <ImageIcon size={14} className="text-indigo-700" />
               <span>Picture Tools</span>
             </div>
 
@@ -1737,7 +1737,7 @@ export const PropertiesPanel: React.FC = () => {
               />
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 shadow-xs"
+                className="w-full py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 shadow-xs"
               >
                 <Upload size={13} />
                 <span>Replace Picture...</span>
@@ -1779,7 +1779,7 @@ export const PropertiesPanel: React.FC = () => {
                     onClick={() => updateElement(selectedElement.id, { maskShape: mask })}
                     className={`py-1 rounded-lg text-[10px] font-semibold capitalize transition-all ${
                       ((selectedElement as ImageElement).maskShape || 'none') === mask
-                        ? 'bg-white text-emerald-800 shadow-xs'
+                        ? 'bg-white text-indigo-800 shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
@@ -1802,7 +1802,7 @@ export const PropertiesPanel: React.FC = () => {
                       objectFit: 'cover',
                     })
                   }
-                  className="text-[10px] text-emerald-700 hover:underline flex items-center gap-0.5"
+                  className="text-[10px] text-indigo-700 hover:underline flex items-center gap-0.5"
                 >
                   <RotateCcw size={10} /> Reset
                 </button>
@@ -1814,7 +1814,7 @@ export const PropertiesPanel: React.FC = () => {
                     onClick={() => updateElement(selectedElement.id, { objectFit: fit })}
                     className={`py-1 rounded-lg text-[10px] font-semibold capitalize transition-all ${
                       ((selectedElement as ImageElement).objectFit || 'cover') === fit
-                        ? 'bg-white text-emerald-800 shadow-xs'
+                        ? 'bg-white text-indigo-800 shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
@@ -1837,7 +1837,7 @@ export const PropertiesPanel: React.FC = () => {
                       imageScale: Number(e.target.value) / 100,
                     })
                   }
-                  className="w-full accent-emerald-600 cursor-pointer"
+                  className="w-full accent-indigo-600 cursor-pointer"
                 />
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -1854,7 +1854,7 @@ export const PropertiesPanel: React.FC = () => {
                     onChange={(e) =>
                       updateElement(selectedElement.id, { panX: Number(e.target.value) })
                     }
-                    className="w-full accent-emerald-600 cursor-pointer"
+                    className="w-full accent-indigo-600 cursor-pointer"
                   />
                 </div>
                 <div>
@@ -1870,7 +1870,7 @@ export const PropertiesPanel: React.FC = () => {
                     onChange={(e) =>
                       updateElement(selectedElement.id, { panY: Number(e.target.value) })
                     }
-                    className="w-full accent-emerald-600 cursor-pointer"
+                    className="w-full accent-indigo-600 cursor-pointer"
                   />
                 </div>
               </div>
@@ -1911,7 +1911,7 @@ export const PropertiesPanel: React.FC = () => {
                   <button
                     key={preset.name}
                     onClick={() => updateElement(selectedElement.id, preset.vals)}
-                    className="py-1 px-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-800 text-[10px] font-semibold transition"
+                    className="py-1 px-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-800 text-[10px] font-semibold transition"
                   >
                     {preset.name}
                   </button>
@@ -1955,7 +1955,7 @@ export const PropertiesPanel: React.FC = () => {
                           [slider.key]: Number(e.target.value),
                         })
                       }
-                      className="w-full accent-emerald-600 cursor-pointer"
+                      className="w-full accent-indigo-600 cursor-pointer"
                     />
                   </div>
                 );
@@ -1990,7 +1990,7 @@ export const PropertiesPanel: React.FC = () => {
         {selectedElement && selectedElement.type === 'table' && (
           <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3.5 shadow-2xs">
             <div className="font-bold text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-100">
-              <TableIcon size={14} className="text-emerald-700" />
+              <TableIcon size={14} className="text-indigo-700" />
               <span>Table Design & Themes</span>
             </div>
 
@@ -2021,7 +2021,7 @@ export const PropertiesPanel: React.FC = () => {
                       }
                       className={`p-1.5 rounded-xl border text-left transition-all hover:scale-[1.02] ${
                         isActive
-                          ? 'border-emerald-600 ring-2 ring-emerald-500/30 bg-emerald-50/40'
+                          ? 'border-indigo-600 ring-2 ring-indigo-500/30 bg-indigo-50/40'
                           : 'border-slate-200 hover:border-slate-300 bg-slate-50/60'
                       }`}
                     >
@@ -2090,7 +2090,7 @@ export const PropertiesPanel: React.FC = () => {
                     height: tbl.height + 36,
                   });
                 }}
-                className="py-1 px-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-800 text-[10px] font-semibold transition"
+                className="py-1 px-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-800 text-[10px] font-semibold transition"
               >
                 + Add Row
               </button>
@@ -2106,7 +2106,7 @@ export const PropertiesPanel: React.FC = () => {
                     data: newData,
                   });
                 }}
-                className="py-1 px-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-800 text-[10px] font-semibold transition"
+                className="py-1 px-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-800 text-[10px] font-semibold transition"
               >
                 + Add Col
               </button>
@@ -2177,7 +2177,7 @@ export const PropertiesPanel: React.FC = () => {
         {selectedElement && selectedElement.type === 'qr' && (
           <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3.5 shadow-2xs">
             <div className="font-bold text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-100">
-              <QrCode size={14} className="text-emerald-700" />
+              <QrCode size={14} className="text-indigo-700" />
               <span>QR Code Generator</span>
             </div>
 
@@ -2192,7 +2192,7 @@ export const PropertiesPanel: React.FC = () => {
                   updateElement(selectedElement.id, { value: e.target.value })
                 }
                 placeholder="https://example.com"
-                className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-medium"
+                className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium"
               />
             </div>
 
@@ -2261,7 +2261,7 @@ export const PropertiesPanel: React.FC = () => {
                     opacity: Number(e.target.value) / 100,
                   })
                 }
-                className="w-full accent-emerald-600 cursor-pointer"
+                className="w-full accent-indigo-600 cursor-pointer"
               />
             </div>
 
@@ -2275,7 +2275,7 @@ export const PropertiesPanel: React.FC = () => {
                   }
                   className={`p-1 rounded-lg border transition ${
                     selectedElement.flipH
-                      ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                      ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
                       : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                   }`}
                   title="Flip Horizontal"
@@ -2288,7 +2288,7 @@ export const PropertiesPanel: React.FC = () => {
                   }
                   className={`p-1 rounded-lg border transition ${
                     selectedElement.flipV
-                      ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                      ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
                       : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                   }`}
                   title="Flip Vertical"

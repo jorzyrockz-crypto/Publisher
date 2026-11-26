@@ -79,7 +79,7 @@ export const FontSelector: React.FC<FontSelectorProps> = ({
         ref={triggerRef}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center justify-between bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg px-2 py-1 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-medium transition cursor-pointer ${className}`}
+        className={`flex items-center justify-between bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg px-2 py-1 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium transition cursor-pointer ${className}`}
         style={{ fontFamily: value }}
         title="Choose System or Downloadable Google Font"
       >
@@ -104,7 +104,7 @@ export const FontSelector: React.FC<FontSelectorProps> = ({
             placeholder="Search or enter any Google Font..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-7 pr-2 py-1.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-[11px] outline-none focus:border-emerald-500"
+            className="w-full pl-7 pr-2 py-1.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-[11px] outline-none focus:border-indigo-500"
           />
         </div>
 
@@ -122,7 +122,7 @@ export const FontSelector: React.FC<FontSelectorProps> = ({
               onClick={() => setTab(t.id)}
               className={`py-1 rounded-lg text-[10px] font-bold transition ${
                 tab === t.id
-                  ? 'bg-white text-emerald-800 shadow-2xs'
+                  ? 'bg-white text-indigo-800 shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -135,7 +135,7 @@ export const FontSelector: React.FC<FontSelectorProps> = ({
         {isCustomMatch && (
           <button
             onClick={() => handleDownloadFont(customFontName, true)}
-            className="w-full mb-2 px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-semibold text-[11px] flex items-center justify-between transition"
+            className="w-full mb-2 px-2.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-800 font-semibold text-[11px] flex items-center justify-between transition"
           >
             <span>Download "{customFontName}" from Google Fonts</span>
             <Download size={12} />
@@ -160,7 +160,7 @@ export const FontSelector: React.FC<FontSelectorProps> = ({
                     }}
                     className={`w-full text-left px-2 py-1.5 rounded-lg flex items-center justify-between transition ${
                       value === font.family
-                        ? 'bg-emerald-50 text-emerald-800 font-bold'
+                        ? 'bg-indigo-50 text-indigo-800 font-bold'
                         : 'hover:bg-slate-100'
                     }`}
                   >
@@ -192,7 +192,7 @@ export const FontSelector: React.FC<FontSelectorProps> = ({
                       onClick={() => handleDownloadFont(font.family, true)}
                       className={`w-full px-2 py-1.5 rounded-lg flex items-center justify-between cursor-pointer transition ${
                         value === font.family
-                          ? 'bg-emerald-50 text-emerald-800 font-bold'
+                          ? 'bg-indigo-50 text-indigo-800 font-bold'
                           : 'hover:bg-slate-100'
                       }`}
                     >
@@ -211,12 +211,12 @@ export const FontSelector: React.FC<FontSelectorProps> = ({
                       <div className="flex items-center gap-1.5 flex-shrink-0">
                         <span className="text-[9px] text-slate-400">{font.category}</span>
                         {isBusy ? (
-                          <span className="text-[9px] text-emerald-700 font-bold animate-pulse">
+                          <span className="text-[9px] text-indigo-700 font-bold animate-pulse">
                             ...
                           </span>
                         ) : isDownloaded ? (
                           <span
-                            className="p-0.5 rounded-full bg-emerald-100 text-emerald-700"
+                            className="p-0.5 rounded-full bg-indigo-100 text-indigo-700"
                             title="Downloaded"
                           >
                             <Check size={10} />
@@ -227,7 +227,7 @@ export const FontSelector: React.FC<FontSelectorProps> = ({
                               e.stopPropagation();
                               handleDownloadFont(font.family, false);
                             }}
-                            className="p-1 rounded-md bg-slate-100 hover:bg-emerald-600 hover:text-white text-slate-600 transition"
+                            className="p-1 rounded-md bg-slate-100 hover:bg-indigo-600 hover:text-white text-slate-600 transition"
                             title={`Download ${font.family}`}
                           >
                             <Download size={10} />

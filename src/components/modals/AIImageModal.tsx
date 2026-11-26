@@ -144,13 +144,13 @@ export const AIImageModal: React.FC = () => {
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-sm">
+            <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-indigo-500 to-teal-600 text-white flex items-center justify-center shadow-sm">
               <Wand2 size={18} />
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
                 <span>Free AI Image Studio</span>
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">
                   Hybrid Engine
                 </span>
               </h2>
@@ -194,7 +194,7 @@ export const AIImageModal: React.FC = () => {
                       onClick={() => setEngineMode(item.id)}
                       className={`flex items-center justify-center gap-1 py-1.5 px-1.5 rounded-lg text-[11px] font-semibold transition ${
                         engineMode === item.id
-                          ? 'bg-white text-emerald-800 shadow-xs'
+                          ? 'bg-white text-indigo-800 shadow-xs'
                           : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
@@ -222,7 +222,7 @@ export const AIImageModal: React.FC = () => {
                   }
                 }}
                 placeholder="e.g. Minimalist sunset mountains, bold vector shapes, warm gold tones..."
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 focus:bg-white p-2.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 resize-none transition"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 focus:bg-white p-2.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 resize-none transition"
               />
               <div className="flex flex-wrap gap-1 mt-1.5">
                 {PROMPT_PRESETS.slice(0, 3).map((preset, i) => (
@@ -230,7 +230,7 @@ export const AIImageModal: React.FC = () => {
                     key={i}
                     type="button"
                     onClick={() => setPrompt(preset)}
-                    className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 hover:bg-emerald-50 hover:text-emerald-800 text-slate-600 border border-slate-200/70 transition truncate max-w-[190px]"
+                    className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 hover:bg-indigo-50 hover:text-indigo-800 text-slate-600 border border-slate-200/70 transition truncate max-w-[190px]"
                     title={preset}
                   >
                     + {preset}
@@ -248,7 +248,7 @@ export const AIImageModal: React.FC = () => {
                 <select
                   value={artStyle}
                   onChange={(e) => setArtStyle(e.target.value as AIArtStyle)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 px-2.5 py-1.5 text-xs font-medium outline-none focus:border-emerald-600"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 px-2.5 py-1.5 text-xs font-medium outline-none focus:border-indigo-600"
                 >
                   {AI_ART_STYLES.map((s) => (
                     <option key={s.id} value={s.id}>
@@ -264,7 +264,7 @@ export const AIImageModal: React.FC = () => {
                 <select
                   value={ratioId}
                   onChange={(e) => setRatioId(e.target.value as AIAspectRatio)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 px-2.5 py-1.5 text-xs font-medium outline-none focus:border-emerald-600"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 px-2.5 py-1.5 text-xs font-medium outline-none focus:border-indigo-600"
                 >
                   {ASPECT_RATIOS.map((r) => (
                     <option key={r.id} value={r.id}>
@@ -290,7 +290,7 @@ export const AIImageModal: React.FC = () => {
                         onClick={() => setMotif(m.id)}
                         className={`py-1 px-1.5 rounded-lg border text-[10.5px] font-semibold transition ${
                           motif === m.id
-                            ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
+                            ? 'border-indigo-500 bg-indigo-50 text-indigo-800'
                             : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600'
                         }`}
                       >
@@ -313,7 +313,7 @@ export const AIImageModal: React.FC = () => {
                       max={10}
                       value={complexity}
                       onChange={(e) => setComplexity(Number(e.target.value))}
-                      className="w-full accent-emerald-600 cursor-pointer"
+                      className="w-full accent-indigo-600 cursor-pointer"
                     />
                   </div>
                   <div>
@@ -327,7 +327,7 @@ export const AIImageModal: React.FC = () => {
                       max={100}
                       value={grain}
                       onChange={(e) => setGrain(Number(e.target.value))}
-                      className="w-full accent-emerald-600 cursor-pointer"
+                      className="w-full accent-indigo-600 cursor-pointer"
                     />
                   </div>
                 </div>
@@ -339,7 +339,7 @@ export const AIImageModal: React.FC = () => {
                       type="checkbox"
                       checked={useCustomPalette}
                       onChange={(e) => setUseCustomPalette(e.target.checked)}
-                      className="accent-emerald-600 rounded"
+                      className="accent-indigo-600 rounded"
                     />
                     <span>Custom Colors</span>
                   </label>
@@ -348,7 +348,7 @@ export const AIImageModal: React.FC = () => {
                       type="checkbox"
                       checked={hdPrint}
                       onChange={(e) => setHdPrint(e.target.checked)}
-                      className="accent-emerald-600 rounded"
+                      className="accent-indigo-600 rounded"
                     />
                     <span>2× Print-HD</span>
                   </label>
@@ -391,7 +391,7 @@ export const AIImageModal: React.FC = () => {
                   setSeed(nextSeed);
                   handleGenerate(nextSeed);
                 }}
-                className="flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white text-xs font-bold shadow-sm flex items-center justify-center gap-2 transition cursor-pointer"
+                className="flex-1 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white text-xs font-bold shadow-sm flex items-center justify-center gap-2 transition cursor-pointer"
               >
                 {isGenerating ? (
                   <>
@@ -458,7 +458,7 @@ export const AIImageModal: React.FC = () => {
                 </div>
               ) : (
                 <div className="text-center max-w-xs space-y-2">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center mx-auto">
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-700 flex items-center justify-center mx-auto">
                     <Wand2 size={22} />
                   </div>
                   <p className="text-xs font-bold text-slate-700">
@@ -493,7 +493,7 @@ export const AIImageModal: React.FC = () => {
                         onClick={() => setCurrentResult(item)}
                         className={`w-14 h-14 rounded-lg overflow-hidden border-2 flex-shrink-0 transition ${
                           currentResult === item
-                            ? 'border-emerald-600 shadow-xs'
+                            ? 'border-indigo-600 shadow-xs'
                             : 'border-slate-200 opacity-80 hover:opacity-100'
                         }`}
                       >
@@ -522,7 +522,7 @@ export const AIImageModal: React.FC = () => {
                   type="button"
                   disabled={!currentResult}
                   onClick={handleSetAsBackground}
-                  className="py-2 px-3.5 rounded-xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 disabled:opacity-40 text-emerald-800 text-xs font-semibold transition cursor-pointer"
+                  className="py-2 px-3.5 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 disabled:opacity-40 text-indigo-800 text-xs font-semibold transition cursor-pointer"
                 >
                   Set as Page Background
                 </button>
@@ -530,7 +530,7 @@ export const AIImageModal: React.FC = () => {
                   type="button"
                   disabled={!currentResult}
                   onClick={handleInsert}
-                  className="py-2 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white text-xs font-bold shadow-sm flex items-center gap-1.5 transition cursor-pointer"
+                  className="py-2 px-5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white text-xs font-bold shadow-sm flex items-center gap-1.5 transition cursor-pointer"
                 >
                   <ImagePlus size={14} />
                   <span>Insert onto Page</span>

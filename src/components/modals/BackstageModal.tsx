@@ -157,7 +157,7 @@ export const BackstageModal: React.FC = () => {
                   : 'hover:bg-white/10 text-white/80'
               }`}
             >
-              <FilePlus size={16} className="text-emerald-300" />
+              <FilePlus size={16} className="text-indigo-300" />
               <span>New</span>
             </button>
 
@@ -169,7 +169,7 @@ export const BackstageModal: React.FC = () => {
                   : 'hover:bg-white/10 text-white/80'
               }`}
             >
-              <FolderOpen size={16} className="text-emerald-300" />
+              <FolderOpen size={16} className="text-indigo-300" />
               <span>Open</span>
             </button>
 
@@ -181,7 +181,7 @@ export const BackstageModal: React.FC = () => {
                   : 'hover:bg-white/10 text-white/80'
               }`}
             >
-              <Save size={16} className="text-emerald-300" />
+              <Save size={16} className="text-indigo-300" />
               <span>Save As</span>
             </button>
 
@@ -193,7 +193,7 @@ export const BackstageModal: React.FC = () => {
                   : 'hover:bg-white/10 text-white/80'
               }`}
             >
-              <Printer size={16} className="text-emerald-300" />
+              <Printer size={16} className="text-indigo-300" />
               <span>Print</span>
             </button>
 
@@ -205,7 +205,7 @@ export const BackstageModal: React.FC = () => {
                   : 'hover:bg-white/10 text-white/80'
               }`}
             >
-              <FileDown size={16} className="text-emerald-300" />
+              <FileDown size={16} className="text-indigo-300" />
               <span>Export</span>
             </button>
 
@@ -217,7 +217,7 @@ export const BackstageModal: React.FC = () => {
                   : 'hover:bg-white/10 text-white/80'
               }`}
             >
-              <Info size={16} className="text-emerald-300" />
+              <Info size={16} className="text-indigo-300" />
               <span>Info</span>
             </button>
           </nav>
@@ -226,9 +226,9 @@ export const BackstageModal: React.FC = () => {
         <div className="text-[11px] text-white/70 space-y-1">
           <div className="flex items-center gap-1.5 font-bold text-white">
             <Sparkles size={12} className="text-amber-300" />
-            <span>Microsoft Publisher</span>
+            <span>StudioPress</span>
           </div>
-          <p className="text-[10px] text-emerald-200/80">365 Modern Web Edition</p>
+          <p className="text-[10px] text-indigo-200/80">365 Modern Web Edition</p>
         </div>
       </div>
 
@@ -275,7 +275,7 @@ export const BackstageModal: React.FC = () => {
                   placeholder="Search templates (e.g. menu, poster, resume)..."
                   value={templateSearch}
                   onChange={(e) => setTemplateSearch(e.target.value)}
-                  className="w-full md:w-64 px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 shadow-2xs"
+                  className="w-full md:w-64 px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 shadow-2xs"
                 />
               </div>
 
@@ -287,7 +287,7 @@ export const BackstageModal: React.FC = () => {
                     onClick={() => setTemplateGroupFilter(tab)}
                     className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition ${
                       templateGroupFilter === tab
-                        ? 'bg-emerald-600 text-white shadow-xs'
+                        ? 'bg-indigo-600 text-white shadow-xs'
                         : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
                     }`}
                   >
@@ -315,7 +315,7 @@ export const BackstageModal: React.FC = () => {
                             loadTemplate(tpl.id);
                             confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
                           }}
-                          className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm hover:shadow-xl hover:border-emerald-500 cursor-pointer transition-all hover:-translate-y-1 group flex flex-col justify-between"
+                          className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm hover:shadow-xl hover:border-indigo-500 cursor-pointer transition-all hover:-translate-y-1 group flex flex-col justify-between"
                         >
                           <div>
                             <div
@@ -343,7 +343,7 @@ export const BackstageModal: React.FC = () => {
                                   e.stopPropagation();
                                   setPreviewTemplate(tpl);
                                 }}
-                                className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-900/80 hover:bg-emerald-600 text-white text-[10.5px] font-semibold opacity-0 group-hover:opacity-100 transition-all shadow-md"
+                                className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-900/80 hover:bg-indigo-600 text-white text-[10.5px] font-semibold opacity-0 group-hover:opacity-100 transition-all shadow-md"
                                 title="Full Preview"
                               >
                                 <Eye size={12} />
@@ -352,7 +352,7 @@ export const BackstageModal: React.FC = () => {
                             </div>
 
                             <div className="flex items-center gap-2 mb-1.5">
-                              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/60">
+                              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-800 border border-indigo-200/60">
                                 {tpl.category}
                               </span>
                               <span className="text-[11px] font-medium text-slate-400">
@@ -361,7 +361,7 @@ export const BackstageModal: React.FC = () => {
                               </span>
                             </div>
 
-                            <h3 className="font-bold text-sm text-slate-800 group-hover:text-emerald-700 transition">
+                            <h3 className="font-bold text-sm text-slate-800 group-hover:text-indigo-700 transition">
                               {tpl.name}
                             </h3>
                             <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
@@ -369,7 +369,7 @@ export const BackstageModal: React.FC = () => {
                             </p>
                           </div>
 
-                          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-emerald-700">
+                          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-indigo-700">
                             <span>Create Publication</span>
                             <span className="group-hover:translate-x-1 transition-transform">→</span>
                           </div>
@@ -388,13 +388,13 @@ export const BackstageModal: React.FC = () => {
           <div className="max-w-2xl mx-auto space-y-6">
             <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Open Publication</h1>
             <div className="bg-white p-10 rounded-2xl border border-slate-200/80 shadow-sm text-center space-y-4">
-              <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center mx-auto shadow-xs">
+              <div className="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-700 flex items-center justify-center mx-auto shadow-xs">
                 <FolderOpen size={32} />
               </div>
               <div>
                 <h3 className="font-bold text-base text-slate-800">Open from your device</h3>
                 <p className="text-xs text-slate-500 mt-1">
-                  Select a saved Microsoft Publisher project file (.pub)
+                  Select a saved StudioPress project file (.pub)
                 </p>
               </div>
 
@@ -420,7 +420,7 @@ export const BackstageModal: React.FC = () => {
 
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-semibold text-xs transition shadow-sm"
+                className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-xl font-semibold text-xs transition shadow-sm"
               >
                 Browse Files...
               </button>
@@ -441,7 +441,7 @@ export const BackstageModal: React.FC = () => {
                   type="text"
                   value={project.name}
                   onChange={(e) => (project.name = e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-medium"
+                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium"
                 />
               </div>
 
@@ -451,7 +451,7 @@ export const BackstageModal: React.FC = () => {
                     saveProjectToFile(project);
                     setIsBackstageOpen(false);
                   }}
-                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-semibold text-xs transition shadow-sm flex items-center gap-2"
+                  className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-xl font-semibold text-xs transition shadow-sm flex items-center gap-2"
                 >
                   <Save size={14} />
                   <span>Download .pub File</span>
@@ -472,7 +472,7 @@ export const BackstageModal: React.FC = () => {
                     setIsBackstageOpen(false);
                     setTimeout(triggerPrint, 300);
                   }}
-                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-bold text-sm transition shadow-md flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-xl font-bold text-sm transition shadow-md flex items-center justify-center gap-2"
                 >
                   <Printer size={18} />
                   <span>Print Document</span>
@@ -619,7 +619,7 @@ export const BackstageModal: React.FC = () => {
             <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">
                     {previewTemplate.category}
                   </span>
                   <h2 className="text-lg font-bold text-slate-800">{previewTemplate.name}</h2>
@@ -633,7 +633,7 @@ export const BackstageModal: React.FC = () => {
                     setPreviewTemplate(null);
                     confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
                   }}
-                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition cursor-pointer"
                 >
                   Use This Template
                 </button>

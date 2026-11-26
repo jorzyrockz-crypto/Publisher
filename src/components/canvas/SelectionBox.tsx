@@ -206,13 +206,13 @@ export const SelectionBox: React.FC<SelectionBoxProps> = ({
       {/* Rotation Control with stem line */}
       <div className="absolute left-1/2 -top-7 -translate-x-1/2 flex flex-col items-center pointer-events-auto cursor-grab active:cursor-grabbing">
         <div
-          className="w-5 h-5 bg-white border border-emerald-600 rounded-full flex items-center justify-center hover:bg-emerald-600 shadow-md group transition-all active:scale-95"
+          className="w-5 h-5 bg-white border border-indigo-600 rounded-full flex items-center justify-center hover:bg-indigo-600 shadow-md group transition-all active:scale-95"
           onMouseDown={handleRotateMouseDown}
           title="Drag to Rotate"
         >
-          <RotateCw size={10} className="text-emerald-700 group-hover:text-white" />
+          <RotateCw size={10} className="text-indigo-700 group-hover:text-white" />
         </div>
-        <div className="w-[1.5px] h-2 bg-emerald-600" />
+        <div className="w-[1.5px] h-2 bg-indigo-600" />
       </div>
 
       {/* Floating Dimension or Angle Tooltip */}

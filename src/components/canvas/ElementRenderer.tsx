@@ -127,7 +127,7 @@ const TextRenderer: React.FC<{
       case 'comic-pop':
         return 'wordart-comic-pop';
       case 'emerald-3d':
-        return 'wordart-emerald-3d';
+        return 'wordart-indigo-3d';
       case 'sunset-gradient':
         return 'wordart-sunset-gradient';
       default:
@@ -782,7 +782,7 @@ const ImageRenderer: React.FC<{ element: ImageElement }> = ({ element }) => {
       case 'art-deco':
         return 'border-4 border-slate-800 shadow-[0_0_0_3px_#fff,0_0_0_6px_#334155]';
       case 'dots-and-dashes':
-        return 'border-4 border-dashed border-emerald-600';
+        return 'border-4 border-dashed border-indigo-600';
       default:
         return '';
     }

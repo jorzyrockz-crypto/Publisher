@@ -73,7 +73,7 @@ export const PageThumbnails: React.FC = () => {
   const getLayerIcon = (el: PublisherElement) => {
     switch (el.type) {
       case 'text':
-        return <Type size={12} className="text-emerald-700" />;
+        return <Type size={12} className="text-indigo-700" />;
       case 'shape':
         return <Square size={12} className="text-blue-600" />;
       case 'image':
@@ -94,14 +94,14 @@ export const PageThumbnails: React.FC = () => {
       <div className="w-9 bg-white border-r border-slate-200 flex flex-col items-center py-2.5 gap-3 h-full select-none flex-shrink-0 z-20 shadow-2xs">
         <button
           onClick={() => setIsLeftPanelOpen(true)}
-          className="p-1.5 rounded-lg text-slate-600 hover:text-emerald-800 hover:bg-emerald-50 transition"
+          className="p-1.5 rounded-lg text-slate-600 hover:text-indigo-800 hover:bg-indigo-50 transition"
           title="Expand Pages & Layers Panel"
         >
           <PanelLeftOpen size={15} />
         </button>
         <div
           onClick={() => setIsLeftPanelOpen(true)}
-          className="text-[10px] font-bold tracking-widest text-slate-400 uppercase cursor-pointer hover:text-emerald-700 transition"
+          className="text-[10px] font-bold tracking-widest text-slate-400 uppercase cursor-pointer hover:text-indigo-700 transition"
           style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
         >
           Pages & Layers
@@ -119,7 +119,7 @@ export const PageThumbnails: React.FC = () => {
             onClick={() => setSidebarTab('pages')}
             className={`flex items-center justify-center gap-1 py-1 rounded-lg text-[10.5px] font-bold transition-all ${
               sidebarTab === 'pages'
-                ? 'bg-white text-emerald-800 shadow-xs'
+                ? 'bg-white text-indigo-800 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -130,7 +130,7 @@ export const PageThumbnails: React.FC = () => {
             onClick={() => setSidebarTab('layers')}
             className={`flex items-center justify-center gap-1 py-1 rounded-lg text-[10.5px] font-bold transition-all ${
               sidebarTab === 'layers'
-                ? 'bg-white text-emerald-800 shadow-xs'
+                ? 'bg-white text-indigo-800 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -142,7 +142,7 @@ export const PageThumbnails: React.FC = () => {
         {sidebarTab === 'pages' && (
           <button
             onClick={addPage}
-            className="p-1 hover:bg-emerald-100 hover:text-emerald-800 text-slate-600 rounded-lg transition active:scale-95"
+            className="p-1 hover:bg-indigo-100 hover:text-indigo-800 text-slate-600 rounded-lg transition active:scale-95"
             title="Add Blank Page"
           >
             <Plus size={14} />
@@ -181,7 +181,7 @@ export const PageThumbnails: React.FC = () => {
                 }}
                 className={`group flex flex-col items-center cursor-pointer p-2 rounded-2xl transition-all ${
                   isActive
-                    ? 'bg-emerald-50/60 ring-2 ring-emerald-600 shadow-xs'
+                    ? 'bg-indigo-50/60 ring-2 ring-indigo-600 shadow-xs'
                     : 'hover:bg-slate-100/70'
                 }`}
               >
@@ -239,7 +239,7 @@ export const PageThumbnails: React.FC = () => {
                 <div className="flex items-center justify-between w-full mt-2 px-1 text-xs text-slate-600">
                   <span
                     className={`truncate font-medium text-[11px] ${
-                      isActive ? 'text-emerald-800 font-bold' : ''
+                      isActive ? 'text-indigo-800 font-bold' : ''
                     }`}
                   >
                     {page.name || `Page ${idx + 1}`}
@@ -252,7 +252,7 @@ export const PageThumbnails: React.FC = () => {
                         setActivePageIndex(idx);
                         duplicateActivePage();
                       }}
-                      className="p-1 hover:bg-slate-200/80 rounded-md text-slate-600 hover:text-emerald-700 transition"
+                      className="p-1 hover:bg-slate-200/80 rounded-md text-slate-600 hover:text-indigo-700 transition"
                       title="Duplicate Page"
                     >
                       <Copy size={11} />
@@ -296,7 +296,7 @@ export const PageThumbnails: React.FC = () => {
                   onClick={(e) => selectElement(el.id, e.shiftKey || e.ctrlKey)}
                   className={`flex items-center justify-between px-2.5 py-2 rounded-xl cursor-pointer text-[11px] transition-all border ${
                     isSelected
-                      ? 'bg-emerald-50 border-emerald-400 text-emerald-900 font-semibold shadow-2xs'
+                      ? 'bg-indigo-50 border-indigo-400 text-indigo-900 font-semibold shadow-2xs'
                       : 'bg-white border-slate-200/70 hover:bg-slate-50 text-slate-700'
                   } ${isHidden ? 'opacity-50' : ''}`}
                 >
@@ -345,7 +345,7 @@ export const PageThumbnails: React.FC = () => {
           className={`flex-1 py-1 px-2 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1.5 transition ${
             isEditingMaster
               ? 'bg-amber-500 text-white shadow-xs'
-              : 'bg-white border border-slate-200 text-slate-700 hover:bg-emerald-50 hover:text-emerald-800'
+              : 'bg-white border border-slate-200 text-slate-700 hover:bg-indigo-50 hover:text-indigo-800'
           }`}
           title="Edit Master Page (headers, footers, page numbers applied to all pages)"
         >
@@ -357,7 +357,7 @@ export const PageThumbnails: React.FC = () => {
           onClick={toggleMasterPageVisibility}
           className={`p-1.5 rounded-lg border transition ${
             project.masterPage?.showOnAllPages !== false
-              ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+              ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
               : 'bg-white border-slate-200 text-slate-400'
           }`}
           title="Toggle Master Page Elements Visibility"

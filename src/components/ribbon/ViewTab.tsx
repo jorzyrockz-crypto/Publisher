@@ -82,7 +82,7 @@ export const ViewTab: React.FC = () => {
             className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
             title="Fit Whole Page to Window"
           >
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-xs">
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-xs">
               <Maximize size={16} />
             </div>
             <span className="text-[10px] font-medium mt-1 text-slate-600">Fit Page</span>
@@ -117,7 +117,7 @@ export const ViewTab: React.FC = () => {
             onClick={() => setViewMode('artboard')}
             className={`flex flex-col items-center p-1.5 rounded-xl border transition-all ${
               viewMode === 'artboard'
-                ? 'bg-emerald-50 border-emerald-300 text-emerald-800 shadow-xs'
+                ? 'bg-indigo-50 border-indigo-300 text-indigo-800 shadow-xs'
                 : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
             }`}
             title="Freeform Artboards (Move papers & mix sizes)"
@@ -130,7 +130,7 @@ export const ViewTab: React.FC = () => {
             onClick={() => setViewMode('single')}
             className={`flex flex-col items-center p-1.5 rounded-xl border transition-all ${
               viewMode === 'single'
-                ? 'bg-emerald-50 border-emerald-300 text-emerald-800 shadow-xs'
+                ? 'bg-indigo-50 border-indigo-300 text-indigo-800 shadow-xs'
                 : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
             }`}
             title="Single Page View"
@@ -143,7 +143,7 @@ export const ViewTab: React.FC = () => {
             onClick={() => setViewMode('continuous')}
             className={`flex flex-col items-center p-1.5 rounded-xl border transition-all ${
               viewMode === 'continuous'
-                ? 'bg-emerald-50 border-emerald-300 text-emerald-800 shadow-xs'
+                ? 'bg-indigo-50 border-indigo-300 text-indigo-800 shadow-xs'
                 : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
             }`}
             title="All Pages Vertical Scroll"
@@ -156,7 +156,7 @@ export const ViewTab: React.FC = () => {
             onClick={() => setViewMode('spread')}
             className={`flex flex-col items-center p-1.5 rounded-xl border transition-all ${
               viewMode === 'spread'
-                ? 'bg-emerald-50 border-emerald-300 text-emerald-800 shadow-xs'
+                ? 'bg-indigo-50 border-indigo-300 text-indigo-800 shadow-xs'
                 : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
             }`}
             title="Two-Page Spread View"

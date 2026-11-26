@@ -1028,7 +1028,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         rows,
         cols,
         data,
-        themeId: 'emerald-office',
+        themeId: 'indigo-office',
         headerBg: activeScheme.primary,
         headerColor: '#ffffff',
         cellBg: '#ffffff',

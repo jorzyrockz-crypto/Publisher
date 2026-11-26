@@ -15,7 +15,7 @@ export const MailingsTab: React.FC = () => {
             className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
             title="Step-by-Step Mail Merge Wizard"
           >
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-xs">
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-xs">
               <Mail size={16} />
             </div>
             <span className="text-[10px] font-medium mt-1 text-slate-600">Mail Merge</span>
@@ -38,7 +38,7 @@ export const MailingsTab: React.FC = () => {
               }
               className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-[11px] font-medium transition shadow-2xs"
             >
-              <Plus size={11} className="text-emerald-700" />
+              <Plus size={11} className="text-indigo-700" />
               <span>{'{{Name}}'}</span>
             </button>
             <button
@@ -50,13 +50,13 @@ export const MailingsTab: React.FC = () => {
               }
               className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-[11px] font-medium transition shadow-2xs"
             >
-              <Plus size={11} className="text-emerald-700" />
+              <Plus size={11} className="text-indigo-700" />
               <span>{'{{Company}}'}</span>
             </button>
           </div>
           <button
             onClick={() => setIsMailMergeOpen(true)}
-            className="w-full text-center px-2 py-0.5 rounded-lg border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-[11px] text-emerald-800 font-semibold transition"
+            className="w-full text-center px-2 py-0.5 rounded-lg border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-[11px] text-indigo-800 font-semibold transition"
           >
             Manage Recipients...
           </button>
@@ -72,7 +72,7 @@ export const MailingsTab: React.FC = () => {
             className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
             title="Preview and Generate Merged Publication"
           >
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-xs">
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-xs">
               <Play size={16} />
             </div>
             <span className="text-[10px] font-medium mt-1 text-slate-600">Run Merge</span>

@@ -44,7 +44,7 @@ export const PageDesignTab: React.FC = () => {
             className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
             title="Browse Templates"
           >
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-xs">
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-xs">
               <FileText size={16} />
             </div>
             <span className="text-[10px] font-medium mt-1 text-slate-600">Templates</span>
@@ -78,7 +78,7 @@ export const PageDesignTab: React.FC = () => {
                     setPageMargins({ top: 48, right: 48, bottom: 48, left: 48 });
                     setIsMarginsDropdownOpen(false);
                   }}
-                  className="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 hover:text-emerald-800 rounded-lg text-xs transition"
+                  className="w-full text-left px-2.5 py-1.5 hover:bg-indigo-50 hover:text-indigo-800 rounded-lg text-xs transition"
                 >
                   Normal (0.5")
                 </button>
@@ -87,7 +87,7 @@ export const PageDesignTab: React.FC = () => {
                     setPageMargins({ top: 24, right: 24, bottom: 24, left: 24 });
                     setIsMarginsDropdownOpen(false);
                   }}
-                  className="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 hover:text-emerald-800 rounded-lg text-xs transition"
+                  className="w-full text-left px-2.5 py-1.5 hover:bg-indigo-50 hover:text-indigo-800 rounded-lg text-xs transition"
                 >
                   Narrow (0.25")
                 </button>
@@ -96,7 +96,7 @@ export const PageDesignTab: React.FC = () => {
                     setPageMargins({ top: 96, right: 96, bottom: 96, left: 96 });
                     setIsMarginsDropdownOpen(false);
                   }}
-                  className="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 hover:text-emerald-800 rounded-lg text-xs transition"
+                  className="w-full text-left px-2.5 py-1.5 hover:bg-indigo-50 hover:text-indigo-800 rounded-lg text-xs transition"
                 >
                   Wide (1.0")
                 </button>
@@ -105,7 +105,7 @@ export const PageDesignTab: React.FC = () => {
                     setPageMargins({ top: 0, right: 0, bottom: 0, left: 0 });
                     setIsMarginsDropdownOpen(false);
                   }}
-                  className="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 hover:text-emerald-800 rounded-lg text-xs transition"
+                  className="w-full text-left px-2.5 py-1.5 hover:bg-indigo-50 hover:text-indigo-800 rounded-lg text-xs transition"
                 >
                   None (0")
                 </button>
@@ -118,7 +118,7 @@ export const PageDesignTab: React.FC = () => {
                 onClick={() => setPageOrientation('portrait')}
                 className={`px-2.5 py-0.5 text-[11px] font-semibold rounded-md transition-all ${
                   activePage.orientation === 'portrait'
-                    ? 'bg-white text-emerald-800 shadow-xs'
+                    ? 'bg-white text-indigo-800 shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -128,7 +128,7 @@ export const PageDesignTab: React.FC = () => {
                 onClick={() => setPageOrientation('landscape')}
                 className={`px-2.5 py-0.5 text-[11px] font-semibold rounded-md transition-all ${
                   activePage.orientation === 'landscape'
-                    ? 'bg-white text-emerald-800 shadow-xs'
+                    ? 'bg-white text-indigo-800 shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -164,7 +164,7 @@ export const PageDesignTab: React.FC = () => {
                     setPageSize(size.name);
                     setIsSizeDropdownOpen(false);
                   }}
-                  className="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 hover:text-emerald-800 rounded-lg text-xs transition"
+                  className="w-full text-left px-2.5 py-1.5 hover:bg-indigo-50 hover:text-indigo-800 rounded-lg text-xs transition"
                 >
                   {size.displayName}
                 </button>
@@ -184,7 +184,7 @@ export const PageDesignTab: React.FC = () => {
             className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
             title="Change Color Scheme"
           >
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-xs">
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-xs">
               <Palette size={16} />
             </div>
             <span className="text-[10px] font-medium mt-1 text-slate-600 flex items-center">
@@ -209,7 +209,7 @@ export const PageDesignTab: React.FC = () => {
                   setIsSchemesDropdownOpen(false);
                 }}
                 className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl hover:bg-slate-50 transition ${
-                  project.colorScheme === scheme.id ? 'bg-emerald-50 ring-1 ring-emerald-300' : ''
+                  project.colorScheme === scheme.id ? 'bg-indigo-50 ring-1 ring-indigo-300' : ''
                 }`}
               >
                 <span className="text-xs font-medium text-slate-700">{scheme.name}</span>
@@ -253,7 +253,7 @@ export const PageDesignTab: React.FC = () => {
             className="flex items-center justify-between gap-2.5 cursor-pointer hover:opacity-90"
           >
             <span className="text-[11px] font-medium text-slate-600 flex items-center gap-1">
-              <Magnet size={12} className="text-emerald-700" />
+              <Magnet size={12} className="text-indigo-700" />
               <span>Snap</span>
             </span>
             <div className={`fluent-switch ${snapToGuides ? 'active' : ''}`}>
@@ -266,7 +266,7 @@ export const PageDesignTab: React.FC = () => {
             className="flex items-center justify-between gap-2.5 cursor-pointer hover:opacity-90"
           >
             <span className="text-[11px] font-medium text-slate-600 flex items-center gap-1">
-              <Grid size={12} className="text-emerald-700" />
+              <Grid size={12} className="text-indigo-700" />
               <span>Grid</span>
             </span>
             <div className={`fluent-switch ${gridVisible ? 'active' : ''}`}>

@@ -336,7 +336,7 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
           isEditingMaster
             ? 'ring-4 ring-amber-400/70'
             : isActivePage
-            ? 'ring-2 ring-emerald-500/70'
+            ? 'ring-2 ring-indigo-500/70'
             : 'hover:ring-2 hover:ring-slate-300'
         }`}
         style={{
@@ -748,7 +748,7 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
                 copySelectedElements();
                 setContextMenu(null);
               }}
-              className="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 hover:text-emerald-800 rounded-xl flex items-center gap-2 transition"
+              className="w-full text-left px-2.5 py-1.5 hover:bg-indigo-50 hover:text-indigo-800 rounded-xl flex items-center gap-2 transition"
             >
               <Copy size={13} /> <span>Copy</span>
               <span className="ml-auto text-[10px] text-slate-400">Ctrl+C</span>
@@ -758,7 +758,7 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
                 duplicateSelectedElements();
                 setContextMenu(null);
               }}
-              className="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 hover:text-emerald-800 rounded-xl flex items-center gap-2 transition"
+              className="w-full text-left px-2.5 py-1.5 hover:bg-indigo-50 hover:text-indigo-800 rounded-xl flex items-center gap-2 transition"
             >
               <Copy size={13} /> <span>Duplicate</span>
               <span className="ml-auto text-[10px] text-slate-400">Ctrl+D</span>
@@ -769,7 +769,7 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
                 bringToFront();
                 setContextMenu(null);
               }}
-              className="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 hover:text-emerald-800 rounded-xl flex items-center gap-2 transition"
+              className="w-full text-left px-2.5 py-1.5 hover:bg-indigo-50 hover:text-indigo-800 rounded-xl flex items-center gap-2 transition"
             >
               <BringToFront size={13} /> <span>Bring to Front</span>
             </button>
@@ -778,7 +778,7 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
                 sendToBack();
                 setContextMenu(null);
               }}
-              className="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 hover:text-emerald-800 rounded-xl flex items-center gap-2 transition"
+              className="w-full text-left px-2.5 py-1.5 hover:bg-indigo-50 hover:text-indigo-800 rounded-xl flex items-center gap-2 transition"
             >
               <SendToBack size={13} /> <span>Send to Back</span>
             </button>
@@ -819,7 +819,7 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
                 pasteElements();
                 setContextMenu(null);
               }}
-              className="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 hover:text-emerald-800 rounded-xl flex items-center gap-2 disabled:opacity-40 transition"
+              className="w-full text-left px-2.5 py-1.5 hover:bg-indigo-50 hover:text-indigo-800 rounded-xl flex items-center gap-2 disabled:opacity-40 transition"
             >
               <Clipboard size={13} /> <span>Paste</span>
               <span className="ml-auto text-[10px] text-slate-400">Ctrl+V</span>
@@ -830,7 +830,7 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
                 addTextBox();
                 setContextMenu(null);
               }}
-              className="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 hover:text-emerald-800 rounded-xl flex items-center gap-2 transition"
+              className="w-full text-left px-2.5 py-1.5 hover:bg-indigo-50 hover:text-indigo-800 rounded-xl flex items-center gap-2 transition"
             >
               <Type size={13} /> <span>Insert Text Box</span>
             </button>
@@ -839,7 +839,7 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
                 addQRCode();
                 setContextMenu(null);
               }}
-              className="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 hover:text-emerald-800 rounded-xl flex items-center gap-2 transition"
+              className="w-full text-left px-2.5 py-1.5 hover:bg-indigo-50 hover:text-indigo-800 rounded-xl flex items-center gap-2 transition"
             >
               <QrCode size={13} /> <span>Insert QR Code</span>
             </button>

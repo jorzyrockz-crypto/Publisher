@@ -39,7 +39,7 @@ export const Ribbon: React.FC = () => {
                 }}
                 className={`px-3 py-1 rounded-full text-xs font-semibold tracking-wide transition-all ${
                   isActive
-                    ? 'bg-emerald-600 text-white shadow-xs'
+                    ? 'bg-indigo-600 text-white shadow-xs'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                 }`}
               >

@@ -69,7 +69,7 @@ export const HorizontalRuler: React.FC<HorizontalRulerProps> = ({
       {/* Hairline cursor tracker */}
       {cursorX !== undefined && cursorX >= 0 && cursorX <= width && (
         <div
-          className="absolute top-0 bottom-0 w-[1.5px] bg-emerald-600 pointer-events-none z-10 shadow-xs"
+          className="absolute top-0 bottom-0 w-[1.5px] bg-indigo-600 pointer-events-none z-10 shadow-xs"
           style={{ left: `${cursorX * zoom}px` }}
         />
       )}
@@ -142,7 +142,7 @@ export const VerticalRuler: React.FC<VerticalRulerProps> = ({
 
       {cursorY !== undefined && cursorY >= 0 && cursorY <= height && (
         <div
-          className="absolute left-0 right-0 h-[1.5px] bg-emerald-600 pointer-events-none z-10 shadow-xs"
+          className="absolute left-0 right-0 h-[1.5px] bg-indigo-600 pointer-events-none z-10 shadow-xs"
           style={{ top: `${cursorY * zoom}px` }}
         />
       )}

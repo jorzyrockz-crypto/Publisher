@@ -53,7 +53,7 @@ export const QuickAccessToolbar: React.FC = () => {
   );
 
   return (
-    <div className="h-10 bg-gradient-to-r from-[#064e3b] via-[#047857] to-[#065f46] text-white flex items-center justify-between px-3 select-none text-xs border-b border-emerald-900/40 shadow-sm relative z-40">
+    <div className="h-10 bg-gradient-to-r from-[#064e3b] via-[#047857] to-[#065f46] text-white flex items-center justify-between px-3 select-none text-xs border-b border-indigo-900/40 shadow-sm relative z-40">
       {/* Left: File & Quick Action Icons */}
       <div className="flex items-center gap-1.5">
         {/* Backstage File Button */}
@@ -61,7 +61,7 @@ export const QuickAccessToolbar: React.FC = () => {
           onClick={() => setIsBackstageOpen(true)}
           className="bg-white/15 hover:bg-white/25 active:scale-95 text-white font-semibold px-3 py-1 rounded-full text-xs flex items-center gap-1.5 transition-all shadow-xs backdrop-blur-md mr-1 border border-white/20"
         >
-          <LayoutGrid size={13} className="text-emerald-200" />
+          <LayoutGrid size={13} className="text-indigo-200" />
           <span>File</span>
         </button>
 
@@ -105,8 +105,8 @@ export const QuickAccessToolbar: React.FC = () => {
         <div className="w-[1px] h-3.5 bg-white/20 mx-1" />
 
         {/* Saved Status Indicator */}
-        <div className="hidden lg:flex items-center gap-1 text-[11px] text-emerald-200/90 font-medium bg-emerald-900/40 px-2 py-0.5 rounded-full border border-emerald-700/50">
-          <CheckCircle2 size={11} className="text-emerald-300" />
+        <div className="hidden lg:flex items-center gap-1 text-[11px] text-indigo-200/90 font-medium bg-indigo-900/40 px-2 py-0.5 rounded-full border border-indigo-700/50">
+          <CheckCircle2 size={11} className="text-indigo-300" />
           <span>Saved</span>
         </div>
       </div>
@@ -125,7 +125,7 @@ export const QuickAccessToolbar: React.FC = () => {
               setSearchQuery(e.target.value);
               setIsSearchOpen(true);
             }}
-            className="w-full bg-white/15 hover:bg-white/20 focus:bg-white text-white focus:text-slate-800 placeholder-white/60 focus:placeholder-slate-400 pl-8 pr-12 py-1 rounded-full text-[11px] outline-none border border-white/20 focus:border-emerald-600 transition-all shadow-inner"
+            className="w-full bg-white/15 hover:bg-white/20 focus:bg-white text-white focus:text-slate-800 placeholder-white/60 focus:placeholder-slate-400 pl-8 pr-12 py-1 rounded-full text-[11px] outline-none border border-white/20 focus:border-indigo-600 transition-all shadow-inner"
           />
           <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 text-[9px] bg-white/20 text-white/80 px-1.5 py-0.5 rounded font-mono pointer-events-none">
             <Command size={9} />
@@ -147,7 +147,7 @@ export const QuickAccessToolbar: React.FC = () => {
                   setIsSearchOpen(false);
                   setSearchQuery('');
                 }}
-                className="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 hover:text-emerald-800 rounded-lg text-xs flex items-center gap-2 transition"
+                className="w-full text-left px-2.5 py-1.5 hover:bg-indigo-50 hover:text-indigo-800 rounded-lg text-xs flex items-center gap-2 transition"
               >
                 <span className="w-5 h-5 rounded-md bg-slate-100 flex items-center justify-center font-bold text-slate-600 text-[11px]">
                   {item.icon}
@@ -172,7 +172,7 @@ export const QuickAccessToolbar: React.FC = () => {
           className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-white/15 hover:bg-white/25 active:scale-95 text-white rounded-full font-medium text-[11px] transition border border-white/20 shadow-xs"
           title="Export to PDF"
         >
-          <FileDown size={13} className="text-emerald-200" />
+          <FileDown size={13} className="text-indigo-200" />
           <span>Export PDF</span>
         </button>
 
@@ -186,7 +186,7 @@ export const QuickAccessToolbar: React.FC = () => {
         </button>
 
         {/* Modern 365 Badge */}
-        <div className="flex items-center gap-1 bg-emerald-950/40 border border-emerald-600/40 text-emerald-200 px-2 py-0.5 rounded-full text-[10px] font-semibold">
+        <div className="flex items-center gap-1 bg-indigo-950/40 border border-indigo-600/40 text-indigo-200 px-2 py-0.5 rounded-full text-[10px] font-semibold">
           <Sparkles size={10} className="text-amber-300" />
           <span>365</span>
         </div>

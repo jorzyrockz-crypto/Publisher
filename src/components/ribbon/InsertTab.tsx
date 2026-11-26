@@ -53,7 +53,7 @@ export const InsertTab: React.FC = () => {
             className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
             title="Insert Blank Page"
           >
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-xs">
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-xs">
               <FilePlus size={16} />
             </div>
             <span className="text-[10px] font-medium mt-1 text-slate-600">New Page</span>
@@ -82,7 +82,7 @@ export const InsertTab: React.FC = () => {
             className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
             title="Insert Table"
           >
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-xs">
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-xs">
               <TableIcon size={16} />
             </div>
             <span className="text-[10px] font-medium mt-1 text-slate-600">Table</span>
@@ -111,8 +111,8 @@ export const InsertTab: React.FC = () => {
                       }}
                       className={`w-5 h-5 border rounded cursor-pointer transition ${
                         isHighlighted
-                          ? 'bg-emerald-500 border-emerald-600 shadow-2xs'
-                          : 'bg-slate-50 border-slate-200 hover:bg-emerald-100'
+                          ? 'bg-indigo-500 border-indigo-600 shadow-2xs'
+                          : 'bg-slate-50 border-slate-200 hover:bg-indigo-100'
                       }`}
                     />
                   );
@@ -124,7 +124,7 @@ export const InsertTab: React.FC = () => {
                 addTable(3, 3);
                 setIsTableDropdownOpen(false);
               }}
-              className="w-full text-center py-1.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-800 rounded-lg text-xs font-medium text-slate-700 transition"
+              className="w-full text-center py-1.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-800 rounded-lg text-xs font-medium text-slate-700 transition"
             >
               Insert 3×3 Grid
             </button>
@@ -158,7 +158,7 @@ export const InsertTab: React.FC = () => {
             className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
             title="Upload Picture"
           >
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-xs">
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-xs">
               <ImageIcon size={16} />
             </div>
             <span className="text-[10px] font-medium mt-1 text-slate-600">Picture</span>
@@ -170,10 +170,10 @@ export const InsertTab: React.FC = () => {
             className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
             title="Free AI Image Studio (Hybrid Cloud + Offline Art)"
           >
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-100 border border-emerald-300 text-emerald-700 flex items-center justify-center group-hover:from-emerald-600 group-hover:to-teal-600 group-hover:text-white transition-all shadow-xs">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-50 to-teal-100 border border-indigo-300 text-indigo-700 flex items-center justify-center group-hover:from-indigo-600 group-hover:to-teal-600 group-hover:text-white transition-all shadow-xs">
               <Wand2 size={16} />
             </div>
-            <span className="text-[10px] font-semibold mt-1 text-emerald-800">AI Image</span>
+            <span className="text-[10px] font-semibold mt-1 text-indigo-800">AI Image</span>
           </button>
 
           {/* Stock Graphics Picker */}
@@ -206,7 +206,7 @@ export const InsertTab: React.FC = () => {
                 placeholder="Search clipart (e.g. rocket, cake, sunset)..."
                 value={stockSearch}
                 onChange={(e) => setStockSearch(e.target.value)}
-                className="w-full mb-2 px-2.5 py-1 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-[11px] outline-none focus:border-emerald-500"
+                className="w-full mb-2 px-2.5 py-1 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-[11px] outline-none focus:border-indigo-500"
               />
               <div className="flex items-center gap-1 mb-2.5 flex-wrap">
                 {(['All', 'Nature', 'Abstract', 'Business', 'Badges', 'Lifestyle'] as const).map((cat) => (
@@ -215,7 +215,7 @@ export const InsertTab: React.FC = () => {
                     onClick={() => setStockCategory(cat)}
                     className={`px-2 py-0.5 rounded-full text-[10px] font-semibold transition ${
                       stockCategory === cat
-                        ? 'bg-emerald-600 text-white'
+                        ? 'bg-indigo-600 text-white'
                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
@@ -235,7 +235,7 @@ export const InsertTab: React.FC = () => {
                       addImage(g.src, { name: g.name });
                       setIsStockOpen(false);
                     }}
-                    className="group/item flex flex-col items-center p-1.5 rounded-xl border border-slate-200/80 hover:border-emerald-500 hover:bg-emerald-50/40 transition"
+                    className="group/item flex flex-col items-center p-1.5 rounded-xl border border-slate-200/80 hover:border-indigo-500 hover:bg-indigo-50/40 transition"
                   >
                     <img
                       src={g.src}
@@ -287,7 +287,7 @@ export const InsertTab: React.FC = () => {
             className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
             title="Insert Tear-off Special Coupon"
           >
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-xs">
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-xs">
               <Scissors size={16} />
             </div>
             <span className="text-[10px] font-medium mt-1 text-slate-600">Coupon</span>
@@ -299,7 +299,7 @@ export const InsertTab: React.FC = () => {
             className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
             title="Insert Large Pull Quote Accent"
           >
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-xs">
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-xs">
               <Quote size={16} />
             </div>
             <span className="text-[10px] font-medium mt-1 text-slate-600">Pull Quote</span>
@@ -311,7 +311,7 @@ export const InsertTab: React.FC = () => {
             className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
             title="Insert Newspaper / Newsletter Masthead"
           >
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-xs">
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-xs">
               <Layout size={16} />
             </div>
             <span className="text-[10px] font-medium mt-1 text-slate-600">Masthead</span>
@@ -353,7 +353,7 @@ export const InsertTab: React.FC = () => {
             className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
             title="Insert Dynamic Page Number"
           >
-            <div className="w-8 h-8 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all text-slate-700 shadow-xs">
+            <div className="w-8 h-8 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all text-slate-700 shadow-xs">
               <Hash size={16} />
             </div>
             <span className="text-[10px] font-medium mt-1 text-slate-600">Page #</span>
