@@ -37,6 +37,10 @@ export const BrandBoardModal: React.FC = () => {
     setSelectedSizes(['flyer', 'poster', 'postcard', 'business-card', 'trifold']);
   };
 
+  const selectWebBrandKit = () => {
+    setSelectedSizes(['hero-banner', 'brand-logo', 'ig-post', 'fb-cover', 'linkedin-banner']);
+  };
+
   const handleGenerate = () => {
     if (selectedSizes.length === 0) return;
     generateBrandBoardSizes(selectedSizes);
@@ -98,6 +102,13 @@ export const BrandBoardModal: React.FC = () => {
                 className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-semibold transition cursor-pointer"
               >
                 + Print & Cards Suite
+              </button>
+              <button
+                type="button"
+                onClick={selectWebBrandKit}
+                className="px-3 py-1.5 rounded-xl bg-violet-50 hover:bg-violet-100 border border-violet-200 text-violet-800 text-xs font-semibold transition cursor-pointer"
+              >
+                + Web & Brand Kit
               </button>
             </div>
             <button

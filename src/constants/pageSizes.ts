@@ -51,6 +51,20 @@ export const PAGE_SIZES: PageSizeDefinition[] = [
     category: 'Marketing',
   },
   {
+    name: 'hero-banner',
+    displayName: 'Website Hero Banner (1920 × 640 px)',
+    width: 1920,
+    height: 640,
+    category: 'Marketing',
+  },
+  {
+    name: 'brand-logo',
+    displayName: 'Brand Logo Square (512 × 512 px)',
+    width: 512,
+    height: 512,
+    category: 'Card & Social',
+  },
+  {
     name: 'certificate',
     displayName: 'Award Certificate (11 × 8.5 in)',
     width: 1056,
