@@ -1,4 +1,83 @@
 export type AIEngineMode = 'hybrid' | 'cloud' | 'procedural';
+export type AICloudModel = 'flux' | 'gemini' | 'flux-schnell' | 'turbo';
+export type AICreationType = 'photo' | 'clipart' | 'logo' | 'backdrop';
+
+export const AI_CLOUD_MODELS: { id: AICloudModel; label: string; description: string }[] = [
+  {
+    id: 'flux',
+    label: 'Flux.1 (Free Cloud AI • Fast & Crisp)',
+    description: '100% Free Flux generative model, no key required',
+  },
+  {
+    id: 'gemini',
+    label: 'Gemini Multimodal (Google AI Studio Key)',
+    description: 'Requires a Google Cloud billing account for image quota',
+  },
+];
+
+export const AI_CREATION_TYPES: {
+  id: AICreationType;
+  label: string;
+  suffix: string;
+}[] = [
+  { id: 'photo', label: 'Photo / Scene', suffix: 'cinematic lighting, sharp focus, high resolution composition' },
+  {
+    id: 'clipart',
+    label: 'Clipart / Sticker',
+    suffix: 'isolated centered character or object on solid pure white background, clean bold outlines, die-cut sticker ready, no shadow',
+  },
+  {
+    id: 'logo',
+    label: 'Logo / Emblem',
+    suffix: 'clean minimalist vector emblem logo centered on pure white background, flat balanced geometry, crisp edges',
+  },
+  {
+    id: 'backdrop',
+    label: 'Poster Backdrop',
+    suffix: 'seamless full-bleed background wallpaper, balanced negative space for typography',
+  },
+];
+
+export const CATEGORIZED_PROMPT_PRESETS: Record<AICreationType, string[]> = {
+  photo: [
+    'Smiling college graduate holding diploma, warm sunlight, studio portrait',
+    'Cute golden retriever puppy wearing a tiny graduation cap, studio photo',
+    'Modern creative office desk flatlay with laptop, notebook, and succulent plant',
+    'Happy diverse students celebrating graduation confetti outdoors',
+  ],
+  clipart: [
+    'Cute astronaut cat floating in space with tiny planets, clean vector sticker',
+    'Playful wise owl wearing graduation cap and holding a gold medal',
+    'Potted monstera and succulent plant, clean flat vector illustration',
+    'Celebration birthday cake with sparkler candle, cute flat sticker',
+  ],
+  logo: [
+    'Minimalist golden laurel wreath academy shield emblem on white background',
+    'Modern geometric blue and teal mountain wave badge icon',
+    'Botanical coffee shop cup emblem with olive leaf accents',
+    'Tech summit spark emblem, bold navy and indigo vector mark',
+  ],
+  backdrop: [
+    'Minimalist emerald and gold abstract geometric editorial waves',
+    'Soft pastel watercolor floral border texture on ivory cotton paper',
+    'Neon cyber dark futuristic light grid horizon',
+    'Warm sunset desert dunes minimalist editorial poster backdrop',
+  ],
+};
+
+export function enhancePromptText(
+  rawPrompt: string,
+  creationType: AICreationType,
+  style: AIArtStyle
+): string {
+  const base = rawPrompt.trim() || 'Modern creative subject';
+  const styleEntry = AI_ART_STYLES.find((s) => s.id === style);
+  const typeEntry = AI_CREATION_TYPES.find((t) => t.id === creationType);
+  const extras = [typeEntry?.suffix, styleEntry?.promptSuffix]
+    .filter(Boolean)
+    .filter((s) => !base.toLowerCase().includes(s!.slice(0, 12).toLowerCase()));
+  return extras.length > 0 ? `${base}, ${extras.join(', ')}` : base;
+}
 
 export type AIArtStyle =
   | 'photorealistic'
@@ -65,16 +144,19 @@ export const PROCEDURAL_MOTIFS: { id: ProceduralMotif; label: string }[] = [
 ];
 
 export const PROMPT_PRESETS: string[] = [
+  'Smiling college graduate holding diploma, warm sunlight, studio portrait',
+  'Cute golden retriever puppy wearing a tiny graduation cap, clean studio',
+  'Modern office desk flatlay with laptop, coffee mug, and succulent plant',
+  'Watercolor botanical wreath with olive branches and gold stars on white',
   'Minimalist emerald and gold abstract geometric poster backdrop',
-  'Sunset mountain peaks in warm watercolor layers',
-  'Neon cyber futuristic digital waves dark background',
-  'Modern clean coffee shop workspace morning sunlight',
-  'Luxury rose gold marble fluid silk texture',
 ];
 
 export interface GeneratedImageResult {
   dataUrl: string;
+  originalDataUrl?: string;
+  bgRemoved?: boolean;
   source: 'cloud' | 'procedural';
+  modelLabel?: string;
   width: number;
   height: number;
   seed: number;
@@ -577,6 +659,7 @@ export function generateProceduralArtwork(
   return {
     dataUrl: canvas.toDataURL('image/png'),
     source: 'procedural',
+    modelLabel: 'Procedural Studio Art',
     width: w,
     height: h,
     seed,
@@ -594,7 +677,100 @@ function blobToDataUrl(blob: Blob): Promise<string> {
 }
 
 /**
- * Generates a free AI image via Pollinations.ai and converts it to a local Data URL
+ * Resizes and center-crops a square 768x768 image to the exact target aspect ratio
+ * so users can generate 4:3 landscape, 3:4 portrait, or 16:9 widescreen freely.
+ */
+function cropImageToRatio(dataUrl: string, targetW: number, targetH: number): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const srcW = img.naturalWidth || img.width;
+      const srcH = img.naturalHeight || img.height;
+      if (srcW === targetW && srcH === targetH) {
+        resolve(dataUrl);
+        return;
+      }
+      const targetRatio = targetW / targetH;
+      const srcRatio = srcW / srcH;
+      let sX = 0;
+      let sY = 0;
+      let sW = srcW;
+      let sH = srcH;
+      if (srcRatio > targetRatio) {
+        sW = srcH * targetRatio;
+        sX = (srcW - sW) / 2;
+      } else {
+        sH = srcW / targetRatio;
+        sY = (srcH - sH) / 2;
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = targetW;
+      canvas.height = targetH;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        resolve(dataUrl);
+        return;
+      }
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, sX, sY, sW, sH, 0, 0, targetW, targetH);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
+/**
+ * Fallback image loader using an HTML Image element to bypass any browser fetch blocks.
+ */
+function loadImageAsDataUrl(url: string, signal?: AbortSignal): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    const cleanUp = () => {
+      img.onload = null;
+      img.onerror = null;
+    };
+    if (signal) {
+      if (signal.aborted) return reject(new Error('Generation cancelled'));
+      signal.addEventListener(
+        'abort',
+        () => {
+          cleanUp();
+          reject(new Error('Generation cancelled'));
+        },
+        { once: true }
+      );
+    }
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth || img.width;
+        canvas.height = img.naturalHeight || img.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Canvas context unavailable');
+        ctx.drawImage(img, 0, 0);
+        const dataUrl = canvas.toDataURL('image/png');
+        cleanUp();
+        resolve(dataUrl);
+      } catch (err) {
+        cleanUp();
+        reject(err);
+      }
+    };
+    img.onerror = () => {
+      cleanUp();
+      reject(new Error('Image failed to load'));
+    };
+    img.src = url;
+  });
+}
+
+/**
+ * Generates a free AI image via Pollinations.ai (Flux) and converts it to a local Data URL
  * so canvas PDF/PNG export and offline project saving work without CORS tainting.
  */
 export async function generateCloudAIImage(
@@ -602,42 +778,99 @@ export async function generateCloudAIImage(
   options: {
     ratio: AspectRatioSpec;
     style: AIArtStyle;
+    cloudModel?: AICloudModel;
+    creationType?: AICreationType;
+    negativePrompt?: string;
     seed: number;
     signal?: AbortSignal;
   }
 ): Promise<GeneratedImageResult> {
   const styleEntry = AI_ART_STYLES.find((s) => s.id === options.style);
-  const fullPrompt = styleEntry
-    ? `${prompt.trim()}, ${styleEntry.promptSuffix}`
-    : prompt.trim();
+  const typeEntry = AI_CREATION_TYPES.find((t) => t.id === (options.creationType || 'photo'));
+  const parts = [prompt.trim(), typeEntry?.suffix, styleEntry?.promptSuffix].filter(Boolean);
+  if (options.negativePrompt?.trim()) {
+    parts.push(`avoid: ${options.negativePrompt.trim()}`);
+  }
+  const fullPrompt = parts.join(', ');
 
-  const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(
-    fullPrompt
-  )}?width=${options.ratio.width}&height=${options.ratio.height}&seed=${options.seed}&nologo=true`;
+  const encoded = encodeURIComponent(fullPrompt);
+
+  // Pollinations Free Tier strictly requires 768x768 square; non-square or sizes > 768 return 402.
+  // We fetch at 768x768 (free & fast) and then crop to the user's requested aspect ratio (e.g. 800x600, 600x800, 960x540).
+  const endpoints = [
+    // 1. Local Vite proxy endpoint (bypasses browser CORS & adblock completely)
+    `/api/pollinations/prompt/${encoded}?model=flux&width=768&height=768&seed=${options.seed}&nologo=true`,
+    // 2. Direct public endpoint fallback
+    `https://image.pollinations.ai/prompt/${encoded}?model=flux&width=768&height=768&seed=${options.seed}&nologo=true`,
+  ];
 
   const timeoutController = new AbortController();
-  const timeoutId = window.setTimeout(() => timeoutController.abort(), 22000);
+  const timeoutId = window.setTimeout(() => timeoutController.abort(), 45000);
 
   if (options.signal) {
+    if (options.signal.aborted) {
+      window.clearTimeout(timeoutId);
+      throw new Error('Generation cancelled');
+    }
     options.signal.addEventListener('abort', () => timeoutController.abort(), { once: true });
   }
 
   try {
-    const res = await fetch(url, { signal: timeoutController.signal });
-    if (res.status === 429) {
-      throw new Error('RATE_LIMITED');
+    let rawSquareDataUrl: string | null = null;
+    let lastErr: Error = new Error('Cloud AI request failed');
+
+    for (const url of endpoints) {
+      try {
+        const res = await fetch(url, { signal: timeoutController.signal });
+        if (res.status === 429) {
+          lastErr = new Error('RATE_LIMITED');
+          continue;
+        }
+        if (!res.ok) {
+          lastErr = new Error(`HTTP_${res.status}`);
+          continue;
+        }
+        const blob = await res.blob();
+        if (!blob.type.startsWith('image/')) {
+          lastErr = new Error('INVALID_IMAGE_RESPONSE');
+          continue;
+        }
+        rawSquareDataUrl = await blobToDataUrl(blob);
+        if (rawSquareDataUrl) break;
+      } catch (e) {
+        if (options.signal?.aborted) throw new Error('Generation cancelled');
+        if (timeoutController.signal.aborted) throw new Error('Request timed out');
+        // If fetch failed due to network / CORS / proxy, try Image() loader fallback on direct URL
+        if (url.startsWith('https://')) {
+          try {
+            rawSquareDataUrl = await loadImageAsDataUrl(url, timeoutController.signal);
+            if (rawSquareDataUrl) break;
+          } catch {
+            // continue
+          }
+        }
+        lastErr = e instanceof Error ? e : new Error('Network error');
+      }
     }
-    if (!res.ok) {
-      throw new Error(`HTTP_${res.status}`);
+
+    if (!rawSquareDataUrl) {
+      throw lastErr;
     }
-    const blob = await res.blob();
-    if (!blob.type.startsWith('image/')) {
-      throw new Error('INVALID_IMAGE_RESPONSE');
+
+    // Adapt / Crop to requested aspect ratio if not 1:1 square
+    let finalDataUrl = rawSquareDataUrl;
+    if (options.ratio.width !== 768 || options.ratio.height !== 768) {
+      finalDataUrl = await cropImageToRatio(
+        rawSquareDataUrl,
+        options.ratio.width,
+        options.ratio.height
+      );
     }
-    const dataUrl = await blobToDataUrl(blob);
+
     return {
-      dataUrl,
+      dataUrl: finalDataUrl,
       source: 'cloud',
+      modelLabel: 'Flux.1 (Free Cloud AI)',
       width: options.ratio.width,
       height: options.ratio.height,
       seed: options.seed,
@@ -648,10 +881,92 @@ export async function generateCloudAIImage(
   }
 }
 
+export async function generateGeminiAIImage(
+  prompt: string,
+  options: {
+    ratio: AspectRatioSpec;
+    style: AIArtStyle;
+    seed: number;
+  },
+  apiKey: string
+): Promise<GeneratedImageResult> {
+  const styleEntry = AI_ART_STYLES.find((s) => s.id === options.style);
+  const fullPrompt = styleEntry
+    ? `${prompt.trim()}, ${styleEntry.promptSuffix}`
+    : prompt.trim();
+
+  const modelsToTry = ['gemini-2.5-flash-image', 'gemini-3.1-flash-image'];
+  let lastError = 'Gemini image generation failed';
+
+  for (const model of modelsToTry) {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(
+        apiKey.trim()
+      )}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: fullPrompt }] }],
+          generationConfig: { responseModalities: ['TEXT', 'IMAGE'] },
+        }),
+      }
+    );
+
+    if (!res.ok) {
+      try {
+        const errJson = await res.json();
+        const msg = errJson?.error?.message || '';
+        if (msg.includes('limit: 0') || msg.includes('Quota exceeded') || res.status === 429) {
+          lastError =
+            'Google AI Studio Free Tier has 0 quota for image generation on this key (requires a paid Google Cloud billing account). Switch to Flux for free generation!';
+        } else {
+          lastError = msg || `Gemini HTTP ${res.status}`;
+        }
+      } catch {
+        lastError = `Gemini HTTP ${res.status}`;
+      }
+      if (res.status === 404) continue;
+      throw new Error(lastError);
+    }
+
+    const data = await res.json();
+    const parts = data?.candidates?.[0]?.content?.parts || [];
+    const imgPart = parts.find(
+      (p: { inlineData?: { mimeType?: string; data?: string } }) => p.inlineData?.data
+    );
+    if (!imgPart?.inlineData?.data) {
+      lastError = 'Gemini returned text without an image. Try a more descriptive image prompt.';
+      continue;
+    }
+    const mime = imgPart.inlineData.mimeType || 'image/png';
+    const rawDataUrl = `data:${mime};base64,${imgPart.inlineData.data}`;
+    const finalDataUrl =
+      options.ratio.id !== '1:1'
+        ? await cropImageToRatio(rawDataUrl, options.ratio.width, options.ratio.height)
+        : rawDataUrl;
+
+    return {
+      dataUrl: finalDataUrl,
+      source: 'cloud',
+      modelLabel: `Gemini (${model})`,
+      width: options.ratio.width,
+      height: options.ratio.height,
+      seed: options.seed,
+      prompt,
+    };
+  }
+
+  throw new Error(lastError);
+}
+
 export async function generateHybridAIImage(
   prompt: string,
   options: {
     mode: AIEngineMode;
+    cloudModel?: AICloudModel;
+    creationType?: AICreationType;
+    negativePrompt?: string;
     ratio: AspectRatioSpec;
     style: AIArtStyle;
     motif: ProceduralMotif;
@@ -660,11 +975,27 @@ export async function generateHybridAIImage(
     grain?: number;
     hdPrint?: boolean;
     customPalette?: { bg1: string; bg2: string; accent1: string; accent2: string };
+    geminiApiKey?: string;
     signal?: AbortSignal;
   }
 ): Promise<GeneratedImageResult> {
   if (options.mode === 'procedural') {
     return generateProceduralArtwork(prompt, options);
+  }
+
+  // Only use Gemini when explicitly chosen as the cloud model
+  if (options.cloudModel === 'gemini') {
+    if (!options.geminiApiKey?.trim()) {
+      throw new Error('Please paste your Google AI Studio API Key to use Gemini image generation.');
+    }
+    try {
+      return await generateGeminiAIImage(prompt, options, options.geminiApiKey);
+    } catch (geminiErr) {
+      if (options.mode === 'cloud') {
+        throw geminiErr;
+      }
+      // If in hybrid mode, fall through to Flux or procedural
+    }
   }
 
   try {
@@ -679,8 +1010,8 @@ export async function generateHybridAIImage(
     const procedural = generateProceduralArtwork(prompt, options);
     const reason =
       message === 'RATE_LIMITED'
-        ? 'Free Cloud AI is temporarily busy (rate limit 429). Switched seamlessly to Instant Procedural Art!'
-        : 'Cloud AI could not be reached right now. Switched seamlessly to Instant Procedural Art!';
+        ? 'Free Cloud AI is temporarily busy — generated an Instant Procedural Artwork instead.'
+        : 'Cloud AI could not be reached — generated an Instant Procedural Artwork instead.';
 
     return {
       ...procedural,

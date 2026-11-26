@@ -12,6 +12,8 @@ import {
 } from '../../types/publisher';
 import { Scissors, Quote, Award, QrCode, ImagePlus, Upload } from 'lucide-react';
 import { buildWavyRectPath } from '../../utils/shapePaths';
+import { buildShapePatternDataUri } from '../../utils/patternGenerator';
+import { PATTERN_CATALOG } from '../../utils/patternGenerator';
 
 interface ElementRendererProps {
   element: PublisherElement;
@@ -273,10 +275,15 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
   const shadowFilter = filters.length > 0 ? filters.join(' ') : undefined;
 
   const gradId = `grad-${element.id}`;
+  const patId = `pat-${element.id}`;
   const effectiveFill =
-    element.fillType === 'linear-gradient' ? `url(#${gradId})` : fillColor;
+    element.fillType === 'linear-gradient'
+      ? `url(#${gradId})`
+      : element.fillType === 'pattern'
+        ? `url(#${patId})`
+        : fillColor;
 
-  const renderSvgShape = () => {
+  const renderSvgShape = (overrideFill?: string) => {
     switch (shapeType) {
       case 'rectangle':
         if (element.waveEdge && element.waveEdge !== 'none') {
@@ -290,7 +297,7 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
                 element.waveAmplitude ?? 18,
                 element.waveFrequency ?? 2
               )}
-              fill={effectiveFill}
+              fill={overrideFill ?? effectiveFill}
               stroke={strokeColor}
               strokeWidth={strokeWidth}
               strokeDasharray={dashArray}
@@ -304,7 +311,7 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
             y={strokeWidth / 2}
             width={width - strokeWidth}
             height={height - strokeWidth}
-            fill={effectiveFill}
+            fill={overrideFill ?? effectiveFill}
             stroke={strokeColor}
             strokeWidth={strokeWidth}
             strokeDasharray={dashArray}
@@ -321,7 +328,7 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
             width={width - strokeWidth}
             height={height - strokeWidth}
             rx={rxVal}
-            fill={effectiveFill}
+            fill={overrideFill ?? effectiveFill}
             stroke={strokeColor}
             strokeWidth={strokeWidth}
             strokeDasharray={dashArray}
@@ -335,7 +342,7 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
             cy={height / 2}
             rx={(width - strokeWidth) / 2}
             ry={(height - strokeWidth) / 2}
-            fill={effectiveFill}
+            fill={overrideFill ?? effectiveFill}
             stroke={strokeColor}
             strokeWidth={strokeWidth}
             strokeDasharray={dashArray}
@@ -346,7 +353,7 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
         return (
           <polygon
             points={`${apexX},${strokeWidth} ${width - strokeWidth},${height - strokeWidth} ${strokeWidth},${height - strokeWidth}`}
-            fill={effectiveFill}
+            fill={overrideFill ?? effectiveFill}
             stroke={strokeColor}
             strokeWidth={strokeWidth}
             strokeDasharray={dashArray}
@@ -357,7 +364,7 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
         return (
           <polygon
             points={`${width / 2},${strokeWidth} ${width - strokeWidth},${height / 2} ${width / 2},${height - strokeWidth} ${strokeWidth},${height / 2}`}
-            fill={effectiveFill}
+            fill={overrideFill ?? effectiveFill}
             stroke={strokeColor}
             strokeWidth={strokeWidth}
             strokeDasharray={dashArray}
@@ -377,7 +384,7 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
         return (
           <polygon
             points={points.join(' ')}
-            fill={effectiveFill}
+            fill={overrideFill ?? effectiveFill}
             stroke={strokeColor}
             strokeWidth={strokeWidth}
             strokeDasharray={dashArray}
@@ -389,7 +396,7 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
         return (
           <path
             d={`M 0 0 L ${width} 0 L ${width - notch} ${height / 2} L ${width} ${height} L 0 ${height} L ${notch} ${height / 2} Z`}
-            fill={effectiveFill}
+            fill={overrideFill ?? effectiveFill}
             stroke={strokeColor}
             strokeWidth={strokeWidth}
             strokeDasharray={dashArray}
@@ -411,7 +418,7 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
                 A 10 10 0 0 1 0 ${height - 30} 
                 V 20 
                 A 10 10 0 0 1 10 10 Z`}
-            fill={effectiveFill}
+            fill={overrideFill ?? effectiveFill}
             stroke={strokeColor}
             strokeWidth={strokeWidth}
             strokeDasharray={dashArray}
@@ -424,7 +431,7 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
         return (
           <polygon
             points={`0,${shaftY} ${width - arrowHeadW},${shaftY} ${width - arrowHeadW},0 ${width},${height / 2} ${width - arrowHeadW},${height} ${width - arrowHeadW},${shaftY + shaftH} 0,${shaftY + shaftH}`}
-            fill={effectiveFill}
+            fill={overrideFill ?? effectiveFill}
             stroke={strokeColor}
             strokeWidth={strokeWidth}
             strokeDasharray={dashArray}
@@ -441,7 +448,7 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
                 C ${width / 2} ${height * 0.12}, ${width * 0.54} 0, ${width * 0.62} 0
                 C ${width * 0.8} 0, ${width} ${height * 0.08}, ${width} ${height * 0.22}
                 C ${width} ${height * 0.35}, ${width * 0.85} ${height * 0.6}, ${width / 2} ${height * 0.85} Z`}
-            fill={effectiveFill}
+            fill={overrideFill ?? effectiveFill}
             stroke={strokeColor}
             strokeWidth={strokeWidth}
             strokeDasharray={dashArray}
@@ -454,7 +461,7 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
         return (
           <polygon
             points={`0,${height / 2} ${headW},0 ${headW},${shaftY} ${width - headW},${shaftY} ${width - headW},0 ${width},${height / 2} ${width - headW},${height} ${width - headW},${shaftY + shaftH} ${headW},${shaftY + shaftH} ${headW},${height}`}
-            fill={effectiveFill}
+            fill={overrideFill ?? effectiveFill}
             stroke={strokeColor}
             strokeWidth={strokeWidth}
             strokeDasharray={dashArray}
@@ -473,7 +480,7 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
         return (
           <polygon
             points={pts.join(' ')}
-            fill={effectiveFill}
+            fill={overrideFill ?? effectiveFill}
             stroke={strokeColor}
             strokeWidth={strokeWidth}
             strokeDasharray={dashArray}
@@ -494,7 +501,7 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
         return (
           <polygon
             points={pts.join(' ')}
-            fill={effectiveFill}
+            fill={overrideFill ?? effectiveFill}
             stroke={strokeColor}
             strokeWidth={strokeWidth}
             strokeDasharray={dashArray}
@@ -506,7 +513,7 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
         return (
           <polygon
             points={`${skew},${strokeWidth} ${width - strokeWidth},${strokeWidth} ${width - skew},${height - strokeWidth} ${strokeWidth},${height - strokeWidth}`}
-            fill={effectiveFill}
+            fill={overrideFill ?? effectiveFill}
             stroke={strokeColor}
             strokeWidth={strokeWidth}
             strokeDasharray={dashArray}
@@ -518,7 +525,7 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
         return (
           <polygon
             points={`${inset},${strokeWidth} ${width - inset},${strokeWidth} ${width - strokeWidth},${height - strokeWidth} ${strokeWidth},${height - strokeWidth}`}
-            fill={effectiveFill}
+            fill={overrideFill ?? effectiveFill}
             stroke={strokeColor}
             strokeWidth={strokeWidth}
             strokeDasharray={dashArray}
@@ -536,7 +543,7 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
         return (
           <polygon
             points={pts.join(' ')}
-            fill={effectiveFill}
+            fill={overrideFill ?? effectiveFill}
             stroke={strokeColor}
             strokeWidth={strokeWidth}
             strokeDasharray={dashArray}
@@ -552,7 +559,7 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
         return (
           <polygon
             points={`${x1},${strokeWidth} ${x2},${strokeWidth} ${x2},${y1} ${width - strokeWidth},${y1} ${width - strokeWidth},${y2} ${x2},${y2} ${x2},${height - strokeWidth} ${x1},${height - strokeWidth} ${x1},${y2} ${strokeWidth},${y2} ${strokeWidth},${y1} ${x1},${y1}`}
-            fill={effectiveFill}
+            fill={overrideFill ?? effectiveFill}
             stroke={strokeColor}
             strokeWidth={strokeWidth}
             strokeDasharray={dashArray}
@@ -567,7 +574,7 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
                 C ${width * 0.16} ${height * 0.22}, ${width * 0.38} ${height * 0.12}, ${width * 0.52} ${height * 0.24}
                 C ${width * 0.64} ${height * 0.1}, ${width * 0.88} ${height * 0.2}, ${width * 0.84} ${height * 0.44}
                 C ${width * 0.96} ${height * 0.52}, ${width * 0.94} ${height * 0.8}, ${width * 0.75} ${height * 0.8} Z`}
-            fill={effectiveFill}
+            fill={overrideFill ?? effectiveFill}
             stroke={strokeColor}
             strokeWidth={strokeWidth}
             strokeDasharray={dashArray}
@@ -607,7 +614,7 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
                 <path
                   d={parts[0].d}
                   transform={renderPartTransform(parts[0])}
-                  fill={effectiveFill}
+                  fill={overrideFill ?? effectiveFill}
                   stroke={strokeColor}
                   strokeWidth={strokeWidth}
                   strokeDasharray={dashArray}
@@ -629,7 +636,7 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
                 <path
                   d={parts[0].d}
                   transform={renderPartTransform(parts[0])}
-                  fill={effectiveFill}
+                  fill={overrideFill ?? effectiveFill}
                   stroke={strokeColor}
                   strokeWidth={strokeWidth}
                   strokeDasharray={dashArray}
@@ -667,7 +674,7 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
                 <path
                   d={parts[0].d}
                   transform={renderPartTransform(parts[0])}
-                  fill={effectiveFill}
+                  fill={overrideFill ?? effectiveFill}
                   stroke={strokeColor}
                   strokeWidth={strokeWidth}
                   strokeDasharray={dashArray}
@@ -678,7 +685,7 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
                     key={idx}
                     d={p.d}
                     transform={renderPartTransform(p)}
-                    fill={effectiveFill}
+                    fill={overrideFill ?? effectiveFill}
                     stroke={strokeColor}
                     strokeWidth={strokeWidth}
                     strokeDasharray={dashArray}
@@ -698,7 +705,7 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
                 key={idx}
                 d={p.d}
                 transform={renderPartTransform(p)}
-                fill={effectiveFill}
+                fill={overrideFill ?? effectiveFill}
                 stroke={strokeColor}
                 strokeWidth={strokeWidth}
                 strokeDasharray={dashArray}
@@ -722,16 +729,57 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
           filter: shadowFilter,
         }}
       >
-        {element.fillType === 'linear-gradient' && (
+        {(element.fillType === 'linear-gradient' ||
+          (element.fillType === 'pattern' && element.patternBgType === 'gradient')) && (
           <defs>
             <linearGradient
               id={gradId}
-              gradientTransform={`rotate(${element.gradientAngle ?? 90}, 0.5, 0.5)`}
+              gradientTransform={`rotate(${
+                element.fillType === 'pattern'
+                  ? (element.patternBgAngle ?? 135)
+                  : (element.gradientAngle ?? 90)
+              }, 0.5, 0.5)`}
             >
-              <stop offset="0%" stopColor={fillColor} />
-              <stop offset="100%" stopColor={element.gradientColor2 || '#38bdf8'} />
+              <stop
+                offset="0%"
+                stopColor={
+                  element.fillType === 'pattern'
+                    ? (element.patternBgColor || '#fdf2f8')
+                    : fillColor
+                }
+              />
+              <stop
+                offset="100%"
+                stopColor={
+                  element.fillType === 'pattern'
+                    ? (element.patternBgColor2 || '#e0f2fe')
+                    : (element.gradientColor2 || '#38bdf8')
+                }
+              />
             </linearGradient>
           </defs>
+        )}
+        {element.fillType === 'pattern' && element.patternType && element.patternType !== 'none' && (() => {
+          const tileSize = element.patternScale ?? 24;
+          const isGradBg = element.patternBgType === 'gradient';
+          const dataUri = buildShapePatternDataUri(
+            element.patternType,
+            element.patternColor ?? '#4f46e5',
+            isGradBg ? 'transparent' : (element.patternBgColor ?? '#ffffff'),
+            tileSize,
+            1.5,
+            element.patternOpacity ?? 0.8,
+          );
+          return (
+            <defs>
+              <pattern id={patId} width={tileSize} height={tileSize} patternUnits="userSpaceOnUse">
+                <image href={dataUri} width={tileSize} height={tileSize} />
+              </pattern>
+            </defs>
+          );
+        })()}
+        {element.fillType === 'pattern' && element.patternBgType === 'gradient' && (
+          <g>{renderSvgShape(`url(#${gradId})`)}</g>
         )}
         {renderSvgShape()}
       </svg>
@@ -855,15 +903,81 @@ const ImageRenderer: React.FC<{
       ? 6
       : 0);
   const effect = element.effectPreset || 'none';
+  const isStickerMode = effect === 'sticker' || Boolean(element.isSticker);
+
+  const getStickerContourFilter = (): string => {
+    if (!isStickerMode) return '';
+    const w1 = element.stickerOutlineWidth ?? 5;
+    const c1 = element.stickerOutlineColor || '#ffffff';
+    const w2 = element.stickerOutlineWidth2 ?? 0;
+    const c2 = element.stickerOutlineColor2 || '#4f46e5';
+    const finish = element.stickerFinish || 'matte';
+    const parts: string[] = [];
+
+    if (w1 > 0) {
+      const d = Math.max(1, Math.round(w1 * 0.72));
+      const offsets = [
+        [w1, 0],
+        [-w1, 0],
+        [0, w1],
+        [0, -w1],
+        [d, d],
+        [-d, d],
+        [d, -d],
+        [-d, -d],
+      ];
+      offsets.forEach(([ox, oy]) => {
+        parts.push(`drop-shadow(${ox}px ${oy}px 0px ${c1})`);
+      });
+    }
+
+    if (w2 > 0) {
+      const r2 = w1 + w2;
+      const d2 = Math.max(1, Math.round(r2 * 0.72));
+      const offsets2 = [
+        [r2, 0],
+        [-r2, 0],
+        [0, r2],
+        [0, -r2],
+        [d2, d2],
+        [-d2, d2],
+        [d2, -d2],
+        [-d2, -d2],
+      ];
+      offsets2.forEach(([ox, oy]) => {
+        parts.push(`drop-shadow(${ox}px ${oy}px 0px ${c2})`);
+      });
+    }
+
+    if (finish === 'neon') {
+      const glowCol = element.stickerGlowColor || '#38bdf8';
+      parts.push(`drop-shadow(0px 0px 10px ${glowCol})`, `drop-shadow(0px 0px 18px ${glowCol})`);
+    } else if (finish === 'puffy') {
+      parts.push('drop-shadow(0px 8px 12px rgba(15,23,42,0.34))');
+    } else {
+      parts.push('drop-shadow(0px 5px 8px rgba(15,23,42,0.22))');
+    }
+
+    return parts.join(' ');
+  };
 
   const getOuterEffectStyle = (): React.CSSProperties => {
+    if (isStickerMode) {
+      return {
+        width: '100%',
+        height: '100%',
+        position: 'relative',
+        overflow: 'visible',
+        backgroundColor: 'transparent',
+        boxSizing: 'border-box',
+      };
+    }
+
     const shadows: string[] = [];
     if (element.shadow) {
       shadows.push(`0 8px ${element.shadowBlur || 14}px rgba(0,0,0,0.28)`);
     }
-    if (effect === 'sticker') {
-      shadows.push('0 0 0 6px #ffffff', '0 10px 20px rgba(15,23,42,0.25)');
-    } else if (effect === 'clay') {
+    if (effect === 'clay') {
       shadows.push(
         '0 12px 24px rgba(15,23,42,0.18)',
         'inset 0 6px 12px rgba(255,255,255,0.65)',
@@ -917,8 +1031,6 @@ const ImageRenderer: React.FC<{
     const borderRadiusStyle =
       effect === 'clay'
         ? '26px'
-        : effect === 'sticker'
-        ? '18px'
         : art === 'stitched-scrapbook' || art === 'dotted-double'
         ? '16px'
         : art === 'candy-stripe'
@@ -951,8 +1063,7 @@ const ImageRenderer: React.FC<{
         art === 'washi-tape' ||
         art === 'dotted-double' ||
         art === 'doodle-box' ||
-        art === 'puffy-clay' ||
-        effect === 'sticker'
+        art === 'puffy-clay'
           ? 'visible'
           : 'hidden',
       borderRadius: borderRadiusStyle,
@@ -1066,11 +1177,12 @@ const ImageRenderer: React.FC<{
         style={{
           width: '100%',
           height: '100%',
-          overflow: 'hidden',
-          backgroundColor: art === 'candy-stripe' ? artColor2 : undefined,
-          padding: art === 'candy-stripe' ? '4px' : undefined,
-          borderRadius:
-            art === 'polaroid'
+          overflow: isStickerMode ? 'visible' : 'hidden',
+          backgroundColor: !isStickerMode && art === 'candy-stripe' ? artColor2 : undefined,
+          padding: !isStickerMode && art === 'candy-stripe' ? '4px' : undefined,
+          borderRadius: isStickerMode
+            ? undefined
+            : art === 'polaroid'
               ? '4px'
               : art === 'candy-stripe'
               ? '10px'
@@ -1086,27 +1198,48 @@ const ImageRenderer: React.FC<{
         }}
       >
         {element.src ? (
-          <img
-            src={element.src}
-            alt={element.alt || 'Publication image'}
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: element.objectFit || 'cover',
-              objectPosition: `${50 + panX}% ${50 + panY}%`,
-              transform:
-                [
-                  imgScale !== 1 ? `scale(${imgScale})` : '',
-                  element.imageRotation ? `rotate(${element.imageRotation}deg)` : '',
-                  element.flipH ? 'scaleX(-1)' : '',
-                  element.flipV ? 'scaleY(-1)' : '',
-                ]
-                  .filter(Boolean)
+          <>
+            <img
+              src={element.src}
+              alt={element.alt || 'Publication image'}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: isStickerMode ? element.objectFit || 'contain' : element.objectFit || 'cover',
+                objectPosition: `${50 + panX}% ${50 + panY}%`,
+                transform:
+                  [
+                    imgScale !== 1 ? `scale(${imgScale})` : '',
+                    element.imageRotation ? `rotate(${element.imageRotation}deg)` : '',
+                    element.flipH ? 'scaleX(-1)' : '',
+                    element.flipV ? 'scaleY(-1)' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ') || undefined,
+                filter: [getStickerContourFilter(), getFilterStyle()]
+                  .filter((f) => f && f !== 'none')
                   .join(' ') || undefined,
-              filter: getFilterStyle(),
-              pointerEvents: 'none',
-            }}
-          />
+                pointerEvents: 'none',
+              }}
+            />
+            {isStickerMode && element.stickerFinish === 'glossy' && (
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background:
+                    'linear-gradient(125deg, rgba(255,255,255,0.42) 0%, rgba(255,255,255,0.12) 32%, rgba(255,255,255,0) 48%)',
+                  WebkitMaskImage: `url(${element.src})`,
+                  maskImage: `url(${element.src})`,
+                  WebkitMaskSize: 'contain',
+                  maskSize: 'contain',
+                  WebkitMaskRepeat: 'no-repeat',
+                  maskRepeat: 'no-repeat',
+                  WebkitMaskPosition: 'center',
+                  maskPosition: 'center',
+                }}
+              />
+            )}
+          </>
         ) : (
           <div
             className={`w-full h-full relative flex flex-col items-center justify-center overflow-hidden transition-colors ${

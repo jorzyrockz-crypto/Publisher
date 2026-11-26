@@ -23,6 +23,9 @@ export const CanvasArea: React.FC = () => {
     project,
     activePage,
     isEditingMaster,
+    setIsEditingMaster,
+    masterPages,
+    activeMasterId,
     viewMode,
     setViewMode,
     toolMode,
@@ -45,7 +48,21 @@ export const CanvasArea: React.FC = () => {
   const [cursorPos, setCursorPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [isSpaceHeld, setIsSpaceHeld] = useState(false);
+  const [spreadMode, setSpreadMode] = useState<'reading' | 'pairs'>('reading');
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Smoothly scroll canvas to active page whenever activePageIndex changes (e.g. clicking in Pages sidebar)
+  useEffect(() => {
+    if (isEditingMaster || viewMode === 'single') return;
+    const container = containerRef.current;
+    if (!container) return;
+    const target = container.querySelector(
+      `[data-canvas-page-id="${activePage.id}"]`
+    ) as HTMLElement | null;
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+    }
+  }, [project.activePageIndex, activePage.id, viewMode, isEditingMaster]);
 
   // Spacebar hold for temporary Hand/Pan tool, plus H (Hand) and V (Select) shortcuts
   useEffect(() => {
@@ -191,15 +208,44 @@ export const CanvasArea: React.FC = () => {
     artboardMaxBottom = Math.max(artboardMaxBottom, coords.y + pg.height + 500);
   });
 
-  // Group pages into pairs for 2-Page Spread view
-  const spreadGroups: { page: typeof activePage; index: number }[][] = [];
-  for (let i = 0; i < project.pages.length; i += 2) {
-    const pair = [{ page: project.pages[i], index: i }];
-    if (i + 1 < project.pages.length) {
-      pair.push({ page: project.pages[i + 1], index: i + 1 });
+  // Group pages into facing spreads ('reading': Cover, [2|3], [4|5], Back; or 'pairs': [1|2], [3|4])
+  const spreadGroups: { label: string; pages: { page: typeof activePage; index: number; role: string }[] }[] = [];
+  if (spreadMode === 'reading' && project.pages.length > 0) {
+    spreadGroups.push({
+      label: 'Front Cover',
+      pages: [{ page: project.pages[0], index: 0, role: 'Cover' }],
+    });
+    for (let i = 1; i < project.pages.length; i += 2) {
+      if (i === project.pages.length - 1) {
+        spreadGroups.push({
+          label: 'Back Cover',
+          pages: [{ page: project.pages[i], index: i, role: 'Back Cover' }],
+        });
+      } else {
+        spreadGroups.push({
+          label: `Spread · Pages ${i + 1} – ${i + 2}`,
+          pages: [
+            { page: project.pages[i], index: i, role: `Page ${i + 1} (Left)` },
+            { page: project.pages[i + 1], index: i + 1, role: `Page ${i + 2} (Right)` },
+          ],
+        });
+      }
     }
-    spreadGroups.push(pair);
+  } else {
+    for (let i = 0; i < project.pages.length; i += 2) {
+      const pair = [{ page: project.pages[i], index: i, role: `Page ${i + 1}` }];
+      if (i + 1 < project.pages.length) {
+        pair.push({ page: project.pages[i + 1], index: i + 1, role: `Page ${i + 2}` });
+      }
+      spreadGroups.push({
+        label: `Spread ${spreadGroups.length + 1} (Pages ${pair.map((p) => p.index + 1).join(' – ')})`,
+        pages: pair,
+      });
+    }
   }
+
+  const activeMasterName =
+    masterPages.find((m) => m.id === activeMasterId)?.name || 'Master A';
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden pasteboard-bg relative select-none">
@@ -256,7 +302,19 @@ export const CanvasArea: React.FC = () => {
         >
           {/* Master Page Mode or Single Page View */}
           {(isEditingMaster || viewMode === 'single') && (
-            <div className="flex flex-col items-center pb-36">
+            <div className="flex flex-col items-center pb-36 gap-3">
+              {isEditingMaster && (
+                <div className="flex items-center gap-3 px-4 py-1.5 rounded-full bg-amber-500 text-white shadow-md text-xs font-bold">
+                  <Sparkles size={13} />
+                  <span>Editing Master: {activeMasterName}</span>
+                  <button
+                    onClick={() => setIsEditingMaster(false)}
+                    className="ml-1 px-2.5 py-0.5 rounded-full bg-white/20 hover:bg-white/30 text-white text-[10px] font-bold transition"
+                  >
+                    Exit Master
+                  </button>
+                </div>
+              )}
               <PageCanvas onCursorMove={handleCursorMove} />
             </div>
           )}
@@ -277,6 +335,7 @@ export const CanvasArea: React.FC = () => {
                 return (
                   <div
                     key={pg.id}
+                    data-canvas-page-id={pg.id}
                     style={{
                       position: 'absolute',
                       left: `${coords.x * zoom}px`,
@@ -374,7 +433,7 @@ export const CanvasArea: React.FC = () => {
               {project.pages.map((pg, idx) => {
                 const isActive = idx === project.activePageIndex;
                 return (
-                  <div key={pg.id} className="flex flex-col items-start gap-1.5">
+                  <div key={pg.id} data-canvas-page-id={pg.id} className="flex flex-col items-start gap-1.5">
                     <div
                       onClick={() => setActivePageIndex(idx)}
                       className={`flex items-center gap-2 px-2.5 py-0.5 rounded-full text-[11px] font-semibold cursor-pointer transition ${
@@ -408,30 +467,61 @@ export const CanvasArea: React.FC = () => {
           {/* Two-Page Spread View (Side-by-Side) */}
           {!isEditingMaster && viewMode === 'spread' && (
             <div className="flex flex-col items-center gap-12 pb-36">
+              <div className="flex items-center gap-1 bg-white/90 backdrop-blur-xs p-1 rounded-full border border-slate-200 shadow-xs text-[10.5px] font-bold">
+                <button
+                  onClick={() => setSpreadMode('reading')}
+                  className={`px-3 py-1 rounded-full transition ${
+                    spreadMode === 'reading'
+                      ? 'bg-indigo-600 text-white shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Booklet Facing Spreads
+                </button>
+                <button
+                  onClick={() => setSpreadMode('pairs')}
+                  className={`px-3 py-1 rounded-full transition ${
+                    spreadMode === 'pairs'
+                      ? 'bg-indigo-600 text-white shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Sequential Pairs
+                </button>
+              </div>
+
               {spreadGroups.map((group, gIdx) => (
                 <div key={gIdx} className="flex flex-col items-center gap-2">
                   <div className="text-[11px] font-semibold text-slate-500 bg-white/80 px-3 py-0.5 rounded-full border border-slate-200 shadow-2xs">
-                    Spread {gIdx + 1} (Pages {group.map((item) => item.index + 1).join(' – ')})
+                    {group.label}
                   </div>
-                  <div className="flex items-start gap-4">
-                    {group.map(({ page: pg, index: idx }) => (
-                      <div key={pg.id} className="flex flex-col items-start gap-1">
-                        <span
-                          onClick={() => setActivePageIndex(idx)}
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full cursor-pointer ${
-                            idx === project.activePageIndex
-                              ? 'bg-indigo-600 text-white'
-                              : 'bg-white/80 text-slate-500 border border-slate-200'
-                          }`}
-                        >
-                          Page {idx + 1}
-                        </span>
-                        <PageCanvas
-                          page={pg}
-                          pageIndex={idx}
-                          onCursorMove={handleCursorMove}
-                        />
-                      </div>
+                  <div className="flex items-stretch gap-0">
+                    {group.pages.map(({ page: pg, index: idx, role }, itemIdx) => (
+                      <React.Fragment key={pg.id}>
+                        {itemIdx === 1 && (
+                          <div
+                            className="w-0 border-l-2 border-dashed border-indigo-300/80 mx-1 self-stretch relative"
+                            title="Booklet Center Spine / Fold"
+                          />
+                        )}
+                        <div key={pg.id} data-canvas-page-id={pg.id} className="flex flex-col items-start gap-1">
+                          <span
+                            onClick={() => setActivePageIndex(idx)}
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full cursor-pointer ${
+                              idx === project.activePageIndex
+                                ? 'bg-indigo-600 text-white'
+                                : 'bg-white/80 text-slate-500 border border-slate-200'
+                            }`}
+                          >
+                            {role}
+                          </span>
+                          <PageCanvas
+                            page={pg}
+                            pageIndex={idx}
+                            onCursorMove={handleCursorMove}
+                          />
+                        </div>
+                      </React.Fragment>
                     ))}
                   </div>
                 </div>
@@ -449,7 +539,7 @@ export const CanvasArea: React.FC = () => {
 
           {/* Modern Floating Viewport, Tool Mode, Page View & Zoom Pill */}
           <div
-            className={`fixed bottom-10 z-30 flex items-center gap-1 bg-white px-2.5 py-1.5 rounded-full border border-slate-200/90 shadow-lg text-xs text-slate-700 transition-all ${
+            className={`fixed bottom-16 z-30 flex items-center gap-1 bg-white px-2.5 py-1.5 rounded-full border border-slate-200/90 shadow-lg text-xs text-slate-700 transition-all ${
               isRightPanelOpen ? 'right-76' : 'right-14'
             }`}
           >

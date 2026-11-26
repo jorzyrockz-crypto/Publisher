@@ -1,5 +1,6 @@
 import React from 'react';
-import { BorderArtStyle, ImageEffectPreset, ImageElement } from '../types/publisher';
+import { BorderArtStyle, ImageEffectPreset, ImageElement, BackgroundPatternType } from '../types/publisher';
+import { buildPatternSvg } from './patternGenerator';
 
 export type BorderArtId =
   | 'none'
@@ -11,7 +12,10 @@ export type BorderArtId =
   | 'offset-doodle'
   | 'dotted-double'
   | 'polaroid'
-  | 'washi-tape';
+  | 'washi-tape'
+  | 'gold-foil'
+  | 'confetti-pop'
+  | 'film-negative';
 
 export type StyleEffectId =
   | 'none'
@@ -49,6 +53,7 @@ export interface BorderArtOption {
     accentColor: string;
     thickness: number;
     cornerRadius: number;
+    densityScale?: number;
   }) => React.CSSProperties;
   /** Optional inner wrapper style (e.g., for candy-stripe or polaroid chin) */
   getInnerStyle?: (params: {
@@ -56,6 +61,7 @@ export interface BorderArtOption {
     accentColor: string;
     thickness: number;
     cornerRadius: number;
+    densityScale?: number;
   }) => React.CSSProperties;
 }
 
@@ -66,14 +72,20 @@ export interface CollageStyleConfig {
   frameThickness: number;
   effect: StyleEffectId;
   mask: SlotMaskShape;
-  gap: number; // 0-28px
+  gap: number; // -16 to 40px
   cornerRadius: number; // 0-32px
   scatterTilt: boolean;
+  slotScale?: number; // 0.6 to 1.25 (default 1.0)
 }
 
 export interface CollageBackdropConfig {
   type: CollageBackdropType;
   color: string;
+  gradientColor2?: string;
+  gradientAngle?: number;
+  patternType?: BackgroundPatternType;
+  patternColor?: string;
+  patternOpacity?: number;
   padding: number; // 0-40px
 }
 
@@ -81,6 +93,9 @@ export interface CollageVibePack {
   id: string;
   label: string;
   description: string;
+  category?: 'classic' | 'occasion';
+  badgeEmoji?: string;
+  stickerIds?: string[];
   style: Partial<CollageStyleConfig>;
   backdrop: CollageBackdropConfig;
   enableCaptions?: boolean;
@@ -98,14 +113,43 @@ export interface CollageSlotState {
   caption?: string;
   zIndexOverride?: number;
   styleOverride?: Partial<
-    Pick<CollageStyleConfig, 'borderArt' | 'frameColor' | 'accentColor' | 'effect' | 'mask'>
+    Pick<
+      CollageStyleConfig,
+      'borderArt' | 'frameColor' | 'accentColor' | 'frameThickness' | 'effect' | 'mask'
+    >
   >;
+}
+
+export interface CollagePlacedSticker {
+  id: string;
+  stickerId: string;
+  x: number; // normalized 0..1
+  y: number; // normalized 0..1
+  size: number; // px relative to 450px stage
+  rotation: number; // degrees
+}
+
+export type DynamicLayoutMode =
+  | 'smart-grid'
+  | 'mosaic-featured'
+  | 'hero-plus'
+  | 'aspect-masonry'
+  | 'scatter';
+
+export interface CustomCollageLayoutConfig {
+  mode: DynamicLayoutMode;
+  slotCount: number;
+  columns?: number;
 }
 
 export interface CollageMeta {
   layoutId: string;
-  aspectRatio: '1:1' | '4:3' | '3:4' | '16:9' | '9:16' | 'page-margin';
+  customLayout?: CustomCollageLayoutConfig;
+  aspectRatio: '1:1' | '4:3' | '3:4' | '16:9' | '9:16' | 'page-margin' | 'full-paper';
   vibePackId?: string;
+  sizeSeed?: number;
+  coverDocumentBackground?: boolean;
+  stickers?: CollagePlacedSticker[];
   globalStyle: CollageStyleConfig;
   backdrop: CollageBackdropConfig;
   slots: CollageSlotState[];
@@ -305,17 +349,20 @@ export const COLLAGE_BORDER_ART_OPTIONS: BorderArtOption[] = [
     defaultAccentColor: '#cbd5e1',
     defaultThickness: 2,
     supportsCaption: true,
-    getContainerStyle: ({ frameColor, accentColor }) =>
-      ({
+    getContainerStyle: ({ frameColor, accentColor, densityScale = 1 }) => {
+      const sidePad = Math.max(3, Math.round(8 * densityScale));
+      const chinPad = Math.max(10, Math.round(30 * densityScale));
+      return {
         '--frame-color': frameColor,
         '--accent-color': accentColor,
         backgroundColor: 'var(--frame-color)',
         border: '1px solid var(--accent-color)',
         borderRadius: '4px',
-        padding: '8px 8px 32px 8px',
+        padding: `${sidePad}px ${sidePad}px ${chinPad}px ${sidePad}px`,
         boxShadow: '0 8px 20px rgba(15, 23, 42, 0.2)',
         boxSizing: 'border-box',
-      }) as React.CSSProperties,
+      } as React.CSSProperties;
+    },
     getInnerStyle: () => ({
       borderRadius: '2px',
       overflow: 'hidden',
@@ -327,13 +374,13 @@ export const COLLAGE_BORDER_ART_OPTIONS: BorderArtOption[] = [
     defaultFrameColor: '#fffdf7',
     defaultAccentColor: '#fda4af',
     defaultThickness: 3,
-    getContainerStyle: ({ frameColor, thickness, cornerRadius }) =>
+    getContainerStyle: ({ frameColor, thickness, cornerRadius, densityScale = 1 }) =>
       ({
         '--frame-color': frameColor,
         backgroundColor: 'var(--frame-color)',
-        border: `${Math.max(2, thickness)}px solid #ffffff`,
+        border: `${Math.max(2, Math.round(thickness * densityScale))}px solid #ffffff`,
         borderRadius: `${Math.max(4, cornerRadius)}px`,
-        padding: '6px',
+        padding: `${Math.max(2, Math.round(6 * densityScale))}px`,
         boxShadow: '0 6px 14px rgba(15, 23, 42, 0.14)',
         boxSizing: 'border-box',
         position: 'relative',
@@ -343,13 +390,88 @@ export const COLLAGE_BORDER_ART_OPTIONS: BorderArtOption[] = [
       overflow: 'hidden',
     }),
   },
+  {
+    id: 'gold-foil',
+    label: 'Gold Foil Elegance',
+    defaultFrameColor: '#fffbeb',
+    defaultAccentColor: '#d4af37',
+    defaultThickness: 4,
+    getContainerStyle: ({ frameColor, accentColor, thickness, cornerRadius, densityScale = 1 }) =>
+      ({
+        '--frame-color': frameColor,
+        '--accent-color': accentColor,
+        backgroundColor: 'var(--frame-color)',
+        border: `${Math.max(2, Math.round(thickness * densityScale))}px solid var(--accent-color)`,
+        outline: `${Math.max(1, Math.round(2 * densityScale))}px solid #fde68a`,
+        outlineOffset: `${-Math.max(3, Math.round(5 * densityScale))}px`,
+        borderRadius: `${Math.max(4, cornerRadius)}px`,
+        padding: `${Math.max(3, Math.round(7 * densityScale))}px`,
+        boxShadow: '0 8px 18px rgba(180, 130, 20, 0.18)',
+        boxSizing: 'border-box',
+      }) as React.CSSProperties,
+    getInnerStyle: ({ cornerRadius }) => ({
+      borderRadius: `${Math.max(2, cornerRadius - 4)}px`,
+      overflow: 'hidden',
+    }),
+  },
+  {
+    id: 'confetti-pop',
+    label: 'Confetti Celebration',
+    defaultFrameColor: '#ffffff',
+    defaultAccentColor: '#f43f5e',
+    defaultThickness: 4,
+    getContainerStyle: ({ frameColor, accentColor, thickness, cornerRadius, densityScale = 1 }) =>
+      ({
+        '--frame-color': frameColor,
+        '--accent-color': accentColor,
+        background: `linear-gradient(${frameColor}, ${frameColor}) padding-box, repeating-linear-gradient(60deg, ${accentColor} 0 8px, #fbbf24 8px 16px, #38bdf8 16px 24px, #a855f7 24px 32px) border-box`,
+        border: `${Math.max(2, Math.round((thickness + 2) * densityScale))}px solid transparent`,
+        borderRadius: `${Math.max(8, cornerRadius)}px`,
+        padding: `${Math.max(2, Math.round(4 * densityScale))}px`,
+        boxShadow: '0 6px 14px rgba(15, 23, 42, 0.12)',
+        boxSizing: 'border-box',
+      }) as React.CSSProperties,
+    getInnerStyle: ({ cornerRadius }) => ({
+      borderRadius: `${Math.max(4, cornerRadius - 4)}px`,
+      overflow: 'hidden',
+    }),
+  },
+  {
+    id: 'film-negative',
+    label: 'Cinema Film Frame',
+    defaultFrameColor: '#18181b',
+    defaultAccentColor: '#e4e4e7',
+    defaultThickness: 4,
+    getContainerStyle: ({ frameColor, accentColor, densityScale = 1 }) => {
+      const pad = Math.max(3, Math.round(7 * densityScale));
+      return {
+        '--frame-color': frameColor,
+        '--accent-color': accentColor,
+        backgroundColor: 'var(--frame-color)',
+        border: '2px solid #09090b',
+        outline: '2px dashed rgba(255,255,255,0.45)',
+        outlineOffset: `${-Math.max(2, Math.round(4 * densityScale))}px`,
+        borderRadius: '4px',
+        padding: `${pad}px`,
+        boxShadow: '0 8px 18px rgba(0, 0, 0, 0.28)',
+        boxSizing: 'border-box',
+      } as React.CSSProperties;
+    },
+    getInnerStyle: () => ({
+      borderRadius: '2px',
+      overflow: 'hidden',
+    }),
+  },
 ];
 
 export const COLLAGE_VIBE_PACKS: CollageVibePack[] = [
   {
     id: 'cozy-scrapbook',
     label: 'Cozy Scrapbook',
-    description: 'Stitched cream frames + kraft paper + playful tilt',
+    description: 'Stitched cream & kraft paper',
+    category: 'classic',
+    badgeEmoji: '🧵',
+    stickerIds: ['stk-washi', 'stk-flower'],
     style: {
       borderArt: 'stitched-scrapbook',
       frameColor: '#fff8f0',
@@ -360,6 +482,7 @@ export const COLLAGE_VIBE_PACKS: CollageVibePack[] = [
       gap: 14,
       cornerRadius: 16,
       scatterTilt: true,
+      slotScale: 1,
     },
     backdrop: {
       type: 'kraft-paper',
@@ -370,7 +493,10 @@ export const COLLAGE_VIBE_PACKS: CollageVibePack[] = [
   {
     id: 'kawaii-sticker',
     label: 'Kawaii Sticker',
-    description: 'Puffy Clay 3D pastel frames on soft blush card',
+    description: 'Puffy Clay 3D pastel frames',
+    category: 'classic',
+    badgeEmoji: '🫧',
+    stickerIds: ['stk-bow', 'stk-sparkle', 'stk-cloud'],
     style: {
       borderArt: 'puffy-clay',
       frameColor: '#fce7f3',
@@ -381,6 +507,7 @@ export const COLLAGE_VIBE_PACKS: CollageVibePack[] = [
       gap: 16,
       cornerRadius: 24,
       scatterTilt: true,
+      slotScale: 1,
     },
     backdrop: {
       type: 'solid',
@@ -391,7 +518,10 @@ export const COLLAGE_VIBE_PACKS: CollageVibePack[] = [
   {
     id: 'retro-polaroid',
     label: 'Retro Polaroid',
-    description: 'Classic Polaroids, Retro Film look & captions',
+    description: 'Classic Polaroids & captions',
+    category: 'classic',
+    badgeEmoji: '📷',
+    stickerIds: ['stk-camera', 'stk-washi'],
     style: {
       borderArt: 'polaroid',
       frameColor: '#ffffff',
@@ -399,9 +529,10 @@ export const COLLAGE_VIBE_PACKS: CollageVibePack[] = [
       frameThickness: 2,
       effect: 'retro-film',
       mask: 'rounded',
-      gap: 16,
+      gap: 14,
       cornerRadius: 4,
       scatterTilt: true,
+      slotScale: 1,
     },
     backdrop: {
       type: 'dot-grid',
@@ -412,8 +543,10 @@ export const COLLAGE_VIBE_PACKS: CollageVibePack[] = [
   },
   {
     id: 'editorial-minimal',
-    label: 'Editorial Minimal',
-    description: 'Clean tight gallery with sharp 0px edges',
+    label: 'Editorial Clean',
+    description: 'Sharp 0px gallery grid',
+    category: 'classic',
+    badgeEmoji: '🖼️',
     style: {
       borderArt: 'none',
       frameColor: '#ffffff',
@@ -424,6 +557,7 @@ export const COLLAGE_VIBE_PACKS: CollageVibePack[] = [
       gap: 6,
       cornerRadius: 0,
       scatterTilt: false,
+      slotScale: 1,
     },
     backdrop: {
       type: 'none',
@@ -434,7 +568,10 @@ export const COLLAGE_VIBE_PACKS: CollageVibePack[] = [
   {
     id: 'pastel-zine',
     label: 'Pastel Zine',
-    description: 'Offset Doodle sticker frames + Duotone Pop',
+    description: 'Doodle sticker + Duotone Pop',
+    category: 'classic',
+    badgeEmoji: '🎨',
+    stickerIds: ['stk-crown', 'stk-lightning', 'stk-confetti-burst'],
     style: {
       borderArt: 'offset-doodle',
       frameColor: '#ffd166',
@@ -445,11 +582,190 @@ export const COLLAGE_VIBE_PACKS: CollageVibePack[] = [
       gap: 14,
       cornerRadius: 16,
       scatterTilt: false,
+      slotScale: 1,
     },
     backdrop: {
       type: 'dot-grid',
       color: '#fefce8',
       padding: 18,
+    },
+  },
+  // Special Occasions
+  {
+    id: 'birthday-bash',
+    label: 'Birthday Bash',
+    description: 'Confetti frames & party pop',
+    category: 'occasion',
+    badgeEmoji: '🎂',
+    stickerIds: ['stk-cake', 'stk-balloon', 'stk-confetti-burst'],
+    style: {
+      borderArt: 'confetti-pop',
+      frameColor: '#ffffff',
+      accentColor: '#f43f5e',
+      frameThickness: 5,
+      effect: 'none',
+      mask: 'rounded',
+      gap: 14,
+      cornerRadius: 16,
+      scatterTilt: true,
+      slotScale: 0.96,
+    },
+    backdrop: {
+      type: 'dot-grid',
+      color: '#fff1f2',
+      padding: 20,
+    },
+  },
+  {
+    id: 'wedding-romance',
+    label: 'Wedding & Gold',
+    description: 'Ivory & gold foil elegance',
+    category: 'occasion',
+    badgeEmoji: '💍',
+    stickerIds: ['stk-rings', 'stk-gold-heart', 'stk-sparkle'],
+    style: {
+      borderArt: 'gold-foil',
+      frameColor: '#fffdf9',
+      accentColor: '#d4af37',
+      frameThickness: 4,
+      effect: 'none',
+      mask: 'rounded',
+      gap: 12,
+      cornerRadius: 8,
+      scatterTilt: false,
+      slotScale: 1,
+    },
+    backdrop: {
+      type: 'solid',
+      color: '#fdf8f0',
+      padding: 22,
+    },
+  },
+  {
+    id: 'holiday-festive',
+    label: 'Holiday Festive',
+    description: 'Peppermint candy-stripe joy',
+    category: 'occasion',
+    badgeEmoji: '🎄',
+    stickerIds: ['stk-tree', 'stk-snowflake', 'stk-gift'],
+    style: {
+      borderArt: 'candy-stripe',
+      frameColor: '#ffffff',
+      accentColor: '#e11d48',
+      frameThickness: 5,
+      effect: 'none',
+      mask: 'rounded',
+      gap: 14,
+      cornerRadius: 14,
+      scatterTilt: true,
+      slotScale: 0.98,
+    },
+    backdrop: {
+      type: 'solid',
+      color: '#ecfdf5',
+      padding: 20,
+    },
+  },
+  {
+    id: 'baby-milestone',
+    label: 'Baby Milestone',
+    description: 'Soft dreamy clouds & captions',
+    category: 'occasion',
+    badgeEmoji: '🍼',
+    stickerIds: ['stk-cloud', 'stk-moon', 'stk-bow'],
+    style: {
+      borderArt: 'puffy-clay',
+      frameColor: '#e0f2fe',
+      accentColor: '#7dd3fc',
+      frameThickness: 4,
+      effect: 'clay',
+      mask: 'rounded',
+      gap: 14,
+      cornerRadius: 22,
+      scatterTilt: false,
+      slotScale: 1,
+    },
+    backdrop: {
+      type: 'pastel-gradient',
+      color: '#eff6ff',
+      padding: 20,
+    },
+    enableCaptions: true,
+  },
+  {
+    id: 'travel-journal',
+    label: 'Travel Journal',
+    description: 'Postage stamps & kraft diary',
+    category: 'occasion',
+    badgeEmoji: '✈️',
+    stickerIds: ['stk-plane', 'stk-compass', 'stk-camera'],
+    style: {
+      borderArt: 'postage-stamp',
+      frameColor: '#fffbeb',
+      accentColor: '#0ea5e9',
+      frameThickness: 4,
+      effect: 'retro-film',
+      mask: 'rounded',
+      gap: 14,
+      cornerRadius: 6,
+      scatterTilt: true,
+      slotScale: 0.98,
+    },
+    backdrop: {
+      type: 'kraft-paper',
+      color: '#ebd5b3',
+      padding: 22,
+    },
+    enableCaptions: true,
+  },
+  {
+    id: 'graduation-honors',
+    label: 'Graduation',
+    description: 'Classic gold & cinema pride',
+    category: 'occasion',
+    badgeEmoji: '🎓',
+    stickerIds: ['stk-grad-cap', 'stk-trophy', 'stk-sparkle'],
+    style: {
+      borderArt: 'gold-foil',
+      frameColor: '#f8fafc',
+      accentColor: '#ca8a04',
+      frameThickness: 4,
+      effect: 'none',
+      mask: 'rounded',
+      gap: 10,
+      cornerRadius: 6,
+      scatterTilt: false,
+      slotScale: 1,
+    },
+    backdrop: {
+      type: 'solid',
+      color: '#e2e8f0',
+      padding: 20,
+    },
+  },
+  {
+    id: 'autumn-harvest',
+    label: 'Autumn Warmth',
+    description: 'Terracotta stitch & film glow',
+    category: 'occasion',
+    badgeEmoji: '🍂',
+    stickerIds: ['stk-autumn-leaf', 'stk-flower'],
+    style: {
+      borderArt: 'stitched-scrapbook',
+      frameColor: '#fff7ed',
+      accentColor: '#ea580c',
+      frameThickness: 5,
+      effect: 'retro-film',
+      mask: 'rounded',
+      gap: 14,
+      cornerRadius: 14,
+      scatterTilt: true,
+      slotScale: 1,
+    },
+    backdrop: {
+      type: 'kraft-paper',
+      color: '#fed7aa',
+      padding: 20,
     },
   },
 ];
@@ -475,30 +791,64 @@ export function getBackdropPreviewStyle(backdrop: CollageBackdropConfig): React.
   if (backdrop.type === 'none') {
     return { backgroundColor: '#ffffff' };
   }
+
+  const patSvg =
+    backdrop.patternType && backdrop.patternType !== 'none'
+      ? buildPatternSvg({
+          type: backdrop.patternType,
+          color: backdrop.patternColor || '#4f46e5',
+          opacity: backdrop.patternOpacity ?? 0.25,
+          scale: 22,
+          strokeWidth: 1.5,
+          rotation: 0,
+        })
+      : '';
+  const patLayer = patSvg
+    ? `url("data:image/svg+xml,${encodeURIComponent(patSvg)}")`
+    : undefined;
+
   if (backdrop.type === 'pastel-gradient') {
-    return {
-      backgroundImage: `linear-gradient(135deg, ${backdrop.color || '#fdf2f8'}, #e0f2fe, #fef9c3)`,
-    };
+    const c1 = backdrop.color || '#fdf2f8';
+    const c2 = backdrop.gradientColor2 || '#e0f2fe';
+    const angle = backdrop.gradientAngle ?? 135;
+    const grad = `linear-gradient(${angle}deg, ${c1}, ${c2})`;
+    return patLayer
+      ? {
+          backgroundImage: `${patLayer}, ${grad}`,
+          backgroundRepeat: 'repeat, no-repeat',
+          backgroundSize: '22px 22px, 100% 100%',
+        }
+      : { backgroundImage: grad };
   }
   if (backdrop.type === 'kraft-paper') {
     return {
       backgroundColor: backdrop.color || '#e6ccb2',
-      backgroundImage:
-        'radial-gradient(rgba(120, 80, 40, 0.14) 1px, transparent 1px), radial-gradient(rgba(255, 255, 255, 0.25) 1px, transparent 1px)',
-      backgroundSize: '14px 14px',
-      backgroundPosition: '0 0, 7px 7px',
+      backgroundImage: patLayer
+        ? `${patLayer}, radial-gradient(rgba(120, 80, 40, 0.14) 1px, transparent 1px)`
+        : 'radial-gradient(rgba(120, 80, 40, 0.14) 1px, transparent 1px), radial-gradient(rgba(255, 255, 255, 0.25) 1px, transparent 1px)',
+      backgroundSize: patLayer ? '22px 22px, 14px 14px' : '14px 14px',
+      backgroundPosition: patLayer ? '0 0, 0 0' : '0 0, 7px 7px',
     };
   }
   if (backdrop.type === 'dot-grid') {
     return {
       backgroundColor: backdrop.color || '#f8fafc',
-      backgroundImage: 'radial-gradient(rgba(100, 116, 139, 0.28) 1.2px, transparent 1.2px)',
-      backgroundSize: '14px 14px',
+      backgroundImage: patLayer
+        ? `${patLayer}, radial-gradient(rgba(100, 116, 139, 0.28) 1.2px, transparent 1.2px)`
+        : 'radial-gradient(rgba(100, 116, 139, 0.28) 1.2px, transparent 1.2px)',
+      backgroundSize: patLayer ? '22px 22px, 14px 14px' : '14px 14px',
     };
   }
-  return {
-    backgroundColor: backdrop.color || '#f1f5f9',
-  };
+  return patLayer
+    ? {
+        backgroundColor: backdrop.color || '#f1f5f9',
+        backgroundImage: patLayer,
+        backgroundRepeat: 'repeat',
+        backgroundSize: '22px 22px',
+      }
+    : {
+        backgroundColor: backdrop.color || '#f1f5f9',
+      };
 }
 
 export function getEffectCssFilter(effect: StyleEffectId): string | undefined {
@@ -517,6 +867,9 @@ export function getEffectCssFilter(effect: StyleEffectId): string | undefined {
 export function toPublisherBorderArt(id: BorderArtId): BorderArtStyle {
   if (id === 'postage-stamp') return 'stamp-postage';
   if (id === 'offset-doodle') return 'doodle-box';
+  if (id === 'gold-foil') return 'double-gold';
+  if (id === 'confetti-pop') return 'dots-and-dashes';
+  if (id === 'film-negative') return 'filmstrip';
   return id;
 }
 
@@ -524,6 +877,9 @@ export function fromPublisherBorderArt(style?: BorderArtStyle): BorderArtId {
   if (!style) return 'none';
   if (style === 'stamp-postage') return 'postage-stamp';
   if (style === 'doodle-box') return 'offset-doodle';
+  if (style === 'double-gold') return 'gold-foil';
+  if (style === 'dots-and-dashes') return 'confetti-pop';
+  if (style === 'filmstrip') return 'film-negative';
   const valid = COLLAGE_BORDER_ART_OPTIONS.some((o) => o.id === style);
   return valid ? (style as BorderArtId) : 'none';
 }

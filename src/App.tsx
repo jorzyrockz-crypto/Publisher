@@ -1,6 +1,7 @@
 import React from 'react';
 import { PublisherProvider } from './context/PublisherContext';
 import { Ribbon } from './components/ribbon/Ribbon';
+import { DocumentTabsBar } from './components/workspace/DocumentTabsBar';
 import { PageThumbnails } from './components/sidebar/PageThumbnails';
 import { CanvasArea } from './components/canvas/CanvasArea';
 import { PropertiesPanel } from './components/sidebar/PropertiesPanel';
@@ -20,13 +21,14 @@ export const AppContent: React.FC = () => {
       <Ribbon />
 
       {/* 2. Main Work Area: Thumbnails + Canvas Workspace + Properties Inspector */}
-      <div className="flex flex-1 w-full h-[calc(100vh-120px)] overflow-hidden relative">
+      <div className="flex flex-1 w-full min-h-0 overflow-hidden relative">
         <PageThumbnails />
         <CanvasArea />
         <PropertiesPanel />
       </div>
 
-      {/* 3. Bottom Status Bar */}
+      {/* 3. Excel-Style Bottom Sheet Tabs & Status Bar */}
+      <DocumentTabsBar />
       <StatusBar />
 
       {/* 4. Full-screen & Overlay Modals */}

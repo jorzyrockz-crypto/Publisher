@@ -4,6 +4,7 @@ import { ElementRenderer } from './ElementRenderer';
 import { SelectionBox } from './SelectionBox';
 import { calculateSnap } from '../../utils/snapping';
 import { buildPatternBackgroundStyle } from '../../utils/patternGenerator';
+import { computeTarpapelMetrics } from '../../utils/printUtils';
 import { PublisherElement, Page, ConnectorElement } from '../../types/publisher';
 import {
   Copy,
@@ -38,11 +39,16 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
     selectedElementIds,
     isEditingMaster,
     setIsEditingMaster,
+    masterPages,
+    activeMasterId,
+    getMasterElementsForPage,
     toolMode,
     hasClipboard,
     zoom,
     guidesVisible,
     gridVisible,
+    tarpapelOverlayVisible,
+    printSettings,
     snapToGuides,
     selectElement,
     selectElements,
@@ -370,14 +376,14 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
     window.addEventListener('mouseup', handleWindowMouseUp);
   };
 
-  const displayedElements = isEditingMaster
-    ? project.masterPage?.elements || []
-    : targetPage.elements;
+  const activeMasterEls =
+    masterPages.find((m) => m.id === activeMasterId)?.elements ||
+    project.masterPage?.elements ||
+    [];
 
-  const masterElements =
-    !isEditingMaster && project.masterPage?.showOnAllPages
-      ? project.masterPage.elements
-      : [];
+  const displayedElements = isEditingMaster ? activeMasterEls : targetPage.elements;
+
+  const masterElements = !isEditingMaster ? getMasterElementsForPage(targetPage) : [];
 
   return (
     <div
@@ -404,7 +410,24 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
           width: `${targetPage.width}px`,
           height: `${targetPage.height}px`,
           backgroundColor: targetPage.backgroundColor,
-          ...buildPatternBackgroundStyle(targetPage.backgroundPattern),
+          ...(() => {
+            const patStyle = buildPatternBackgroundStyle(targetPage.backgroundPattern);
+            const gradCss = targetPage.backgroundGradient
+              ? `linear-gradient(${targetPage.backgroundGradient.angle}deg, ${targetPage.backgroundGradient.color1}, ${targetPage.backgroundGradient.color2})`
+              : undefined;
+            if (patStyle.backgroundImage && gradCss) {
+              return {
+                ...patStyle,
+                backgroundImage: `${patStyle.backgroundImage}, ${gradCss}`,
+                backgroundRepeat: `${patStyle.backgroundRepeat || 'repeat'}, no-repeat`,
+                backgroundSize: `${patStyle.backgroundSize || 'auto'}, 100% 100%`,
+              };
+            }
+            if (gradCss) {
+              return { backgroundImage: gradCss };
+            }
+            return patStyle;
+          })(),
           boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
           transform: `scale(${zoom})`,
           transformOrigin: 'top left',
@@ -483,6 +506,54 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
             </div>
           </div>
         ))}
+
+      {/* Live Tarpapel Tile Grid Overlay on Canvas */}
+      {tarpapelOverlayVisible && (() => {
+        const tm = computeTarpapelMetrics(targetPage, printSettings);
+        const stepWIn = Math.max(0.1, tm.printableWIn - tm.overlapIn);
+        const stepHIn = Math.max(0.1, tm.printableHIn - tm.overlapIn);
+        const fitScale =
+          printSettings.tarpapelFitMode === 'cover'
+            ? Math.max(tm.totalPosterWIn / targetPage.width, tm.totalPosterHIn / targetPage.height)
+            : Math.min(tm.totalPosterWIn / targetPage.width, tm.totalPosterHIn / targetPage.height);
+        const artWIn = targetPage.width * fitScale;
+        const artHIn = targetPage.height * fitScale;
+        const artOffXIn = (tm.totalPosterWIn - artWIn) / 2;
+        const artOffYIn = (tm.totalPosterHIn - artHIn) / 2;
+
+        return (
+          <div className="absolute inset-0 pointer-events-none no-print z-40 overflow-hidden">
+            {Array.from({ length: tm.cols * tm.rows }).map((_, idx) => {
+              const r = Math.floor(idx / tm.cols);
+              const c = idx % tm.cols;
+              const tileLeftIn = Math.min(Math.max(0, tm.totalPosterWIn - tm.printableWIn), c * stepWIn);
+              const tileTopIn = Math.min(Math.max(0, tm.totalPosterHIn - tm.printableHIn), r * stepHIn);
+
+              const leftPx = (tileLeftIn - artOffXIn) / fitScale;
+              const topPx = (tileTopIn - artOffYIn) / fitScale;
+              const wPx = tm.printableWIn / fitScale;
+              const hPx = tm.printableHIn / fitScale;
+
+              return (
+                <div
+                  key={idx}
+                  style={{
+                    left: `${leftPx}px`,
+                    top: `${topPx}px`,
+                    width: `${wPx}px`,
+                    height: `${hPx}px`,
+                  }}
+                  className="absolute border border-dashed border-amber-500/85"
+                >
+                  <span className="inline-block m-1 px-1.5 py-0.5 rounded bg-amber-600/85 text-white text-[9px] font-mono font-bold shadow-2xs">
+                    R{r + 1}·C{c + 1}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
 
       {/* Smart Alignment Guides (Horizontal & Vertical Pink/Cyan lines during dragging) */}
       {activeAlignGuideH !== undefined && (

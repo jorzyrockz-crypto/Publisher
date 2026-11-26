@@ -8,14 +8,18 @@ import {
   loadProjectFromFile,
   exportToImage,
 } from '../../utils/imageExport';
-import { exportToPdf } from '../../utils/pdfExport';
+import { exportToPdf, exportBookletPdf, exportTarpapelPdf } from '../../utils/pdfExport';
 import { buildPatternBackgroundStyle } from '../../utils/patternGenerator';
 import {
-  DEFAULT_PRINT_SETTINGS,
+  PrintLayoutMode,
   PrintSettings,
+  SheetOrientation,
+  buildBookletSheets,
   chunkPagesIntoSheets,
+  computeTarpapelMetrics,
   executePrintJob,
   parsePageIndices,
+  resolvePaperBaseDimensions,
 } from '../../utils/printUtils';
 import confetti from 'canvas-confetti';
 import {
@@ -157,6 +161,15 @@ export const BackstageModal: React.FC = () => {
     setIsBackstageOpen,
     loadTemplate,
     setProject,
+    createNewTab,
+    workspaceTabs,
+    activeTabId,
+    switchWorkspaceTab,
+    closeWorkspaceTab,
+    printSettings,
+    setPrintSettings,
+    setTarpapelOverlayVisible,
+    matchPageToTarpapelRatio,
   } = usePublisher();
 
   const [activeSection, setActiveSection] = useState<
@@ -166,12 +179,14 @@ export const BackstageModal: React.FC = () => {
   const [templateSearch, setTemplateSearch] = useState<string>('');
   const [previewTemplate, setPreviewTemplate] = useState<TemplateDefinition | null>(null);
 
-  const [printSettings, setPrintSettings] = useState<PrintSettings>(DEFAULT_PRINT_SETTINGS);
   const [showPrinterProps, setShowPrinterProps] = useState<boolean>(false);
   const [activeSheetIdx, setActiveSheetIdx] = useState<number>(0);
   const [showAllPrintSheets, setShowAllPrintSheets] = useState<boolean>(false);
   const [isPreparingPrint, setIsPreparingPrint] = useState<boolean>(false);
   const [transparentPng, setTransparentPng] = useState<boolean>(false);
+  const [tarpapelPreviewMode, setTarpapelPreviewMode] = useState<'map' | 'tile'>('map');
+  const [tarpapelInspectTileIdx, setTarpapelInspectTileIdx] = useState<number>(0);
+  const [tarpapelInfoOpen, setTarpapelInfoOpen] = useState<'overlap' | 'guides' | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -205,9 +220,19 @@ export const BackstageModal: React.FC = () => {
     const pagesToPrint = resolveSelectedPrintPages();
     await runExportOrPrintTask(async () => {
       if (printSettings.printerName === 'Save as PDF') {
-        await exportToPdf({ ...project, pages: pagesToPrint });
+        if (printSettings.printMode === 'booklet') {
+          await exportBookletPdf(project, pagesToPrint, printSettings);
+        } else if (printSettings.printMode === 'tarpapel') {
+          const tIdx = Math.max(
+            0,
+            Math.min(pagesToPrint.length - 1, printSettings.tarpapelTargetPageIndex || 0)
+          );
+          await exportTarpapelPdf(project, pagesToPrint[tIdx] || activePage, printSettings);
+        } else {
+          await exportToPdf({ ...project, pages: pagesToPrint });
+        }
       } else {
-        await executePrintJob(pagesToPrint, printSettings);
+        await executePrintJob(pagesToPrint, printSettings, project);
       }
     });
   };
@@ -318,6 +343,13 @@ export const BackstageModal: React.FC = () => {
         {activeSection === 'new' && (() => {
           const groupDefs: { label: string; categories: TemplateDefinition['category'][] }[] = [
             { label: 'Web & Branding', categories: ['Hero Banner', 'Logo'] },
+            { label: 'Collage Templates', categories: ['Collage'] },
+            { label: 'Programs', categories: ['Program'] },
+            { label: 'Tarpapel Posters', categories: ['Tarpapel'] },
+            { label: 'Holiday & Occasion Cards', categories: ['Card'] },
+            { label: 'Calendars', categories: ['Calendar'] },
+            { label: 'Cover & Narrative Reports', categories: ['Cover Document', 'Narrative Report'] },
+            { label: 'Email Templates', categories: ['Email'] },
             { label: 'Social Media', categories: ['Social Media'] },
             { label: 'Marketing & Flyers', categories: ['Brochure', 'Flyer', 'Poster', 'Postcard'] },
             { label: 'Cards, Menus & Invitations', categories: ['Menu', 'Invitation', 'Business Card'] },
@@ -466,8 +498,69 @@ export const BackstageModal: React.FC = () => {
 
         {/* SECTION: OPEN */}
         {activeSection === 'open' && (
-          <div className="max-w-2xl mx-auto space-y-6">
+          <div className="max-w-3xl mx-auto space-y-6">
             <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Open Publication</h1>
+
+            {/* Open Workspace Tabs Switcher */}
+            {workspaceTabs.length > 0 && (
+              <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-sm text-slate-800">
+                    Open Workspace Tabs ({workspaceTabs.length})
+                  </h3>
+                  <span className="text-[11px] text-slate-400">
+                    Switch without losing your work
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {workspaceTabs.map((tab) => {
+                    const isCur = tab.id === activeTabId;
+                    return (
+                      <div
+                        key={tab.id}
+                        onClick={() => {
+                          switchWorkspaceTab(tab.id);
+                          setIsBackstageOpen(false);
+                        }}
+                        className={`p-3 rounded-xl border flex items-center justify-between gap-2 cursor-pointer transition ${
+                          isCur
+                            ? 'border-indigo-500 bg-indigo-50/70'
+                            : 'border-slate-200 hover:border-indigo-300 hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className="min-w-0">
+                          <div className="text-xs font-bold text-slate-800 truncate flex items-center gap-1.5">
+                            <span>{tab.project.name}</span>
+                            {isCur && (
+                              <span className="px-1.5 py-0.5 rounded bg-indigo-600 text-white text-[9px]">
+                                Active
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[10.5px] text-slate-500">
+                            {tab.project.pages.length} page{tab.project.pages.length === 1 ? '' : 's'} •{' '}
+                            {tab.project.pageSizeName}
+                          </div>
+                        </div>
+                        {workspaceTabs.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              closeWorkspaceTab(tab.id);
+                            }}
+                            className="px-2 py-1 rounded-lg text-[10px] font-semibold text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition"
+                          >
+                            Close
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <div className="bg-white p-10 rounded-2xl border border-slate-200/80 shadow-sm text-center space-y-4">
               <div className="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-700 flex items-center justify-center mx-auto shadow-xs">
                 <FolderOpen size={32} />
@@ -475,7 +568,7 @@ export const BackstageModal: React.FC = () => {
               <div>
                 <h3 className="font-bold text-base text-slate-800">Open from your device</h3>
                 <p className="text-xs text-slate-500 mt-1">
-                  Select a saved StudioPress project file (.pub)
+                  Select a saved StudioPress project file (.pub) — opens in a new tab
                 </p>
               </div>
 
@@ -489,7 +582,7 @@ export const BackstageModal: React.FC = () => {
                   if (file) {
                     try {
                       const loaded = await loadProjectFromFile(file);
-                      setProject(loaded);
+                      createNewTab(loaded);
                       setIsBackstageOpen(false);
                       confetti({ particleCount: 40 });
                     } catch (err) {
@@ -595,14 +688,34 @@ export const BackstageModal: React.FC = () => {
                       disabled={isPreparingPrint}
                       onClick={() =>
                         runExportOrPrintTask(async () => {
-                          await exportToPdf(project);
+                          if (printSettings.printMode === 'booklet') {
+                            await exportBookletPdf(project, selectedPages, printSettings);
+                          } else if (printSettings.printMode === 'tarpapel') {
+                            const tIdx = Math.max(
+                              0,
+                              Math.min(selectedPages.length - 1, printSettings.tarpapelTargetPageIndex || 0)
+                            );
+                            await exportTarpapelPdf(
+                              project,
+                              selectedPages[tIdx] || activePage,
+                              printSettings
+                            );
+                          } else {
+                            await exportToPdf(project);
+                          }
                           confetti({ particleCount: 35 });
                         })
                       }
                       className="w-full py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer"
                     >
                       <FileDown size={14} className="text-rose-600" />
-                      <span>Export Print-Ready PDF</span>
+                      <span>
+                        {printSettings.printMode === 'booklet'
+                          ? 'Export Booklet PDF'
+                          : printSettings.printMode === 'tarpapel'
+                          ? 'Export Tarpapel PDF'
+                          : 'Export Print-Ready PDF'}
+                      </span>
                     </button>
                   </div>
 
@@ -656,6 +769,7 @@ export const BackstageModal: React.FC = () => {
                               <option value="auto">Auto-Match</option>
                               <option value="letter">Letter (8.5×11&quot;)</option>
                               <option value="a4">A4 (210×297mm)</option>
+                              <option value="a3">A3 (297×420mm)</option>
                               <option value="legal">Legal</option>
                               <option value="tabloid">Tabloid (11×17&quot;)</option>
                             </select>
@@ -817,30 +931,461 @@ export const BackstageModal: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Sheet Layout (Pages Per Sheet) */}
-                  <div className="space-y-1.5 pt-3 border-t border-slate-100">
+                  {/* Print Layout Mode: Standard vs Booklet vs Tarpapel */}
+                  <div className="space-y-2.5 pt-3 border-t border-slate-100">
                     <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                      Pages Per Sheet
+                      Print Layout Mode
                     </label>
                     <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl">
-                      {([1, 2, 4] as const).map((n) => (
+                      {(
+                        [
+                          { id: 'standard', label: 'Standard' },
+                          { id: 'booklet', label: 'Booklet' },
+                          { id: 'tarpapel', label: 'Tarpapel' },
+                        ] as const
+                      ).map((m) => (
                         <button
-                          key={n}
+                          key={m.id}
                           type="button"
                           onClick={() => {
-                            setPrintSettings((s) => ({ ...s, pagesPerSheet: n }));
+                            setPrintSettings((s) => ({
+                              ...s,
+                              printMode: m.id as PrintLayoutMode,
+                            }));
                             setActiveSheetIdx(0);
                           }}
-                          className={`py-1.5 rounded-lg text-[11px] font-semibold transition ${
-                            printSettings.pagesPerSheet === n
+                          className={`py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${
+                            printSettings.printMode === m.id
                               ? 'bg-white text-indigo-800 shadow-2xs'
                               : 'text-slate-600 hover:text-slate-900'
                           }`}
                         >
-                          {n === 1 ? '1-Up' : n === 2 ? '2-Up' : '4-Up Grid'}
+                          {m.label}
                         </button>
                       ))}
                     </div>
+
+                    {/* Sheet Orientation (Auto / Portrait / Landscape) */}
+                    <div>
+                      <span className="block text-[10px] font-semibold text-slate-500 mb-1">
+                        Sheet Orientation
+                      </span>
+                      <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl">
+                        {(
+                          [
+                            { id: 'auto', label: 'Auto' },
+                            { id: 'portrait', label: 'Portrait' },
+                            { id: 'landscape', label: 'Landscape' },
+                          ] as const
+                        ).map((ori) => (
+                          <button
+                            key={ori.id}
+                            type="button"
+                            onClick={() =>
+                              setPrintSettings((s) => ({
+                                ...s,
+                                sheetOrientation: ori.id as SheetOrientation,
+                              }))
+                            }
+                            className={`py-1 rounded-lg text-[10.5px] font-semibold transition cursor-pointer ${
+                              printSettings.sheetOrientation === ori.id
+                                ? 'bg-white text-indigo-800 shadow-2xs'
+                                : 'text-slate-600 hover:text-slate-900'
+                            }`}
+                          >
+                            {ori.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {printSettings.printMode === 'standard' && (
+                      <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl">
+                        {([1, 2, 4] as const).map((n) => (
+                          <button
+                            key={n}
+                            type="button"
+                            onClick={() => {
+                              setPrintSettings((s) => ({ ...s, pagesPerSheet: n }));
+                              setActiveSheetIdx(0);
+                            }}
+                            className={`py-1.5 rounded-lg text-[11px] font-semibold transition ${
+                              printSettings.pagesPerSheet === n
+                                ? 'bg-white text-indigo-800 shadow-2xs'
+                                : 'text-slate-600 hover:text-slate-900'
+                            }`}
+                          >
+                            {n === 1 ? '1-Up' : n === 2 ? '2-Up' : '4-Up Grid'}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {printSettings.printMode === 'booklet' && (
+                      <div className="p-2.5 rounded-xl bg-indigo-50/70 border border-indigo-200/70 space-y-2">
+                        <div className="text-[10.5px] font-bold text-indigo-900">
+                          Booklet Saddle-Stitch Imposition
+                        </div>
+                        <div className="grid grid-cols-3 gap-1">
+                          {(
+                            [
+                              { id: 'both', label: 'Both Sides' },
+                              { id: 'fronts-only', label: 'Fronts' },
+                              { id: 'backs-only', label: 'Backs' },
+                            ] as const
+                          ).map((side) => (
+                            <button
+                              key={side.id}
+                              type="button"
+                              onClick={() => {
+                                setPrintSettings((s) => ({ ...s, bookletSides: side.id }));
+                                setActiveSheetIdx(0);
+                              }}
+                              className={`py-1 rounded-lg text-[10px] font-bold border transition cursor-pointer ${
+                                printSettings.bookletSides === side.id
+                                  ? 'bg-indigo-600 text-white border-indigo-600'
+                                  : 'bg-white text-slate-600 border-slate-200'
+                              }`}
+                            >
+                              {side.label}
+                            </button>
+                          ))}
+                        </div>
+                        <label className="flex items-center gap-2 text-[11px] font-medium text-indigo-950 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={printSettings.bookletShowFoldLine}
+                            onChange={(e) =>
+                              setPrintSettings((s) => ({
+                                ...s,
+                                bookletShowFoldLine: e.target.checked,
+                              }))
+                            }
+                            className="accent-indigo-600 rounded"
+                          />
+                          <span>Show Center Fold Line</span>
+                        </label>
+                      </div>
+                    )}
+
+                    {printSettings.printMode === 'tarpapel' && (() => {
+                      const tIdx = Math.max(
+                        0,
+                        Math.min(selectedPages.length - 1, printSettings.tarpapelTargetPageIndex || 0)
+                      );
+                      const refPage = selectedPages[tIdx] || activePage;
+                      const m = computeTarpapelMetrics(refPage, printSettings);
+                      return (
+                        <div className="p-2.5 rounded-xl bg-amber-50/70 border border-amber-200/80 space-y-2.5">
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="text-[10.5px] font-bold text-amber-950">
+                              Tarpapel Poster Grid
+                            </span>
+                            <span className="text-[10px] font-bold text-amber-800">
+                              {m.cols * m.rows} sheets ({m.isLandscape ? 'Landscape' : 'Portrait'})
+                            </span>
+                          </div>
+
+                          {/* Assembled Physical Dimensions & Sharpness Pill */}
+                          <div className="flex items-center justify-between gap-1.5 px-2 py-1 rounded-lg bg-white/85 border border-amber-200/70 text-[9.5px]">
+                            <span className="font-semibold text-slate-700">
+                              ~{m.totalPosterWIn.toFixed(1)}" × {m.totalPosterHIn.toFixed(1)}" ({Math.round(m.totalPosterWCm)} × {Math.round(m.totalPosterHCm)} cm)
+                            </span>
+                            <span
+                              className={`px-1.5 py-0.2 rounded-full font-bold ${
+                                m.lowResImageCount > 0
+                                  ? 'bg-amber-100 text-amber-800'
+                                  : 'bg-emerald-100 text-emerald-700'
+                              }`}
+                              title="Vector text & shapes scale cleanly; raster images are checked against printed dimensions"
+                            >
+                              {m.posterScalePercent}% · {m.effectiveDpi} DPI
+                            </span>
+                          </div>
+
+                          {/* Sheet Paper Size & Printer Margin */}
+                          <div className="grid grid-cols-2 gap-1.5">
+                            <div>
+                              <label className="block text-[9.5px] font-semibold text-slate-600 mb-0.5">
+                                Sheet Paper Size
+                              </label>
+                              <select
+                                value={printSettings.paperSize}
+                                onChange={(e) =>
+                                  setPrintSettings((s) => ({
+                                    ...s,
+                                    paperSize: e.target.value as PrintSettings['paperSize'],
+                                  }))
+                                }
+                                className="w-full rounded-lg border border-amber-200 bg-white px-1.5 py-1 text-[10.5px] font-semibold text-slate-700 outline-none"
+                              >
+                                <option value="auto">Auto-Match</option>
+                                <option value="letter">Letter (8.5×11")</option>
+                                <option value="a4">A4 (210×297mm)</option>
+                                <option value="a3">A3 (297×420mm)</option>
+                                <option value="legal">Legal (8.5×14")</option>
+                                <option value="tabloid">Tabloid (11×17")</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-[9.5px] font-semibold text-slate-600 mb-0.5">
+                                Printer Margin
+                              </label>
+                              <select
+                                value={printSettings.tarpapelMarginIn}
+                                onChange={(e) =>
+                                  setPrintSettings((s) => ({
+                                    ...s,
+                                    tarpapelMarginIn: Number(e.target.value) as 0 | 0.25 | 0.5,
+                                  }))
+                                }
+                                className="w-full rounded-lg border border-amber-200 bg-white px-1.5 py-1 text-[10.5px] font-semibold text-slate-700 outline-none"
+                              >
+                                <option value={0}>Borderless (0")</option>
+                                <option value={0.25}>Narrow (0.25")</option>
+                                <option value={0.5}>Standard (0.5")</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          {selectedPages.length > 1 && (
+                            <div>
+                              <label className="block text-[9.5px] font-semibold text-slate-600 mb-0.5">
+                                Target Page to Tile
+                              </label>
+                              <select
+                                value={tIdx}
+                                onChange={(e) => {
+                                  setPrintSettings((s) => ({
+                                    ...s,
+                                    tarpapelTargetPageIndex: Number(e.target.value),
+                                  }));
+                                  setTarpapelInspectTileIdx(0);
+                                }}
+                                className="w-full rounded-lg border border-amber-200 bg-white px-2 py-1 text-[10.5px] font-semibold text-slate-700 outline-none"
+                              >
+                                {selectedPages.map((pg, idx) => (
+                                  <option key={pg.id} value={idx}>
+                                    Page {idx + 1}: {pg.name || `Page ${idx + 1}`}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
+
+                          {/* Grid Presets */}
+                          <div className="grid grid-cols-5 gap-1">
+                            {[
+                              { c: 2, r: 2, label: '2×2' },
+                              { c: 2, r: 3, label: '2×3' },
+                              { c: 3, r: 2, label: '3×2' },
+                              { c: 3, r: 3, label: '3×3' },
+                              { c: 4, r: 3, label: '4×3' },
+                            ].map((p) => (
+                              <button
+                                key={p.label}
+                                type="button"
+                                onClick={() => {
+                                  setPrintSettings((s) => ({
+                                    ...s,
+                                    tarpapelCols: p.c,
+                                    tarpapelRows: p.r,
+                                  }));
+                                  setTarpapelInspectTileIdx(0);
+                                }}
+                                className={`py-1 rounded-lg text-[10px] font-bold border transition cursor-pointer ${
+                                  printSettings.tarpapelCols === p.c &&
+                                  printSettings.tarpapelRows === p.r
+                                    ? 'bg-amber-600 text-white border-amber-600'
+                                    : 'bg-white text-slate-700 border-amber-200'
+                                }`}
+                              >
+                                {p.label}
+                              </button>
+                            ))}
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="block text-[9.5px] font-semibold text-slate-600">
+                                Columns (1–8)
+                              </label>
+                              <input
+                                type="number"
+                                min={1}
+                                max={8}
+                                value={printSettings.tarpapelCols}
+                                onChange={(e) => {
+                                  setPrintSettings((s) => ({
+                                    ...s,
+                                    tarpapelCols: Math.max(1, Math.min(8, Number(e.target.value) || 1)),
+                                  }));
+                                  setTarpapelInspectTileIdx(0);
+                                }}
+                                className="w-full px-2 py-1 rounded-lg border border-slate-200 bg-white text-xs font-bold"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[9.5px] font-semibold text-slate-600">
+                                Rows (1–8)
+                              </label>
+                              <input
+                                type="number"
+                                min={1}
+                                max={8}
+                                value={printSettings.tarpapelRows}
+                                onChange={(e) => {
+                                  setPrintSettings((s) => ({
+                                    ...s,
+                                    tarpapelRows: Math.max(1, Math.min(8, Number(e.target.value) || 1)),
+                                  }));
+                                  setTarpapelInspectTileIdx(0);
+                                }}
+                                className="w-full px-2 py-1 rounded-lg border border-slate-200 bg-white text-xs font-bold"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Fit Mode */}
+                          <div className="grid grid-cols-2 gap-1 bg-amber-100/70 p-0.5 rounded-lg">
+                            {(
+                              [
+                                { id: 'contain', label: 'Fit Whole Design' },
+                                { id: 'cover', label: 'Fill All Sheets' },
+                              ] as const
+                            ).map((fm) => (
+                              <button
+                                key={fm.id}
+                                type="button"
+                                onClick={() =>
+                                  setPrintSettings((s) => ({ ...s, tarpapelFitMode: fm.id }))
+                                }
+                                className={`py-1 rounded-md text-[10px] font-bold transition cursor-pointer ${
+                                  printSettings.tarpapelFitMode === fm.id
+                                    ? 'bg-white text-amber-950 shadow-2xs'
+                                    : 'text-amber-800/80 hover:text-amber-950'
+                                }`}
+                              >
+                                {fm.label}
+                              </button>
+                            ))}
+                          </div>
+
+                          {/* Glue / Tape Overlap + (i) Info */}
+                          <div className="space-y-1 relative">
+                            <div className="flex items-center justify-between text-[9.5px] font-semibold text-slate-600">
+                              <div className="flex items-center gap-1">
+                                <span>Glue / Tape Overlap</span>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setTarpapelInfoOpen((cur) =>
+                                      cur === 'overlap' ? null : 'overlap'
+                                    )
+                                  }
+                                  className="text-amber-700 hover:text-amber-900 focus:outline-none"
+                                  title="Adds an overlapping margin between adjacent sheets so you can glue or tape tiles together seamlessly without white gaps."
+                                  aria-label="Info about Glue / Tape Overlap"
+                                >
+                                  <Info size={12} />
+                                </button>
+                              </div>
+                              <span className="font-mono">{printSettings.tarpapelOverlapIn}"</span>
+                            </div>
+                            {tarpapelInfoOpen === 'overlap' && (
+                              <div className="p-2 rounded-lg bg-white border border-amber-300 shadow-sm text-[10px] text-slate-600 leading-snug">
+                                Adds an overlapping strip on inner edges of adjacent sheets so you can glue or tape tiles together seamlessly without white gaps.
+                              </div>
+                            )}
+                            <div className="grid grid-cols-4 gap-1">
+                              {([0, 0.25, 0.5, 0.75] as const).map((ov) => (
+                                <button
+                                  key={ov}
+                                  type="button"
+                                  onClick={() =>
+                                    setPrintSettings((s) => ({
+                                      ...s,
+                                      tarpapelOverlapIn: ov,
+                                    }))
+                                  }
+                                  className={`py-1 rounded-lg text-[10px] font-bold border transition cursor-pointer ${
+                                    printSettings.tarpapelOverlapIn === ov
+                                      ? 'bg-amber-600 text-white border-amber-600'
+                                      : 'bg-white text-slate-700 border-amber-200'
+                                  }`}
+                                >
+                                  {ov === 0 ? 'None' : `${ov}"`}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Show Cut & Row/Col Guides + (i) Info */}
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between gap-1">
+                              <label className="flex items-center gap-2 text-[10.5px] font-medium text-amber-950 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={printSettings.tarpapelShowTileGuides}
+                                  onChange={(e) =>
+                                    setPrintSettings((s) => ({
+                                      ...s,
+                                      tarpapelShowTileGuides: e.target.checked,
+                                    }))
+                                  }
+                                  className="accent-amber-600 rounded"
+                                />
+                                <span>Show Cut &amp; Row/Col Guides</span>
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setTarpapelInfoOpen((cur) =>
+                                    cur === 'guides' ? null : 'guides'
+                                  )
+                                }
+                                className="text-amber-700 hover:text-amber-900 focus:outline-none"
+                                title="Draws corner trim crosshairs, dashed cut lines, shaded Glue/Tape overlap strips, and R1·C1 assembly labels on each printed sheet."
+                                aria-label="Info about Show Cut & Row/Col Guides"
+                              >
+                                <Info size={12} />
+                              </button>
+                            </div>
+                            {tarpapelInfoOpen === 'guides' && (
+                              <div className="p-2 rounded-lg bg-white border border-amber-300 shadow-sm text-[10px] text-slate-600 leading-snug">
+                                Draws corner trim crosshairs, dashed cut lines, shaded <strong>GLUE / TAPE OVERLAP</strong> strips, and <code className="font-mono">R1·C1</code> assembly labels on each printed sheet.
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Canvas Helpers: Match Ratio & Show Tarpapel Grid on Canvas */}
+                          <div className="grid grid-cols-2 gap-1.5 pt-1 border-t border-amber-200/70">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                matchPageToTarpapelRatio();
+                                setTarpapelOverlayVisible(true);
+                              }}
+                              className="py-1.5 px-2 rounded-lg bg-white border border-amber-300 hover:bg-amber-100/70 text-[10px] font-bold text-amber-900 transition cursor-pointer"
+                              title="Resize canvas proportions to match this Tarpapel grid so there is 0% extra empty space"
+                            >
+                              Match Canvas Ratio
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setTarpapelOverlayVisible(true);
+                                setIsBackstageOpen(false);
+                              }}
+                              className="py-1.5 px-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold transition cursor-pointer"
+                              title="Return to editor with live R1·C1 Tarpapel grid lines on the canvas so you can resize your photo"
+                            >
+                              Grid on Canvas
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* Prepress Marks & Guides */}
@@ -932,58 +1477,390 @@ export const BackstageModal: React.FC = () => {
 
                   {/* Physical Print Sheet Display */}
                   <div className="flex-1 flex flex-col items-center justify-center gap-6 overflow-y-auto py-2">
-                    {displayedSheets.map((sheetPages, sIdx) => {
-                      const cols = printSettings.pagesPerSheet === 1 ? 1 : 2;
-                      const perPgW =
-                        printSettings.pagesPerSheet === 1
-                          ? showAllPrintSheets
-                            ? 320
-                            : 420
-                          : printSettings.pagesPerSheet === 2
-                          ? 220
-                          : 185;
-                      const perPgH =
-                        printSettings.pagesPerSheet === 1
-                          ? showAllPrintSheets
-                            ? 340
-                            : 440
-                          : printSettings.pagesPerSheet === 2
-                          ? 290
-                          : 185;
-
-                      return (
-                        <div key={sIdx} className="flex flex-col items-center gap-1.5">
-                          <div
-                            className="bg-white rounded-md shadow-xl border border-slate-300/90 p-5 grid gap-4 place-items-center"
-                            style={{
-                              gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-                            }}
-                          >
-                            {sheetPages.map((pg) => (
-                              <div key={pg.id} className="flex flex-col items-center gap-1">
-                                <TemplatePagePreview
-                                  page={pg}
-                                  maxWidth={perPgW}
-                                  maxHeight={perPgH}
-                                  showMargins={printSettings.showMarginBox}
-                                  showCropMarks={printSettings.showCropMarks}
-                                  grayscale={printSettings.colorMode === 'grayscale'}
-                                />
-                                {printSettings.pagesPerSheet > 1 && (
-                                  <span className="text-[9.5px] font-medium text-slate-400">
-                                    {pg.name}
-                                  </span>
+                    {printSettings.printMode === 'booklet' ? (
+                      (() => {
+                        const bookletSheets = buildBookletSheets(
+                          selectedPages,
+                          printSettings.bookletSides
+                        );
+                        return bookletSheets.map((bs, bIdx) => (
+                          <div key={bIdx} className="flex flex-col items-center gap-1.5">
+                            <div className="relative bg-white rounded-md shadow-xl border border-slate-300/90 p-4 grid grid-cols-2 gap-2 place-items-center">
+                              {printSettings.bookletShowFoldLine && (
+                                <div className="absolute top-2 bottom-2 left-1/2 border-l border-dashed border-slate-400 pointer-events-none z-10" />
+                              )}
+                              <div className="flex flex-col items-center gap-1">
+                                {bs.leftPage ? (
+                                  <TemplatePagePreview
+                                    page={bs.leftPage}
+                                    maxWidth={210}
+                                    maxHeight={280}
+                                    showMargins={printSettings.showMarginBox}
+                                    showCropMarks={printSettings.showCropMarks}
+                                    grayscale={printSettings.colorMode === 'grayscale'}
+                                  />
+                                ) : (
+                                  <div className="w-[180px] h-[230px] border border-dashed border-slate-200 rounded flex items-center justify-center text-[10px] text-slate-400">
+                                    Blank Half
+                                  </div>
                                 )}
+                                <span className="text-[9.5px] font-bold text-slate-500">
+                                  {bs.leftPageNum ? `Page ${bs.leftPageNum}` : 'Blank'}
+                                </span>
                               </div>
-                            ))}
+                              <div className="flex flex-col items-center gap-1">
+                                {bs.rightPage ? (
+                                  <TemplatePagePreview
+                                    page={bs.rightPage}
+                                    maxWidth={210}
+                                    maxHeight={280}
+                                    showMargins={printSettings.showMarginBox}
+                                    showCropMarks={printSettings.showCropMarks}
+                                    grayscale={printSettings.colorMode === 'grayscale'}
+                                  />
+                                ) : (
+                                  <div className="w-[180px] h-[230px] border border-dashed border-slate-200 rounded flex items-center justify-center text-[10px] text-slate-400">
+                                    Blank Half
+                                  </div>
+                                )}
+                                <span className="text-[9.5px] font-bold text-slate-500">
+                                  {bs.rightPageNum ? `Page ${bs.rightPageNum}` : 'Blank'}
+                                </span>
+                              </div>
+                            </div>
+                            <span className="text-[10.5px] font-semibold text-indigo-800">
+                              Sheet {bs.sheetNumber} • {bs.side} ({bs.leftPageNum ? `P${bs.leftPageNum}` : 'Blank'} |{' '}
+                              {bs.rightPageNum ? `P${bs.rightPageNum}` : 'Blank'})
+                            </span>
                           </div>
-                          <span className="text-[10.5px] font-medium text-slate-500">
-                            Sheet {showAllPrintSheets ? sIdx + 1 : safeSheetIdx + 1} •{' '}
-                            {sheetPages.map((p) => p.name).join(' + ')}
-                          </span>
-                        </div>
-                      );
-                    })}
+                        ));
+                      })()
+                    ) : printSettings.printMode === 'tarpapel' ? (
+                      (() => {
+                        const tIdx = Math.max(
+                          0,
+                          Math.min(selectedPages.length - 1, printSettings.tarpapelTargetPageIndex || 0)
+                        );
+                        const targetPg = selectedPages[tIdx] || activePage;
+                        const m = computeTarpapelMetrics(targetPg, printSettings);
+                        const totalTiles = m.cols * m.rows;
+                        const safeTileIdx = Math.max(0, Math.min(totalTiles - 1, tarpapelInspectTileIdx));
+                        const inspectRow = Math.floor(safeTileIdx / m.cols) + 1;
+                        const inspectCol = (safeTileIdx % m.cols) + 1;
+
+                        // True physical poster aspect ratio scaled to preview stage
+                        const maxStageW = 430;
+                        const maxStageH = 380;
+                        const mapScale = Math.min(
+                          maxStageW / m.totalPosterWIn,
+                          maxStageH / m.totalPosterHIn
+                        );
+                        const posterPreviewW = Math.round(m.totalPosterWIn * mapScale);
+                        const posterPreviewH = Math.round(m.totalPosterHIn * mapScale);
+
+                        const pageFitScale =
+                          printSettings.tarpapelFitMode === 'cover'
+                            ? Math.max(posterPreviewW / targetPg.width, posterPreviewH / targetPg.height)
+                            : Math.min(posterPreviewW / targetPg.width, posterPreviewH / targetPg.height);
+                        const artW = targetPg.width * pageFitScale;
+                        const artH = targetPg.height * pageFitScale;
+                        const artX = (posterPreviewW - artW) / 2;
+                        const artY = (posterPreviewH - artH) / 2;
+                        const usedAreaRatio = Math.min(1, (artW * artH) / Math.max(1, posterPreviewW * posterPreviewH));
+                        const extraSpacePct = Math.max(0, Math.round((1 - usedAreaRatio) * 100));
+
+                        // Single-sheet inspect dimensions in true Portrait / Landscape sheet ratio
+                        const sheetScale = Math.min(360 / m.sheetWIn, 390 / m.sheetHIn);
+                        const sheetPreviewW = Math.round(m.sheetWIn * sheetScale);
+                        const sheetPreviewH = Math.round(m.sheetHIn * sheetScale);
+                        const marginPreviewPx = Math.round(m.marginIn * sheetScale);
+                        const printablePreviewW = Math.max(20, sheetPreviewW - marginPreviewPx * 2);
+                        const printablePreviewH = Math.max(20, sheetPreviewH - marginPreviewPx * 2);
+
+                        const tileStepWIn = Math.max(0.1, m.printableWIn - m.overlapIn);
+                        const tileStepHIn = Math.max(0.1, m.printableHIn - m.overlapIn);
+                        const tileOffsetXIn = Math.min(
+                          Math.max(0, m.totalPosterWIn - m.printableWIn),
+                          (inspectCol - 1) * tileStepWIn
+                        );
+                        const tileOffsetYIn = Math.min(
+                          Math.max(0, m.totalPosterHIn - m.printableHIn),
+                          (inspectRow - 1) * tileStepHIn
+                        );
+                        const zoomRatio = printablePreviewW / Math.max(1, m.printableWIn * mapScale);
+                        const overlapPreviewPx = Math.round(m.overlapIn * sheetScale);
+
+                        return (
+                          <div className="flex flex-col items-center gap-3 w-full">
+                            {/* View Mode Switcher: Poster Tile Map | Inspect Single Sheet */}
+                            <div className="flex items-center gap-2 flex-wrap justify-center">
+                              <div className="flex items-center bg-white border border-slate-200 rounded-full p-0.5 text-[10.5px] font-bold shadow-2xs">
+                                <button
+                                  type="button"
+                                  onClick={() => setTarpapelPreviewMode('map')}
+                                  className={`px-3 py-1 rounded-full transition cursor-pointer ${
+                                    tarpapelPreviewMode === 'map'
+                                      ? 'bg-amber-600 text-white'
+                                      : 'text-slate-600 hover:text-slate-900'
+                                  }`}
+                                >
+                                  Poster Tile Map ({m.cols}×{m.rows})
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setTarpapelPreviewMode('tile')}
+                                  className={`px-3 py-1 rounded-full transition cursor-pointer ${
+                                    tarpapelPreviewMode === 'tile'
+                                      ? 'bg-amber-600 text-white'
+                                      : 'text-slate-600 hover:text-slate-900'
+                                  }`}
+                                >
+                                  Inspect Sheet (R{inspectRow}·C{inspectCol})
+                                </button>
+                              </div>
+
+                              {tarpapelPreviewMode === 'tile' && (
+                                <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-full px-2 py-0.5 text-[10.5px] font-bold text-slate-700">
+                                  <button
+                                    type="button"
+                                    disabled={safeTileIdx <= 0}
+                                    onClick={() => setTarpapelInspectTileIdx((i) => Math.max(0, i - 1))}
+                                    className="p-0.5 disabled:opacity-30 hover:text-amber-700"
+                                  >
+                                    <ChevronLeft size={13} />
+                                  </button>
+                                  <span>
+                                    Sheet {safeTileIdx + 1}/{totalTiles}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    disabled={safeTileIdx >= totalTiles - 1}
+                                    onClick={() =>
+                                      setTarpapelInspectTileIdx((i) => Math.min(totalTiles - 1, i + 1))
+                                    }
+                                    className="p-0.5 disabled:opacity-30 hover:text-amber-700"
+                                  >
+                                    <ChevronRight size={13} />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+
+                            {tarpapelPreviewMode === 'map' ? (
+                              <div className="relative bg-white rounded-md shadow-xl border border-slate-300/90 p-3">
+                                <div
+                                  className="relative overflow-hidden border border-slate-300"
+                                  style={{
+                                    width: `${posterPreviewW}px`,
+                                    height: `${posterPreviewH}px`,
+                                    backgroundImage:
+                                      'repeating-linear-gradient(45deg, #f8fafc, #f8fafc 6px, #e2e8f0 6px, #e2e8f0 8px)',
+                                  }}
+                                >
+                                  {extraSpacePct >= 4 && (
+                                    <span className="absolute bottom-1.5 right-1.5 z-10 px-1.5 py-0.5 rounded bg-slate-800/75 text-white text-[9px] font-semibold pointer-events-none">
+                                      Extra Space: {extraSpacePct}%
+                                    </span>
+                                  )}
+                                  {/* Scaled Artwork inside true physical poster frame */}
+                                  <div
+                                    style={{
+                                      position: 'absolute',
+                                      left: `${artX}px`,
+                                      top: `${artY}px`,
+                                      width: `${artW}px`,
+                                      height: `${artH}px`,
+                                    }}
+                                  >
+                                    <TemplatePagePreview
+                                      page={targetPg}
+                                      maxWidth={artW}
+                                      maxHeight={artH}
+                                      showMargins={printSettings.showMarginBox}
+                                      showCropMarks={false}
+                                      grayscale={printSettings.colorMode === 'grayscale'}
+                                    />
+                                  </div>
+
+                                  {/* Clickable True-Proportion Sheet Tiles Overlay */}
+                                  {Array.from({ length: totalTiles }).map((_, idx) => {
+                                    const r = Math.floor(idx / m.cols);
+                                    const c = idx % m.cols;
+                                    const leftPx =
+                                      Math.min(
+                                        Math.max(0, m.totalPosterWIn - m.printableWIn),
+                                        c * tileStepWIn
+                                      ) * mapScale;
+                                    const topPx =
+                                      Math.min(
+                                        Math.max(0, m.totalPosterHIn - m.printableHIn),
+                                        r * tileStepHIn
+                                      ) * mapScale;
+                                    const wPx = m.printableWIn * mapScale;
+                                    const hPx = m.printableHIn * mapScale;
+
+                                    return (
+                                      <button
+                                        key={idx}
+                                        type="button"
+                                        onClick={() => {
+                                          setTarpapelInspectTileIdx(idx);
+                                          setTarpapelPreviewMode('tile');
+                                        }}
+                                        title={`Click to inspect Sheet R${r + 1}·C${c + 1} (${m.isLandscape ? 'Landscape' : 'Portrait'})`}
+                                        style={{
+                                          left: `${leftPx}px`,
+                                          top: `${topPx}px`,
+                                          width: `${wPx}px`,
+                                          height: `${hPx}px`,
+                                        }}
+                                        className={`absolute flex items-start justify-start p-1 transition cursor-pointer ${
+                                          printSettings.tarpapelShowTileGuides
+                                            ? 'border border-dashed border-amber-600/80 hover:bg-amber-400/15'
+                                            : 'border border-amber-400/35 hover:bg-amber-400/10'
+                                        }`}
+                                      >
+                                        <span className="px-1 py-0.2 rounded bg-amber-600/85 text-white text-[8.5px] font-mono font-bold shadow-2xs">
+                                          R{r + 1}·C{c + 1}
+                                        </span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            ) : (
+                              /* Single Sheet Inspect View in True Portrait / Landscape Sheet Frame */
+                              <div
+                                className="relative bg-white rounded-md shadow-xl border border-slate-300/90 flex items-center justify-center"
+                                style={{
+                                  width: `${sheetPreviewW}px`,
+                                  height: `${sheetPreviewH}px`,
+                                  padding: `${marginPreviewPx}px`,
+                                }}
+                              >
+                                <div
+                                  className="relative overflow-hidden border border-slate-200/80 w-full h-full"
+                                  style={{
+                                    width: `${printablePreviewW}px`,
+                                    height: `${printablePreviewH}px`,
+                                    backgroundImage:
+                                      'repeating-linear-gradient(45deg, #f8fafc, #f8fafc 6px, #e2e8f0 6px, #e2e8f0 8px)',
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      position: 'absolute',
+                                      left: `${(artX - tileOffsetXIn * mapScale) * zoomRatio}px`,
+                                      top: `${(artY - tileOffsetYIn * mapScale) * zoomRatio}px`,
+                                      width: `${artW * zoomRatio}px`,
+                                      height: `${artH * zoomRatio}px`,
+                                    }}
+                                  >
+                                    <TemplatePagePreview
+                                      page={targetPg}
+                                      maxWidth={artW * zoomRatio}
+                                      maxHeight={artH * zoomRatio}
+                                      showMargins={printSettings.showMarginBox}
+                                      showCropMarks={false}
+                                      grayscale={printSettings.colorMode === 'grayscale'}
+                                    />
+                                  </div>
+
+                                  {printSettings.tarpapelShowTileGuides && (
+                                    <>
+                                      {overlapPreviewPx > 1 && inspectCol < m.cols && (
+                                        <div
+                                          style={{ width: `${overlapPreviewPx}px` }}
+                                          className="absolute top-0 bottom-0 right-0 bg-amber-500/15 border-l border-dashed border-amber-600/70 pointer-events-none flex items-center justify-center"
+                                        >
+                                          <span
+                                            className="text-[7px] font-bold text-amber-800 whitespace-nowrap"
+                                            style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+                                          >
+                                            GLUE / TAPE
+                                          </span>
+                                        </div>
+                                      )}
+                                      {overlapPreviewPx > 1 && inspectRow < m.rows && (
+                                        <div
+                                          style={{ height: `${overlapPreviewPx}px` }}
+                                          className="absolute left-0 right-0 bottom-0 bg-amber-500/15 border-t border-dashed border-amber-600/70 pointer-events-none"
+                                        />
+                                      )}
+                                      <div className="absolute inset-0 border border-dashed border-slate-700/50 pointer-events-none" />
+                                      <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-slate-900/75 text-white text-[9px] font-mono font-bold pointer-events-none">
+                                        R{inspectRow}·C{inspectCol} ({safeTileIdx + 1}/{totalTiles})
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            <span className="text-[11px] font-semibold text-amber-900 text-center">
+                              {tarpapelPreviewMode === 'map'
+                                ? `Tarpapel Tile Map: ${m.cols} × ${m.rows} = ${totalTiles} ${m.isLandscape ? 'Landscape' : 'Portrait'} Sheets (${m.sheetWIn}" × ${m.sheetHIn}") — click any tile to inspect`
+                                : `Sheet R${inspectRow}·C${inspectCol} • ${m.sheetWIn}" × ${m.sheetHIn}" ${m.isLandscape ? 'Landscape' : 'Portrait'} (Margin ${m.marginIn}", Overlap ${m.overlapIn}")`}
+                            </span>
+                          </div>
+                        );
+                      })()
+                    ) : (
+                      displayedSheets.map((sheetPages, sIdx) => {
+                        const cols = printSettings.pagesPerSheet === 1 ? 1 : 2;
+                        const refSheetPage = sheetPages[0];
+                        const { widthIn: sWIn, heightIn: sHIn, isLandscape: sIsLand } =
+                          resolvePaperBaseDimensions(
+                            printSettings.paperSize,
+                            printSettings.sheetOrientation,
+                            refSheetPage
+                          );
+                        const sheetMaxW = showAllPrintSheets ? 360 : 440;
+                        const sheetMaxH = showAllPrintSheets ? 360 : 440;
+                        const sheetScale = Math.min(sheetMaxW / sWIn, sheetMaxH / sHIn);
+                        const frameW = Math.round(sWIn * sheetScale);
+                        const frameH = Math.round(sHIn * sheetScale);
+                        const innerPad = 16;
+                        const cellW = Math.floor((frameW - innerPad * 2 - (cols > 1 ? 12 : 0)) / cols);
+                        const rowsCount = printSettings.pagesPerSheet === 4 ? 2 : 1;
+                        const cellH = Math.floor((frameH - innerPad * 2 - (rowsCount > 1 ? 12 : 0)) / rowsCount);
+
+                        return (
+                          <div key={sIdx} className="flex flex-col items-center gap-1.5">
+                            <div
+                              className="bg-white rounded-md shadow-xl border border-slate-300/90 p-4 grid gap-3 place-items-center transition-all"
+                              style={{
+                                width: `${frameW}px`,
+                                height: `${frameH}px`,
+                                gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+                              }}
+                            >
+                              {sheetPages.map((pg) => (
+                                <div key={pg.id} className="flex flex-col items-center gap-1">
+                                  <TemplatePagePreview
+                                    page={pg}
+                                    maxWidth={cellW}
+                                    maxHeight={cellH}
+                                    showMargins={printSettings.showMarginBox}
+                                    showCropMarks={printSettings.showCropMarks}
+                                    grayscale={printSettings.colorMode === 'grayscale'}
+                                  />
+                                  {printSettings.pagesPerSheet > 1 && (
+                                    <span className="text-[9.5px] font-medium text-slate-400">
+                                      {pg.name}
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                            <span className="text-[10.5px] font-medium text-slate-500">
+                              Sheet {showAllPrintSheets ? sIdx + 1 : safeSheetIdx + 1} • {sIsLand ? 'Landscape' : 'Portrait'} ({sWIn}" × {sHIn}") •{' '}
+                              {sheetPages.map((p) => p.name).join(' + ')}
+                            </span>
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
               </div>

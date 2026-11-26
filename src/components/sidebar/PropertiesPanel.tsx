@@ -8,6 +8,7 @@ import {
   QRElement,
   ConnectorElement,
   PageBackgroundPattern,
+  BackgroundPatternType,
   WordArtStyle,
   BorderArtStyle,
   ShapeType,
@@ -22,14 +23,24 @@ import {
   PATTERN_CATALOG,
   DEFAULT_BACKGROUND_PATTERN,
   buildPatternBackgroundStyle,
+  buildShapePatternDataUri,
 } from '../../utils/patternGenerator';
 import { COLOR_SCHEMES } from '../../constants/colorSchemes';
+import { GRADIENT_SWATCHES, buildLinearGradientCss } from '../../constants/gradientSwatches';
 import {
   CROP_RATIO_PRESETS,
   computeAspectCropUpdates,
   FILTER_EFFECT_PRESETS,
   BORDER_ART_OPTIONS,
 } from '../../utils/pictureEffects';
+import { removeImageBackground } from '../../utils/bgRemoval';
+import {
+  RECOLOR_PALETTE_PRESETS,
+  extractSvgPalette,
+  isSvgDataUri,
+  recolorSvgDataUri,
+} from '../../utils/svgRecolor';
+import { DesignIdeasPanel } from './DesignIdeasPanel';
 import {
   Type,
   Square,
@@ -66,6 +77,8 @@ import {
   ArrowUp,
   ArrowDown,
   Layers,
+  Eraser,
+  Unlink,
 } from 'lucide-react';
 
 export const PropertiesPanel: React.FC = () => {
@@ -75,6 +88,8 @@ export const PropertiesPanel: React.FC = () => {
     isEditingMaster,
     isRightPanelOpen,
     setIsRightPanelOpen,
+    rightPanelTab,
+    setRightPanelTab,
     selectedElementIds,
     updateElement,
     updateElementsBatch,
@@ -98,14 +113,21 @@ export const PropertiesPanel: React.FC = () => {
     setPageOrientation,
     setPageMargins,
     setPageBackgroundColor,
+    setPageBackgroundGradient,
     setPageBackgroundPattern,
     setIsBrandBoardModalOpen,
     setIsBrandKitModalOpen,
     activeBrandKit,
     applyBrandKit,
+    detachImageFromPlaceholder,
   } = usePublisher();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [bgMode, setBgMode] = useState<'flood' | 'color-key'>('flood');
+  const [bgTarget, setBgTarget] = useState<'auto' | 'white' | 'black'>('auto');
+  const [bgTolerance, setBgTolerance] = useState<number>(28);
+  const [bgFeather, setBgFeather] = useState<number>(1);
+  const [isRemovingBg, setIsRemovingBg] = useState<boolean>(false);
   const shapePickerBtnRef = useRef<HTMLButtonElement>(null);
   const wordArtPickerBtnRef = useRef<HTMLButtonElement>(null);
   const [isShapePickerOpen, setIsShapePickerOpen] = useState(false);
@@ -175,11 +197,33 @@ export const PropertiesPanel: React.FC = () => {
 
   return (
     <div className="w-72 bg-white border-l border-slate-200 flex flex-col h-full select-none flex-shrink-0 z-20 text-xs text-slate-700 overflow-y-auto shadow-2xs transition-all">
-      {/* Header */}
-      <div className="h-9 px-3.5 flex items-center justify-between font-bold text-xs text-slate-700 border-b border-slate-200/80 bg-slate-50/70">
-        <div className="flex items-center gap-2">
-          <Sliders size={14} className="text-indigo-700" />
-          <span>Inspector</span>
+      {/* Header with Inspector | Design Ideas Tabs */}
+      <div className="p-2 flex items-center gap-1.5 font-bold text-xs text-slate-700 border-b border-slate-200/80 bg-slate-50/70 sticky top-0 z-10">
+        <div className="flex-1 grid grid-cols-2 bg-slate-200/70 p-0.5 rounded-xl">
+          <button
+            type="button"
+            onClick={() => setRightPanelTab('inspector')}
+            className={`flex items-center justify-center gap-1 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer ${
+              rightPanelTab === 'inspector'
+                ? 'bg-white text-indigo-800 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Sliders size={11} />
+            <span>Inspector</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setRightPanelTab('design-ideas')}
+            className={`flex items-center justify-center gap-1 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer ${
+              rightPanelTab === 'design-ideas'
+                ? 'bg-white text-indigo-800 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Sparkles size={11} className="text-amber-500" />
+            <span>Design Ideas</span>
+          </button>
         </div>
         <button
           onClick={() => setIsRightPanelOpen(false)}
@@ -190,6 +234,9 @@ export const PropertiesPanel: React.FC = () => {
         </button>
       </div>
 
+      {rightPanelTab === 'design-ideas' ? (
+        <DesignIdeasPanel />
+      ) : (
       <div className="p-3.5 space-y-4">
         {/* Multi-Selection: Group, Align, Merge Shapes & Diagram Auto-Connect */}
         {selectedElementIds.length >= 2 && (
@@ -815,11 +862,61 @@ export const PropertiesPanel: React.FC = () => {
                     {activePage.backgroundColor.toUpperCase()}
                   </span>
                   <button
-                    onClick={() => setPageBackgroundColor('#ffffff')}
+                    onClick={() => {
+                      setPageBackgroundColor('#ffffff');
+                      setPageBackgroundGradient(undefined);
+                    }}
                     className="ml-auto text-[11px] font-medium text-indigo-700 hover:underline"
                   >
                     White
                   </button>
+                </div>
+
+                {/* Unified Gradient Swatches for Page Background */}
+                <div className="mt-2.5">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10.5px] font-semibold text-slate-500">
+                      Gradient Swatches
+                    </span>
+                    {activePage.backgroundGradient && (
+                      <button
+                        type="button"
+                        onClick={() => setPageBackgroundGradient(undefined)}
+                        className="text-[10px] font-semibold text-rose-600 hover:underline"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-6 gap-1.5">
+                    {GRADIENT_SWATCHES.map((sw) => {
+                      const isSel =
+                        activePage.backgroundGradient?.color1 === sw.color1 &&
+                        activePage.backgroundGradient?.color2 === sw.color2;
+                      return (
+                        <button
+                          key={sw.id}
+                          type="button"
+                          title={sw.name}
+                          onClick={() =>
+                            setPageBackgroundGradient({
+                              color1: sw.color1,
+                              color2: sw.color2,
+                              angle: sw.angle,
+                            })
+                          }
+                          className={`h-6 rounded-lg border transition cursor-pointer ${
+                            isSel
+                              ? 'border-indigo-600 ring-2 ring-indigo-500/30 scale-105'
+                              : 'border-slate-200 hover:scale-105'
+                          }`}
+                          style={{
+                            backgroundImage: buildLinearGradientCss(sw.color1, sw.color2, sw.angle),
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
 
@@ -1937,12 +2034,12 @@ export const PropertiesPanel: React.FC = () => {
               </div>
             </div>
 
-            {/* Fill Mode: Solid vs Linear Gradient */}
+            {/* Fill Mode: Solid vs Linear Gradient vs Pattern */}
             <div>
               <label className="block text-[11px] font-semibold text-slate-500 mb-1.5">
                 Fill Type
               </label>
-              <div className="grid grid-cols-2 gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60">
+              <div className="grid grid-cols-3 gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60">
                 <button
                   onClick={() =>
                     updateElement(selectedElement.id, { fillType: 'solid' })
@@ -1953,7 +2050,7 @@ export const PropertiesPanel: React.FC = () => {
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  Solid Fill
+                  Solid
                 </button>
                 <button
                   onClick={() =>
@@ -1971,10 +2068,302 @@ export const PropertiesPanel: React.FC = () => {
                 >
                   Gradient
                 </button>
+                <button
+                  onClick={() => {
+                    const shape = selectedElement as ShapeElement;
+                    updateElement(selectedElement.id, {
+                      fillType: 'pattern',
+                      patternType:
+                        shape.patternType && shape.patternType !== 'none'
+                          ? shape.patternType
+                          : 'dots',
+                      patternColor: shape.patternColor || '#4f46e5',
+                      patternBgColor:
+                        shape.patternBgColor ||
+                        (shape.fillColor && shape.fillColor !== 'transparent'
+                          ? shape.fillColor
+                          : '#ffffff'),
+                      patternScale: shape.patternScale ?? 24,
+                      patternOpacity: shape.patternOpacity ?? 0.8,
+                    });
+                  }}
+                  className={`py-1 rounded-lg text-[11px] font-semibold transition-all ${
+                    (selectedElement as ShapeElement).fillType === 'pattern'
+                      ? 'bg-white text-indigo-800 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Pattern
+                </button>
               </div>
             </div>
 
-            {/* Fill Color(s) */}
+            {/* Fill Color(s) or Pattern Controls */}
+            {(selectedElement as ShapeElement).fillType === 'pattern' ? (
+              (() => {
+                const shape = selectedElement as ShapeElement;
+                const patType: BackgroundPatternType =
+                  shape.patternType && shape.patternType !== 'none'
+                    ? shape.patternType
+                    : 'dots';
+                const patColor = shape.patternColor ?? '#4f46e5';
+                const patBgType = shape.patternBgType ?? 'solid';
+                const patBg = shape.patternBgColor ?? '#ffffff';
+                const patBg2 = shape.patternBgColor2 ?? '#e0f2fe';
+                const patBgAngle = shape.patternBgAngle ?? 135;
+                const patScale = shape.patternScale ?? 24;
+                const patOpacity = shape.patternOpacity ?? 0.8;
+
+                return (
+                  <div className="space-y-2.5">
+                    <div>
+                      <span className="block text-[10px] font-semibold text-slate-500 mb-1.5">
+                        Pattern Style
+                      </span>
+                      <div className="grid grid-cols-5 gap-1.5">
+                        {PATTERN_CATALOG.map((pat) => {
+                          const isSelected = patType === pat.id;
+                          const thumbUri = buildShapePatternDataUri(
+                            pat.id,
+                            patColor,
+                            patBgType === 'gradient' ? 'transparent' : patBg,
+                            16,
+                            1.5,
+                            patOpacity
+                          );
+                          const gradCss =
+                            patBgType === 'gradient'
+                              ? buildLinearGradientCss(patBg, patBg2, patBgAngle)
+                              : undefined;
+                          return (
+                            <button
+                              key={pat.id}
+                              type="button"
+                              title={pat.label}
+                              onClick={() =>
+                                updateElement(selectedElement.id, {
+                                  patternType: pat.id,
+                                })
+                              }
+                              className={`h-8 rounded-lg border transition-all overflow-hidden ${
+                                isSelected
+                                  ? 'border-indigo-600 ring-2 ring-indigo-500/30 scale-[1.03]'
+                                  : 'border-slate-200 hover:border-slate-300'
+                              }`}
+                              style={
+                                gradCss && thumbUri
+                                  ? {
+                                      backgroundImage: `url("${thumbUri}"), ${gradCss}`,
+                                      backgroundRepeat: 'repeat, no-repeat',
+                                      backgroundSize: '16px 16px, 100% 100%',
+                                    }
+                                  : {
+                                      backgroundImage: thumbUri ? `url("${thumbUri}")` : undefined,
+                                      backgroundRepeat: 'repeat',
+                                      backgroundSize: '16px 16px',
+                                    }
+                              }
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Pattern Background Mode: Solid vs Gradient */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-semibold text-slate-500">
+                          Pattern Background
+                        </span>
+                        <div className="flex gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateElement(selectedElement.id, { patternBgType: 'solid' })
+                            }
+                            className={`px-2 py-0.5 rounded-md text-[9.5px] font-bold transition ${
+                              patBgType === 'solid'
+                                ? 'bg-white text-indigo-700 shadow-2xs'
+                                : 'text-slate-500'
+                            }`}
+                          >
+                            Solid
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateElement(selectedElement.id, {
+                                patternBgType: 'gradient',
+                                patternBgColor:
+                                  patBg === 'transparent' ? '#fdf2f8' : patBg,
+                                patternBgColor2: patBg2,
+                              })
+                            }
+                            className={`px-2 py-0.5 rounded-md text-[9.5px] font-bold transition ${
+                              patBgType === 'gradient'
+                                ? 'bg-white text-indigo-700 shadow-2xs'
+                                : 'text-slate-500'
+                            }`}
+                          >
+                            Gradient
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1.5 rounded-xl border border-slate-200/80">
+                          <input
+                            type="color"
+                            value={patColor}
+                            onChange={(e) =>
+                              updateElement(selectedElement.id, {
+                                patternColor: e.target.value,
+                              })
+                            }
+                            className="w-5 h-5 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0"
+                          />
+                          <span className="text-[10px] font-semibold text-slate-600">
+                            Ink
+                          </span>
+                        </div>
+                        {patBgType === 'gradient' ? (
+                          <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1.5 rounded-xl border border-slate-200/80">
+                            <input
+                              type="color"
+                              value={patBg === 'transparent' ? '#fdf2f8' : patBg}
+                              onChange={(e) =>
+                                updateElement(selectedElement.id, {
+                                  patternBgColor: e.target.value,
+                                })
+                              }
+                              className="w-5 h-5 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0"
+                              title="Gradient Start"
+                            />
+                            <input
+                              type="color"
+                              value={patBg2}
+                              onChange={(e) =>
+                                updateElement(selectedElement.id, {
+                                  patternBgColor2: e.target.value,
+                                })
+                              }
+                              className="w-5 h-5 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0"
+                              title="Gradient End"
+                            />
+                            <span className="text-[9.5px] font-semibold text-slate-600">
+                              Grad
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1.5 rounded-xl border border-slate-200/80">
+                            <input
+                              type="color"
+                              value={patBg === 'transparent' ? '#ffffff' : patBg}
+                              onChange={(e) =>
+                                updateElement(selectedElement.id, {
+                                  patternBgColor: e.target.value,
+                                })
+                              }
+                              className="w-5 h-5 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0"
+                            />
+                            <span className="text-[10px] font-semibold text-slate-600">
+                              Bg
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                updateElement(selectedElement.id, {
+                                  patternBgColor:
+                                    patBg === 'transparent' ? '#ffffff' : 'transparent',
+                                })
+                              }
+                              className={`ml-auto text-[9px] font-semibold px-1.5 py-0.5 rounded ${
+                                patBg === 'transparent'
+                                  ? 'bg-indigo-100 text-indigo-700'
+                                  : 'text-slate-400 hover:text-slate-600'
+                              }`}
+                              title="Toggle transparent background"
+                            >
+                              {patBg === 'transparent' ? 'None' : 'Clear'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {patBgType === 'gradient' && (
+                        <div className="grid grid-cols-6 gap-1 pt-0.5">
+                          {GRADIENT_SWATCHES.map((sw) => {
+                            const isSel = patBg === sw.color1 && patBg2 === sw.color2;
+                            return (
+                              <button
+                                key={sw.id}
+                                type="button"
+                                title={sw.name}
+                                onClick={() =>
+                                  updateElement(selectedElement.id, {
+                                    patternBgType: 'gradient',
+                                    patternBgColor: sw.color1,
+                                    patternBgColor2: sw.color2,
+                                    patternBgAngle: sw.angle,
+                                  })
+                                }
+                                className={`h-5 rounded-md border transition cursor-pointer ${
+                                  isSel
+                                    ? 'border-indigo-600 ring-1 ring-indigo-500/40 scale-105'
+                                    : 'border-slate-200 hover:scale-105'
+                                }`}
+                                style={{
+                                  backgroundImage: buildLinearGradientCss(sw.color1, sw.color2, sw.angle),
+                                }}
+                              />
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-[10px] text-slate-500 font-medium mb-1">
+                        <span>Pattern Scale</span>
+                        <span>{patScale}px</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={10}
+                        max={80}
+                        value={patScale}
+                        onChange={(e) =>
+                          updateElement(selectedElement.id, {
+                            patternScale: Number(e.target.value),
+                          })
+                        }
+                        className="w-full accent-indigo-600 cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-[10px] text-slate-500 font-medium mb-1">
+                        <span>Pattern Opacity</span>
+                        <span>{Math.round(patOpacity * 100)}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0.05}
+                        max={1}
+                        step={0.05}
+                        value={patOpacity}
+                        onChange={(e) =>
+                          updateElement(selectedElement.id, {
+                            patternOpacity: Number(e.target.value),
+                          })
+                        }
+                        className="w-full accent-indigo-600 cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                );
+              })()
+            ) : (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <input
@@ -2013,26 +2402,64 @@ export const PropertiesPanel: React.FC = () => {
               </div>
 
               {(selectedElement as ShapeElement).fillType === 'linear-gradient' && (
-                <div>
-                  <div className="flex justify-between text-[10px] text-slate-500 font-medium mb-1">
-                    <span>Gradient Angle</span>
-                    <span>{(selectedElement as ShapeElement).gradientAngle ?? 90}Â°</span>
+                <div className="space-y-2">
+                  <div>
+                    <div className="flex justify-between text-[10px] text-slate-500 font-medium mb-1">
+                      <span>Gradient Angle</span>
+                      <span>{(selectedElement as ShapeElement).gradientAngle ?? 90}°</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={360}
+                      value={(selectedElement as ShapeElement).gradientAngle ?? 90}
+                      onChange={(e) =>
+                        updateElement(selectedElement.id, {
+                          gradientAngle: Number(e.target.value),
+                        })
+                      }
+                      className="w-full accent-indigo-600 cursor-pointer"
+                    />
                   </div>
-                  <input
-                    type="range"
-                    min={0}
-                    max={360}
-                    value={(selectedElement as ShapeElement).gradientAngle ?? 90}
-                    onChange={(e) =>
-                      updateElement(selectedElement.id, {
-                        gradientAngle: Number(e.target.value),
-                      })
-                    }
-                    className="w-full accent-indigo-600 cursor-pointer"
-                  />
+                  <div>
+                    <span className="block text-[10px] text-slate-500 font-medium mb-1">
+                      Gradient Swatches
+                    </span>
+                    <div className="grid grid-cols-6 gap-1.5">
+                      {GRADIENT_SWATCHES.map((sw) => {
+                        const sh = selectedElement as ShapeElement;
+                        const isSel =
+                          sh.fillColor === sw.color1 && sh.gradientColor2 === sw.color2;
+                        return (
+                          <button
+                            key={sw.id}
+                            type="button"
+                            title={sw.name}
+                            onClick={() =>
+                              updateElement(selectedElement.id, {
+                                fillType: 'linear-gradient',
+                                fillColor: sw.color1,
+                                gradientColor2: sw.color2,
+                                gradientAngle: sw.angle,
+                              })
+                            }
+                            className={`h-6 rounded-lg border transition cursor-pointer ${
+                              isSel
+                                ? 'border-indigo-600 ring-2 ring-indigo-500/30 scale-105'
+                                : 'border-slate-200 hover:scale-105'
+                            }`}
+                            style={{
+                              backgroundImage: buildLinearGradientCss(sw.color1, sw.color2, sw.angle),
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
+            )}
 
             {/* Corner Radius for Rounded Rect */}
             {(selectedElement as ShapeElement).shapeType === 'rounded-rect' && (
@@ -2196,15 +2623,415 @@ export const PropertiesPanel: React.FC = () => {
           </div>
         )}
 
-        {/* Case 4: Image Properties */}
-        {selectedElement && selectedElement.type === 'image' && (
+        {/* Case 4A: Dedicated Sticker Studio Inspector (Frameless, Shape-Hugging Contour Borders) */}
+        {selectedElement &&
+          selectedElement.type === 'image' &&
+          ((selectedElement as ImageElement).isSticker ||
+            (selectedElement as ImageElement).effectPreset === 'sticker') && (() => {
+            const stk = selectedElement as ImageElement;
+            const outlineW = stk.stickerOutlineWidth ?? 5;
+            const outlineC = stk.stickerOutlineColor || '#ffffff';
+            const outlineW2 = stk.stickerOutlineWidth2 ?? 0;
+            const outlineC2 = stk.stickerOutlineColor2 || '#4f46e5';
+            const finish = stk.stickerFinish || 'matte';
+
+            const handleStickerBgRemoval = async () => {
+              const source = stk.originalSrc || stk.src;
+              if (!source) return;
+              setIsRemovingBg(true);
+              try {
+                const cleaned = await removeImageBackground(source, {
+                  mode: bgMode,
+                  targetColor: bgTarget,
+                  tolerance: bgTolerance,
+                  feather: bgFeather,
+                });
+                updateElement(stk.id, {
+                  originalSrc: stk.originalSrc || stk.src,
+                  src: cleaned,
+                  bgRemoved: true,
+                });
+              } finally {
+                setIsRemovingBg(false);
+              }
+            };
+
+            return (
+              <div className="bg-white rounded-2xl border border-amber-200/90 p-3.5 space-y-3.5 shadow-2xs">
+                <div className="flex items-center justify-between pb-2 border-b border-amber-100">
+                  <div className="font-bold text-amber-950 flex items-center gap-1.5">
+                    <Sparkles size={14} className="text-amber-500" />
+                    <span>Sticker Studio</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateElement(stk.id, {
+                        isSticker: false,
+                        effectPreset: 'none',
+                      })
+                    }
+                    className="text-[10px] font-semibold text-slate-500 hover:text-indigo-700 underline"
+                    title="Switch to rectangular Picture Frame tools"
+                  >
+                    To Picture
+                  </button>
+                </div>
+
+                {/* Die-Cut Contour Border (Hugs Shape, No Square Box) */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-slate-700">
+                      Die-Cut Contour Border
+                    </label>
+                    <span className="text-[10px] font-mono text-amber-700 font-bold">
+                      {outlineW}px
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-4 gap-1">
+                    {[
+                      { label: 'None', w: 0 },
+                      { label: 'Thin', w: 3 },
+                      { label: 'Classic', w: 6 },
+                      { label: 'Bold', w: 10 },
+                    ].map((p) => (
+                      <button
+                        key={p.label}
+                        type="button"
+                        onClick={() => updateElement(stk.id, { stickerOutlineWidth: p.w })}
+                        className={`py-1 rounded-lg text-[10px] font-bold border transition ${
+                          outlineW === p.w
+                            ? 'bg-amber-500 text-white border-amber-500'
+                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-amber-50'
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={14}
+                    value={outlineW}
+                    onChange={(e) =>
+                      updateElement(stk.id, { stickerOutlineWidth: Number(e.target.value) })
+                    }
+                    className="w-full accent-amber-500 cursor-pointer"
+                  />
+
+                  <div className="flex items-center justify-between gap-1.5 pt-0.5">
+                    <span className="text-[10px] font-semibold text-slate-500">Contour Color</span>
+                    <div className="flex items-center gap-1">
+                      {['#ffffff', '#fef3c7', '#0f172a', '#f59e0b', '#ec4899', '#38bdf8'].map(
+                        (col) => (
+                          <button
+                            key={col}
+                            type="button"
+                            onClick={() => updateElement(stk.id, { stickerOutlineColor: col })}
+                            style={{ backgroundColor: col }}
+                            className={`w-4 h-4 rounded-full border transition ${
+                              outlineC.toLowerCase() === col
+                                ? 'ring-2 ring-amber-500 border-slate-700 scale-110'
+                                : 'border-slate-300'
+                            }`}
+                            title={col}
+                          />
+                        )
+                      )}
+                      <input
+                        type="color"
+                        value={outlineC}
+                        onChange={(e) =>
+                          updateElement(stk.id, { stickerOutlineColor: e.target.value })
+                        }
+                        className="w-5 h-5 rounded cursor-pointer border-0 bg-transparent"
+                        title="Custom Contour Color"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Double Contour Ring */}
+                <div className="p-2 rounded-xl bg-amber-50/50 border border-amber-200/70 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="flex items-center gap-1.5 text-[10.5px] font-bold text-amber-950 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={outlineW2 > 0}
+                        onChange={(e) =>
+                          updateElement(stk.id, {
+                            stickerOutlineWidth2: e.target.checked ? 4 : 0,
+                          })
+                        }
+                        className="accent-amber-500 rounded"
+                      />
+                      <span>Double Contour Ring</span>
+                    </label>
+                    {outlineW2 > 0 && (
+                      <input
+                        type="color"
+                        value={outlineC2}
+                        onChange={(e) =>
+                          updateElement(stk.id, { stickerOutlineColor2: e.target.value })
+                        }
+                        className="w-5 h-5 rounded cursor-pointer border-0 bg-transparent"
+                      />
+                    )}
+                  </div>
+                  {outlineW2 > 0 && (
+                    <input
+                      type="range"
+                      min={1}
+                      max={10}
+                      value={outlineW2}
+                      onChange={(e) =>
+                        updateElement(stk.id, { stickerOutlineWidth2: Number(e.target.value) })
+                      }
+                      className="w-full accent-amber-500 cursor-pointer"
+                    />
+                  )}
+                </div>
+
+                {/* Sticker Finish */}
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-bold text-slate-700">
+                    Sticker Finish
+                  </label>
+                  <div className="grid grid-cols-4 gap-1">
+                    {(
+                      [
+                        { id: 'matte', label: 'Matte' },
+                        { id: 'glossy', label: 'Glossy' },
+                        { id: 'puffy', label: 'Puffy 3D' },
+                        { id: 'neon', label: 'Neon' },
+                      ] as const
+                    ).map((f) => (
+                      <button
+                        key={f.id}
+                        type="button"
+                        onClick={() => updateElement(stk.id, { stickerFinish: f.id })}
+                        className={`py-1 rounded-lg text-[10px] font-bold border transition ${
+                          finish === f.id
+                            ? 'bg-indigo-600 text-white border-indigo-600'
+                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-indigo-50'
+                        }`}
+                      >
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                  {finish === 'neon' && (
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-[10px] font-semibold text-slate-500">Neon Glow</span>
+                      <input
+                        type="color"
+                        value={stk.stickerGlowColor || '#38bdf8'}
+                        onChange={(e) =>
+                          updateElement(stk.id, { stickerGlowColor: e.target.value })
+                        }
+                        className="w-6 h-5 rounded cursor-pointer border-0 bg-transparent"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Peel / Tilt & Flip */}
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-bold text-slate-700">
+                    Peel Angle &amp; Flip
+                  </label>
+                  <div className="grid grid-cols-5 gap-1">
+                    {[-12, -6, 0, 6, 12].map((deg) => (
+                      <button
+                        key={deg}
+                        type="button"
+                        onClick={() => updateElement(stk.id, { rotation: deg })}
+                        className={`py-1 rounded-lg text-[10px] font-bold border transition ${
+                          Math.round(stk.rotation || 0) === deg
+                            ? 'bg-amber-500 text-white border-amber-500'
+                            : 'bg-slate-50 text-slate-700 border-slate-200'
+                        }`}
+                      >
+                        {deg}°
+                      </button>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => updateElement(stk.id, { flipH: !stk.flipH })}
+                      className={`py-1.5 rounded-lg border text-[10.5px] font-semibold flex items-center justify-center gap-1 transition ${
+                        stk.flipH
+                          ? 'bg-indigo-50 border-indigo-300 text-indigo-800'
+                          : 'bg-slate-50 border-slate-200 text-slate-700'
+                      }`}
+                    >
+                      <FlipHorizontal2 size={12} /> Flip H
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updateElement(stk.id, { flipV: !stk.flipV })}
+                      className={`py-1.5 rounded-lg border text-[10.5px] font-semibold flex items-center justify-center gap-1 transition ${
+                        stk.flipV
+                          ? 'bg-indigo-50 border-indigo-300 text-indigo-800'
+                          : 'bg-slate-50 border-slate-200 text-slate-700'
+                      }`}
+                    >
+                      <FlipVertical2 size={12} /> Flip V
+                    </button>
+                  </div>
+                </div>
+
+                {/* Recolor SVG Sticker Artwork */}
+                {stk.src && isSvgDataUri(stk.src) && (() => {
+                  const palette = extractSvgPalette(stk.src);
+                  if (palette.length === 0) return null;
+                  return (
+                    <div className="p-2.5 rounded-xl bg-amber-50/50 border border-amber-200/80 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10.5px] font-bold text-amber-950">
+                          Recolor Sticker
+                        </span>
+                        {stk.originalSrc && isSvgDataUri(stk.originalSrc) && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateElement(stk.id, {
+                                src: stk.originalSrc,
+                                originalSrc: undefined,
+                              })
+                            }
+                            className="text-[9.5px] font-bold text-rose-600 hover:underline"
+                          >
+                            Reset Colors
+                          </button>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {palette.map((col) => (
+                          <label
+                            key={col}
+                            className="relative cursor-pointer"
+                            title={`Replace ${col}`}
+                          >
+                            <span
+                              className="block w-5 h-5 rounded-full border border-slate-300 shadow-2xs"
+                              style={{ backgroundColor: col }}
+                            />
+                            <input
+                              type="color"
+                              value={col}
+                              onChange={(e) => {
+                                const nextSrc = recolorSvgDataUri(stk.src, { [col]: e.target.value });
+                                updateElement(stk.id, {
+                                  originalSrc: stk.originalSrc || stk.src,
+                                  src: nextSrc,
+                                });
+                              }}
+                              className="sr-only"
+                            />
+                          </label>
+                        ))}
+                      </div>
+                      <div className="grid grid-cols-3 gap-1">
+                        {RECOLOR_PALETTE_PRESETS.slice(0, 3).map((preset) => (
+                          <button
+                            key={preset.id}
+                            type="button"
+                            onClick={() => {
+                              const map: Record<string, string> = {};
+                              palette.forEach((c, i) => {
+                                map[c] = preset.colors[i % preset.colors.length];
+                              });
+                              updateElement(stk.id, {
+                                originalSrc: stk.originalSrc || stk.src,
+                                src: recolorSvgDataUri(stk.src, map),
+                              });
+                            }}
+                            className="py-1 px-1 rounded-lg bg-white border border-amber-200 hover:bg-amber-100/60 text-[9px] font-bold text-slate-700 truncate"
+                          >
+                            {preset.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Background Removal for Stickers / Cliparts */}
+                {stk.src && (
+                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10.5px] font-bold text-slate-700 flex items-center gap-1">
+                        <Eraser size={12} className="text-indigo-600" />
+                        Background Removal
+                      </span>
+                      {stk.originalSrc && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateElement(stk.id, {
+                              src: stk.originalSrc,
+                              originalSrc: undefined,
+                              bgRemoved: false,
+                            })
+                          }
+                          className="text-[9.5px] font-bold text-rose-600 hover:underline"
+                        >
+                          Restore
+                        </button>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      disabled={isRemovingBg}
+                      onClick={handleStickerBgRemoval}
+                      className="w-full py-1.5 px-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white text-[10.5px] font-bold transition"
+                    >
+                      {isRemovingBg ? 'Removing...' : 'Auto-Remove Background'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+        {/* Case 4B: Image Properties */}
+        {selectedElement &&
+          selectedElement.type === 'image' &&
+          !(selectedElement as ImageElement).isSticker &&
+          (selectedElement as ImageElement).effectPreset !== 'sticker' && (
           <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3.5 shadow-2xs">
-            <div className="font-bold text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-100">
-              <ImageIcon size={14} className="text-indigo-700" />
-              <span>Picture Tools</span>
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div className="font-bold text-slate-800 flex items-center gap-1.5">
+                <ImageIcon size={14} className="text-indigo-700" />
+                <span>Picture Tools</span>
+              </div>
+              {(selectedElement as ImageElement).src && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    updateElement(selectedElement.id, {
+                      isSticker: true,
+                      effectPreset: 'sticker',
+                      stickerOutlineColor: '#ffffff',
+                      stickerOutlineWidth: 5,
+                      stickerFinish: 'matte',
+                      borderWidth: 0,
+                      borderArt: 'none',
+                      objectFit: 'contain',
+                    })
+                  }
+                  className="text-[10px] font-bold text-amber-700 hover:text-amber-900 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 transition"
+                  title="Convert to frameless Die-Cut Sticker"
+                >
+                  Make Sticker
+                </button>
+              )}
             </div>
 
-            {/* Replace or Clear Picture Placeholder */}
+            {/* Replace, Detach, or Clear Picture Placeholder */}
             <div className="space-y-1.5">
               <input
                 type="file"
@@ -2218,6 +3045,8 @@ export const PropertiesPanel: React.FC = () => {
                     reader.onload = (event) => {
                       updateElement(selectedElement.id, {
                         src: event.target?.result as string,
+                        originalSrc: undefined,
+                        bgRemoved: false,
                         name: file.name.replace(/\.[^.]+$/, '') || selectedElement.name,
                       });
                     };
@@ -2238,20 +3067,251 @@ export const PropertiesPanel: React.FC = () => {
                 </span>
               </button>
               {(selectedElement as ImageElement).src && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    updateElement(selectedElement.id, {
-                      src: '',
-                      name: 'Picture Placeholder',
-                    })
-                  }
-                  className="w-full py-1.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-[11px] flex items-center justify-center gap-1.5 transition"
-                >
-                  <span>Clear to Placeholder</span>
-                </button>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => detachImageFromPlaceholder(selectedElement.id)}
+                    className="py-1.5 px-2 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 rounded-xl font-semibold text-[10.5px] flex items-center justify-center gap-1 transition"
+                    title="Extract placed image/clipart into an independent element and restore empty placeholder"
+                  >
+                    <Unlink size={11} />
+                    <span>Detach</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateElement(selectedElement.id, {
+                        src: '',
+                        originalSrc: undefined,
+                        bgRemoved: false,
+                        name: 'Picture Placeholder',
+                      })
+                    }
+                    className="py-1.5 px-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-[10.5px] flex items-center justify-center gap-1 transition"
+                  >
+                    <span>Clear</span>
+                  </button>
+                </div>
               )}
             </div>
+
+            {/* Recolor Vector Stock Art / Clipart */}
+            {(selectedElement as ImageElement).src &&
+              isSvgDataUri((selectedElement as ImageElement).src) && (() => {
+                const imgEl = selectedElement as ImageElement;
+                const palette = extractSvgPalette(imgEl.src);
+                if (palette.length === 0) return null;
+                return (
+                  <div className="p-2.5 rounded-xl bg-indigo-50/45 border border-indigo-200/70 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-indigo-950">
+                        Recolor Clipart / Stock Art
+                      </span>
+                      {imgEl.originalSrc && isSvgDataUri(imgEl.originalSrc) && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateElement(imgEl.id, {
+                              src: imgEl.originalSrc,
+                              originalSrc: undefined,
+                            })
+                          }
+                          className="text-[10px] font-bold text-rose-600 hover:underline"
+                        >
+                          Reset Colors
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {palette.map((col) => (
+                        <label
+                          key={col}
+                          className="relative cursor-pointer"
+                          title={`Click to recolor ${col}`}
+                        >
+                          <span
+                            className="block w-5 h-5 rounded-full border border-slate-300 shadow-2xs"
+                            style={{ backgroundColor: col }}
+                          />
+                          <input
+                            type="color"
+                            value={col}
+                            onChange={(e) => {
+                              const nextSrc = recolorSvgDataUri(imgEl.src, { [col]: e.target.value });
+                              updateElement(imgEl.id, {
+                                originalSrc: imgEl.originalSrc || imgEl.src,
+                                src: nextSrc,
+                              });
+                            }}
+                            className="sr-only"
+                          />
+                        </label>
+                      ))}
+                    </div>
+                    <div className="grid grid-cols-3 gap-1">
+                      {RECOLOR_PALETTE_PRESETS.slice(0, 6).map((preset) => (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          onClick={() => {
+                            const map: Record<string, string> = {};
+                            palette.forEach((c, i) => {
+                              map[c] = preset.colors[i % preset.colors.length];
+                            });
+                            updateElement(imgEl.id, {
+                              originalSrc: imgEl.originalSrc || imgEl.src,
+                              src: recolorSvgDataUri(imgEl.src, map),
+                            });
+                          }}
+                          className="py-1 px-1 rounded-lg bg-white border border-indigo-200/80 hover:bg-indigo-100/60 text-[9px] font-bold text-slate-700 truncate"
+                        >
+                          {preset.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
+            {/* Background Removal for Cliparts & Photos */}
+            {(selectedElement as ImageElement).src && (() => {
+              const imgEl = selectedElement as ImageElement;
+              const handleBgRemove = async () => {
+                const source = imgEl.originalSrc || imgEl.src;
+                if (!source) return;
+                setIsRemovingBg(true);
+                try {
+                  const cleaned = await removeImageBackground(source, {
+                    mode: bgMode,
+                    targetColor: bgTarget,
+                    tolerance: bgTolerance,
+                    feather: bgFeather,
+                  });
+                  updateElement(imgEl.id, {
+                    originalSrc: imgEl.originalSrc || imgEl.src,
+                    src: cleaned,
+                    bgRemoved: true,
+                    objectFit: 'contain',
+                  });
+                } finally {
+                  setIsRemovingBg(false);
+                }
+              };
+
+              return (
+                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
+                      <Eraser size={12} className="text-indigo-600" />
+                      <span>Background Removal</span>
+                    </span>
+                    {imgEl.originalSrc && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateElement(imgEl.id, {
+                            src: imgEl.originalSrc,
+                            originalSrc: undefined,
+                            bgRemoved: false,
+                          })
+                        }
+                        className="text-[10px] font-bold text-rose-600 hover:underline"
+                      >
+                        Restore Original
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-1 bg-slate-200/70 p-0.5 rounded-lg">
+                    <button
+                      type="button"
+                      onClick={() => setBgMode('flood')}
+                      className={`py-1 rounded-md text-[10px] font-bold transition ${
+                        bgMode === 'flood'
+                          ? 'bg-white text-indigo-800 shadow-2xs'
+                          : 'text-slate-600'
+                      }`}
+                    >
+                      Auto Edge
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBgMode('color-key')}
+                      className={`py-1 rounded-md text-[10px] font-bold transition ${
+                        bgMode === 'color-key'
+                          ? 'bg-white text-indigo-800 shadow-2xs'
+                          : 'text-slate-600'
+                      }`}
+                    >
+                      Color Key (Holes)
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-1">
+                    {(
+                      [
+                        { id: 'auto', label: 'Auto' },
+                        { id: 'white', label: 'White' },
+                        { id: 'black', label: 'Black' },
+                      ] as const
+                    ).map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => setBgTarget(t.id)}
+                        className={`py-1 rounded-lg text-[9.5px] font-bold border transition ${
+                          bgTarget === t.id
+                            ? 'bg-indigo-600 text-white border-indigo-600'
+                            : 'bg-white text-slate-600 border-slate-200'
+                        }`}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <div className="flex justify-between text-[9.5px] text-slate-500">
+                        <span>Tolerance</span>
+                        <span className="font-mono">{bgTolerance}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={5}
+                        max={85}
+                        value={bgTolerance}
+                        onChange={(e) => setBgTolerance(Number(e.target.value))}
+                        className="w-full accent-indigo-600 cursor-pointer"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex justify-between text-[9.5px] text-slate-500">
+                        <span>Feather</span>
+                        <span className="font-mono">{bgFeather}px</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0}
+                        max={3}
+                        value={bgFeather}
+                        onChange={(e) => setBgFeather(Number(e.target.value))}
+                        className="w-full accent-indigo-600 cursor-pointer"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={isRemovingBg}
+                    onClick={handleBgRemove}
+                    className="w-full py-1.5 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white text-[11px] font-bold transition"
+                  >
+                    {isRemovingBg ? 'Removing Background...' : 'Remove Background'}
+                  </button>
+                </div>
+              );
+            })()}
 
             {/* BorderArt (Customizable Collage Frames) */}
             <div className="space-y-2">
@@ -2416,15 +3476,38 @@ export const PropertiesPanel: React.FC = () => {
               <div className="flex items-center justify-between">
                 <label className="text-slate-700 font-bold text-[11px]">Crop & Frame Fit</label>
                 <button
-                  onClick={() =>
-                    updateElement(selectedElement.id, {
+                  onClick={() => {
+                    const imgEl = selectedElement as ImageElement;
+                    const baseReset = {
                       imageScale: 1,
                       panX: 0,
                       panY: 0,
-                      objectFit: 'cover',
-                    })
-                  }
-                  className="text-[10px] text-indigo-700 hover:underline flex items-center gap-0.5"
+                      objectFit: 'cover' as const,
+                      imageRotation: 0 as const,
+                      flipH: false,
+                    };
+                    if (!imgEl.src) {
+                      updateElement(selectedElement.id, baseReset);
+                      return;
+                    }
+                    const probe = new Image();
+                    probe.onload = () => {
+                      const nw = probe.naturalWidth || imgEl.width;
+                      const nh = probe.naturalHeight || imgEl.height;
+                      const maxW = Math.max(200, activePage.width - 48);
+                      const maxH = Math.max(200, activePage.height - 48);
+                      const fitScale = Math.min(1, maxW / nw, maxH / nh);
+                      updateElement(selectedElement.id, {
+                        ...baseReset,
+                        width: Math.max(24, Math.round(nw * fitScale)),
+                        height: Math.max(24, Math.round(nh * fitScale)),
+                      });
+                    };
+                    probe.onerror = () => updateElement(selectedElement.id, baseReset);
+                    probe.src = imgEl.src;
+                  }}
+                  className="text-[10px] text-indigo-700 hover:underline flex items-center gap-0.5 cursor-pointer"
+                  title="Reset crop, pan, rotation, and restore original image size/proportions"
                 >
                   <RotateCcw size={10} /> Reset
                 </button>
@@ -2996,6 +4079,7 @@ export const PropertiesPanel: React.FC = () => {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 };

@@ -42,6 +42,8 @@ export const HomeTab: React.FC = () => {
     addShape,
     addImage,
     addPicturePlaceholder,
+    setIsRightPanelOpen,
+    setRightPanelTab,
   } = usePublisher();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -424,6 +426,27 @@ export const HomeTab: React.FC = () => {
           </div>
         </div>
         <span className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider text-center">Arrange</span>
+      </div>
+
+      {/* Design Ideas Group */}
+      <div className="flex flex-col justify-between h-full py-1 px-2 flex-shrink-0">
+        <div className="flex items-center my-auto">
+          <button
+            type="button"
+            onClick={() => {
+              setIsRightPanelOpen(true);
+              setRightPanelTab('design-ideas');
+            }}
+            className="flex flex-col items-center p-1.5 hover:bg-indigo-50/70 active:scale-95 rounded-xl transition-all group"
+            title="Open Design Recommendations Panel (PowerPoint Designer / Slides Explore style)"
+          >
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center shadow-xs group-hover:shadow-md transition-all">
+              <Sparkles size={16} />
+            </div>
+            <span className="text-[10px] font-semibold mt-1 text-indigo-800">Design Ideas</span>
+          </button>
+        </div>
+        <span className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider text-center">Designer</span>
       </div>
     </div>
   );

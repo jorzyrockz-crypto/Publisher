@@ -11,7 +11,7 @@ import {
   TableElement,
   TextElement,
 } from '../types/publisher';
-import { buildPatternSvg } from './patternGenerator';
+import { buildPatternSvg, buildShapePatternDataUri } from './patternGenerator';
 import { buildWavyRectPath, getShapeSvgPath } from './shapePaths';
 
 function loadImage(src: string): Promise<HTMLImageElement | null> {
@@ -223,7 +223,7 @@ function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
   ctx.restore();
 }
 
-function drawShapeElement(ctx: CanvasRenderingContext2D, el: ShapeElement) {
+async function drawShapeElement(ctx: CanvasRenderingContext2D, el: ShapeElement) {
   const { width, height, fillColor, strokeColor, strokeWidth, strokeDash } = el;
   ctx.save();
 
@@ -237,19 +237,55 @@ function drawShapeElement(ctx: CanvasRenderingContext2D, el: ShapeElement) {
     ctx.shadowBlur = el.glowSize || 12;
   }
 
-  const fillStyle: string | CanvasGradient =
+  const fillStyle: string | CanvasGradient | CanvasPattern =
     el.fillType === 'linear-gradient'
       ? createLinearGrad(ctx, width, height, el.gradientAngle ?? 90, fillColor, el.gradientColor2 || '#38bdf8')
       : fillColor || 'transparent';
 
+  // Resolve pattern fill asynchronously
+  let resolvedFillStyle: string | CanvasGradient | CanvasPattern = fillStyle;
+  let patternBgGrad: CanvasGradient | null = null;
+  if (el.fillType === 'pattern' && el.patternType && el.patternType !== 'none') {
+    const isGradBg = el.patternBgType === 'gradient';
+    if (isGradBg) {
+      patternBgGrad = createLinearGrad(
+        ctx,
+        width,
+        height,
+        el.patternBgAngle ?? 135,
+        el.patternBgColor || '#fdf2f8',
+        el.patternBgColor2 || '#e0f2fe'
+      );
+    }
+    const dataUri = buildShapePatternDataUri(
+      el.patternType,
+      el.patternColor ?? '#4f46e5',
+      isGradBg ? 'transparent' : (el.patternBgColor ?? '#ffffff'),
+      el.patternScale ?? 24,
+      1.5,
+      el.patternOpacity ?? 0.8,
+    );
+    const patImg = await loadImage(dataUri);
+    if (patImg) {
+      const canvasPat = ctx.createPattern(patImg, 'repeat');
+      if (canvasPat) resolvedFillStyle = canvasPat;
+    } else {
+      resolvedFillStyle = fillColor || '#cccccc';
+    }
+  }
+
   if (el.shapeType === 'merged' && el.mergedParts && el.mergedParts.length > 0) {
-    ctx.fillStyle = fillStyle;
     ctx.strokeStyle = strokeColor || 'transparent';
     ctx.lineWidth = strokeWidth || 0;
     for (const part of el.mergedParts) {
       const p2d = new Path2D(part.d);
       ctx.save();
       ctx.translate(part.x, part.y);
+      if (patternBgGrad) {
+        ctx.fillStyle = patternBgGrad;
+        ctx.fill(p2d);
+      }
+      ctx.fillStyle = resolvedFillStyle;
       ctx.fill(p2d);
       if (strokeWidth > 0 && strokeColor !== 'transparent') ctx.stroke(p2d);
       ctx.restore();
@@ -284,8 +320,12 @@ function drawShapeElement(ctx: CanvasRenderingContext2D, el: ShapeElement) {
 
     if (pathStr) {
       const p2d = new Path2D(pathStr);
-      if (fillColor !== 'transparent') {
-        ctx.fillStyle = fillStyle;
+      if (fillColor !== 'transparent' || el.fillType === 'pattern' || el.fillType === 'linear-gradient') {
+        if (patternBgGrad) {
+          ctx.fillStyle = patternBgGrad;
+          ctx.fill(p2d);
+        }
+        ctx.fillStyle = resolvedFillStyle;
         ctx.fill(p2d);
       }
       if (strokeWidth > 0 && strokeColor && strokeColor !== 'transparent') {
@@ -294,8 +334,12 @@ function drawShapeElement(ctx: CanvasRenderingContext2D, el: ShapeElement) {
         ctx.stroke(p2d);
       }
     } else {
-      if (fillColor !== 'transparent') {
-        ctx.fillStyle = fillStyle;
+      if (fillColor !== 'transparent' || el.fillType === 'pattern' || el.fillType === 'linear-gradient') {
+        if (patternBgGrad) {
+          ctx.fillStyle = patternBgGrad;
+          ctx.fill();
+        }
+        ctx.fillStyle = resolvedFillStyle;
         ctx.fill();
       }
       if (strokeWidth > 0 && strokeColor && strokeColor !== 'transparent') {
@@ -340,11 +384,10 @@ async function drawImageElement(ctx: CanvasRenderingContext2D, el: ImageElement)
       ? 6
       : 0);
   const effect = el.effectPreset || 'none';
+  const isStickerMode = effect === 'sticker' || Boolean(el.isSticker);
 
   const cardRadius =
-    effect === 'sticker'
-      ? 18
-      : effect === 'clay' || art === 'puffy-clay'
+    effect === 'clay' || art === 'puffy-clay'
       ? 24
       : art === 'pastel-rainbow'
       ? 20
@@ -357,7 +400,7 @@ async function drawImageElement(ctx: CanvasRenderingContext2D, el: ImageElement)
       : el.borderRadius;
 
   // Offset solid shadows (doodle-box / puffy-clay) before drawing card body
-  if (art === 'puffy-clay') {
+  if (!isStickerMode && art === 'puffy-clay') {
     ctx.save();
     ctx.fillStyle = artColor2;
     drawPolygonMask(ctx, el.maskShape, width, height, cardRadius);
@@ -374,14 +417,16 @@ async function drawImageElement(ctx: CanvasRenderingContext2D, el: ImageElement)
   }
 
   ctx.save();
-  if (el.shadow || effect === 'sticker' || art === 'polaroid' || art === 'puffy-clay') {
+  if (!isStickerMode && (el.shadow || art === 'polaroid' || art === 'puffy-clay')) {
     ctx.shadowColor = art === 'puffy-clay' ? 'rgba(0,131,143,0.18)' : 'rgba(15,23,42,0.24)';
     ctx.shadowBlur = art === 'puffy-clay' ? 20 : 14;
     ctx.shadowOffsetY = art === 'puffy-clay' ? 10 : 6;
   }
 
   // Outer card background
-  if (art === 'candy-stripe') {
+  if (isStickerMode) {
+    // Transparent frameless sticker: contour outline is drawn around alpha silhouette below
+  } else if (art === 'candy-stripe') {
     ctx.save();
     drawPolygonMask(ctx, el.maskShape, width, height, cardRadius);
     ctx.clip();
@@ -420,42 +465,45 @@ async function drawImageElement(ctx: CanvasRenderingContext2D, el: ImageElement)
     art === 'stitched-scrapbook' ||
     art === 'puffy-clay' ||
     art === 'doodle-box' ||
-    art === 'dotted-double' ||
-    effect === 'sticker'
+    art === 'dotted-double'
   ) {
-    ctx.fillStyle = effect === 'sticker' ? '#ffffff' : artColor;
+    ctx.fillStyle = artColor;
     drawPolygonMask(ctx, el.maskShape, width, height, cardRadius);
     ctx.fill();
   }
   ctx.restore();
 
   // Inner image rectangle
-  const padL = artPad + (art === 'candy-stripe' ? 4 : 0);
-  const padT = artPad + (art === 'candy-stripe' ? 4 : 0);
-  const padR = artPad + (art === 'candy-stripe' ? 4 : 0);
-  const padB = art === 'polaroid' ? Math.max(26, artPad * 2.8) : artPad + (art === 'candy-stripe' ? 4 : 0);
+  const padL = isStickerMode ? 0 : artPad + (art === 'candy-stripe' ? 4 : 0);
+  const padT = isStickerMode ? 0 : artPad + (art === 'candy-stripe' ? 4 : 0);
+  const padR = isStickerMode ? 0 : artPad + (art === 'candy-stripe' ? 4 : 0);
+  const padB = isStickerMode
+    ? 0
+    : art === 'polaroid'
+    ? Math.max(26, artPad * 2.8)
+    : artPad + (art === 'candy-stripe' ? 4 : 0);
   const innerW = Math.max(10, width - padL - padR);
   const innerH = Math.max(10, height - padT - padB);
 
   const img = await loadImage(el.src);
   ctx.save();
   ctx.translate(padL, padT);
-  drawPolygonMask(
-    ctx,
-    el.maskShape,
-    innerW,
-    innerH,
-    art === 'candy-stripe'
-      ? 10
-      : effect === 'clay' || art === 'puffy-clay'
-      ? 18
-      : effect === 'sticker'
-      ? 14
-      : art === 'stitched-scrapbook' || art === 'pastel-rainbow' || art === 'doodle-box' || art === 'dotted-double'
-      ? 10
-      : el.borderRadius
-  );
-  ctx.clip();
+  if (!isStickerMode) {
+    drawPolygonMask(
+      ctx,
+      el.maskShape,
+      innerW,
+      innerH,
+      art === 'candy-stripe'
+        ? 10
+        : effect === 'clay' || art === 'puffy-clay'
+        ? 18
+        : art === 'stitched-scrapbook' || art === 'pastel-rainbow' || art === 'doodle-box' || art === 'dotted-double'
+        ? 10
+        : el.borderRadius
+    );
+    ctx.clip();
+  }
 
   if (img) {
     const filters: string[] = [];
@@ -514,7 +562,54 @@ async function drawImageElement(ctx: CanvasRenderingContext2D, el: ImageElement)
       if (el.flipH || el.flipV) ctx.scale(el.flipH ? -1 : 1, el.flipV ? -1 : 1);
       ctx.translate(-innerW / 2, -innerH / 2);
     }
-    ctx.drawImage(img, dx, dy, drawW, drawH);
+
+    if (isStickerMode) {
+      const w1 = el.stickerOutlineWidth ?? 5;
+      const c1 = el.stickerOutlineColor || '#ffffff';
+      const w2 = el.stickerOutlineWidth2 ?? 0;
+      const c2 = el.stickerOutlineColor2 || '#4f46e5';
+
+      const stampContour = (radius: number, color: string) => {
+        if (radius <= 0) return;
+        const sil = document.createElement('canvas');
+        sil.width = Math.max(2, Math.round(drawW));
+        sil.height = Math.max(2, Math.round(drawH));
+        const sCtx = sil.getContext('2d');
+        if (!sCtx) return;
+        sCtx.drawImage(img, 0, 0, sil.width, sil.height);
+        sCtx.globalCompositeOperation = 'source-in';
+        sCtx.fillStyle = color;
+        sCtx.fillRect(0, 0, sil.width, sil.height);
+        const steps = 12;
+        for (let i = 0; i < steps; i++) {
+          const ang = (i / steps) * Math.PI * 2;
+          ctx.drawImage(
+            sil,
+            dx + Math.cos(ang) * radius,
+            dy + Math.sin(ang) * radius,
+            drawW,
+            drawH
+          );
+        }
+      };
+
+      if (w2 > 0) stampContour(w1 + w2, c2);
+      if (w1 > 0) stampContour(w1, c1);
+
+      ctx.save();
+      if (el.stickerFinish === 'neon') {
+        ctx.shadowColor = el.stickerGlowColor || '#38bdf8';
+        ctx.shadowBlur = 16;
+      } else {
+        ctx.shadowColor = 'rgba(15,23,42,0.24)';
+        ctx.shadowBlur = el.stickerFinish === 'puffy' ? 12 : 8;
+        ctx.shadowOffsetY = el.stickerFinish === 'puffy' ? 8 : 5;
+      }
+      ctx.drawImage(img, dx, dy, drawW, drawH);
+      ctx.restore();
+    } else {
+      ctx.drawImage(img, dx, dy, drawW, drawH);
+    }
     ctx.restore();
     ctx.filter = 'none';
   } else {
@@ -841,7 +936,18 @@ export async function renderPageModelToCanvas(
   ctx.scale(scale, scale);
 
   if (!transparent) {
-    ctx.fillStyle = page.backgroundColor || '#ffffff';
+    if (page.backgroundGradient) {
+      ctx.fillStyle = createLinearGrad(
+        ctx,
+        page.width,
+        page.height,
+        page.backgroundGradient.angle ?? 135,
+        page.backgroundGradient.color1,
+        page.backgroundGradient.color2
+      );
+    } else {
+      ctx.fillStyle = page.backgroundColor || '#ffffff';
+    }
     ctx.fillRect(0, 0, page.width, page.height);
 
     if (page.backgroundPattern && page.backgroundPattern.type !== 'none') {
@@ -872,7 +978,7 @@ export async function renderPageModelToCanvas(
     if (el.flipH || el.flipV) ctx.scale(el.flipH ? -1 : 1, el.flipV ? -1 : 1);
     ctx.translate(-el.width / 2, -el.height / 2);
 
-    if (el.type === 'shape') drawShapeElement(ctx, el);
+    if (el.type === 'shape') await drawShapeElement(ctx, el);
     else if (el.type === 'text') drawTextElement(ctx, el);
     else if (el.type === 'image') await drawImageElement(ctx, el);
     else if (el.type === 'table') drawTableElement(ctx, el);

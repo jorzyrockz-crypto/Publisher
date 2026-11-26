@@ -1,4 +1,9 @@
 import { DocumentProject } from '../types/publisher';
+import { COLLAGE_AND_WEB_TEMPLATES } from './collageAndWebTemplates';
+import { PROGRAM_AND_TARPAPEL_TEMPLATES } from './programAndTarpapelTemplates';
+import { CERTIFICATE_TEMPLATES } from './certificateTemplates';
+import { SAMPLE_GRAPHICS } from './sampleGraphics';
+import { getStickerById } from './stickerLibrary';
 
 export type TemplateCategory =
   | 'Brochure'
@@ -14,6 +19,14 @@ export type TemplateCategory =
   | 'Social Media'
   | 'Hero Banner'
   | 'Logo'
+  | 'Collage'
+  | 'Program'
+  | 'Tarpapel'
+  | 'Card'
+  | 'Calendar'
+  | 'Cover Document'
+  | 'Email'
+  | 'Narrative Report'
   | 'Blank';
 
 export interface TemplateDefinition {
@@ -268,6 +281,20 @@ export const TEMPLATES: TemplateDefinition[] = [
               shadowColor: 'rgba(0,0,0,0.3)',
               shadowBlur: 10,
             },
+            {
+              id: 'el-mid-collab',
+              type: 'image',
+              name: 'Team Collaboration',
+              src: SAMPLE_GRAPHICS.find((g) => g.id === 'team-collab')?.src || '',
+              x: 382,
+              y: 520,
+              width: 290,
+              height: 200,
+              rotation: 0,
+              zIndex: 2,
+              borderRadius: 14,
+              objectFit: 'cover',
+            },
           ],
         },
       ],
@@ -436,6 +463,37 @@ export const TEMPLATES: TemplateDefinition[] = [
               shadow: true,
               shadowColor: 'rgba(2,132,199,0.4)',
               shadowBlur: 12,
+            },
+            {
+              id: 'f-speaker-art',
+              type: 'image',
+              name: 'Keynote Speaker',
+              src: SAMPLE_GRAPHICS.find((g) => g.id === 'speaker-stage')?.src || '',
+              x: 560,
+              y: 56,
+              width: 196,
+              height: 196,
+              rotation: 0,
+              zIndex: 3,
+              borderRadius: 18,
+              objectFit: 'cover',
+            },
+            {
+              id: 'f-laptop-stk',
+              type: 'image',
+              name: 'Studio Laptop',
+              src: getStickerById('stk-laptop')?.dataUri || '',
+              x: 646,
+              y: 820,
+              width: 96,
+              height: 96,
+              rotation: 8,
+              zIndex: 4,
+              objectFit: 'contain',
+              effectPreset: 'sticker',
+              isSticker: true,
+              stickerOutlineColor: '#ffffff',
+              stickerOutlineWidth: 4,
             },
             {
               id: 'f-footer',
@@ -4674,4 +4732,8 @@ export const TEMPLATES: TemplateDefinition[] = [
       ],
     },
   },
+
+  ...COLLAGE_AND_WEB_TEMPLATES,
+  ...PROGRAM_AND_TARPAPEL_TEMPLATES,
+  ...CERTIFICATE_TEMPLATES,
 ];

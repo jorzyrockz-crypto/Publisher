@@ -25,6 +25,9 @@ export const ViewTab: React.FC = () => {
     setGuidesVisible,
     gridVisible,
     setGridVisible,
+    tarpapelOverlayVisible,
+    setTarpapelOverlayVisible,
+    printSettings,
   } = usePublisher();
 
   return (
@@ -56,6 +59,18 @@ export const ViewTab: React.FC = () => {
           >
             <span className="text-[11px] font-medium text-slate-600">Gridlines</span>
             <div className={`fluent-switch ${gridVisible ? 'active' : ''}`}>
+              <div className="fluent-switch-knob" />
+            </div>
+          </div>
+          <div
+            onClick={() => setTarpapelOverlayVisible(!tarpapelOverlayVisible)}
+            className="flex items-center justify-between gap-2 cursor-pointer hover:opacity-90"
+            title="Show Tarpapel poster tile lines (R1·C1) directly on the canvas so you can resize photos & graphics cleanly"
+          >
+            <span className="text-[11px] font-medium text-amber-700">
+              Tarpapel {tarpapelOverlayVisible ? `${printSettings.tarpapelCols}×${printSettings.tarpapelRows}` : 'Grid'}
+            </span>
+            <div className={`fluent-switch ${tarpapelOverlayVisible ? 'active' : ''}`}>
               <div className="fluent-switch-knob" />
             </div>
           </div>

@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
 import { SAMPLE_GRAPHICS, StockCategory } from '../../constants/sampleGraphics';
+import { STICKER_CATALOG, StickerCategory } from '../../constants/stickerLibrary';
 import { ImageElement } from '../../types/publisher';
 import { FloatingDropdown } from '../common/FloatingDropdown';
 import {
@@ -20,6 +21,7 @@ import {
   Wand2,
   LayoutGrid,
   ImagePlus,
+  Smile,
 } from 'lucide-react';
 
 export const InsertTab: React.FC = () => {
@@ -45,11 +47,14 @@ export const InsertTab: React.FC = () => {
   const tableBtnRef = useRef<HTMLButtonElement>(null);
   const placeholderBtnRef = useRef<HTMLButtonElement>(null);
   const stockBtnRef = useRef<HTMLButtonElement>(null);
+  const stickerBtnRef = useRef<HTMLButtonElement>(null);
   const qrBtnRef = useRef<HTMLButtonElement>(null);
   const [tableGridHover, setTableGridHover] = useState<{ r: number; c: number }>({ r: 3, c: 3 });
   const [isTableDropdownOpen, setIsTableDropdownOpen] = useState(false);
   const [isPlaceholderOpen, setIsPlaceholderOpen] = useState(false);
   const [isStockOpen, setIsStockOpen] = useState(false);
+  const [isStickersOpen, setIsStickersOpen] = useState(false);
+  const [stickerCategory, setStickerCategory] = useState<'all' | 'vibe' | StickerCategory>('all');
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [qrMode, setQrMode] = useState<'url' | 'wifi' | 'email' | 'phone'>('url');
   const [qrInput, setQrInput] = useState('https://example.com');
@@ -57,6 +62,7 @@ export const InsertTab: React.FC = () => {
   const [wifiPass, setWifiPass] = useState('');
   const [stockCategory, setStockCategory] = useState<'All' | StockCategory>('All');
   const [stockSearch, setStockSearch] = useState('');
+  const [stickerSearch, setStickerSearch] = useState('');
 
   const buildQrPayload = () => {
     if (qrMode === 'wifi') {
@@ -379,7 +385,21 @@ export const InsertTab: React.FC = () => {
                 className="w-full mb-2 px-2.5 py-1 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-[11px] outline-none focus:border-indigo-500"
               />
               <div className="flex items-center gap-1 mb-2.5 flex-wrap">
-                {(['All', 'Nature', 'Abstract', 'Business', 'Badges', 'Lifestyle'] as const).map((cat) => (
+                {(
+                  [
+                    'All',
+                    'People',
+                    'Animals',
+                    'Plants',
+                    'Things',
+                    'Education',
+                    'Nature',
+                    'Abstract',
+                    'Business',
+                    'Badges',
+                    'Lifestyle',
+                  ] as const
+                ).map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setStockCategory(cat)}
@@ -414,6 +434,117 @@ export const InsertTab: React.FC = () => {
                     />
                     <span className="text-[10px] font-semibold text-slate-700 truncate w-full text-center">
                       {g.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </FloatingDropdown>
+          </div>
+
+          {/* Stickers Picker (Single Source of Truth shared with Collage Vibe Packs) */}
+          <div className="relative">
+            <button
+              ref={stickerBtnRef}
+              onClick={() => setIsStickersOpen(!isStickersOpen)}
+              className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
+              title="Insert Decorative & Vibe Pack Stickers"
+            >
+              <div className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center group-hover:bg-amber-500 group-hover:text-white transition-all shadow-xs">
+                <Smile size={16} />
+              </div>
+              <span className="text-[10px] font-medium mt-1 text-slate-600">Stickers</span>
+            </button>
+
+            <FloatingDropdown
+              isOpen={isStickersOpen}
+              onClose={() => setIsStickersOpen(false)}
+              anchorRef={stickerBtnRef}
+              className="p-3 w-88"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold text-slate-700">
+                  Stickers ({STICKER_CATALOG.length})
+                </span>
+                <span className="text-[9.5px] text-slate-400 font-semibold">
+                  Includes Vibe Pack Stickers
+                </span>
+              </div>
+              <input
+                type="text"
+                placeholder="Search stickers (e.g. owl, leaf, grad, cat)..."
+                value={stickerSearch}
+                onChange={(e) => setStickerSearch(e.target.value)}
+                className="w-full mb-2 px-2.5 py-1 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-[11px] outline-none focus:border-amber-500"
+              />
+              <div className="flex items-center gap-1 mb-2.5 flex-wrap">
+                {(
+                  [
+                    { id: 'all', label: 'All' },
+                    { id: 'vibe', label: 'Vibe Packs' },
+                    { id: 'people', label: 'People' },
+                    { id: 'animals', label: 'Animals' },
+                    { id: 'plants', label: 'Plants' },
+                    { id: 'objects', label: 'Objects' },
+                    { id: 'school-office', label: 'School/Office' },
+                    { id: 'celebration', label: 'Celebration' },
+                    { id: 'love', label: 'Love' },
+                    { id: 'holiday', label: 'Holiday' },
+                    { id: 'travel', label: 'Travel' },
+                    { id: 'kawaii', label: 'Kawaii' },
+                    { id: 'doodles', label: 'Doodles' },
+                    { id: 'nature', label: 'Nature' },
+                  ] as const
+                ).map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setStickerCategory(cat.id)}
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-semibold transition ${
+                      stickerCategory === cat.id
+                        ? 'bg-amber-500 text-white'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+              <div className="grid grid-cols-4 gap-2 max-h-72 overflow-y-auto pr-1">
+                {STICKER_CATALOG.filter((stk) => {
+                  const matchesSearch =
+                    !stickerSearch.trim() ||
+                    stk.name.toLowerCase().includes(stickerSearch.toLowerCase());
+                  if (!matchesSearch) return false;
+                  if (stickerCategory === 'all') return true;
+                  if (stickerCategory === 'vibe') return Boolean(stk.vibePackIds?.length);
+                  return stk.category === stickerCategory;
+                }).map((stk) => (
+                  <button
+                    key={stk.id}
+                    onClick={() => {
+                      addImage(stk.dataUri, {
+                        name: stk.name,
+                        width: 140,
+                        height: 140,
+                        objectFit: 'contain',
+                        effectPreset: 'sticker',
+                        isSticker: true,
+                        stickerOutlineColor: '#ffffff',
+                        stickerOutlineWidth: 5,
+                        stickerFinish: 'matte',
+                        borderWidth: 0,
+                      });
+                      setIsStickersOpen(false);
+                    }}
+                    className="group/item flex flex-col items-center p-1.5 rounded-xl border border-slate-200/80 hover:border-amber-500 hover:bg-amber-50/40 transition"
+                    title={stk.name}
+                  >
+                    <img
+                      src={stk.dataUri}
+                      alt={stk.name}
+                      className="w-12 h-12 object-contain mb-1"
+                    />
+                    <span className="text-[9.5px] font-semibold text-slate-700 truncate w-full text-center">
+                      {stk.name}
                     </span>
                   </button>
                 ))}

@@ -1,4 +1,14 @@
-export type StockCategory = 'Nature' | 'Abstract' | 'Business' | 'Badges' | 'Lifestyle';
+export type StockCategory =
+  | 'Nature'
+  | 'Abstract'
+  | 'Business'
+  | 'Badges'
+  | 'Lifestyle'
+  | 'People'
+  | 'Animals'
+  | 'Plants'
+  | 'Things'
+  | 'Education';
 
 export interface SampleGraphic {
   id: string;
@@ -673,6 +683,199 @@ export const SAMPLE_GRAPHICS: SampleGraphic[] = [
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
         <rect width="500" height="500" rx="28" fill="#fff1f2"/>
         <path d="M250 400 C 120 310, 75 230, 75 170 C 75 110, 125 80, 175 80 C 215 80, 240 105, 250 130 C 260 105, 285 80, 325 80 C 375 80, 425 110, 425 170 C 425 230, 380 310, 250 400 Z" fill="#e11d48"/>
+      </svg>
+    `),
+  },
+
+  // People & Collaboration
+  {
+    id: 'team-collab',
+    name: 'Team Collaboration',
+    category: 'People',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 420">
+        <rect width="600" height="420" rx="28" fill="#eef2ff"/>
+        <circle cx="190" cy="145" r="46" fill="#fed7aa"/>
+        <path d="M115 340 C115 245 265 245 265 340 Z" fill="#4f46e5"/>
+        <circle cx="300" cy="125" r="50" fill="#fde68a"/>
+        <path d="M220 340 C220 235 380 235 380 340 Z" fill="#0ea5e9"/>
+        <circle cx="410" cy="145" r="46" fill="#ffedd5"/>
+        <path d="M335 340 C335 245 485 245 485 340 Z" fill="#ec4899"/>
+      </svg>
+    `),
+  },
+  {
+    id: 'graduate-celebration',
+    name: 'Graduate Celebration',
+    category: 'People',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+        <rect width="500" height="500" rx="28" fill="#eff6ff"/>
+        <circle cx="250" cy="195" r="68" fill="#fed7aa"/>
+        <polygon points="250,70 370,120 250,170 130,120" fill="#1e293b"/>
+        <line x1="345" y1="130" x2="345" y2="215" stroke="#f59e0b" stroke-width="10"/>
+        <path d="M120 425 C120 300 380 300 380 425 Z" fill="#1e3a8a"/>
+        <polygon points="250,295 220,370 250,400 280,370" fill="#f59e0b"/>
+      </svg>
+    `),
+  },
+  {
+    id: 'speaker-stage',
+    name: 'Keynote Speaker',
+    category: 'People',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+        <rect width="500" height="500" rx="28" fill="#0f172a"/>
+        <circle cx="250" cy="145" r="54" fill="#fde68a"/>
+        <path d="M160 315 C160 220 340 220 340 315 Z" fill="#6366f1"/>
+        <rect x="135" y="295" width="230" height="155" rx="14" fill="#334155"/>
+        <rect x="195" y="330" width="110" height="18" rx="6" fill="#f59e0b"/>
+      </svg>
+    `),
+  },
+
+  // Animals
+  {
+    id: 'owl-crest',
+    name: 'Scholarly Owl Crest',
+    category: 'Animals',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+        <rect width="500" height="500" rx="28" fill="#fffbeb"/>
+        <ellipse cx="250" cy="265" rx="125" ry="145" fill="#92400e"/>
+        <ellipse cx="250" cy="305" rx="80" ry="85" fill="#fef3c7"/>
+        <circle cx="205" cy="205" r="42" fill="#ffffff"/>
+        <circle cx="295" cy="205" r="42" fill="#ffffff"/>
+        <circle cx="205" cy="205" r="18" fill="#0f172a"/>
+        <circle cx="295" cy="205" r="18" fill="#0f172a"/>
+        <polygon points="232,235 268,235 250,270" fill="#f59e0b"/>
+      </svg>
+    `),
+  },
+  {
+    id: 'forest-fox',
+    name: 'Geometric Forest Fox',
+    category: 'Animals',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+        <rect width="500" height="500" rx="28" fill="#fff7ed"/>
+        <polygon points="120,110 210,185 130,270" fill="#ea580c"/>
+        <polygon points="380,110 290,185 370,270" fill="#ea580c"/>
+        <polygon points="130,220 370,220 250,395" fill="#f97316"/>
+        <polygon points="180,295 320,295 250,395" fill="#ffffff"/>
+        <circle cx="250" cy="385" r="18" fill="#1e293b"/>
+      </svg>
+    `),
+  },
+  {
+    id: 'peace-dove',
+    name: 'Soaring Peace Dove',
+    category: 'Animals',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+        <rect width="500" height="500" rx="28" fill="#e0f2fe"/>
+        <path d="M110 280 C160 150 260 140 310 210 C340 160 390 155 415 190 C370 225 360 295 290 345 C220 385 140 350 110 280 Z" fill="#ffffff"/>
+        <path d="M140 240 C190 95 280 115 280 215 Z" fill="#bae6fd"/>
+        <polygon points="415,190 445,198 418,212" fill="#f59e0b"/>
+      </svg>
+    `),
+  },
+
+  // Plants & Botanicals
+  {
+    id: 'laurel-crest',
+    name: 'Golden Laurel Crest',
+    category: 'Plants',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+        <rect width="500" height="500" rx="28" fill="#1e293b"/>
+        <path d="M230 395 C120 355 95 215 165 115" fill="none" stroke="#f59e0b" stroke-width="14" stroke-linecap="round"/>
+        <path d="M270 395 C380 355 405 215 335 115" fill="none" stroke="#f59e0b" stroke-width="14" stroke-linecap="round"/>
+        <circle cx="250" cy="240" r="65" fill="#facc15"/>
+        <polygon points="250,195 264,230 302,230 272,252 282,288 250,266 218,288 228,252 198,230 236,230" fill="#92400e"/>
+      </svg>
+    `),
+  },
+  {
+    id: 'botanical-arch',
+    name: 'Botanical Leaf Arch',
+    category: 'Plants',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+        <rect width="500" height="500" rx="28" fill="#ecfdf5"/>
+        <path d="M130 410 C130 160 370 160 370 410" fill="none" stroke="#15803d" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="145" cy="260" rx="34" ry="18" fill="#22c55e" transform="rotate(-35 145 260)"/>
+        <ellipse cx="355" cy="260" rx="34" ry="18" fill="#22c55e" transform="rotate(35 355 260)"/>
+        <ellipse cx="250" cy="185" rx="38" ry="20" fill="#16a34a"/>
+      </svg>
+    `),
+  },
+  {
+    id: 'cactus-trio',
+    name: 'Minimalist Cactus Trio',
+    category: 'Plants',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+        <rect width="500" height="500" rx="28" fill="#fef3c7"/>
+        <rect x="215" y="135" width="70" height="220" rx="35" fill="#15803d"/>
+        <rect x="145" y="195" width="45" height="95" rx="22" fill="#16a34a"/>
+        <rect x="310" y="175" width="45" height="115" rx="22" fill="#16a34a"/>
+        <polygon points="165,355 335,355 310,430 190,430" fill="#d97706"/>
+      </svg>
+    `),
+  },
+
+  // Things & Education
+  {
+    id: 'science-flasks',
+    name: 'Science Lab Flasks',
+    category: 'Education',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+        <rect width="500" height="500" rx="28" fill="#ecfeff"/>
+        <path d="M210 95 H290 V180 L365 365 C375 390 355 415 325 415 H175 C145 415 125 390 135 365 L210 180 Z" fill="#ffffff" stroke="#0891b2" stroke-width="14"/>
+        <path d="M165 305 H335 L355 365 C362 382 348 398 325 398 H175 C152 398 138 382 145 365 Z" fill="#06b6d4"/>
+        <circle cx="235" cy="340" r="14" fill="#cffafe"/>
+        <circle cx="275" cy="260" r="12" fill="#22d3ee"/>
+      </svg>
+    `),
+  },
+  {
+    id: 'academic-shield',
+    name: 'Academic Shield Emblem',
+    category: 'Education',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+        <rect width="500" height="500" rx="28" fill="#f8fafc"/>
+        <path d="M115 100 H385 V250 C385 345 250 415 250 415 C250 415 115 345 115 250 Z" fill="#1e3a8a" stroke="#f59e0b" stroke-width="14"/>
+        <path d="M180 175 Q215 155 250 180 Q285 155 320 175 V285 Q285 265 250 290 Q215 265 180 285 Z" fill="#ffffff"/>
+      </svg>
+    `),
+  },
+  {
+    id: 'workspace-flatlay',
+    name: 'Desk Workspace',
+    category: 'Things',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 420">
+        <rect width="600" height="420" rx="28" fill="#f1f5f9"/>
+        <rect x="130" y="80" width="340" height="220" rx="16" fill="#1e293b"/>
+        <rect x="150" y="100" width="300" height="180" rx="8" fill="#38bdf8"/>
+        <rect x="95" y="300" width="410" height="32" rx="10" fill="#cbd5e1"/>
+        <circle cx="515" cy="210" r="36" fill="#ffffff" stroke="#94a3b8" stroke-width="6"/>
+      </svg>
+    `),
+  },
+  {
+    id: 'wax-seal',
+    name: 'Official Wax Seal',
+    category: 'Education',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+        <rect width="500" height="500" rx="28" fill="#fffbeb"/>
+        <circle cx="250" cy="250" r="145" fill="#b91c1c"/>
+        <circle cx="250" cy="250" r="110" fill="#dc2626" stroke="#fca5a5" stroke-width="8"/>
+        <polygon points="250,175 270,225 325,225 280,255 298,308 250,275 202,308 220,255 175,225 230,225" fill="#fde047"/>
       </svg>
     `),
   },

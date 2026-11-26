@@ -84,6 +84,35 @@ export function buildPatternSvg(pattern: PageBackgroundPattern): string {
 }
 
 /**
+ * Builds an SVG data-URI for a shape pattern fill with an optional solid background colour.
+ * Wraps buildPatternSvg to inject a background rect so the pattern reads against any bg.
+ */
+export function buildShapePatternDataUri(
+  type: BackgroundPatternType,
+  inkColor: string,
+  bgColor: string,
+  scale: number,
+  strokeWidth: number,
+  opacity: number
+): string {
+  const patternSpec: PageBackgroundPattern = {
+    type,
+    color: inkColor,
+    opacity,
+    scale,
+    strokeWidth,
+    rotation: 0,
+  };
+  const inner = buildPatternSvg(patternSpec);
+  if (!inner) return '';
+
+  const s = Math.max(10, Math.round(scale));
+  const bg = bgColor && bgColor !== 'transparent' ? `<rect width="${s}" height="${s}" fill="${bgColor}"/>` : '';
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" viewBox="0 0 ${s} ${s}">${bg}${inner}</svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
+/**
  * Returns CSS backgroundImage/backgroundSize properties for a page or thumbnail preview.
  */
 export function buildPatternBackgroundStyle(

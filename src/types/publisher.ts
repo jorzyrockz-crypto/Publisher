@@ -127,9 +127,18 @@ export interface ShapeElement extends BaseElement {
   type: 'shape';
   shapeType: ShapeType;
   fillColor: string;
-  fillType?: 'solid' | 'linear-gradient';
+  fillType?: 'solid' | 'linear-gradient' | 'pattern';
   gradientColor2?: string;
   gradientAngle?: number;
+  // Pattern fill fields (fillType === 'pattern')
+  patternType?: BackgroundPatternType;
+  patternColor?: string;      // pattern ink color
+  patternBgColor?: string;    // pattern background color (or gradient color 1)
+  patternBgType?: 'solid' | 'gradient';
+  patternBgColor2?: string;   // pattern gradient color 2
+  patternBgAngle?: number;    // pattern gradient angle
+  patternScale?: number;      // tile size in px (10–80)
+  patternOpacity?: number;    // 0.05–1
   strokeColor: string;
   strokeWidth: number;
   strokeDash?: 'solid' | 'dashed' | 'dotted';
@@ -188,6 +197,15 @@ export interface ImageElement extends BaseElement {
   panY?: number; // -50 to 50
   shadow?: boolean;
   shadowBlur?: number;
+  isSticker?: boolean;
+  stickerOutlineColor?: string;
+  stickerOutlineWidth?: number;
+  stickerOutlineColor2?: string;
+  stickerOutlineWidth2?: number;
+  stickerFinish?: 'matte' | 'glossy' | 'puffy' | 'neon';
+  stickerGlowColor?: string;
+  originalSrc?: string;
+  bgRemoved?: boolean;
 }
 
 export interface TableElement extends BaseElement {
@@ -293,6 +311,12 @@ export interface PageBackgroundPattern {
   rotation: number;
 }
 
+export interface PageBackgroundGradient {
+  color1: string;
+  color2: string;
+  angle: number;
+}
+
 export interface Page {
   id: string;
   name: string;
@@ -302,9 +326,18 @@ export interface Page {
   height: number; // pixels
   orientation: 'portrait' | 'landscape';
   backgroundColor: string;
+  backgroundGradient?: PageBackgroundGradient;
   backgroundPattern?: PageBackgroundPattern;
   margins: PageMargins;
   guides: PageGuide[];
+  elements: PublisherElement[];
+  masterId?: string;
+  hideMaster?: boolean;
+}
+
+export interface MasterPageDef {
+  id: string;
+  name: string;
   elements: PublisherElement[];
 }
 
@@ -337,6 +370,8 @@ export interface DocumentProject {
     elements: PublisherElement[];
     showOnAllPages: boolean;
   };
+  masterPages?: MasterPageDef[];
+  activeMasterId?: string;
 }
 
 export interface ColorScheme {

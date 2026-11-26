@@ -6,6 +6,8 @@ import {
   PageMargins,
   PageGuide,
   PageBackgroundPattern,
+  PageBackgroundGradient,
+  MasterPageDef,
   BrandKit,
   TextElement,
   ShapeElement,
@@ -24,6 +26,12 @@ import { CompositionStyle } from '../utils/designBlueprints';
 import { DEFAULT_BRAND_KITS, rebrandPageWithKit } from '../utils/brandRebrand';
 import { PAGE_SIZES } from '../constants/pageSizes';
 import { COLOR_SCHEMES } from '../constants/colorSchemes';
+import { buildMasterPresetElements } from '../constants/masterPresets';
+import {
+  DEFAULT_PRINT_SETTINGS,
+  PrintSettings,
+  computeTarpapelMetrics,
+} from '../utils/printUtils';
 
 interface PublisherContextType {
   project: DocumentProject;
@@ -52,6 +60,8 @@ interface PublisherContextType {
   rulerVisible: boolean;
   guidesVisible: boolean;
   gridVisible: boolean;
+  tarpapelOverlayVisible: boolean;
+  printSettings: PrintSettings;
   snapToGuides: boolean;
   snapToGrid: boolean;
   canUndo: boolean;
@@ -62,14 +72,30 @@ interface PublisherContextType {
   toolMode: 'select' | 'pan';
   isLeftPanelOpen: boolean;
   isRightPanelOpen: boolean;
+  rightPanelTab: 'inspector' | 'design-ideas';
 
   // Setters & UI controls
   setViewMode: (mode: 'artboard' | 'single' | 'continuous' | 'spread') => void;
   setToolMode: (mode: 'select' | 'pan') => void;
   setIsLeftPanelOpen: (open: boolean) => void;
   setIsRightPanelOpen: (open: boolean) => void;
+  setRightPanelTab: (tab: 'inspector' | 'design-ideas') => void;
+  applyDesignRecommendation: (recommendedPage: Page) => void;
   setIsEditingMaster: (editing: boolean) => void;
   toggleMasterPageVisibility: () => void;
+  masterPages: MasterPageDef[];
+  activeMasterId: string;
+  getMasterElementsForPage: (pg: Page) => PublisherElement[];
+  addMasterPage: (name?: string) => void;
+  selectMasterPage: (masterId: string) => void;
+  renameMasterPage: (masterId: string, name: string) => void;
+  deleteMasterPage: (masterId: string) => void;
+  assignMasterToPage: (pageId: string, masterId: string | null) => void;
+  applyMasterPreset: (presetId: string) => void;
+  reorderPage: (fromIndex: number, toIndex: number) => void;
+  renamePage: (pageId: string, name: string) => void;
+  addBookletSpread: () => void;
+  padToBookletMultiple: () => void;
   setActiveTab: (tab: 'home' | 'insert' | 'page-design' | 'mailings' | 'view') => void;
   setIsBackstageOpen: (open: boolean) => void;
   setIsMailMergeOpen: (open: boolean) => void;
@@ -101,6 +127,9 @@ interface PublisherContextType {
   setRulerVisible: (visible: boolean) => void;
   setGuidesVisible: (visible: boolean) => void;
   setGridVisible: (visible: boolean) => void;
+  setTarpapelOverlayVisible: (visible: boolean) => void;
+  setPrintSettings: React.Dispatch<React.SetStateAction<PrintSettings>>;
+  matchPageToTarpapelRatio: () => void;
   setSnapToGuides: (snap: boolean) => void;
   setSnapToGrid: (snap: boolean) => void;
 
@@ -109,6 +138,15 @@ interface PublisherContextType {
   redo: () => void;
 
   // Document & Page actions
+  workspaceTabs: WorkspaceTab[];
+  activeTabId: string;
+  switchWorkspaceTab: (tabId: string) => void;
+  createNewTab: (initialProject?: DocumentProject) => void;
+  closeWorkspaceTab: (tabId: string) => void;
+  renameWorkspaceTab: (tabId: string, name: string) => void;
+  duplicateWorkspaceTab: (tabId: string) => void;
+  moveWorkspaceTab: (tabId: string, direction: 'left' | 'right') => void;
+  setWorkspaceTabColor: (tabId: string, color?: string) => void;
   setProject: (newProject: DocumentProject) => void;
   setActivePageIndex: (index: number) => void;
   addPage: () => void;
@@ -121,7 +159,13 @@ interface PublisherContextType {
   updatePagePosition: (pageIndex: number, x: number, y: number) => void;
   setPageMargins: (margins: PageMargins) => void;
   setPageBackgroundColor: (color: string) => void;
+  setPageBackgroundGradient: (gradient: PageBackgroundGradient | undefined) => void;
   setPageBackgroundPattern: (pattern: PageBackgroundPattern | undefined) => void;
+  applyPageBackdrop: (backdrop: {
+    backgroundColor: string;
+    backgroundGradient?: PageBackgroundGradient;
+    backgroundPattern?: PageBackgroundPattern;
+  }) => void;
   setColorScheme: (schemeId: string) => void;
   loadTemplate: (templateId: string) => void;
 
@@ -141,6 +185,10 @@ interface PublisherContextType {
   pasteElements: () => void;
   toggleElementLock: (id: string) => void;
   toggleElementVisibility: (id: string) => void;
+  setElementsVisibility: (ids: string[], visible: boolean) => void;
+  setElementsLocked: (ids: string[], locked: boolean) => void;
+  renameElement: (id: string, name: string) => void;
+  reorderElementLayer: (draggedId: string, targetId: string) => void;
   selectElement: (id: string, multiSelect?: boolean) => void;
   selectElements: (ids: string[], additive?: boolean) => void;
   selectAll: () => void;
@@ -164,6 +212,7 @@ interface PublisherContextType {
   addImage: (src: string, options?: Partial<ImageElement>) => void;
   addPicturePlaceholder: (options?: Partial<ImageElement>) => void;
   fillPlaceholderFromImageElement: (sourceId: string, targetPlaceholderId: string) => void;
+  detachImageFromPlaceholder: (elementId: string) => void;
   addTable: (rows: number, cols: number, options?: Partial<TableElement>) => void;
   addAccent: (accentType: AccentElement['accentType'], options?: Partial<AccentElement>) => void;
   addLine: (options?: Partial<LineElement>) => void;
@@ -179,29 +228,96 @@ interface PublisherContextType {
   zoom100: () => void;
 }
 
+export interface WorkspaceTab {
+  id: string;
+  project: DocumentProject;
+  tabColor?: string;
+  updatedAt: number;
+}
+
 const PublisherContext = createContext<PublisherContextType | null>(null);
 
 const AUTOSAVE_KEY = 'ms_publisher_clone_autosave_v1';
+const WORKSPACE_TABS_KEY = 'studiopress_workspace_tabs_v1';
 const BRAND_KITS_STORAGE_KEY = 'studiopress_brand_kits_v1';
 
-export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Load from localStorage autosave if available, otherwise default to Corporate Trifold Brochure
-  const [project, setProjectState] = useState<DocumentProject>(() => {
-    try {
-      const saved = localStorage.getItem(AUTOSAVE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed && Array.isArray(parsed.pages) && parsed.pages.length > 0) {
-          return parsed;
+function loadInitialWorkspace(): { tabs: WorkspaceTab[]; activeTabId: string } {
+  try {
+    const rawTabs = localStorage.getItem(WORKSPACE_TABS_KEY);
+    if (rawTabs) {
+      const parsed = JSON.parse(rawTabs);
+      if (parsed && Array.isArray(parsed.tabs) && parsed.tabs.length > 0) {
+        const validTabs = parsed.tabs.filter(
+          (t: WorkspaceTab) => t?.id && t?.project && Array.isArray(t.project.pages) && t.project.pages.length > 0
+        );
+        if (validTabs.length > 0) {
+          const activeExists = validTabs.some((t: WorkspaceTab) => t.id === parsed.activeTabId);
+          return {
+            tabs: validTabs,
+            activeTabId: activeExists ? parsed.activeTabId : validTabs[0].id,
+          };
         }
       }
-    } catch {
-      // ignore storage errors
     }
-    return JSON.parse(JSON.stringify(TEMPLATES[0].project));
+    const savedSingle = localStorage.getItem(AUTOSAVE_KEY);
+    if (savedSingle) {
+      const parsed = JSON.parse(savedSingle);
+      if (parsed && Array.isArray(parsed.pages) && parsed.pages.length > 0) {
+        return {
+          tabs: [{ id: 'tab-initial', project: parsed, updatedAt: Date.now() }],
+          activeTabId: 'tab-initial',
+        };
+      }
+    }
+  } catch {
+    // ignore storage errors
+  }
+  return {
+    tabs: [
+      {
+        id: 'tab-initial',
+        project: JSON.parse(JSON.stringify(TEMPLATES[0].project)),
+        updatedAt: Date.now(),
+      },
+    ],
+    activeTabId: 'tab-initial',
+  };
+}
+
+export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const initialWorkspaceRef = useRef<{ tabs: WorkspaceTab[]; activeTabId: string } | null>(null);
+  if (!initialWorkspaceRef.current) {
+    initialWorkspaceRef.current = loadInitialWorkspace();
+  }
+
+  const [workspaceTabs, setWorkspaceTabs] = useState<WorkspaceTab[]>(
+    () => initialWorkspaceRef.current!.tabs
+  );
+  const [activeTabId, setActiveTabId] = useState<string>(
+    () => initialWorkspaceRef.current!.activeTabId
+  );
+
+  const [project, setProjectState] = useState<DocumentProject>(() => {
+    const found = initialWorkspaceRef.current!.tabs.find(
+      (t) => t.id === initialWorkspaceRef.current!.activeTabId
+    );
+    return found ? found.project : initialWorkspaceRef.current!.tabs[0].project;
   });
 
-  // Debounced auto-save project to localStorage so drag/resize/slider updates never block the main thread
+  const tabHistoriesRef = useRef<
+    Record<string, { past: DocumentProject[]; future: DocumentProject[] }>
+  >({});
+
+  // Sync active project edits into workspaceTabs
+  useEffect(() => {
+    setWorkspaceTabs((prev) =>
+      prev.map((t) => (t.id === activeTabId ? { ...t, project, updatedAt: Date.now() } : t))
+    );
+  }, [project, activeTabId]);
+
+  // Debounced auto-save all workspace tabs to localStorage
+  const latestTabsRef = useRef({ tabs: workspaceTabs, activeTabId });
+  latestTabsRef.current = { tabs: workspaceTabs, activeTabId };
   const latestProjectRef = useRef(project);
   latestProjectRef.current = project;
 
@@ -209,17 +325,19 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const timer = window.setTimeout(() => {
       try {
         localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(latestProjectRef.current));
+        localStorage.setItem(WORKSPACE_TABS_KEY, JSON.stringify(latestTabsRef.current));
       } catch {
         // ignore quota errors
       }
     }, 500);
     return () => window.clearTimeout(timer);
-  }, [project]);
+  }, [workspaceTabs, activeTabId]);
 
   useEffect(() => {
     const flushSave = () => {
       try {
         localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(latestProjectRef.current));
+        localStorage.setItem(WORKSPACE_TABS_KEY, JSON.stringify(latestTabsRef.current));
       } catch {
         // ignore quota errors
       }
@@ -238,11 +356,14 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [toolMode, setToolMode] = useState<'select' | 'pan'>('select');
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
+  const [rightPanelTab, setRightPanelTab] = useState<'inspector' | 'design-ideas'>('inspector');
   const [zoom, setZoomState] = useState<number>(0.8);
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
   const [activeTab, setActiveTab] = useState<'home' | 'insert' | 'page-design' | 'mailings' | 'view'>('home');
   const [isBackstageOpen, setIsBackstageOpen] = useState(false);
+  const [tarpapelOverlayVisible, setTarpapelOverlayVisible] = useState(false);
+  const [printSettings, setPrintSettings] = useState<PrintSettings>(DEFAULT_PRINT_SETTINGS);
   const [isMailMergeOpen, setIsMailMergeOpen] = useState(false);
   const [isWordArtModalOpen, setIsWordArtModalOpen] = useState(false);
   const [isBuildingBlocksModalOpen, setIsBuildingBlocksModalOpen] = useState(false);
@@ -354,6 +475,178 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setSelectedElementIds([]);
   }, [commitProject]);
 
+  const switchWorkspaceTab = useCallback(
+    (tabId: string) => {
+      if (tabId === activeTabId) return;
+      const target = workspaceTabs.find((t) => t.id === tabId);
+      if (!target) return;
+
+      tabHistoriesRef.current[activeTabId] = {
+        past: historyPast,
+        future: historyFuture,
+      };
+      setWorkspaceTabs((prev) =>
+        prev.map((t) => (t.id === activeTabId ? { ...t, project } : t))
+      );
+
+      const targetHist = tabHistoriesRef.current[tabId] || { past: [], future: [] };
+      setActiveTabId(tabId);
+      setProjectState(target.project);
+      setHistoryPast(targetHist.past);
+      setHistoryFuture(targetHist.future);
+      setSelectedElementIds([]);
+      setIsEditingMasterState(false);
+    },
+    [activeTabId, workspaceTabs, historyPast, historyFuture, project]
+  );
+
+  const createNewTab = useCallback(
+    (initialProject?: DocumentProject) => {
+      const blankTpl = TEMPLATES.find((t) => t.id === 'blank-letter') || TEMPLATES[0];
+      const nextProj: DocumentProject = initialProject
+        ? JSON.parse(JSON.stringify(initialProject))
+        : {
+            ...JSON.parse(JSON.stringify(blankTpl.project)),
+            id: `proj-${Date.now()}`,
+            name: `Publication ${workspaceTabs.length + 1}.pub`,
+          };
+      const newTabId = `tab-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+
+      tabHistoriesRef.current[activeTabId] = {
+        past: historyPast,
+        future: historyFuture,
+      };
+
+      setWorkspaceTabs((prev) => [
+        ...prev.map((t) => (t.id === activeTabId ? { ...t, project } : t)),
+        { id: newTabId, project: nextProj, updatedAt: Date.now() },
+      ]);
+      setActiveTabId(newTabId);
+      setProjectState(nextProj);
+      setHistoryPast([]);
+      setHistoryFuture([]);
+      setSelectedElementIds([]);
+      setIsEditingMasterState(false);
+    },
+    [activeTabId, workspaceTabs.length, historyPast, historyFuture, project]
+  );
+
+  const closeWorkspaceTab = useCallback(
+    (tabId: string) => {
+      delete tabHistoriesRef.current[tabId];
+      if (workspaceTabs.length <= 1) {
+        const blankTpl = TEMPLATES.find((t) => t.id === 'blank-letter') || TEMPLATES[0];
+        const freshProj: DocumentProject = {
+          ...JSON.parse(JSON.stringify(blankTpl.project)),
+          id: `proj-${Date.now()}`,
+          name: 'Publication 1.pub',
+        };
+        const freshId = `tab-${Date.now()}`;
+        setWorkspaceTabs([{ id: freshId, project: freshProj, updatedAt: Date.now() }]);
+        setActiveTabId(freshId);
+        setProjectState(freshProj);
+        setHistoryPast([]);
+        setHistoryFuture([]);
+        setSelectedElementIds([]);
+        setIsEditingMasterState(false);
+        return;
+      }
+
+      const idx = workspaceTabs.findIndex((t) => t.id === tabId);
+      const remaining = workspaceTabs.filter((t) => t.id !== tabId);
+      setWorkspaceTabs(remaining);
+
+      if (tabId === activeTabId) {
+        const nextTab = remaining[Math.min(idx, remaining.length - 1)] || remaining[0];
+        const nextHist = tabHistoriesRef.current[nextTab.id] || { past: [], future: [] };
+        setActiveTabId(nextTab.id);
+        setProjectState(nextTab.project);
+        setHistoryPast(nextHist.past);
+        setHistoryFuture(nextHist.future);
+        setSelectedElementIds([]);
+        setIsEditingMasterState(false);
+      }
+    },
+    [workspaceTabs, activeTabId]
+  );
+
+  const renameWorkspaceTab = useCallback(
+    (tabId: string, name: string) => {
+      const trimmed = name.trim();
+      if (!trimmed) return;
+      setWorkspaceTabs((prev) =>
+        prev.map((t) =>
+          t.id === tabId ? { ...t, project: { ...t.project, name: trimmed } } : t
+        )
+      );
+      if (tabId === activeTabId) {
+        setProjectState((p) => ({ ...p, name: trimmed }));
+      }
+    },
+    [activeTabId]
+  );
+
+  const duplicateWorkspaceTab = useCallback(
+    (tabId: string) => {
+      const source = workspaceTabs.find((t) => t.id === tabId);
+      if (!source) return;
+      const baseProj = tabId === activeTabId ? project : source.project;
+      const cloned: DocumentProject = JSON.parse(JSON.stringify(baseProj));
+      cloned.id = `proj-${Date.now()}`;
+      const cleanName = cloned.name.replace(/\.pub$/i, '');
+      cloned.name = `${cleanName} (Copy).pub`;
+
+      const newTabId = `tab-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+      tabHistoriesRef.current[activeTabId] = {
+        past: historyPast,
+        future: historyFuture,
+      };
+
+      const idx = workspaceTabs.findIndex((t) => t.id === tabId);
+      setWorkspaceTabs((prev) => {
+        const synced = prev.map((t) => (t.id === activeTabId ? { ...t, project } : t));
+        const copyTab: WorkspaceTab = {
+          id: newTabId,
+          project: cloned,
+          tabColor: source.tabColor,
+          updatedAt: Date.now(),
+        };
+        const next = [...synced];
+        next.splice(idx + 1, 0, copyTab);
+        return next;
+      });
+      setActiveTabId(newTabId);
+      setProjectState(cloned);
+      setHistoryPast([]);
+      setHistoryFuture([]);
+      setSelectedElementIds([]);
+      setIsEditingMasterState(false);
+    },
+    [workspaceTabs, activeTabId, project, historyPast, historyFuture]
+  );
+
+  const moveWorkspaceTab = useCallback(
+    (tabId: string, direction: 'left' | 'right') => {
+      setWorkspaceTabs((prev) => {
+        const idx = prev.findIndex((t) => t.id === tabId);
+        if (idx === -1) return prev;
+        const targetIdx = direction === 'left' ? idx - 1 : idx + 1;
+        if (targetIdx < 0 || targetIdx >= prev.length) return prev;
+        const next = [...prev];
+        const [item] = next.splice(idx, 1);
+        next.splice(targetIdx, 0, item);
+        return next;
+      });
+    },
+    []
+  );
+
+  const setWorkspaceTabColor = useCallback((tabId: string, color?: string) => {
+    setWorkspaceTabs((prev) =>
+      prev.map((t) => (t.id === tabId ? { ...t, tabColor: color } : t))
+    );
+  }, []);
+
   const setActivePageIndex = useCallback((index: number) => {
     setProjectState((p) => ({ ...p, activePageIndex: index }));
     setSelectedElementIds([]);
@@ -436,15 +729,130 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       } else if (targetIdx === project.activePageIndex) {
         nextActiveIdx = Math.max(0, Math.min(targetIdx, newPages.length - 1));
       }
+    commitProject({
+      ...project,
+      pages: newPages,
+      activePageIndex: nextActiveIdx,
+    });
+    setSelectedElementIds([]);
+  },
+  [project, commitProject]
+  );
+
+  const reorderPage = useCallback(
+    (fromIndex: number, toIndex: number) => {
+      if (
+        fromIndex === toIndex ||
+        fromIndex < 0 ||
+        toIndex < 0 ||
+        fromIndex >= project.pages.length ||
+        toIndex >= project.pages.length
+      ) {
+        return;
+      }
+      const nextPages = [...project.pages];
+      const [moved] = nextPages.splice(fromIndex, 1);
+      nextPages.splice(toIndex, 0, moved);
+      const activeId = activePage.id;
+      const nextActiveIdx = Math.max(
+        0,
+        nextPages.findIndex((p) => p.id === activeId)
+      );
       commitProject({
         ...project,
-        pages: newPages,
+        pages: nextPages,
         activePageIndex: nextActiveIdx,
       });
-      setSelectedElementIds([]);
+    },
+    [project, activePage.id, commitProject]
+  );
+
+  const renamePage = useCallback(
+    (pageId: string, name: string) => {
+      const trimmed = name.trim();
+      if (!trimmed) return;
+      commitProject({
+        ...project,
+        pages: project.pages.map((pg) => (pg.id === pageId ? { ...pg, name: trimmed } : pg)),
+      });
     },
     [project, commitProject]
   );
+
+  const addBookletSpread = useCallback(() => {
+    const baseCount = project.pages.length;
+    let nextX = 80;
+    project.pages.forEach((pg, idx) => {
+      const px = pg.x ?? 80 + idx * (pg.width + 80);
+      nextX = Math.max(nextX, px + pg.width + 80);
+    });
+    const ts = Date.now();
+    const leftPg: Page = {
+      id: `page-${ts}-l`,
+      name: `Page ${baseCount + 1}`,
+      x: nextX,
+      y: activePage.y ?? 80,
+      width: activePage.width,
+      height: activePage.height,
+      orientation: activePage.orientation,
+      backgroundColor: '#ffffff',
+      margins: { ...activePage.margins },
+      guides: [],
+      elements: [],
+    };
+    const rightPg: Page = {
+      id: `page-${ts}-r`,
+      name: `Page ${baseCount + 2}`,
+      x: nextX + activePage.width + 80,
+      y: activePage.y ?? 80,
+      width: activePage.width,
+      height: activePage.height,
+      orientation: activePage.orientation,
+      backgroundColor: '#ffffff',
+      margins: { ...activePage.margins },
+      guides: [],
+      elements: [],
+    };
+    commitProject({
+      ...project,
+      pages: [...project.pages, leftPg, rightPg],
+      activePageIndex: baseCount,
+    });
+    setSelectedElementIds([]);
+  }, [project, activePage, commitProject]);
+
+  const padToBookletMultiple = useCallback(() => {
+    const count = project.pages.length;
+    const targetCount = Math.max(4, Math.ceil(count / 4) * 4);
+    const needed = targetCount - count;
+    if (needed === 0) return;
+
+    let nextX = 80;
+    project.pages.forEach((pg, idx) => {
+      const px = pg.x ?? 80 + idx * (pg.width + 80);
+      nextX = Math.max(nextX, px + pg.width + 80);
+    });
+
+    const ts = Date.now();
+    const extraPages: Page[] = Array.from({ length: needed }).map((_, i) => ({
+      id: `page-${ts}-pad-${i}`,
+      name: `Page ${count + i + 1}`,
+      x: nextX + i * (activePage.width + 80),
+      y: activePage.y ?? 80,
+      width: activePage.width,
+      height: activePage.height,
+      orientation: activePage.orientation,
+      backgroundColor: '#ffffff',
+      margins: { ...activePage.margins },
+      guides: [],
+      elements: [],
+    }));
+
+    commitProject({
+      ...project,
+      pages: [...project.pages, ...extraPages],
+    });
+  }, [project, activePage, commitProject]);
 
   const setPageSize = useCallback(
     (sizeName: string) => {
@@ -627,6 +1035,37 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     [project, commitProject]
   );
 
+  const setPageBackgroundGradient = useCallback(
+    (backgroundGradient: PageBackgroundGradient | undefined) => {
+      const newPages = project.pages.map((pg, idx) =>
+        idx === project.activePageIndex ? { ...pg, backgroundGradient } : pg
+      );
+      commitProject({ ...project, pages: newPages });
+    },
+    [project, commitProject]
+  );
+
+  const applyPageBackdrop = useCallback(
+    (backdrop: {
+      backgroundColor: string;
+      backgroundGradient?: PageBackgroundGradient;
+      backgroundPattern?: PageBackgroundPattern;
+    }) => {
+      const newPages = project.pages.map((pg, idx) =>
+        idx === project.activePageIndex
+          ? {
+              ...pg,
+              backgroundColor: backdrop.backgroundColor,
+              backgroundGradient: backdrop.backgroundGradient,
+              backgroundPattern: backdrop.backgroundPattern,
+            }
+          : pg
+      );
+      commitProject({ ...project, pages: newPages });
+    },
+    [project, commitProject]
+  );
+
   const setColorScheme = useCallback(
     (schemeId: string) => {
       const newScheme = COLOR_SCHEMES.find((s) => s.id === schemeId);
@@ -752,11 +1191,10 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       const tpl = TEMPLATES.find((t) => t.id === templateId);
       if (!tpl) return;
       const cloned: DocumentProject = JSON.parse(JSON.stringify(tpl.project));
-      commitProject(cloned);
-      setSelectedElementIds([]);
+      createNewTab(cloned);
       setIsBackstageOpen(false);
     },
-    [commitProject]
+    [createNewTab]
   );
 
   // Guides
@@ -793,18 +1231,162 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     [project, activePage, commitProject]
   );
 
-  // Helper to get/update elements on either Master Page or Active Page
+  // Multi-Master Page resolution & helpers
+  const masterPages: MasterPageDef[] =
+    project.masterPages && project.masterPages.length > 0
+      ? project.masterPages
+      : [
+          {
+            id: 'master-a',
+            name: 'Master A',
+            elements: project.masterPage?.elements || [],
+          },
+        ];
+  const activeMaster =
+    masterPages.find((m) => m.id === project.activeMasterId) || masterPages[0];
+  const activeMasterId = activeMaster.id;
+
+  const getMasterElementsForPage = useCallback(
+    (pg: Page): PublisherElement[] => {
+      if (pg.hideMaster || project.masterPage?.showOnAllPages === false) return [];
+      const found = pg.masterId
+        ? masterPages.find((m) => m.id === pg.masterId)
+        : masterPages[0];
+      return found?.elements || [];
+    },
+    [masterPages, project.masterPage?.showOnAllPages]
+  );
+
+  const addMasterPage = useCallback(
+    (name?: string) => {
+      const nextNum = masterPages.length + 1;
+      const newMaster: MasterPageDef = {
+        id: `master-${Date.now()}`,
+        name: name?.trim() || `Master ${String.fromCharCode(64 + nextNum)}`,
+        elements: [],
+      };
+      const nextMasters = [...masterPages, newMaster];
+      commitProject({
+        ...project,
+        masterPages: nextMasters,
+        activeMasterId: newMaster.id,
+        masterPage: {
+          elements: nextMasters[0].elements,
+          showOnAllPages: project.masterPage?.showOnAllPages ?? true,
+        },
+      });
+      setIsEditingMasterState(true);
+      setSelectedElementIds([]);
+    },
+    [masterPages, project, commitProject]
+  );
+
+  const selectMasterPage = useCallback(
+    (masterId: string) => {
+      if (!masterPages.some((m) => m.id === masterId)) return;
+      setProjectState((p) => ({ ...p, activeMasterId: masterId }));
+      setIsEditingMasterState(true);
+      setSelectedElementIds([]);
+    },
+    [masterPages]
+  );
+
+  const renameMasterPage = useCallback(
+    (masterId: string, name: string) => {
+      const trimmed = name.trim();
+      if (!trimmed) return;
+      const nextMasters = masterPages.map((m) =>
+        m.id === masterId ? { ...m, name: trimmed } : m
+      );
+      commitProject({ ...project, masterPages: nextMasters });
+    },
+    [masterPages, project, commitProject]
+  );
+
+  const deleteMasterPage = useCallback(
+    (masterId: string) => {
+      if (masterPages.length <= 1) return;
+      const nextMasters = masterPages.filter((m) => m.id !== masterId);
+      const nextActiveId =
+        activeMasterId === masterId ? nextMasters[0].id : activeMasterId;
+      commitProject({
+        ...project,
+        masterPages: nextMasters,
+        activeMasterId: nextActiveId,
+        pages: project.pages.map((pg) =>
+          pg.masterId === masterId ? { ...pg, masterId: nextMasters[0].id } : pg
+        ),
+        masterPage: {
+          elements: nextMasters[0].elements,
+          showOnAllPages: project.masterPage?.showOnAllPages ?? true,
+        },
+      });
+    },
+    [masterPages, activeMasterId, project, commitProject]
+  );
+
+  const assignMasterToPage = useCallback(
+    (pageId: string, masterId: string | null) => {
+      commitProject({
+        ...project,
+        pages: project.pages.map((pg) =>
+          pg.id === pageId
+            ? masterId === null
+              ? { ...pg, hideMaster: true }
+              : { ...pg, hideMaster: false, masterId }
+            : pg
+        ),
+      });
+    },
+    [project, commitProject]
+  );
+
+  const applyMasterPreset = useCallback(
+    (presetId: string) => {
+      const presetEls = buildMasterPresetElements(
+        presetId,
+        activePage.width,
+        activePage.height,
+        activePage.margins,
+        project.name
+      );
+      const nextMasters = masterPages.map((m) =>
+        m.id === activeMasterId ? { ...m, elements: presetEls } : m
+      );
+      commitProject({
+        ...project,
+        masterPages: nextMasters,
+        activeMasterId,
+        masterPage: {
+          elements: nextMasters[0].elements,
+          showOnAllPages: true,
+        },
+      });
+      setIsEditingMasterState(true);
+      setSelectedElementIds([]);
+    },
+    [activePage, project, masterPages, activeMasterId, commitProject]
+  );
+
+  // Helper to get/update elements on either Active Master Page or Active Page
   const currentElements = isEditingMaster
-    ? project.masterPage?.elements || []
+    ? activeMaster.elements
     : activePage.elements;
 
   const commitCurrentElements = useCallback(
     (nextElements: PublisherElement[]) => {
       if (isEditingMaster) {
-        const currentMaster = project.masterPage || { elements: [], showOnAllPages: true };
+        const nextMasters = masterPages.map((m) =>
+          m.id === activeMasterId ? { ...m, elements: nextElements } : m
+        );
         commitProject({
           ...project,
-          masterPage: { ...currentMaster, elements: nextElements },
+          masterPages: nextMasters,
+          activeMasterId,
+          masterPage: {
+            elements: nextMasters[0].elements,
+            showOnAllPages: project.masterPage?.showOnAllPages ?? true,
+          },
         });
       } else {
         const updatedPage = { ...activePage, elements: nextElements };
@@ -814,7 +1396,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         commitProject({ ...project, pages: newPages });
       }
     },
-    [isEditingMaster, project, activePage, commitProject]
+    [isEditingMaster, masterPages, activeMasterId, project, activePage, commitProject]
   );
 
   // Element actions
@@ -1017,6 +1599,63 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       updateElement(id, { visible: target.visible === false ? true : false });
     },
     [currentElements, updateElement]
+  );
+
+  const setElementsVisibility = useCallback(
+    (ids: string[], visible: boolean) => {
+      if (ids.length === 0) return;
+      const idSet = new Set(ids);
+      commitCurrentElements(
+        currentElements.map((el) => (idSet.has(el.id) ? { ...el, visible } : el))
+      );
+    },
+    [currentElements, commitCurrentElements]
+  );
+
+  const setElementsLocked = useCallback(
+    (ids: string[], locked: boolean) => {
+      if (ids.length === 0) return;
+      const idSet = new Set(ids);
+      commitCurrentElements(
+        currentElements.map((el) => (idSet.has(el.id) ? { ...el, locked } : el))
+      );
+    },
+    [currentElements, commitCurrentElements]
+  );
+
+  const renameElement = useCallback(
+    (id: string, name: string) => {
+      const trimmed = name.trim();
+      if (!trimmed) return;
+      updateElement(id, { name: trimmed });
+    },
+    [updateElement]
+  );
+
+  const reorderElementLayer = useCallback(
+    (draggedId: string, targetId: string) => {
+      if (draggedId === targetId) return;
+      // Sort top-to-bottom (descending zIndex) matching Layers panel display
+      const desc = [...currentElements].sort((a, b) => b.zIndex - a.zIndex);
+      const fromIdx = desc.findIndex((el) => el.id === draggedId);
+      const toIdx = desc.findIndex((el) => el.id === targetId);
+      if (fromIdx === -1 || toIdx === -1) return;
+
+      const [moved] = desc.splice(fromIdx, 1);
+      desc.splice(toIdx, 0, moved);
+
+      const total = desc.length;
+      const zMap = new Map<string, number>();
+      desc.forEach((el, idx) => zMap.set(el.id, total - idx));
+
+      commitCurrentElements(
+        currentElements.map((el) => ({
+          ...el,
+          zIndex: zMap.get(el.id) ?? el.zIndex,
+        }))
+      );
+    },
+    [currentElements, commitCurrentElements]
   );
 
   const selectElement = useCallback(
@@ -1373,6 +2012,46 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setSelectedElementIds([targetPlaceholderId]);
     },
     [currentElements, commitCurrentElements]
+  );
+
+  const detachImageFromPlaceholder = useCallback(
+    (elementId: string) => {
+      const targetEl = currentElements.find(
+        (el): el is ImageElement => el.id === elementId && el.type === 'image'
+      );
+      if (!targetEl || !targetEl.src) return;
+
+      const maxZ = currentElements.reduce((m, e) => Math.max(m, e.zIndex), 0);
+      const detachedId = `img-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+      const detachedEl: ImageElement = {
+        ...targetEl,
+        id: detachedId,
+        name: targetEl.name && targetEl.name !== 'Picture Placeholder' ? targetEl.name : 'Detached Image',
+        x: Math.min(activePage.width - 60, targetEl.x + 24),
+        y: Math.min(activePage.height - 60, targetEl.y + 24),
+        zIndex: maxZ + 1,
+        borderArt: 'none',
+        borderWidth: 0,
+        maskShape: 'none',
+        objectFit: 'contain',
+      };
+
+      const updated = currentElements.map((el) =>
+        el.id === elementId
+          ? ({
+              ...el,
+              src: '',
+              originalSrc: undefined,
+              bgRemoved: false,
+              name: 'Picture Placeholder',
+            } as PublisherElement)
+          : el
+      );
+
+      commitCurrentElements([...updated, detachedEl]);
+      setSelectedElementIds([detachedId]);
+    },
+    [currentElements, activePage, commitCurrentElements]
   );
 
   const addTable = useCallback(
@@ -1743,13 +2422,43 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         toolMode,
         isLeftPanelOpen,
         isRightPanelOpen,
+        rightPanelTab,
 
         setViewMode,
         setToolMode,
         setIsLeftPanelOpen,
         setIsRightPanelOpen,
+        setRightPanelTab,
+        applyDesignRecommendation: (recommendedPage: Page) => {
+          const updatedPages = project.pages.map((pg, idx) =>
+            idx === project.activePageIndex
+              ? {
+                  ...pg,
+                  elements: JSON.parse(JSON.stringify(recommendedPage.elements)),
+                  backgroundColor: recommendedPage.backgroundColor,
+                  backgroundGradient: recommendedPage.backgroundGradient,
+                  backgroundPattern: recommendedPage.backgroundPattern,
+                }
+              : pg
+          );
+          commitProject({ ...project, pages: updatedPages });
+          setSelectedElementIds([]);
+        },
         setIsEditingMaster,
         toggleMasterPageVisibility,
+        masterPages,
+        activeMasterId,
+        getMasterElementsForPage,
+        addMasterPage,
+        selectMasterPage,
+        renameMasterPage,
+        deleteMasterPage,
+        assignMasterToPage,
+        applyMasterPreset,
+        reorderPage,
+        renamePage,
+        addBookletSpread,
+        padToBookletMultiple,
         setActiveTab,
         setIsBackstageOpen,
         setIsMailMergeOpen,
@@ -1773,6 +2482,15 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         undo,
         redo,
 
+        workspaceTabs,
+        activeTabId,
+        switchWorkspaceTab,
+        createNewTab,
+        closeWorkspaceTab,
+        renameWorkspaceTab,
+        duplicateWorkspaceTab,
+        moveWorkspaceTab,
+        setWorkspaceTabColor,
         setProject,
         setActivePageIndex,
         addPage,
@@ -1785,7 +2503,9 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         updatePagePosition,
         setPageMargins,
         setPageBackgroundColor,
+        setPageBackgroundGradient,
         setPageBackgroundPattern,
+        applyPageBackdrop,
         setColorScheme,
         loadTemplate,
 
@@ -1803,6 +2523,10 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         pasteElements,
         toggleElementLock,
         toggleElementVisibility,
+        setElementsVisibility,
+        setElementsLocked,
+        renameElement,
+        reorderElementLayer,
         selectElement,
         selectElements,
         selectAll,
@@ -1825,6 +2549,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         addImage,
         addPicturePlaceholder,
         fillPlaceholderFromImageElement,
+        detachImageFromPlaceholder,
         addTable,
         addAccent,
         addLine,
@@ -1837,6 +2562,35 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         zoomOut,
         zoomFit,
         zoom100,
+        tarpapelOverlayVisible,
+        setTarpapelOverlayVisible,
+        printSettings,
+        setPrintSettings,
+        matchPageToTarpapelRatio: () => {
+          const m = computeTarpapelMetrics(activePage, printSettings);
+          const targetRatio = m.totalPosterWIn / Math.max(0.1, m.totalPosterHIn);
+          const baseW = activePage.width;
+          const nextH = Math.max(200, Math.round(baseW / targetRatio));
+          const updatedPages = project.pages.map((pg, idx) =>
+            idx === project.activePageIndex
+              ? {
+                  ...pg,
+                  width: baseW,
+                  height: nextH,
+                  orientation: (baseW > nextH ? 'landscape' : 'portrait') as 'portrait' | 'landscape',
+                  elements: reflowElementsForSize(
+                    pg.elements,
+                    pg.width,
+                    pg.height,
+                    baseW,
+                    nextH,
+                    pg.margins
+                  ),
+                }
+              : pg
+          );
+          commitProject({ ...project, pages: updatedPages });
+        },
       }}
     >
       {children}
