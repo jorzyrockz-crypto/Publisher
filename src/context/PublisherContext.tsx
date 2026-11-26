@@ -22,7 +22,7 @@ import {
 } from '../types/publisher';
 import { buildMergedPartFromShape } from '../utils/shapePaths';
 import { mergeShapeGeometry } from '../utils/shapeBoolean';
-import { ringsToPath, shapeOutlineRings } from '../utils/shapeClip';
+import { pageRingsToLocal, ringsToPath, shapeOutlineRings } from '../utils/shapeClip';
 import { TEMPLATES } from '../constants/templates';
 import { reflowElementsForSize } from '../utils/smartResize';
 import { CompositionStyle } from '../utils/designBlueprints';
@@ -212,7 +212,7 @@ interface PublisherContextType {
   groupSelected: () => void;
   ungroupSelected: () => void;
   mergeSelectedShapes: (op: 'union' | 'combine' | 'subtract' | 'intersect') => void;
-  clipImagesToShape: () => void;
+  clipToShape: () => void;
   autoConnectSelectedShapes: (style?: 'straight' | 'elbow' | 'curved') => void;
   disconnectSelectedShapes: () => void;
   addConnectedDiagramStep: (style?: 'straight' | 'elbow' | 'curved') => void;
@@ -2280,37 +2280,48 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     [currentElements, selectedElementIds, commitCurrentElements]
   );
 
-  // Clip the selected image(s) to the selected shape's boundary
-  const clipImagesToShape = useCallback(() => {
+  // Clip the selected content to a shape's boundary (image or shape content)
+  const clipToShape = useCallback(() => {
     const selected = currentElements.filter((el) => selectedElementIds.includes(el.id));
     const shapes = selected.filter((el): el is ShapeElement => el.type === 'shape');
-    const images = selected.filter((el): el is ImageElement => el.type === 'image');
-    if (shapes.length === 0 || images.length === 0) return;
+    if (shapes.length === 0) return;
 
-    // Top-most selected shape is the frame.
-    const frame = shapes[shapes.length - 1];
-    const rings = shapeOutlineRings({ ...frame, rotation: 0 });
-    const clipPathD = ringsToPath(rings);
-    if (!clipPathD) return;
+    // The bottom-most selected shape is the frame; everything else is content.
+    const frame = shapes[0];
+    const content = selected.filter((el) => el.id !== frame.id);
+    if (content.length === 0) return;
 
     const updates: Record<string, Partial<PublisherElement>> = {};
-    for (const image of images) {
-      updates[image.id] = {
-        x: frame.x,
-        y: frame.y,
-        width: frame.width,
-        height: frame.height,
-        rotation: frame.rotation || 0,
-        clipPathD,
-        clipBaseWidth: frame.width,
-        clipBaseHeight: frame.height,
-        // a preset mask would fight the custom clip
-        maskShape: 'none',
-        // sit directly above the frame so it is visible
-        zIndex: (frame.zIndex || 0) + 0.5,
-      };
+    const frameUnrotated = shapeOutlineRings({ ...frame, rotation: 0 });
+    const frameLocalPath = ringsToPath(frameUnrotated, frame.x, frame.y);
+    const framePageRings = shapeOutlineRings(frame);
+
+    for (const el of content) {
+      if (el.type === 'image') {
+        // The image adopts the frame: same box, same angle, clipped to it.
+        updates[el.id] = {
+          x: frame.x,
+          y: frame.y,
+          width: frame.width,
+          height: frame.height,
+          rotation: frame.rotation || 0,
+          clipPathD: frameLocalPath,
+          clipBaseWidth: frame.width,
+          clipBaseHeight: frame.height,
+          maskShape: 'none',
+          zIndex: (frame.zIndex || 0) + 0.5,
+        };
+      } else if (el.type === 'shape') {
+        // Shapes keep their place; the frame is expressed in their local space.
+        updates[el.id] = {
+          clipPathD: pageRingsToLocal(framePageRings, el),
+          clipBaseWidth: el.width,
+          clipBaseHeight: el.height,
+        };
+      }
     }
-    updateElementsBatch(updates);
+
+    if (Object.keys(updates).length > 0) updateElementsBatch(updates);
   }, [currentElements, selectedElementIds, updateElementsBatch]);
 
   // Auto-connect 2+ selected elements (or update existing connector style without duplicating)
@@ -2635,7 +2646,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         addConnectedDiagramStep,
 
         addTextBox,
-    clipImagesToShape,
+    clipToShape,
         addShape,
         addImage,
         addPicturePlaceholder,

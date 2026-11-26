@@ -79,6 +79,11 @@ export interface BaseElement {
   locked?: boolean;
   visible?: boolean;
   groupId?: string;
+  /** Clip this element to an arbitrary shape (path in its own local pixels). */
+  clipPathD?: string;
+  /** Frame the clip path was generated for, so later resizes scale it. */
+  clipBaseWidth?: number;
+  clipBaseHeight?: number;
   opacity?: number;
   flipH?: boolean;
   flipV?: boolean;
@@ -217,11 +222,6 @@ export interface ImageElement extends BaseElement {
   borderArtCaption?: string;
   effectPreset?: ImageEffectPreset;
   maskShape?: 'none' | 'circle' | 'star' | 'rounded' | 'diamond' | 'hexagon' | 'triangle' | 'heart';
-  /** Clip from any shape (or merged shape) — path in image-local pixels. */
-  clipPathD?: string;
-  /** Frame the clip path was generated for, so later resizes scale it. */
-  clipBaseWidth?: number;
-  clipBaseHeight?: number;
   brightness?: number; // 0 to 200
   contrast?: number; // 0 to 200
   saturate?: number; // 0 to 200

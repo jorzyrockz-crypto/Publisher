@@ -16,7 +16,7 @@ import { buildShapePatternDataUri } from '../../utils/patternGenerator';
 import { PATTERN_CATALOG } from '../../utils/patternGenerator';
 import { layoutText, verticalOffset } from '../../utils/textLayout';
 import { buildTextEffectPainter } from '../../utils/textEffects';
-import { imageClipPath } from '../../utils/shapeClip';
+import { elementClipPath } from '../../utils/shapeClip';
 
 interface ElementRendererProps {
   element: PublisherElement;
@@ -1018,10 +1018,29 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
             </defs>
           );
         })()}
-        {element.fillType === 'pattern' && element.patternBgType === 'gradient' && (
-          <g>{renderSvgShape(`url(#${gradId})`)}</g>
-        )}
-        {renderSvgShape()}
+        {(() => {
+          const clipD = elementClipPath(element);
+          const shapeClipId = `shape-clip-${element.id}`;
+          const children = (
+            <>
+              {element.fillType === 'pattern' && element.patternBgType === 'gradient' && (
+                <g>{renderSvgShape(`url(#${gradId})`)}</g>
+              )}
+              {renderSvgShape()}
+            </>
+          );
+          if (!clipD) return children;
+          return (
+            <>
+              <defs>
+                <clipPath id={shapeClipId}>
+                  <path d={clipD} />
+                </clipPath>
+              </defs>
+              <g clipPath={`url(#${shapeClipId})`}>{children}</g>
+            </>
+          );
+        })()}
       </svg>
       {element.label && (
         <div
@@ -1110,7 +1129,7 @@ const ImageRenderer: React.FC<{
 
   const getClipPath = () => {
     if (element.clipPathD) {
-      const clip = imageClipPath(element);
+      const clip = elementClipPath(element);
       return clip ? `path("${clip}")` : undefined;
     }
     switch (element.maskShape) {

@@ -116,7 +116,7 @@ export const PropertiesPanel: React.FC = () => {
     bringToFront,
     sendToBack,
     mergeSelectedShapes,
-    clipImagesToShape,
+    clipToShape,
     autoConnectSelectedShapes,
     disconnectSelectedShapes,
     addConnectedDiagramStep,
@@ -652,26 +652,26 @@ export const PropertiesPanel: React.FC = () => {
               </div>
             </InspectorCard>
 
-            {selectedElements.some((el) => el.type === 'image') &&
-              selectedElements.some((el) => el.type === 'shape') && (
+            {selectedElements.some((el) => el.type === 'shape') &&
+              selectedElements.filter((el) => el.type !== 'connector').length > 1 && (
                 <InspectorCard className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-2 shadow-2xs">
                   <div className="font-bold text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-100">
                     <Scissors size={14} className="text-[#5c4bb8]" />
-                    <span>Clip Image to Shape</span>
+                    <span>Clip to Shape</span>
                   </div>
                   <p className="text-[10.5px] text-slate-500">
-                    Put the selected image inside the selected shape's boundary — any shape,
-                    including a merged one.
+                    Keep only what falls inside the shape — for an image or another shape, using
+                    the bottom-most selected shape as the frame.
                   </p>
                   <button
-                    onClick={clipImagesToShape}
+                    onClick={clipToShape}
                     className="w-full py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-[#efeafd] hover:border-[#d3c9f9] hover:text-[#5c4bb8] text-xs font-semibold transition"
                   >
-                    Clip image to shape
+                    Clip to shape
                   </button>
                   <p className="text-[9.5px] text-slate-400 leading-tight">
-                    The image takes the shape's frame; the shape stays underneath so you can keep
-                    its outline. Reposition the photo with Crop &amp; Frame Fit.
+                    An image adopts the frame's box and angle; a shape keeps its own place and
+                    just loses the part outside. Neither becomes a hole — that is Subtract.
                   </p>
                 </InspectorCard>
               )}
@@ -717,7 +717,9 @@ export const PropertiesPanel: React.FC = () => {
                     {canMerge && (
                       <p className="text-[9.5px] text-slate-400 leading-tight">
                         Subtract removes the other shapes from the bottom-most one; the result is a
-                        single editable shape.
+                        single editable shape. To keep a shape's own fill and merely trim it to
+                        another outline, use <strong className="font-semibold">Clip to Shape</strong>{' '}
+                        above instead.
                       </p>
                     )}
                   </>
@@ -2520,6 +2522,26 @@ export const PropertiesPanel: React.FC = () => {
               <Square size={14} className="text-[#5c4bb8]" />
               <span>Shape Formatting</span>
             </div>
+
+            {Boolean((selectedElement as ShapeElement).clipPathD) && (
+              <div className="flex items-center justify-between bg-[#efeafd] border border-[#d3c9f9] rounded-xl px-2 py-1.5">
+                <span className="text-[10px] font-semibold text-[#5c4bb8] flex items-center gap-1">
+                  <Scissors size={11} /> Clipped to a shape
+                </span>
+                <button
+                  onClick={() =>
+                    updateElement(selectedElement.id, {
+                      clipPathD: undefined,
+                      clipBaseWidth: undefined,
+                      clipBaseHeight: undefined,
+                    })
+                  }
+                  className="text-[10px] font-bold text-[#5c4bb8] hover:text-rose-600"
+                >
+                  Remove
+                </button>
+              </div>
+            )}
 
             {/* Visual Shape Geometry Preview Picker */}
             <div>

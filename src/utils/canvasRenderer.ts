@@ -15,7 +15,7 @@ import { buildPatternSvg, buildShapePatternDataUri } from './patternGenerator';
 import { buildWavyRectPath, getShapeSvgPath } from './shapePaths';
 import { buildFontString, layoutText, measureTextWidth, verticalOffset } from './textLayout';
 import { buildTextEffectPainter } from './textEffects';
-import { imageClipPath } from './shapeClip';
+import { elementClipPath } from './shapeClip';
 
 function loadImage(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
@@ -437,6 +437,10 @@ async function drawShapeElement(ctx: CanvasRenderingContext2D, el: ShapeElement)
   const { width, height, fillColor, strokeColor, strokeWidth, strokeDash } = el;
   ctx.save();
 
+  // "Clip to shape" applies to any element, shapes included.
+  const shapeClip = elementClipPath(el);
+  if (shapeClip) ctx.clip(new Path2D(shapeClip));
+
   if (el.shadow) {
     ctx.shadowColor = el.shadowColor || 'rgba(0,0,0,0.28)';
     ctx.shadowBlur = el.shadowBlur || 8;
@@ -603,7 +607,7 @@ async function drawImageElement(ctx: CanvasRenderingContext2D, el: ImageElement)
   const { width, height } = el;
 
   // A custom "clip to shape" applies to everything this element paints.
-  const customClip = imageClipPath(el);
+  const customClip = elementClipPath(el);
   if (customClip) {
     ctx.save();
     ctx.clip(new Path2D(customClip));

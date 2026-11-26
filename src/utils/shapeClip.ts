@@ -55,8 +55,32 @@ export function scalePathData(d: string, sx: number, sy: number): string {
   );
 }
 
-/** The clip path an image should use right now, in its own local pixels. */
-export function imageClipPath(el: {
+/** Maps page-space rings into an element's own local pixels (rotation undone). */
+export function pageRingsToLocal(
+  rings: Ring[],
+  el: { x: number; y: number; width: number; height: number; rotation?: number }
+): string {
+  const cx = el.width / 2;
+  const cy = el.height / 2;
+  const rad = (-(el.rotation || 0) * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  return multiPolygonToPath(
+    rings.map((ring) => [
+      ring.map(([px, py]) => {
+        const dx = px - el.x - cx;
+        const dy = py - el.y - cy;
+        return [
+          Number((cx + dx * cos - dy * sin).toFixed(2)),
+          Number((cy + dx * sin + dy * cos).toFixed(2)),
+        ] as [number, number];
+      }),
+    ])
+  );
+}
+
+/** The clip path an element should use right now, in its own local pixels. */
+export function elementClipPath(el: {
   width: number;
   height: number;
   clipPathD?: string;
