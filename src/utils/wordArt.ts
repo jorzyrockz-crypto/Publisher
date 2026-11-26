@@ -25,6 +25,9 @@ export const WORD_ART_STYLES: WordArtOption[] = [
   { id: 'emerald-3d', label: 'Emerald 3D Block', className: 'wordart-emerald-3d' },
   { id: 'sunset-gradient', label: 'Sunset Vibe', className: 'wordart-sunset-gradient' },
   { id: 'gradient-blue', label: 'Deep Blue Gradient', className: 'wordart-gradient-blue' },
+  { id: 'cinematic', label: 'Cinematic Gold', className: 'wordart-cinematic', dark: true },
+  { id: 'holographic', label: 'Holographic AI', className: 'wordart-holographic', dark: true },
+  { id: 'varsity', label: 'Varsity Block', className: 'wordart-varsity' },
 ];
 
 const BY_ID = new Map<string, WordArtOption>(WORD_ART_STYLES.map((s) => [s.id, s]));
@@ -188,6 +191,51 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
       ],
     },
     shadows: [{ dx: 0, dy: 2, blur: 4, color: 'rgba(29,78,216,0.35)' }],
+  },
+  // Film-title gold: warm rim light, a deep ink edge so it survives a pale
+  // backdrop, and a long soft cast shadow for depth.
+  cinematic: {
+    weight: '900',
+    gradient: {
+      angle: 178,
+      stops: [
+        { offset: 0, color: '#fff4d6' },
+        { offset: 0.34, color: '#f0b45a' },
+        { offset: 0.62, color: '#c8842e' },
+        { offset: 1, color: '#f7e2b2' },
+      ],
+    },
+    stroke: { width: 3, color: '#1b1206' },
+    shadows: [
+      { dx: 0, dy: 3, blur: 10, color: 'rgba(255,176,74,0.45)' },
+      { dx: 0, dy: 10, blur: 26, color: 'rgba(0,0,0,0.55)' },
+    ],
+  },
+  // Iridescent foil — the "AI render" look: violet to cyan to pink, lifted by
+  // a cool bloom and held together with a near-black edge.
+  holographic: {
+    weight: '900',
+    gradient: {
+      angle: 125,
+      stops: [
+        { offset: 0, color: '#a78bfa' },
+        { offset: 0.35, color: '#22d3ee' },
+        { offset: 0.65, color: '#f472b6' },
+        { offset: 1, color: '#fde68a' },
+      ],
+    },
+    stroke: { width: 2, color: '#160f2e' },
+    shadows: [
+      { dx: 0, dy: 0, blur: 12, color: 'rgba(34,211,238,0.5)' },
+      { dx: 0, dy: 2, blur: 4, color: 'rgba(10,10,30,0.45)' },
+    ],
+  },
+  // College block letters: crisp white edge, hard offset shadow, no gradient.
+  varsity: {
+    weight: '900',
+    fill: '#dc2626',
+    stroke: { width: 4, color: '#ffffff' },
+    shadows: [{ dx: 4, dy: 4, blur: 0, color: '#1e293b' }],
   },
 };
 

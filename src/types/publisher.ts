@@ -35,7 +35,10 @@ export type WordArtStyle =
   | 'fire'
   | 'comic-pop'
   | 'emerald-3d'
-  | 'sunset-gradient';
+  | 'sunset-gradient'
+  | 'cinematic'
+  | 'holographic'
+  | 'varsity';
 
 export type BorderArtStyle =
   | 'none'

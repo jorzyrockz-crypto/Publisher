@@ -62,30 +62,30 @@ const EMPTY_STATS: EnhanceStats = {
  */
 const LIGHT_PAGE_STYLES: Partial<Record<TemplateCategory, WordArtStyle[]>> = {
   Certificate: ['gradient-blue', 'gold3d', 'chrome', 'comic-pop'],
-  Poster: ['retro', 'sunset-gradient', 'fire', 'comic-pop'],
-  Tarpapel: ['comic-pop', 'fire', 'sunset-gradient', 'gradient-blue'],
+  Poster: ['retro', 'sunset-gradient', 'fire', 'comic-pop', 'cinematic'],
+  Tarpapel: ['comic-pop', 'varsity', 'fire', 'sunset-gradient', 'gradient-blue'],
   Invitation: ['gradient-blue', 'sunset-gradient', 'gold3d', 'retro'],
   Card: ['gradient-blue', 'sunset-gradient', 'retro'],
-  'Social Media': ['gradient-blue', 'comic-pop', 'retro', 'sunset-gradient'],
+  'Social Media': ['holographic', 'gradient-blue', 'comic-pop', 'retro', 'sunset-gradient'],
   'Hero Banner': ['gradient-blue', 'retro', 'comic-pop'],
   Collage: ['retro', 'sunset-gradient', 'comic-pop', 'gradient-blue'],
   Program: ['gradient-blue', 'emerald-3d', 'gold3d', 'retro'],
-  Menu: ['retro', 'gold3d', 'gradient-blue'],
+  Menu: ['retro', 'cinematic', 'gold3d', 'gradient-blue'],
   Flyer: ['retro', 'comic-pop', 'sunset-gradient', 'gradient-blue'],
   Brochure: ['gradient-blue', 'emerald-3d', 'retro'],
   Newsletter: ['gradient-blue', 'retro', 'emerald-3d'],
   Resume: ['gradient-blue', 'emerald-3d', 'retro'],
-  'Business Card': ['gold3d', 'gradient-blue', 'chrome'],
+  'Business Card': ['cinematic', 'gold3d', 'gradient-blue', 'chrome'],
   Postcard: ['retro', 'sunset-gradient', 'comic-pop'],
   Calendar: ['gradient-blue', 'retro', 'emerald-3d'],
-  'Cover Document': ['gradient-blue', 'chrome', 'emerald-3d'],
+  'Cover Document': ['cinematic', 'gradient-blue', 'chrome', 'emerald-3d'],
   'Narrative Report': ['gradient-blue', 'emerald-3d', 'retro'],
   Email: ['gradient-blue', 'emerald-3d', 'retro'],
-  Logo: ['gradient-blue', 'gold3d', 'chrome'],
+  Logo: ['holographic', 'gradient-blue', 'gold3d', 'chrome'],
 };
 
 /** On a dark page the light-on-dark styles come first. */
-const DARK_PAGE_STYLES: WordArtStyle[] = ['gold3d', 'chrome', 'neon-glow', 'fire', 'rainbow', 'sunset-gradient'];
+const DARK_PAGE_STYLES: WordArtStyle[] = ['cinematic', 'gold3d', 'chrome', 'neon-glow', 'holographic', 'fire', 'rainbow', 'sunset-gradient'];
 
 
 export function hexLuminance(color?: string): number {
@@ -235,19 +235,20 @@ function styleStops(style: WordArtStyle): number[] {
 /**
  * How well a style reads on this background.
  *
- * A WordArt outline is what the eye uses when the fill is pale, so a style
- * with a contrasting stroke is judged by its edge. A gradient is only as
- * legible as its *worst* stop — gold-on-cream has contrast in the middle of
- * the word and nothing at the top, which is exactly how it looks.
+ * Type reads if *either* half of its paint separates from the backdrop: a
+ * dark outline rescues a pale gold fill on cream, and a bright gradient fill
+ * rescues a dark edge on a night-time page. A gradient is only as legible as
+ * its *worst* stop, so the fill side is measured there.
  */
 function contrastScore(style: WordArtStyle, backgroundLum: number): number {
   const paint = wordArtPaint(style);
-  if (paint?.stroke) return Math.abs(hexLuminance(paint.stroke.color) - backgroundLum) * 0.85;
   const stops = styleStops(style);
-  return Math.min(...stops.map((stop) => Math.abs(stop - backgroundLum)));
+  const fill = Math.min(...stops.map((stop) => Math.abs(stop - backgroundLum)));
+  const edge = paint?.stroke ? Math.abs(hexLuminance(paint.stroke.color) - backgroundLum) : 0;
+  return Math.max(fill, edge);
 }
 
-const MIN_CONTRAST = 0.34;
+const MIN_CONTRAST = 0.4;
 
 function wordArtChoice(el: TextElement, category: TemplateCategory, page: Page): TextElement['wordArtStyle'] {
   const bgLum = hexLuminance(effectiveBackground(el, page));
