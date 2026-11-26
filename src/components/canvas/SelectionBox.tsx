@@ -2,10 +2,24 @@ import React, { useState, useEffect } from 'react';
 import type { PublisherElement, ShapeElement } from '../../types/publisher';
 import { RotateCw } from 'lucide-react';
 
+/** Extra context the canvas needs to resize text boxes intelligently. */
+export interface ResizeMeta {
+  handle: string;
+  startWidth: number;
+  startHeight: number;
+  startFontSize?: number;
+}
+
 interface SelectionBoxProps {
   element: PublisherElement;
   zoom: number;
-  onResize: (newX: number, newY: number, newWidth: number, newHeight: number) => void;
+  onResize: (
+    newX: number,
+    newY: number,
+    newWidth: number,
+    newHeight: number,
+    meta?: ResizeMeta
+  ) => void;
   onRotate: (newRotation: number) => void;
   onMoveMouseDown?: (e: React.MouseEvent) => void;
   onAdjustShape?: (adjustValue: number) => void;
@@ -37,6 +51,7 @@ export const SelectionBox: React.FC<SelectionBoxProps> = ({
     const startY = element.y;
     const startW = element.width;
     const startH = element.height;
+    const startFontSize = element.type === 'text' ? element.fontSize : undefined;
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       const deltaX = (moveEvent.clientX - startMouseX) / zoom;
@@ -82,7 +97,12 @@ export const SelectionBox: React.FC<SelectionBoxProps> = ({
         }
       }
 
-      onResize(Math.round(nextX), Math.round(nextY), Math.round(nextW), Math.round(nextH));
+      onResize(Math.round(nextX), Math.round(nextY), Math.round(nextW), Math.round(nextH), {
+        handle,
+        startWidth: startW,
+        startHeight: startH,
+        startFontSize,
+      });
     };
 
     const handleMouseUp = () => {

@@ -1919,6 +1919,9 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         columnGap: 12,
         lineHeight: 1.4,
         padding: 8,
+        // Text behaves like type: no clipped words, ever.
+        autoFit: 'shrink',
+        autoSizeText: true,
         ...options,
       };
       addElement(defaultText);

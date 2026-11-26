@@ -326,21 +326,35 @@ export function layoutText(el: TextElement, options: TextLayoutOptions = {}): Te
 
   // Curved text bypasses line layout: glyphs are placed on an arc instead.
   if (curveBend !== 0) {
-    const curve = buildCurveLayout(
-      el,
-      rawText.replace(/\n+/g, ' ').trim(),
-      baseSize,
-      font,
-      scriptScale,
-      baselineShift,
-      letterSpacing,
-      wordSpacing,
-      padding,
-      boxW,
-      curveBend
-    );
+    const curvedText = rawText.replace(/\n+/g, ' ').trim();
+    const build = (size: number) =>
+      buildCurveLayout(
+        el,
+        curvedText,
+        size,
+        scriptScale,
+        baselineShift,
+        letterSpacing,
+        wordSpacing,
+        padding,
+        boxW,
+        curveBend
+      );
+
+    let size = baseSize;
+    let curve = build(size);
+    // Curved text shrinks to fit like any other block, so a ring never spills
+    // out of its frame after a resize.
+    if (el.autoFit === 'shrink' && !options.ignoreAutoFit) {
+      let guard = 0;
+      while (curve.contentHeight > boxH + 0.5 && size > 6 && guard++ < 24) {
+        size = Math.max(6, size - Math.max(0.5, size * 0.06));
+        curve = build(size);
+      }
+    }
+
     return {
-      fontSize: baseSize,
+      fontSize: size,
       lines: [],
       contentHeight: curve.contentHeight,
       padding,
@@ -555,7 +569,6 @@ function buildCurveLayout(
   el: TextElement,
   text: string,
   baseSize: number,
-  font: string,
   scriptScale: number,
   baselineShift: number,
   letterSpacing: number,
@@ -564,6 +577,7 @@ function buildCurveLayout(
   boxW: number,
   bend: number
 ): { chars: CurveChar[]; contentHeight: number } {
+  const font = buildFontString(el, baseSize);
   const chars: CurveChar[] = [];
   const glyphs = Array.from(text);
   if (glyphs.length === 0) return { chars, contentHeight: baseSize };

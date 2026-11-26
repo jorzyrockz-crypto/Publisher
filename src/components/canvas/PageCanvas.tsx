@@ -5,6 +5,7 @@ import { SelectionBox } from './SelectionBox';
 import { calculateSnap } from '../../utils/snapping';
 import { buildPatternBackgroundStyle } from '../../utils/patternGenerator';
 import { computeTarpapelMetrics } from '../../utils/printUtils';
+import { resizeTextBox } from '../../utils/textResize';
 import { PublisherElement, Page, ConnectorElement } from '../../types/publisher';
 import {
   Copy,
@@ -914,9 +915,16 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
                   setEditingTextId(null);
                   handleElementMouseDown(element, e);
                 }}
-                onResize={(nx, ny, nw, nh) =>
-                  updateElement(element.id, { x: nx, y: ny, width: nw, height: nh })
-                }
+                onResize={(nx, ny, nw, nh, meta) => {
+                  if (element.type === 'text') {
+                    updateElement(
+                      element.id,
+                      resizeTextBox(element, { x: nx, y: ny, width: nw, height: nh }, meta)
+                    );
+                    return;
+                  }
+                  updateElement(element.id, { x: nx, y: ny, width: nw, height: nh });
+                }}
                 onRotate={(nrot) => updateElement(element.id, { rotation: nrot })}
                 onAdjustShape={(adjustValue) =>
                   updateElement(element.id, { adjustValue })

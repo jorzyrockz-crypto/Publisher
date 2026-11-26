@@ -132,6 +132,8 @@ export interface TextElement extends BaseElement {
   highlightColor?: string;
   /** Shrink type until the block fits instead of clipping silently. */
   autoFit?: 'none' | 'shrink';
+  /** Resizing the frame scales/rewraps the type instead of clipping it (default). */
+  autoSizeText?: boolean;
   hyphenate?: boolean;
   /** Kerning + optional ligatures. */
   kerning?: boolean;

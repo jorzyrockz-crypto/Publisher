@@ -2024,6 +2024,22 @@ export const PropertiesPanel: React.FC = () => {
                     </div>
                     <label className="flex items-center justify-between pt-1 cursor-pointer">
                       <span className="text-[10.5px] text-slate-600 font-medium">
+                        Scale text when resized
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={textEl.autoSizeText !== false}
+                        onChange={(e) =>
+                          updateElement(textEl.id, { autoSizeText: e.target.checked })
+                        }
+                        className="accent-[#6e56cf]"
+                      />
+                    </label>
+                    <p className="text-[9.5px] text-slate-400 leading-tight -mt-0.5">
+                      Corner handles scale the type, side handles rewrap it and grow the box.
+                    </p>
+                    <label className="flex items-center justify-between pt-1 cursor-pointer">
+                      <span className="text-[10.5px] text-slate-600 font-medium">
                         Hyphenate long words
                       </span>
                       <input
