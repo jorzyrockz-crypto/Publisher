@@ -4,6 +4,7 @@ import { PROGRAM_AND_TARPAPEL_TEMPLATES } from './programAndTarpapelTemplates';
 import { CERTIFICATE_TEMPLATES } from './certificateTemplates';
 import { SAMPLE_GRAPHICS } from './sampleGraphics';
 import { getStickerById } from './stickerLibrary';
+import { enhanceProject } from '../utils/templateEnhance';
 
 export type TemplateCategory =
   | 'Brochure'
@@ -39,7 +40,7 @@ export interface TemplateDefinition {
   project: DocumentProject;
 }
 
-export const TEMPLATES: TemplateDefinition[] = [
+const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
   // 1. Trifold Brochure
   {
     id: 'trifold-business',
@@ -4737,3 +4738,13 @@ export const TEMPLATES: TemplateDefinition[] = [
   ...PROGRAM_AND_TARPAPEL_TEMPLATES,
   ...CERTIFICATE_TEMPLATES,
 ];
+
+/**
+ * Every template goes through the design pass in `utils/templateEnhance`, so
+ * the gallery thumbnail and the document you get are the same artwork — and
+ * new templates pick the pass up automatically.
+ */
+export const TEMPLATES: TemplateDefinition[] = TEMPLATE_DEFINITIONS.map((tpl) => {
+  const { project } = enhanceProject(tpl.project, tpl.category, tpl.thumbnailColor);
+  return { ...tpl, project };
+});
