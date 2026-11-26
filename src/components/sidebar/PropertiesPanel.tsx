@@ -43,6 +43,15 @@ import {
   GitMerge,
   Workflow,
   Waves,
+  Group,
+  Ungroup,
+  Copy,
+  Trash2,
+  ArrowUpToLine,
+  ArrowDownToLine,
+  ArrowUp,
+  ArrowDown,
+  Layers,
 } from 'lucide-react';
 
 export const PropertiesPanel: React.FC = () => {
@@ -54,7 +63,18 @@ export const PropertiesPanel: React.FC = () => {
     setIsRightPanelOpen,
     selectedElementIds,
     updateElement,
+    updateSelectedElements,
+    deleteSelectedElements,
+    duplicateSelectedElements,
     toggleElementLock,
+    groupSelected,
+    ungroupSelected,
+    alignSelected,
+    distributeSelected,
+    bringForward,
+    sendBackward,
+    bringToFront,
+    sendToBack,
     mergeSelectedShapes,
     autoConnectSelectedShapes,
     addConnectedDiagramStep,
@@ -71,6 +91,23 @@ export const PropertiesPanel: React.FC = () => {
   const elementsPool = isEditingMaster
     ? project.masterPage?.elements || []
     : activePage.elements;
+
+  const selectedElements = elementsPool.filter((el) => selectedElementIds.includes(el.id));
+  const hasGroupedItem = selectedElements.some((el) => Boolean(el.groupId));
+  const isUnifiedGroup =
+    selectedElements.length >= 2 &&
+    Boolean(selectedElements[0]?.groupId) &&
+    selectedElements.every((el) => el.groupId === selectedElements[0]?.groupId);
+  const allSelectedLocked =
+    selectedElements.length > 0 && selectedElements.every((el) => Boolean(el.locked));
+  const avgGroupOpacity =
+    selectedElements.length > 0
+      ? Math.round(
+          (selectedElements.reduce((sum, el) => sum + (el.opacity ?? 1), 0) /
+            selectedElements.length) *
+            100
+        )
+      : 100;
 
   const selectedElement =
     selectedElementIds.length === 1
@@ -116,9 +153,186 @@ export const PropertiesPanel: React.FC = () => {
       </div>
 
       <div className="p-3.5 space-y-4">
-        {/* Multi-Selection: Merge Shapes & Diagram Auto-Connect */}
+        {/* Multi-Selection: Group, Align, Merge Shapes & Diagram Auto-Connect */}
         {selectedElementIds.length >= 2 && (
           <div className="space-y-4">
+            {/* Group & Selection Actions */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3 shadow-2xs">
+              <div className="font-bold text-slate-800 flex items-center justify-between pb-2 border-b border-slate-100">
+                <div className="flex items-center gap-1.5">
+                  <Group size={14} className="text-emerald-700" />
+                  <span>Group ({selectedElementIds.length} items)</span>
+                </div>
+                {isUnifiedGroup && (
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                    Grouped
+                  </span>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-1.5">
+                <button
+                  onClick={groupSelected}
+                  disabled={isUnifiedGroup}
+                  className={`flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-xl border text-xs font-semibold transition ${
+                    isUnifiedGroup
+                      ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
+                      : 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 hover:border-emerald-400'
+                  }`}
+                >
+                  <Group size={13} />
+                  <span>Group</span>
+                </button>
+                <button
+                  onClick={ungroupSelected}
+                  disabled={!hasGroupedItem}
+                  className={`flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-xl border text-xs font-semibold transition ${
+                    !hasGroupedItem
+                      ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
+                      : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-amber-50 hover:border-amber-300 hover:text-amber-800'
+                  }`}
+                >
+                  <Ungroup size={13} />
+                  <span>Ungroup</span>
+                </button>
+              </div>
+
+              {/* Quick Group Actions */}
+              <div className="grid grid-cols-3 gap-1.5">
+                <button
+                  onClick={duplicateSelectedElements}
+                  className="flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-800 text-[11px] font-semibold transition"
+                  title="Duplicate Selection"
+                >
+                  <Copy size={12} />
+                  <span>Duplicate</span>
+                </button>
+                <button
+                  onClick={() => updateSelectedElements({ locked: !allSelectedLocked })}
+                  className={`flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl border text-[11px] font-semibold transition ${
+                    allSelectedLocked
+                      ? 'border-amber-300 bg-amber-50 text-amber-800'
+                      : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700'
+                  }`}
+                  title={allSelectedLocked ? 'Unlock Group' : 'Lock Group'}
+                >
+                  {allSelectedLocked ? <Unlock size={12} /> : <Lock size={12} />}
+                  <span>{allSelectedLocked ? 'Unlock' : 'Lock'}</span>
+                </button>
+                <button
+                  onClick={deleteSelectedElements}
+                  className="flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-rose-50 hover:border-rose-300 hover:text-rose-700 text-[11px] font-semibold transition"
+                  title="Delete Selection"
+                >
+                  <Trash2 size={12} />
+                  <span>Delete</span>
+                </button>
+              </div>
+
+              {/* Align & Distribute */}
+              <div className="pt-2 border-t border-slate-100 space-y-2">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  Align & Distribute
+                </span>
+                <div className="grid grid-cols-3 gap-1">
+                  {(
+                    [
+                      { key: 'left', label: 'Left' },
+                      { key: 'center', label: 'Center' },
+                      { key: 'right', label: 'Right' },
+                      { key: 'top', label: 'Top' },
+                      { key: 'middle', label: 'Middle' },
+                      { key: 'bottom', label: 'Bottom' },
+                    ] as const
+                  ).map((item) => (
+                    <button
+                      key={item.key}
+                      onClick={() => alignSelected(item.key)}
+                      className="py-1 px-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-800 text-[10.5px] font-semibold transition"
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+                {selectedElementIds.length >= 3 && (
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <button
+                      onClick={() => distributeSelected('horizontal')}
+                      className="py-1 px-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-800 text-[10.5px] font-semibold transition"
+                    >
+                      Distribute Horiz.
+                    </button>
+                    <button
+                      onClick={() => distributeSelected('vertical')}
+                      className="py-1 px-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-800 text-[10.5px] font-semibold transition"
+                    >
+                      Distribute Vert.
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Layer Order & Group Opacity */}
+              <div className="pt-2 border-t border-slate-100 space-y-2">
+                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  <span className="flex items-center gap-1">
+                    <Layers size={11} /> Arrange Order
+                  </span>
+                </div>
+                <div className="grid grid-cols-4 gap-1">
+                  <button
+                    onClick={bringToFront}
+                    className="flex flex-col items-center py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-800 text-[9.5px] font-semibold transition"
+                    title="Bring to Front"
+                  >
+                    <ArrowUpToLine size={12} />
+                    <span>Front</span>
+                  </button>
+                  <button
+                    onClick={bringForward}
+                    className="flex flex-col items-center py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-800 text-[9.5px] font-semibold transition"
+                    title="Bring Forward"
+                  >
+                    <ArrowUp size={12} />
+                    <span>Fwd</span>
+                  </button>
+                  <button
+                    onClick={sendBackward}
+                    className="flex flex-col items-center py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-800 text-[9.5px] font-semibold transition"
+                    title="Send Backward"
+                  >
+                    <ArrowDown size={12} />
+                    <span>Back</span>
+                  </button>
+                  <button
+                    onClick={sendToBack}
+                    className="flex flex-col items-center py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-800 text-[9.5px] font-semibold transition"
+                    title="Send to Back"
+                  >
+                    <ArrowDownToLine size={12} />
+                    <span>Bottom</span>
+                  </button>
+                </div>
+
+                <div>
+                  <div className="flex justify-between text-[10px] text-slate-500 font-medium mb-0.5">
+                    <span>Group Opacity</span>
+                    <span>{avgGroupOpacity}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={10}
+                    max={100}
+                    value={avgGroupOpacity}
+                    onChange={(e) =>
+                      updateSelectedElements({ opacity: Number(e.target.value) / 100 })
+                    }
+                    className="w-full accent-emerald-600 cursor-pointer"
+                  />
+                </div>
+              </div>
+            </div>
+
             <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3 shadow-2xs">
               <div className="font-bold text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-100">
                 <GitMerge size={14} className="text-emerald-700" />

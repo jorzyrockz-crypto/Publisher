@@ -104,6 +104,8 @@ interface PublisherContextType {
   sendToBack: () => void;
   alignSelected: (alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => void;
   distributeSelected: (axis: 'horizontal' | 'vertical') => void;
+  groupSelected: () => void;
+  ungroupSelected: () => void;
   mergeSelectedShapes: (op: 'union' | 'combine' | 'subtract' | 'intersect') => void;
   autoConnectSelectedShapes: (style?: 'straight' | 'elbow' | 'curved') => void;
   addConnectedDiagramStep: (style?: 'straight' | 'elbow' | 'curved') => void;
@@ -599,14 +601,23 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (selectedElementIds.length === 0) return;
     const duplicated: PublisherElement[] = [];
     const newIds: string[] = [];
+    const groupMap = new Map<string, string>();
 
     currentElements.forEach((el) => {
       if (selectedElementIds.includes(el.id)) {
         const newId = `el-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
         newIds.push(newId);
+        let nextGroupId = el.groupId;
+        if (el.groupId) {
+          if (!groupMap.has(el.groupId)) {
+            groupMap.set(el.groupId, `grp-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`);
+          }
+          nextGroupId = groupMap.get(el.groupId);
+        }
         duplicated.push({
           ...el,
           id: newId,
+          groupId: nextGroupId,
           x: el.x + 20,
           y: el.y + 20,
           zIndex: el.zIndex + 1,
@@ -664,14 +675,51 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     [currentElements, updateElement]
   );
 
-  const selectElement = useCallback((id: string, multiSelect = false) => {
-    setSelectedElementIds((prev) => {
-      if (multiSelect) {
-        return prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id];
-      }
-      return [id];
-    });
-  }, []);
+  const selectElement = useCallback(
+    (id: string, multiSelect = false) => {
+      const target = currentElements.find((el) => el.id === id);
+      const groupIds =
+        target?.groupId
+          ? currentElements.filter((el) => el.groupId === target.groupId).map((el) => el.id)
+          : [id];
+
+      setSelectedElementIds((prev) => {
+        if (multiSelect) {
+          const isAlreadySelected = prev.includes(id);
+          if (isAlreadySelected) {
+            return prev.filter((item) => !groupIds.includes(item));
+          }
+          return Array.from(new Set([...prev, ...groupIds]));
+        }
+        return groupIds;
+      });
+    },
+    [currentElements]
+  );
+
+  const groupSelected = useCallback(() => {
+    if (selectedElementIds.length < 2) return;
+    const newGroupId = `grp-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
+    const updated = currentElements.map((el) =>
+      selectedElementIds.includes(el.id) ? { ...el, groupId: newGroupId } : el
+    );
+    commitCurrentElements(updated);
+  }, [currentElements, selectedElementIds, commitCurrentElements]);
+
+  const ungroupSelected = useCallback(() => {
+    if (selectedElementIds.length === 0) return;
+    const selectedGroupIds = new Set(
+      currentElements
+        .filter((el) => selectedElementIds.includes(el.id) && el.groupId)
+        .map((el) => el.groupId as string)
+    );
+    const updated = currentElements.map((el) =>
+      selectedElementIds.includes(el.id) || (el.groupId && selectedGroupIds.has(el.groupId))
+        ? { ...el, groupId: undefined }
+        : el
+    );
+    commitCurrentElements(updated);
+  }, [currentElements, selectedElementIds, commitCurrentElements]);
 
   const selectAll = useCallback(() => {
     setSelectedElementIds(currentElements.map((el) => el.id));
@@ -1289,6 +1337,8 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         sendToBack,
         alignSelected,
         distributeSelected,
+        groupSelected,
+        ungroupSelected,
         mergeSelectedShapes,
         autoConnectSelectedShapes,
         addConnectedDiagramStep,

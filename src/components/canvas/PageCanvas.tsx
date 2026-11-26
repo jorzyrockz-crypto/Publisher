@@ -233,7 +233,12 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
     const startClientY = e.clientY;
     const pool = isEditingMaster ? project.masterPage?.elements || [] : targetPage.elements;
     const initialElementsPos = pool
-      .filter((el) => selectedElementIds.includes(el.id) || el.id === element.id)
+      .filter(
+        (el) =>
+          selectedElementIds.includes(el.id) ||
+          el.id === element.id ||
+          (element.groupId && el.groupId === element.groupId)
+      )
       .map((el) => ({ id: el.id, startX: el.x, startY: el.y, width: el.width, height: el.height }));
 
     const handleWindowMouseMove = (moveEvent: MouseEvent) => {

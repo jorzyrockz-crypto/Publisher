@@ -56,6 +56,7 @@ export interface BaseElement {
   zIndex: number;
   locked?: boolean;
   visible?: boolean;
+  groupId?: string;
   opacity?: number;
   flipH?: boolean;
   flipV?: boolean;
