@@ -115,6 +115,7 @@ const TextRenderer: React.FC<{
   onTextChange?: (t: string) => void;
 }> = ({ element, isEditing, pageNumber, totalPages, onTextChange }) => {
   const editorRef = useRef<HTMLDivElement>(null);
+  const viewRef = useRef<HTMLDivElement>(null);
 
   const resolvedText = useMemo(() => {
     if (isEditing) return element.text;
@@ -164,6 +165,18 @@ const TextRenderer: React.FC<{
     return () => flushPendingText();
   }, [isEditing, element.id]);
 
+  // A contentEditable session writes a raw text node into the box. When we go
+  // back to the formatted view React mounts the line spans but does not know
+  // about that node, so it would render the text twice. Scrub it.
+  useEffect(() => {
+    if (isEditing) return;
+    const node = viewRef.current;
+    if (!node) return;
+    Array.from(node.childNodes).forEach((child) => {
+      if (child.nodeType === 3) child.remove();
+    });
+  }, [isEditing, element.id, element.text]);
+
   const boxStyle: React.CSSProperties = {
     backgroundColor: element.backgroundColor || 'transparent',
     border: element.borderWidth
@@ -178,6 +191,7 @@ const TextRenderer: React.FC<{
   if (isEditing) {
     return (
       <div
+        key="text-edit"
         ref={editorRef}
         style={{
           ...boxStyle,
@@ -250,6 +264,8 @@ const TextRenderer: React.FC<{
 
   return (
     <div
+      key="text-view"
+      ref={viewRef}
       style={{
         ...boxStyle,
         width: '100%',
