@@ -14,10 +14,11 @@ import {
 import { buildPatternSvg, buildShapePatternDataUri } from './patternGenerator';
 import { buildWavyRectPath, getShapeSvgPath } from './shapePaths';
 import { buildFontString, layoutText, measureTextWidth, verticalOffset } from './textLayout';
+import type { TextLayoutResult } from './textLayout';
 import { buildTextEffectPainter } from './textEffects';
 import { elementClipPath } from './shapeClip';
 import { imageContentRect, imageFit } from './imageFrame';
-import { wordArtPaint } from './wordArt';
+import { wordArtPaint, wordArtShadowChain } from './wordArt';
 
 function loadImage(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
@@ -205,6 +206,17 @@ function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
 
   const drawUnits = (options: {
     color?: string | CanvasGradient;
+    /**
+     * Built per glyph from element-space coordinates, so a diagonal ramp runs
+     * across the whole word instead of restarting inside every letter.
+     */
+    gradient?: {
+      width: number;
+      height: number;
+      angle: number;
+      stops: { offset: number; color: string }[];
+      origin: { x: number; y: number };
+    };
     strokeColor?: string;
     strokeWidth?: number;
     offsetX?: number;
@@ -214,6 +226,7 @@ function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
   }) => {
     const {
       color,
+      gradient,
       strokeColor,
       strokeWidth = 0,
       offsetX = 0,
@@ -233,8 +246,13 @@ function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
       ctx.textBaseline = unit.centred ? 'middle' : 'top';
       ctx.textAlign = unit.centred ? 'center' : 'left';
 
-      if (fill && color !== undefined) {
-        ctx.fillStyle = color;
+      if (fill && (gradient || color !== undefined)) {
+        ctx.fillStyle = gradient
+          ? gradientFromStops(ctx, gradient.width, gradient.height, gradient.angle, gradient.stops, {
+              x: gradient.origin.x - unit.x - offsetX,
+              y: gradient.origin.y - unit.y - offsetY,
+            })
+          : (color as string | CanvasGradient);
         paintRun(ctx, unit.text, 0, 0, unit.font, letterSpacing, wordSpacing);
       }
       if (strokeWidth > 0 && strokeColor) {
@@ -246,10 +264,11 @@ function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
     }
   };
 
-  // 1. Shadow / glow layers behind the glyphs (WordArt stacks sit underneath).
-  // CSS lists the nearest shadow first; canvas paints last-first, so the
-  // WordArt stack is reversed to keep the crisp offsets on top of the glow.
-  for (const shadow of [...(wa?.shadows ?? [])].reverse().concat(paint.shadows)) {
+  // 1. Everything behind the glyphs, in one chain shared with the CSS painter:
+  // the extrusion marching copies, hand-authored shadows, the cast shadow and
+  // the bloom. CSS lists the nearest layer first; canvas paints farthest-first,
+  // so the chain is walked backwards and the crisp offsets land on top.
+  for (const shadow of [...wordArtShadowChain(wa)].reverse().concat(paint.shadows)) {
     drawUnits({
       color: shadow.color,
       offsetX: shadow.dx,
@@ -266,8 +285,24 @@ function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
 
   // 2. Fill (gradient or flat), unless the effect is hollow.
   let fillStyle: string | CanvasGradient = el.color || '#0f172a';
+  let waGradient:
+    | {
+        width: number;
+        height: number;
+        angle: number;
+        stops: { offset: number; color: string }[];
+        origin: { x: number; y: number };
+      }
+    | undefined;
   if (wa?.gradient) {
-    fillStyle = gradientFromStops(ctx, width, height, wa.gradient.angle, wa.gradient.stops);
+    const box = glyphBox(layout, top);
+    waGradient = {
+      width: box.width,
+      height: box.height,
+      angle: wa.gradient.angle,
+      stops: wa.gradient.stops,
+      origin: { x: box.x, y: box.y },
+    };
   } else if (wa?.fill) {
     fillStyle = wa.fill;
   } else if (paint.gradient) {
@@ -290,7 +325,7 @@ function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
     );
   }
   if (!paint.fillTransparent || wa) {
-    drawUnits({ color: fillStyle });
+    drawUnits(waGradient ? { gradient: waGradient, color: fillStyle } : { color: fillStyle });
   }
 
   // 3. Stroke (a WordArt outline has already been drawn underneath).
@@ -450,20 +485,56 @@ function gradientForBox(
   return g;
 }
 
+/**
+ * The inline box the glyphs actually occupy. CSS clips a WordArt gradient to
+ * the glyphs' own inline boxes, not to the element frame, so the exporter has
+ * to measure the same rectangle or a horizon stop lands at a different height
+ * in the editor than in the PNG.
+ */
+function glyphBox(
+  layout: TextLayoutResult,
+  top: number
+): { x: number; y: number; width: number; height: number } {
+  const lines = layout.lines.length ? layout.lines : [];
+  if (!lines.length) return { x: 0, y: 0, width: 1, height: 1 };
+  let x0 = Infinity;
+  let x1 = -Infinity;
+  for (const line of lines) {
+    for (const run of line.runs) {
+      if (!run.text.trim()) continue;
+      x0 = Math.min(x0, run.x);
+      x1 = Math.max(x1, run.x + run.width);
+    }
+  }
+  if (!Number.isFinite(x0)) { x0 = 0; x1 = layout.columnWidth; }
+  const first = lines[0];
+  const last = lines[lines.length - 1];
+  const y0 = top + first.textTop;
+  const lastSize = last.runs.reduce((max, run) => Math.max(max, run.fontSize), layout.fontSize);
+  const y1 = top + last.textTop + lastSize;
+  return {
+    x: x0,
+    y: y0,
+    width: Math.max(1, x1 - x0),
+    height: Math.max(1, y1 - y0),
+  };
+}
+
 /** Multi-stop version of `gradientForBox`, for WordArt palettes. */
 function gradientFromStops(
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number,
   angleDeg: number,
-  stops: { offset: number; color: string }[]
+  stops: { offset: number; color: string }[],
+  origin: { x: number; y: number } = { x: 0, y: 0 }
 ): CanvasGradient {
   const rad = (angleDeg * Math.PI) / 180;
   const dx = Math.sin(rad);
   const dy = -Math.cos(rad);
   const length = Math.abs(width * dx) + Math.abs(height * dy);
-  const cx = width / 2;
-  const cy = height / 2;
+  const cx = origin.x + width / 2;
+  const cy = origin.y + height / 2;
   const g = ctx.createLinearGradient(
     cx - (dx * length) / 2,
     cy - (dy * length) / 2,

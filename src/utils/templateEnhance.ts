@@ -61,31 +61,44 @@ const EMPTY_STATS: EnhanceStats = {
  * gradient before a chrome gimmick.
  */
 const LIGHT_PAGE_STYLES: Partial<Record<TemplateCategory, WordArtStyle[]>> = {
-  Certificate: ['gradient-blue', 'gold3d', 'chrome', 'comic-pop'],
-  Poster: ['retro', 'sunset-gradient', 'fire', 'comic-pop', 'cinematic'],
-  Tarpapel: ['comic-pop', 'varsity', 'fire', 'sunset-gradient', 'gradient-blue'],
-  Invitation: ['gradient-blue', 'sunset-gradient', 'gold3d', 'retro'],
-  Card: ['gradient-blue', 'sunset-gradient', 'retro'],
-  'Social Media': ['holographic', 'gradient-blue', 'comic-pop', 'retro', 'sunset-gradient'],
-  'Hero Banner': ['gradient-blue', 'retro', 'comic-pop'],
+  Certificate: ['gradient-blue', 'gold3d', 'rose-gold', 'chrome', 'comic-pop'],
+  Poster: ['retro', 'cyber-acid', 'sunset-gradient', 'obsidian-gold', 'fire', 'comic-pop', 'cinematic', 'candy-gloss'],
+  Tarpapel: ['comic-pop', 'varsity', 'obsidian-gold', 'fire', 'sunset-gradient', 'gradient-blue', 'cyber-acid'],
+  Invitation: ['gradient-blue', 'rose-gold', 'sunset-gradient', 'gold3d', 'candy-gloss', 'retro'],
+  Card: ['gradient-blue', 'rose-gold', 'sunset-gradient', 'candy-gloss', 'retro'],
+  'Social Media': ['holographic', 'cyber-acid', 'gradient-blue', 'comic-pop', 'retro', 'sunset-gradient'],
+  'Hero Banner': ['gradient-blue', 'obsidian-gold', 'retro', 'comic-pop'],
   Collage: ['retro', 'sunset-gradient', 'comic-pop', 'gradient-blue'],
   Program: ['gradient-blue', 'emerald-3d', 'gold3d', 'retro'],
-  Menu: ['retro', 'cinematic', 'gold3d', 'gradient-blue'],
-  Flyer: ['retro', 'comic-pop', 'sunset-gradient', 'gradient-blue'],
+  Menu: ['retro', 'cinematic', 'gold3d', 'rose-gold', 'gradient-blue'],
+  Flyer: ['retro', 'cyber-acid', 'comic-pop', 'sunset-gradient', 'gradient-blue', 'candy-gloss'],
   Brochure: ['gradient-blue', 'emerald-3d', 'retro'],
   Newsletter: ['gradient-blue', 'retro', 'emerald-3d'],
   Resume: ['gradient-blue', 'emerald-3d', 'retro'],
-  'Business Card': ['cinematic', 'gold3d', 'gradient-blue', 'chrome'],
+  'Business Card': ['cinematic', 'obsidian-gold', 'gold3d', 'gradient-blue', 'chrome'],
   Postcard: ['retro', 'sunset-gradient', 'comic-pop'],
   Calendar: ['gradient-blue', 'retro', 'emerald-3d'],
-  'Cover Document': ['cinematic', 'gradient-blue', 'chrome', 'emerald-3d'],
+  'Cover Document': ['cinematic', 'obsidian-gold', 'gradient-blue', 'chrome', 'emerald-3d'],
   'Narrative Report': ['gradient-blue', 'emerald-3d', 'retro'],
   Email: ['gradient-blue', 'emerald-3d', 'retro'],
   Logo: ['holographic', 'gradient-blue', 'gold3d', 'chrome'],
 };
 
 /** On a dark page the light-on-dark styles come first. */
-const DARK_PAGE_STYLES: WordArtStyle[] = ['cinematic', 'gold3d', 'chrome', 'neon-glow', 'holographic', 'fire', 'rainbow', 'sunset-gradient'];
+const DARK_PAGE_STYLES: WordArtStyle[] = [
+  'cinematic',
+  'synth-chrome',
+  'gold3d',
+  'chrome',
+  'liquid-glass',
+  'neon-glow',
+  'holographic',
+  'fire',
+  'rainbow',
+  'sunset-gradient',
+  'cyber-acid',
+  'obsidian-gold',
+];
 
 
 export function hexLuminance(color?: string): number {
@@ -248,23 +261,74 @@ function contrastScore(style: WordArtStyle, backgroundLum: number): number {
   return Math.max(fill, edge);
 }
 
+/** FNV-1a — small, stable, and identical on every run. */
+function stableHash(input: string): number {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < input.length; i += 1) {
+    hash ^= input.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash;
+}
+
+/** Styles that shout. Fine on a poster, wrong on a certificate. */
+const PLAYFUL_STYLES = new Set<WordArtStyle>([
+  'comic-pop',
+  'cyber-acid',
+  'candy-gloss',
+  'varsity',
+  'fire',
+  'rainbow',
+  'synth-chrome',
+]);
+
+/** Categories where a shout is the point. */
+const PLAYFUL_CATEGORIES = new Set<TemplateCategory>([
+  'Poster',
+  'Tarpapel',
+  'Social Media',
+  'Collage',
+  'Hero Banner',
+  'Flyer',
+  'Logo',
+  'Invitation',
+  'Card',
+  'Postcard',
+]);
+
 const MIN_CONTRAST = 0.4;
 
 function wordArtChoice(el: TextElement, category: TemplateCategory, page: Page): TextElement['wordArtStyle'] {
   const bgLum = hexLuminance(effectiveBackground(el, page));
   const dark = bgLum < 0.42;
   const palette = dark ? DARK_PAGE_STYLES : LIGHT_PAGE_STYLES[category] ?? ['gradient-blue', 'retro'];
+  const playfulAllowed = PLAYFUL_CATEGORIES.has(category);
+  const sober = (ids: WordArtStyle[]) =>
+    playfulAllowed ? ids : ids.filter((id) => !PLAYFUL_STYLES.has(id));
 
-  // design preference first, legibility second
-  for (const id of palette) if (contrastScore(id, bgLum) >= MIN_CONTRAST) return id;
+  const readable = palette.filter((id) => contrastScore(id, bgLum) >= MIN_CONTRAST);
+  // Design preference first, legibility second — then spread the choice across
+  // the first few that read, so a catalogue of 72 pages doesn't keep landing on
+  // the same style. Deterministic, so enhancing twice changes nothing.
+  const shortlist = (sober(readable).length ? sober(readable) : readable).slice(0, 3);
+  if (shortlist.length) {
+    const seed = stableHash(`${page.id}:${el.id}:${el.text ?? ''}`);
+    return shortlist[seed % shortlist.length];
+  }
 
-  // nothing in the category palette reads here (gold on cream, sunset on
-  // orange) — fall back to whatever paints clearest on this page
-  const global = [...WORD_ART_STYLES]
+  // Nothing in the category palette reads here (gold on cream, sunset on
+  // orange). Fall back to whatever paints clearest — but on a sober category
+  // that must not be a comic pop-up, however well it scores.
+  const scored = [...WORD_ART_STYLES]
     .map((option) => ({ id: option.id, score: contrastScore(option.id, bgLum) }))
     .sort((a, b) => b.score - a.score);
+  const pool = scored.filter(
+    (option) => option.score >= MIN_CONTRAST && (playfulAllowed || !PLAYFUL_STYLES.has(option.id))
+  );
 
-  return global[0] && global[0].score >= MIN_CONTRAST ? global[0].id : undefined;
+  return (pool[0] ?? scored[0]) && (pool[0] ?? scored[0]).score >= MIN_CONTRAST
+    ? (pool[0] ?? scored[0]).id
+    : undefined;
 }
 
 const BULLET = /^[\u2022\u00b7\u25aa\u25e6]\s+/;

@@ -104,7 +104,8 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   font-weight: 900;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+  filter:
+    drop-shadow(0px 2px 4px rgba(0,0,0,0.15));
 }
 
 .wordart-gold3d {
@@ -113,35 +114,44 @@
   -webkit-text-fill-color: transparent;
   -webkit-text-stroke: 2px #7c2d12;
   font-weight: 800;
-  filter: drop-shadow(0 2px 3px rgba(120, 53, 15, 0.35)) drop-shadow(0 4px 10px rgba(0, 0, 0, 0.18));
+  filter:
+    drop-shadow(0px 2px 3px rgba(120,53,15,0.35))
+    drop-shadow(0px 4px 10px rgba(0,0,0,0.18));
 }
 
 .wordart-outline {
   color: #ffffff;
   -webkit-text-stroke: 2px #0f766e;
   font-weight: 900;
-  filter: drop-shadow(2px 3px 0px rgba(15, 118, 110, 0.3));
+  filter:
+    drop-shadow(2px 3px 0px rgba(15,118,110,0.3));
 }
 
 .wordart-retro {
   color: #ec4899;
   font-weight: 800;
-  text-shadow: 3px 3px 0px #06b6d4, 5px 5px 0px #3b82f6;
+  filter:
+    drop-shadow(3px 3px 0px #06b6d4)
+    drop-shadow(5px 5px 0px #3b82f6);
 }
 
 .wordart-neon-glow {
   color: #e0f2fe;
   font-weight: 900;
-  text-shadow: 0 0 6px #38bdf8, 0 0 14px #0284c7, 0 0 28px #ec4899;
+  filter:
+    drop-shadow(0px 0px 6px #38bdf8)
+    drop-shadow(0px 0px 14px #0284c7)
+    drop-shadow(0px 0px 28px #ec4899);
 }
 
 .wordart-chrome {
-  background: linear-gradient(180deg, #f8fafc 0%, #cbd5e1 40%, #475569 55%, #e2e8f0 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #dbe3ec 32%, #93a4b8 49%, #38455c 50%, #7c8ba1 62%, #c3cedd 80%, #f2f6fa 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   -webkit-text-stroke: 1.5px #1e293b;
   font-weight: 900;
-  filter: drop-shadow(0 2px 3px rgba(15, 23, 42, 0.45));
+  filter:
+    drop-shadow(0px 2px 3px rgba(15,23,42,0.45));
 }
 
 .wordart-fire {
@@ -149,20 +159,26 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   font-weight: 900;
-  filter: drop-shadow(0 3px 8px rgba(239, 68, 68, 0.55));
+  filter:
+    drop-shadow(0px 3px 8px rgba(239,68,68,0.55));
 }
 
 .wordart-comic-pop {
   color: #facc15;
   -webkit-text-stroke: 2px #0f172a;
   font-weight: 900;
-  text-shadow: 4px 4px 0px #0f172a;
+  filter:
+    drop-shadow(4px 4px 0px #0f172a);
 }
 
 .wordart-emerald-3d {
   color: #10b981;
   font-weight: 900;
-  text-shadow: 1px 1px 0 #065f46, 2px 2px 0 #064e3b, 3px 3px 0 #022c22, 4px 5px 8px rgba(0, 0, 0, 0.35);
+  filter:
+    drop-shadow(1px 1px 0px #065f46)
+    drop-shadow(2px 2px 0px #064e3b)
+    drop-shadow(3px 3px 0px #022c22)
+    drop-shadow(4px 5px 8px rgba(0,0,0,0.35));
 }
 
 .wordart-cinematic {
@@ -171,23 +187,28 @@
   -webkit-text-fill-color: transparent;
   -webkit-text-stroke: 3px #1b1206;
   font-weight: 900;
-  filter: drop-shadow(0 3px 10px rgba(255, 176, 74, 0.45)) drop-shadow(0 10px 26px rgba(0, 0, 0, 0.55));
+  filter:
+    drop-shadow(0px 3px 10px rgba(255,176,74,0.45))
+    drop-shadow(0px 10px 26px rgba(0,0,0,0.55));
 }
 
 .wordart-holographic {
-  background: linear-gradient(125deg, #a78bfa 0%, #22d3ee 35%, #f472b6 65%, #fde68a 100%);
+  background: linear-gradient(135deg, #a78bfa 0%, #22d3ee 20%, #f8fafc 44%, #f472b6 46%, #fde68a 70%, #c4b5fd 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   -webkit-text-stroke: 2px #160f2e;
   font-weight: 900;
-  filter: drop-shadow(0 0 12px rgba(34, 211, 238, 0.5)) drop-shadow(0 2px 4px rgba(10, 10, 30, 0.45));
+  filter:
+    drop-shadow(0px 0px 12px rgba(34,211,238,0.5))
+    drop-shadow(0px 2px 4px rgba(10,10,30,0.45));
 }
 
 .wordart-varsity {
   color: #dc2626;
   -webkit-text-stroke: 4px #ffffff;
   font-weight: 900;
-  text-shadow: 4px 4px 0 #1e293b;
+  filter:
+    drop-shadow(4px 4px 0px #1e293b);
 }
 
 .wordart-gradient-blue {
@@ -195,15 +216,108 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   font-weight: 900;
-  filter: drop-shadow(0 2px 4px rgba(29, 78, 216, 0.35));
+  filter:
+    drop-shadow(0px 2px 4px rgba(29,78,216,0.35));
 }
+/* AI-grade metal: horizon-break gradients, marching extrusion and bloom.
+   Generated from src/utils/wordArt.ts — keep it that way. */
+.wordart-synth-chrome {
+  background: linear-gradient(180deg, #fff9c4 0%, #ffca3a 24%, #ff6ec7 48%, #1e1b4b 50%, #2563eb 72%, #38bdf8 90%, #e0f2fe 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 2px #fef08a;
+  font-weight: 900;
+  font-style: italic;
+  filter:
+    drop-shadow(0.8px 1.3px 0px #ff7b00)
+    drop-shadow(1.6px 2.6px 0px #eb6800)
+    drop-shadow(2.4px 3.9px 0px #d75500)
+    drop-shadow(3.2px 5.2px 0px #c24200)
+    drop-shadow(4px 6.5px 0px #ae2f00)
+    drop-shadow(4.8px 7.8px 0px #9a1c00)
+    drop-shadow(0px 10px 16px rgba(0,0,0,0.65))
+    drop-shadow(0px 0px 14px rgba(168,85,247,0.55));
+}
+
 
 .wordart-sunset-gradient {
   background: linear-gradient(135deg, #ec4899 0%, #f97316 55%, #facc15 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   font-weight: 900;
-  filter: drop-shadow(0 2px 4px rgba(236, 72, 153, 0.3));
+  filter:
+    drop-shadow(0px 2px 4px rgba(236,72,153,0.3));
+}
+
+.wordart-liquid-glass {
+  background: linear-gradient(175deg, #ffffff 0%, #e0f2fe 28%, #94a3b8 47%, #1e293b 50%, #cbd5e1 68%, #f8fafc 86%, #c4b5fd 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 1.5px #ffffff;
+  font-weight: 900;
+  filter:
+    drop-shadow(0px 1.2px 0px #64748b)
+    drop-shadow(0px 2.4px 0px #48556b)
+    drop-shadow(0px 3.6px 0px #2b364a)
+    drop-shadow(0px 4.8px 0px #0f172a)
+    drop-shadow(0px 8px 14px rgba(15,23,42,0.45))
+    drop-shadow(0px 0px 12px rgba(125,211,252,0.45));
+}
+
+.wordart-rose-gold {
+  background: linear-gradient(168deg, #fff3e4 0%, #f0c39b 25%, #fde4cf 43%, #8f5344 45%, #c9805f 62%, #f3c9ac 82%, #fff8f0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 2px #fff1e0;
+  font-weight: 900;
+  filter:
+    drop-shadow(0.6px 1.4px 0px #8a4a34)
+    drop-shadow(1.2px 2.8px 0px #7a3f2d)
+    drop-shadow(1.8px 4.2px 0px #6a3425)
+    drop-shadow(2.4px 5.6px 0px #5a281e)
+    drop-shadow(3px 7px 0px #4a1d16)
+    drop-shadow(0px 9px 18px rgba(60,20,10,0.5))
+    drop-shadow(0px 0px 10px rgba(255,196,150,0.4));
+}
+
+.wordart-cyber-acid {
+  background: linear-gradient(135deg, #ccff00 0%, #22d3ee 55%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 3px #0a0a0a;
+  font-weight: 900;
+  filter:
+    drop-shadow(2.4px 2.4px 0px #ff2bd6)
+    drop-shadow(4.8px 4.8px 0px #e11dc6)
+    drop-shadow(7.2px 7.2px 0px #c40eb6)
+    drop-shadow(9.6px 9.6px 0px #a600a6)
+    drop-shadow(0px 0px 18px rgba(163,230,53,0.5));
+}
+
+.wordart-obsidian-gold {
+  background: linear-gradient(150deg, #34343e 0%, #6a6a78 32%, #f8fafc 50%, #26262e 56%, #565663 78%, #2c2c34 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 3px #f59e0b;
+  font-weight: 900;
+  filter:
+    drop-shadow(0px 4px 10px rgba(0,0,0,0.55));
+}
+
+.wordart-candy-gloss {
+  background: linear-gradient(180deg, #fff0f5 0%, #ffb3c7 12%, #ff5c8a 50%, #e11d48 80%, #be123c 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 4px #ffffff;
+  font-weight: 900;
+  filter:
+    drop-shadow(1.2px 1.6px 0px #be123c)
+    drop-shadow(2.4px 3.2px 0px #ae1534)
+    drop-shadow(3.6px 4.8px 0px #9f182d)
+    drop-shadow(4.8px 6.4px 0px #8f1a25)
+    drop-shadow(6px 8px 0px #7f1d1d)
+    drop-shadow(0px 8px 16px rgba(127,29,29,0.45))
+    drop-shadow(0px 0px 10px rgba(255,92,138,0.35));
 }
 
 /* Fluent modern toggle switch */

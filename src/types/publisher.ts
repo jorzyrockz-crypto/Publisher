@@ -38,7 +38,13 @@ export type WordArtStyle =
   | 'sunset-gradient'
   | 'cinematic'
   | 'holographic'
-  | 'varsity';
+  | 'varsity'
+  | 'synth-chrome'
+  | 'liquid-glass'
+  | 'rose-gold'
+  | 'cyber-acid'
+  | 'obsidian-gold'
+  | 'candy-gloss';
 
 export type BorderArtStyle =
   | 'none'

@@ -206,10 +206,16 @@ const TextRenderer: React.FC<{
   // WordArt is painted from the same spec the exporter uses; the CSS classes
   // are only for the gallery previews.
   const waCss = wordArtCss(element.isWordArt ? element.wordArtStyle : undefined);
-  const waShadow = waCss.textShadow;
+  // WordArt layers are a drop-shadow chain: `text-shadow` would bleed through
+  // the clipped gradient fill and turn the metal muddy.
+  const waFilter = waCss.filter;
   const waStroke = waCss.webkitTextStroke
     ? { WebkitTextStroke: waCss.webkitTextStroke }
     : {};
+
+  const hasBoxPaint =
+    (!!element.backgroundColor && element.backgroundColor !== 'transparent') ||
+    (!!element.borderWidth && element.borderStyle !== 'none');
 
   if (isEditing) {
     return (
@@ -235,8 +241,10 @@ const TextRenderer: React.FC<{
               }
             : {}),
           ...waStroke,
-          textShadow: waShadow,
-          fontStyle: element.fontStyle,
+          // A drop shadow on the editable box would also outline its fill and
+          // border, so only paint the stack when the box itself is bare.
+          ...(waFilter && !hasBoxPaint ? { filter: waFilter } : {}),
+          fontStyle: waCss.fontStyle ?? element.fontStyle,
           textDecoration: element.textDecoration,
           textTransform: element.textTransform || 'none',
           fontVariant: element.fontVariant || 'normal',
@@ -308,7 +316,7 @@ const TextRenderer: React.FC<{
 
   // First entry in a text-shadow list sits on top — effects were painted above
   // the WordArt stack in the exporter, so they come first here too.
-  const glyphShadow = [paint.cssShadow, waShadow].filter(Boolean).join(', ') || undefined;
+  const glyphShadow = paint.cssShadow || undefined;
 
   const baseColor = waCss.color ?? (paint.fillTransparent ? 'transparent' : element.color);
 
@@ -403,7 +411,8 @@ const TextRenderer: React.FC<{
         overflow: 'hidden',
         fontFamily: element.fontFamily,
         fontWeight: (waCss.fontWeight ?? element.fontWeight) as React.CSSProperties['fontWeight'],
-        fontStyle: element.fontStyle,
+        // style-level italic (synthwave, liquid metal) slants the type too
+        fontStyle: waCss.fontStyle ?? element.fontStyle,
         fontKerning: element.kerning === false ? 'none' : 'normal',
         fontVariantLigatures: element.ligatures ? 'common-ligatures' : 'none',
         userSelect: 'none',
@@ -429,13 +438,16 @@ const TextRenderer: React.FC<{
         </span>
       )}
 
-      {/* Base copy carries the fill, stroke and shadows. */}
+      {/* Base copy carries the fill, stroke and shadows. The WordArt stack is
+          one filter over the whole word, so glows and extrusions behind
+          neighbouring glyphs join up instead of stacking per letter. */}
       <div style={{ position: 'absolute', inset: 0 }}>
         <div
           style={{
             position: 'absolute',
             inset: 0,
             color: baseColor,
+            ...(waFilter ? { filter: waFilter } : {}),
           }}
         >
           {renderGlyphs(baseColor, 'base', true)}

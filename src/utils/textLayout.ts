@@ -1,5 +1,5 @@
+import { wordArtItalic, wordArtWeight } from './wordArt';
 import type { TextElement } from '../types/publisher';
-import { wordArtWeight } from './wordArt';
 
 /**
  * One layout engine for both the DOM renderer and the canvas exporter.
@@ -111,7 +111,9 @@ export function buildFontString(
   },
   size: number
 ): string {
-  const style = el.fontStyle === 'italic' ? 'italic ' : '';
+  // Some WordArt styles are only right in italic (synthwave, liquid metal),
+  // so the measured font and the painted font have to agree on it too.
+  const style = el.fontStyle === 'italic' || (el.isWordArt && wordArtItalic(el.wordArtStyle)) ? 'italic ' : '';
   // A WordArt style forces a heavier weight, so measurement has to use it too
   // or the wrap and the glyphs disagree.
   const weight =
