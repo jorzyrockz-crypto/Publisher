@@ -1,6 +1,7 @@
 import { encodeSvgDataUri } from './svgRecolor';
 import {
   FetchAttemptError,
+  IS_STATIC_HOST,
   fetchFirstOk,
   resolveClipartAssetUrls,
   resolveClipartSearchUrls,
@@ -83,15 +84,17 @@ export async function searchClipartFree(
   }
 ): Promise<ClipartFreeSearchResponse> {
   const key = options.apiKey.trim();
-  if (!key) {
+  // A static deployment supplies the key server-side (`api/clipart.js`), so a
+  // browser key is only required when running against the dev server.
+  if (!key && !IS_STATIC_HOST) {
     throw new Error('Please enter your Clipart.Free API key (starts with cf_).');
   }
 
   const params = new URLSearchParams({
     q: query.trim() || 'cat',
     page: String(options.page || 1),
-    key,
   });
+  if (key) params.set('key', key);
   if (options.category && options.category !== 'All') {
     params.set('category', options.category);
   }

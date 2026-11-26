@@ -71,9 +71,9 @@ export const StockArtPanel: React.FC = () => {
   const [sourceFilter, setSourceFilter] = useState<StockSourceFilter>('all');
   const [svgOnly, setSvgOnly] = useState(false);
 
-  const [clipartApiKey, setClipartApiKey] = useState<string>(
-    () => getSavedClipartFreeKey() || 'cf_12a1b9727cf3c4f4e3d3fafc0e01e0ddd2eb714f'
-  );
+  // No hardcoded fallback: a baked-in key would be published with the bundle.
+  // Static deployments use the server-side proxy (api/clipart.js) instead.
+  const [clipartApiKey, setClipartApiKey] = useState<string>(() => getSavedClipartFreeKey());
   const [showKeyBar, setShowKeyBar] = useState(false);
   const [clipartProxyUrl, setClipartProxyUrl] = useState<string>(() => getClipartProxyBase());
   const [cfTest, setCfTest] = useState<{ ok: boolean; message: string } | null>(null);

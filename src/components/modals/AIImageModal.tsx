@@ -18,6 +18,7 @@ import {
   enhancePromptText,
   generateHybridAIImage,
 } from '../../utils/aiImageGenerator';
+import { getPollinationsKey, savePollinationsKey } from '../../utils/apiEndpoints';
 import { removeImageBackground } from '../../utils/bgRemoval';
 import {
   Wand2,
@@ -50,6 +51,13 @@ export const AIImageModal: React.FC = () => {
   const [geminiApiKey, setGeminiApiKey] = useState<string>(() => {
     try {
       return localStorage.getItem('studiopress_gemini_api_key') || '';
+    } catch {
+      return '';
+    }
+  });
+  const [pollinationsKey, setPollinationsKey] = useState<string>(() => {
+    try {
+      return getPollinationsKey();
     } catch {
       return '';
     }
@@ -156,7 +164,13 @@ export const AIImageModal: React.FC = () => {
         setErrorMsg(
           code === 'RATE_LIMITED'
             ? 'Cloud AI is rate-limited right now (429). Wait a few seconds or switch to Hybrid / Offline Art.'
-            : `${code} — Try another Cloud Model or switch to Auto Hybrid / Offline Art.`
+            : code === 'AUTH_REQUIRED'
+              ? 'Pollinations now requires an API key. Open the API Keys bar above and paste a key from enter.pollinations.ai — or switch to Auto Hybrid / Offline Art.'
+              : code === 'PAYMENT_REQUIRED'
+                ? 'This Pollinations model needs pollen credits on your key. Use another key or switch to Auto Hybrid / Offline Art.'
+                : code.startsWith('UPSTREAM_')
+                  ? `Pollinations answered ${code.replace('UPSTREAM_', 'HTTP ')} — its free models are down. Auto Hybrid / Offline Art still works.`
+                  : `${code} — Try another Cloud Model or switch to Auto Hybrid / Offline Art.`
         );
       }
     } finally {
@@ -326,12 +340,12 @@ export const AIImageModal: React.FC = () => {
                   onClick={() => setShowKeyBar(!showKeyBar)}
                   className="text-[10px] font-bold text-[#5c4bb8] hover:underline"
                 >
-                  {geminiApiKey ? 'Gemini Key Set ✓' : '+ Gemini API Key (Optional)'}
+                  {geminiApiKey || pollinationsKey ? 'API Keys Set ✓' : '+ API Keys (Optional)'}
                 </button>
               </div>
 
               {showKeyBar && (
-                <div className="p-2 rounded-xl bg-[#efeafd] border border-[#d3c9f9] flex items-center gap-1.5">
+                <div className="p-2 rounded-xl bg-[#efeafd] border border-[#d3c9f9] flex flex-wrap items-center gap-1.5">
                   <input
                     type="password"
                     value={geminiApiKey}
@@ -346,7 +360,19 @@ export const AIImageModal: React.FC = () => {
                       }
                     }}
                     placeholder="Paste Gemini API key..."
-                    className="flex-1 bg-white border border-[#d3c9f9] rounded-lg px-2 py-1 text-[10.5px] outline-none"
+                    className="flex-1 min-w-[130px] bg-white border border-[#d3c9f9] rounded-lg px-2 py-1 text-[10.5px] outline-none"
+                  />
+                  <input
+                    type="password"
+                    value={pollinationsKey}
+                    onChange={(e) => {
+                      // Pollinations now gates generation behind a key; stored per
+                      // browser and appended as ?key= to every image request.
+                      setPollinationsKey(e.target.value);
+                      savePollinationsKey(e.target.value);
+                    }}
+                    placeholder="Paste Pollinations key (enter.pollinations.ai)"
+                    className="flex-1 min-w-[130px] bg-white border border-[#d3c9f9] rounded-lg px-2 py-1 text-[10.5px] outline-none"
                   />
                   <button
                     type="button"

@@ -19,10 +19,34 @@ falls through to the next strategy instead of breaking the search.
 
 ## Clipart.Free on a static host
 
+### 1. Vercel: server-side proxy (recommended, already wired)
+
+`api/clipart.js` is a small Vercel function that calls
+`https://clipart.free/api/clipart/search` with the key from the deployment
+environment, so the browser needs neither CORS nor a key:
+
+```
+GET /api/clipart?mode=search&q=cat&page=1&category=animals
+GET /api/clipart?mode=asset&url=https%3A%2F%2Fclipart.free%2Fstatic%2F…
+```
+
+Set it once — **Vercel → Settings → Environment Variables →
+`CLIPART_FREE_API_KEY`** (type *sensitive*, all environments), then redeploy.
+Never put this key in `src/`: a baked-in key ships inside the JS bundle and, in
+a public repo, to the whole world (this project did exactly that until the key
+was removed). Verified live: search returns real JSON from the alias.
+
+Caveat: clipart.free's **static CDN** answers `500` to non-browser requests
+(even with a browser UA, `Accept` and `Referer`), so the `mode=asset` hop only
+relays pages; SVG/PNG previews still load through the browser's own `<img>`
+hotlink, and server-side asset fetching is not possible.
+
+### 2. Other static hosts (GitHub Pages, S3…)
+
 The Clipart.Free REST API is keyed and does not send CORS headers, so browsers
 block direct calls from `https://<user>.github.io`. Two options:
 
-### 1. Runtime setting (no rebuild)
+#### Runtime setting (no rebuild)
 
 1. Open the **Stock Art** panel.
 2. Click the 🔑 key icon.
@@ -32,7 +56,7 @@ block direct calls from `https://<user>.github.io`. Two options:
 The value is stored in `localStorage` (`studiopress_clipart_proxy_url`), so it
 survives reloads and never needs to be committed to the repo.
 
-### 2. Build-time environment variable
+#### Build-time environment variable
 
 ```bash
 # .env.production
@@ -155,3 +179,30 @@ in `vite.config.ts` (`/api/pollinations`, `/api/clipart-free`,
 through `src/utils/apiEndpoints.ts` (browser-first candidate order). Anything
 that still needs a same-origin proxy must be pointed at the Cloudflare Worker,
 never at `/api/…`.
+
+## Cloud AI images (Pollinations) — key now required
+
+As of Nov 2026 Pollinations gates **generation** behind an API key; only model
+listing (`/models`) answers anonymously, and generation without a key returns
+`401/402/500`. Its model list no longer contains `flux` (it currently reports
+just `sana`), so requesting a retired model also fails.
+
+What the app does now:
+
+- Tries the requested model, then falls back to `flux` → `sana`, over three
+  hosts: `image.pollinations.ai/prompt/…`, `gen.pollinations.ai/image/…`, then
+  the Vite dev proxy.
+- Sends the key as `?key=…` (the `Authorization` header is impossible for
+  `<img>`-style loads). Two places to supply it:
+  - **Runtime:** AI Image modal → *+ API Keys* → paste a key from
+    `enter.pollinations.ai`. Stored in `localStorage`
+    (`studiopress_pollinations_api_key`); never leaves the browser except to
+    Pollinations itself.
+  - **Build time:** `VITE_POLLINATIONS_API_KEY` (Vercel → Settings →
+    Environment Variables, then redeploy). Note this inlines the key into the
+    public bundle — prefer the runtime field, or use a `pk_` app key.
+- Maps failures to readable copy: `AUTH_REQUIRED`, `PAYMENT_REQUIRED`,
+  `UPSTREAM_5xx` (upstream outage) instead of a bare `HTTP_500`.
+
+Hybrid and Offline Art engines are unaffected — they run fully in the browser
+and need no key or network.
