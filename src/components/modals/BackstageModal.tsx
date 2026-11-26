@@ -237,6 +237,7 @@ export const BackstageModal: React.FC = () => {
         {/* SECTION: NEW TEMPLATES (Grouped & Categorized) */}
         {activeSection === 'new' && (() => {
           const groupDefs: { label: string; categories: TemplateDefinition['category'][] }[] = [
+            { label: 'Social Media', categories: ['Social Media'] },
             { label: 'Marketing & Flyers', categories: ['Brochure', 'Flyer', 'Poster', 'Postcard'] },
             { label: 'Cards, Menus & Invitations', categories: ['Menu', 'Invitation', 'Business Card'] },
             { label: 'Publications & Resumes', categories: ['Newsletter', 'Resume', 'Certificate'] },
