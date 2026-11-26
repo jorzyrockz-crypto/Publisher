@@ -6,7 +6,7 @@ import { calculateSnap } from '../../utils/snapping';
 import { buildPatternBackgroundStyle } from '../../utils/patternGenerator';
 import { computeTarpapelMetrics } from '../../utils/printUtils';
 import { resizeTextBox } from '../../utils/textResize';
-import { imageHasFrame, imageMaskClip, panFromDrag } from '../../utils/imageFrame';
+import { imageFit, imageHasFrame, imageMaskClip, panFromDrag } from '../../utils/imageFrame';
 import { PublisherElement, Page, ConnectorElement, ImageElement } from '../../types/publisher';
 import {
   Copy,
@@ -197,6 +197,7 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
     return () => window.removeEventListener('keydown', onKey);
   }, [editingPhotoId]);
 
+
   // Drag inside a lifted frame repositions the photo, not the element.
   const handlePhotoPanMouseDown = (element: ImageElement, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -204,12 +205,12 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
     const startX = e.clientX;
     const startY = e.clientY;
     const startPan = { panX: element.panX || 0, panY: element.panY || 0 };
-    const img = document.querySelector(`#element-${element.id} img`) as HTMLImageElement | null;
+    const holder = document.getElementById(`element-${element.id}`);
+    const img = (holder?.querySelector('img') as HTMLImageElement | null) ?? null;
     const natural =
       img && img.naturalWidth > 0
         ? { width: img.naturalWidth, height: img.naturalHeight }
         : null;
-    const fit = element.objectFit === 'contain' ? 'contain' : 'cover';
 
     let raf: number | null = null;
     let latest: MouseEvent | null = null;
@@ -222,7 +223,13 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
         { x: (latest.clientX - startX) / zoom, y: (latest.clientY - startY) / zoom },
         { width: element.width, height: element.height },
         natural,
-        fit
+        {
+          fit: imageFit(element),
+          scale: element.imageScale || 1,
+          rotation: element.imageRotation,
+          flipH: element.flipH,
+          flipV: element.flipV,
+        }
       );
       updateElement(element.id, {
         panX: Math.round(next.panX * 10) / 10,
@@ -443,6 +450,28 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
     [];
 
   const displayedElements = isEditingMaster ? activeMasterEls : targetPage.elements;
+
+  const photoEditingElement = editingPhotoId
+    ? (displayedElements.find((el) => el.id === editingPhotoId) as ImageElement | undefined)
+    : undefined;
+  const photoEditingScale = photoEditingElement?.imageScale || 1;
+
+  // A wheel over the lifted frame resizes the picture inside it. The listener
+  // is native so the page does not scroll instead.
+  useEffect(() => {
+    if (!editingPhotoId) return;
+    const holder = document.getElementById(`element-${editingPhotoId}`);
+    if (!holder) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const step = e.deltaY < 0 ? 1.08 : 1 / 1.08;
+      const next = Math.min(2.5, Math.max(1, photoEditingScale * step));
+      updateElement(editingPhotoId, { imageScale: Math.round(next * 100) / 100 });
+    };
+    holder.addEventListener('wheel', onWheel, { passive: false });
+    return () => holder.removeEventListener('wheel', onWheel);
+  }, [editingPhotoId, photoEditingScale, updateElement]);
 
   const masterElements = !isEditingMaster ? getMasterElementsForPage(targetPage) : [];
 
@@ -1003,7 +1032,7 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
                   <div className="absolute inset-0 border-2 border-dashed border-[#6e56cf]/80 rounded-[inherit]" />
                 </div>
                 <div className="absolute left-1/2 -translate-x-1/2 -top-7 whitespace-nowrap pointer-events-none bg-[#6e56cf] text-white text-[9.5px] font-semibold px-2 py-0.5 rounded-full shadow-sm">
-                  Drag to move the photo · click outside to crop
+                  Drag to move · scroll to resize · click outside to crop
                 </div>
               </>
             )}

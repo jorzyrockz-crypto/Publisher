@@ -16,6 +16,7 @@ import { buildWavyRectPath, getShapeSvgPath } from './shapePaths';
 import { buildFontString, layoutText, measureTextWidth, verticalOffset } from './textLayout';
 import { buildTextEffectPainter } from './textEffects';
 import { elementClipPath } from './shapeClip';
+import { imageContentRect, imageFit } from './imageFrame';
 
 function loadImage(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
@@ -765,38 +766,24 @@ async function drawImageElement(ctx: CanvasRenderingContext2D, el: ImageElement)
     }
     if (filters.length > 0) ctx.filter = filters.join(' ');
 
-    const zoom = el.imageScale || 1;
-    const fit = el.objectFit || 'cover';
-    let drawW = innerW;
-    let drawH = innerH;
-    const imgRatio = img.width / Math.max(1, img.height);
-    const boxRatio = innerW / innerH;
-
-    if (fit === 'cover') {
-      if (imgRatio > boxRatio) {
-        drawH = innerH * zoom;
-        drawW = drawH * imgRatio;
-      } else {
-        drawW = innerW * zoom;
-        drawH = drawW / imgRatio;
-      }
-    } else if (fit === 'contain') {
-      if (imgRatio > boxRatio) {
-        drawW = innerW * zoom;
-        drawH = drawW / imgRatio;
-      } else {
-        drawH = innerH * zoom;
-        drawW = drawH * imgRatio;
-      }
-    } else {
-      drawW = innerW * zoom;
-      drawH = innerH * zoom;
-    }
-
-    const panXRatio = (50 + (el.panX || 0)) / 100;
-    const panYRatio = (50 + (el.panY || 0)) / 100;
-    const dx = (innerW - drawW) * panXRatio;
-    const dy = (innerH - drawH) * panYRatio;
+    // Placement comes from the same helper the DOM renderer and the crop
+    // gesture use, so the export cannot drift from what is on screen.
+    const rect = imageContentRect(
+      { width: innerW, height: innerH },
+      { width: img.width, height: img.height },
+      {
+        fit: imageFit(el),
+        scale: el.imageScale || 1,
+        rotation: el.imageRotation,
+        flipH: el.flipH,
+        flipV: el.flipV,
+      },
+      { panX: el.panX || 0, panY: el.panY || 0 }
+    );
+    const drawW = rect.width;
+    const drawH = rect.height;
+    const dx = rect.left;
+    const dy = rect.top;
     ctx.save();
     if (el.imageRotation || el.flipH || el.flipV) {
       ctx.translate(innerW / 2, innerH / 2);
@@ -1233,6 +1220,13 @@ export async function renderPageModelToCanvas(
     if (el.rotation) ctx.rotate((el.rotation * Math.PI) / 180);
     if (el.flipH || el.flipV) ctx.scale(el.flipH ? -1 : 1, el.flipV ? -1 : 1);
     ctx.translate(-el.width / 2, -el.height / 2);
+
+    // Text, tables, QR codes etc. have no clip of their own — honour the frame
+    // here so "clip to shape" means the same thing for every element type.
+    if (el.type !== 'image' && el.type !== 'shape') {
+      const localClip = elementClipPath(el);
+      if (localClip) ctx.clip(new Path2D(localClip));
+    }
 
     if (el.type === 'shape') await drawShapeElement(ctx, el);
     else if (el.type === 'text') drawTextElement(ctx, el);

@@ -20,6 +20,7 @@ import { FontSelector } from '../common/FontSelector';
 import { FloatingDropdown } from '../common/FloatingDropdown';
 import { ShapePreviewIcon } from '../common/ShapePreviewIcon';
 import { SHAPE_CATALOG } from '../../utils/shapePaths';
+import { imageFit } from '../../utils/imageFrame';
 import {
   PATTERN_CATALOG,
   DEFAULT_BACKGROUND_PATTERN,
@@ -4385,7 +4386,7 @@ export const PropertiesPanel: React.FC = () => {
                     key={fit}
                     onClick={() => updateElement(selectedElement.id, { objectFit: fit })}
                     className={`py-1 rounded-lg text-[10px] font-semibold capitalize transition-all ${
-                      ((selectedElement as ImageElement).objectFit || 'cover') === fit
+                      imageFit(selectedElement as ImageElement) === fit
                         ? 'bg-white text-[#5c4bb8] shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
@@ -4834,6 +4835,27 @@ export const PropertiesPanel: React.FC = () => {
                 <span>{selectedElement.locked ? 'Locked' : 'Lock'}</span>
               </button>
             </div>
+
+            {/* Any element can be clipped to a shape; shapes show this in their own card */}
+            {selectedElement.type !== 'shape' && Boolean(selectedElement.clipPathD) && (
+              <div className="flex items-center justify-between bg-[#efeafd] border border-[#d3c9f9] rounded-xl px-2 py-1.5">
+                <span className="text-[10px] font-semibold text-[#5c4bb8] flex items-center gap-1">
+                  <Scissors size={11} /> Clipped to a shape
+                </span>
+                <button
+                  onClick={() =>
+                    updateElement(selectedElement.id, {
+                      clipPathD: undefined,
+                      clipBaseWidth: undefined,
+                      clipBaseHeight: undefined,
+                    })
+                  }
+                  className="text-[10px] font-bold text-[#5c4bb8] hover:text-rose-600"
+                >
+                  Remove
+                </button>
+              </div>
+            )}
 
             {/* Opacity Slider */}
             <div>

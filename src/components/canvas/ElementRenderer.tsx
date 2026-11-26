@@ -16,7 +16,7 @@ import { buildShapePatternDataUri } from '../../utils/patternGenerator';
 import { PATTERN_CATALOG } from '../../utils/patternGenerator';
 import { layoutText, verticalOffset } from '../../utils/textLayout';
 import { buildTextEffectPainter } from '../../utils/textEffects';
-import { imageMaskClip } from '../../utils/imageFrame';
+import { imageFit, imageMaskClip } from '../../utils/imageFrame';
 import { elementClipPath } from '../../utils/shapeClip';
 
 interface ElementRendererProps {
@@ -92,6 +92,11 @@ export const ElementRenderer: React.FC<ElementRendererProps> = React.memo(
   const scaleX = element.flipH ? -1 : 1;
   const scaleY = element.flipV ? -1 : 1;
 
+  // Images and shapes clip themselves; everything else is framed here so the
+  // clip means the same thing whatever is inside it.
+  const outerClip =
+    element.type !== 'image' && element.type !== 'shape' ? elementClipPath(element) : undefined;
+
   return (
     <div
       style={{
@@ -99,6 +104,8 @@ export const ElementRenderer: React.FC<ElementRendererProps> = React.memo(
         height: '100%',
         transform: scaleX !== 1 || scaleY !== 1 ? `scale(${scaleX}, ${scaleY})` : undefined,
         mixBlendMode: element.blendMode || 'normal',
+        clipPath: outerClip ? `path("${outerClip}")` : undefined,
+        WebkitClipPath: outerClip ? `path("${outerClip}")` : undefined,
       }}
     >
       {renderInner()}
@@ -1468,7 +1475,7 @@ const ImageRenderer: React.FC<{
               style={{
                 width: '100%',
                 height: '100%',
-                objectFit: isStickerMode ? element.objectFit || 'contain' : element.objectFit || 'cover',
+                objectFit: imageFit(element),
                 objectPosition: `${50 + panX}% ${50 + panY}%`,
                 transform:
                   [
