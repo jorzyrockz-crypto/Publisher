@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
 import { WordArtStyle } from '../../types/publisher';
+import { WORD_ART_STYLES } from '../../utils/wordArt';
 import { X, Sparkles } from 'lucide-react';
 
 export const WordArtPickerModal: React.FC = () => {
@@ -10,18 +11,12 @@ export const WordArtPickerModal: React.FC = () => {
 
   if (!isWordArtModalOpen) return null;
 
-  const styles: { id: WordArtStyle; name: string; previewClass: string; darkBg?: boolean }[] = [
-    { id: 'gold3d', name: 'Gold 3D Extrusion', previewClass: 'wordart-gold3d' },
-    { id: 'rainbow', name: 'Rainbow Gradient', previewClass: 'wordart-rainbow' },
-    { id: 'outline', name: 'Cyan Outlined 3D', previewClass: 'wordart-outline' },
-    { id: 'retro', name: 'Retro Pop Shadow', previewClass: 'wordart-retro' },
-    { id: 'neon-glow', name: 'Neon Cyber Glow', previewClass: 'wordart-neon-glow', darkBg: true },
-    { id: 'chrome', name: 'Chrome Metallic', previewClass: 'wordart-chrome' },
-    { id: 'fire', name: 'Blazing Fire', previewClass: 'wordart-fire' },
-    { id: 'comic-pop', name: 'Comic Pop Art', previewClass: 'wordart-comic-pop' },
-    { id: 'emerald-3d', name: 'Emerald 3D Block', previewClass: 'wordart-emerald-3d' },
-    { id: 'sunset-gradient', name: 'Sunset Vibe', previewClass: 'wordart-sunset-gradient' },
-  ];
+  const styles = WORD_ART_STYLES.map((s) => ({
+    id: s.id,
+    name: s.label,
+    previewClass: s.className,
+    darkBg: s.dark,
+  }));
 
   const handleInsert = () => {
     addTextBox({

@@ -17,6 +17,7 @@ import { PATTERN_CATALOG } from '../../utils/patternGenerator';
 import { layoutText, verticalOffset } from '../../utils/textLayout';
 import { buildTextEffectPainter } from '../../utils/textEffects';
 import { imageContentRect, imageFit, imageMaskClip } from '../../utils/imageFrame';
+import { wordArtClassName } from '../../utils/wordArt';
 import { useImageAspect } from '../../hooks/useImageAspect';
 import { elementClipPath } from '../../utils/shapeClip';
 
@@ -441,33 +442,6 @@ const TextRenderer: React.FC<{
     </div>
   );
 };
-
-function wordArtClassName(style?: TextElement['wordArtStyle']): string {
-  switch (style) {
-    case 'rainbow':
-      return 'wordart-rainbow';
-    case 'gold3d':
-      return 'wordart-gold3d';
-    case 'outline':
-      return 'wordart-outline';
-    case 'retro':
-      return 'wordart-retro';
-    case 'neon-glow':
-      return 'wordart-neon-glow';
-    case 'chrome':
-      return 'wordart-chrome';
-    case 'fire':
-      return 'wordart-fire';
-    case 'comic-pop':
-      return 'wordart-comic-pop';
-    case 'emerald-3d':
-      return 'wordart-indigo-3d';
-    case 'sunset-gradient':
-      return 'wordart-sunset-gradient';
-    default:
-      return '';
-  }
-}
 
 function leaderDom(
   run: { text: string; width: number },
