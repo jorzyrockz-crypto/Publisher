@@ -25,6 +25,11 @@ import {
   searchOpenverse,
 } from '../../utils/openverseSearch';
 import {
+  OpenAccessItem,
+  fetchOpenAccessAsDataUrl,
+  searchOpenAccess,
+} from '../../utils/openAccessArt';
+import {
   UnsplashItem,
   UnsplashNotConfiguredError,
   UnsplashOrder,
@@ -63,7 +68,8 @@ type StockSourceFilter =
   | 'wikimedia'
   | 'openverse'
   | 'pixabay'
-  | 'unsplash';
+  | 'unsplash'
+  | 'openart';
 
 interface UnifiedStockItem {
   uid: string;
@@ -74,7 +80,8 @@ interface UnifiedStockItem {
     | 'wikimedia'
     | 'openverse'
     | 'pixabay'
-    | 'unsplash';
+    | 'unsplash'
+    | 'openart';
   sourceLabel: string;
   title: string;
   thumbUrl: string;
@@ -88,6 +95,7 @@ interface UnifiedStockItem {
   rawOpenverse?: OpenverseItem;
   rawPixabay?: PixabayItem;
   rawUnsplash?: UnsplashItem;
+  rawOpenAccess?: OpenAccessItem;
   /** Photographer credit — required wherever Pixabay results are shown. */
   credit?: string;
 }
@@ -249,6 +257,12 @@ export const StockArtPanel: React.FC = () => {
   const [unLoadingMore, setUnLoadingMore] = useState(false);
   const [unsplashUnavailable, setUnsplashUnavailable] = useState(false);
 
+  // Public-domain museum art (Art Institute of Chicago + Cleveland).
+  const [oaItems, setOaItems] = useState<UnifiedStockItem[]>([]);
+  const [oaTotal, setOaTotal] = useState(0);
+  const [oaPage, setOaPage] = useState(1);
+  const [oaLoadingMore, setOaLoadingMore] = useState(false);
+
   const [loadingSources, setLoadingSources] = useState({
     clipartfree: false,
     iconify: false,
@@ -256,6 +270,7 @@ export const StockArtPanel: React.FC = () => {
     openverse: false,
     pixabay: false,
     unsplash: false,
+    openart: false,
   });
   const [sourceErrors, setSourceErrors] = useState<string[]>([]);
   // Sources the user chose not to retry (persisted), e.g. because the host has
@@ -274,6 +289,7 @@ export const StockArtPanel: React.FC = () => {
   const abortRef = useRef<AbortController | null>(null);
   const pbAbortRef = useRef<AbortController | null>(null);
   const unAbortRef = useRef<AbortController | null>(null);
+  const oaAbortRef = useRef<AbortController | null>(null);
   const hasAutoSearchedRef = useRef(false);
 
   const setSourceDisabled = (source: string, disabled: boolean) => {
@@ -434,6 +450,60 @@ export const StockArtPanel: React.FC = () => {
       });
   };
 
+  const runOpenAccessSearch = (q: string, page = 1, keepItems = false, signal?: AbortSignal) => {
+    if (!q) {
+      setOaItems([]);
+      setOaTotal(0);
+      setLoadingSources((prev) => ({ ...prev, openart: false }));
+      return;
+    }
+    if (!signal) {
+      oaAbortRef.current?.abort();
+      const controller = new AbortController();
+      oaAbortRef.current = controller;
+      signal = controller.signal;
+    }
+    if (page === 1) setLoadingSources((s) => ({ ...s, openart: true }));
+    else setOaLoadingMore(true);
+
+    searchOpenAccess(q, { page, limit: 18, signal })
+      .then((res) => {
+        if (signal?.aborted) return;
+        setOaTotal(res.total);
+        setOaPage(page);
+        const mapped: UnifiedStockItem[] = res.items.map((item) => ({
+          uid: `oa-${item.source}-${item.id}`,
+          source: 'openart' as const,
+          sourceLabel: item.museum,
+          title: item.title,
+          thumbUrl: item.thumbUrl,
+          isSvg: false,
+          width: 900,
+          height: 900,
+          rawOpenAccess: item,
+          credit: item.creator || item.museum,
+        }));
+        setOaItems((prev) => {
+          if (!keepItems || page === 1) return mapped;
+          const seen = new Set(prev.map((i) => i.uid));
+          return [...prev, ...mapped.filter((i) => !seen.has(i.uid))];
+        });
+      })
+      .catch((err) => {
+        if (signal?.aborted) return;
+        if (page === 1) setOaItems([]);
+        setSourceErrors((prev) => [
+          ...prev,
+          `Museum art: ${err instanceof Error ? err.message : 'Error'}`,
+        ]);
+      })
+      .finally(() => {
+        if (signal?.aborted) return;
+        setLoadingSources((s) => ({ ...s, openart: false }));
+        setOaLoadingMore(false);
+      });
+  };
+
   const runUnifiedSearch = (overrideQuery?: string) => {
     const q = (overrideQuery ?? query).trim();
     if (!q) {
@@ -467,6 +537,7 @@ export const StockArtPanel: React.FC = () => {
       openverse: true,
       pixabay: pbEnabled,
       unsplash: unEnabled,
+      openart: true,
     });
 
     // 1. Built-in (instant local filter)
@@ -624,6 +695,10 @@ export const StockArtPanel: React.FC = () => {
     // 7. Unsplash — hotlinked photos; only search and download-tracking touch
     // our server, because the access key must stay off the client.
     runUnsplashSearch(q, 1, false);
+
+    // 8. Public-domain museum art — keyless, CC0, and the best source in the
+    // panel for engravings, ornaments and botanical plates.
+    runOpenAccessSearch(q, 1, false, controller.signal);
   };
 
   // Auto-run initial unified search when the panel first opens, and reactively debounce live typing
@@ -653,6 +728,7 @@ export const StockArtPanel: React.FC = () => {
         ovItems,
         pbItems,
         unItems,
+        oaItems,
       ];
       const maxLen = Math.max(...buckets.map((b) => b.length), 0);
       for (let i = 0; i < maxLen; i++) {
@@ -672,6 +748,8 @@ export const StockArtPanel: React.FC = () => {
       list = pbItems;
     } else if (sourceFilter === 'unsplash') {
       list = unItems;
+    } else if (sourceFilter === 'openart') {
+      list = oaItems;
     } else {
       list = wikiItems;
     }
@@ -690,6 +768,7 @@ export const StockArtPanel: React.FC = () => {
     ovItems,
     pbItems,
     unItems,
+    oaItems,
   ]);
 
   const isAnyLoading =
@@ -698,7 +777,8 @@ export const StockArtPanel: React.FC = () => {
     loadingSources.wikimedia ||
     loadingSources.openverse ||
     loadingSources.pixabay ||
-    loadingSources.unsplash;
+    loadingSources.unsplash ||
+    loadingSources.openart;
 
   const handleInsertItem = async (item: UnifiedStockItem, asSticker = false) => {
     setInsertingUid(item.uid);
@@ -714,6 +794,8 @@ export const StockArtPanel: React.FC = () => {
         dataUrl = await fetchWikimediaAsDataUrl(item.rawWikimedia);
       } else if (item.source === 'openverse' && item.rawOpenverse) {
         dataUrl = await fetchOpenverseAsDataUrl(item.rawOpenverse);
+      } else if (item.source === 'openart' && item.rawOpenAccess) {
+        dataUrl = await fetchOpenAccessAsDataUrl(item.rawOpenAccess);
       } else if (item.source === 'unsplash' && item.rawUnsplash) {
         // Hotlinked straight from images.unsplash.com (CORS-enabled), then kept
         // inside the user's own document. Record the required "use" event.
@@ -728,7 +810,11 @@ export const StockArtPanel: React.FC = () => {
       if (!dataUrl) return;
 
       const maxDim =
-        asSticker ? 180 : item.source === 'pixabay' || item.source === 'unsplash' ? 280 : 220;
+        asSticker
+          ? 180
+          : item.source === 'pixabay' || item.source === 'unsplash' || item.source === 'openart'
+            ? 280
+            : 220;
       const ratio = item.width && item.height ? item.width / item.height : 1;
       const width = Math.max(48, ratio >= 1 ? maxDim : Math.round(maxDim * ratio));
       const height = Math.max(48, ratio >= 1 ? Math.round(maxDim / ratio) : maxDim);
@@ -787,7 +873,8 @@ export const StockArtPanel: React.FC = () => {
     wikiItems.length +
     ovItems.length +
     pbItems.length +
-    unItems.length;
+    unItems.length +
+    oaItems.length;
 
   return (
     <aside
@@ -816,7 +903,7 @@ export const StockArtPanel: React.FC = () => {
               Stock Art & Clipart
             </h3>
             <p className="text-[10px] text-[#5b6673] leading-tight">
-              Unified search across 7 sources
+              Unified search across 8 sources
             </p>
           </div>
         </div>
@@ -996,6 +1083,7 @@ export const StockArtPanel: React.FC = () => {
                   ? 'Uns (off)'
                   : `Uns (${unItems.length})`,
               },
+              { id: 'openart', label: `Art (${oaItems.length})` },
             ] as const
           ).map((tab) => (
             <button
@@ -1228,6 +1316,7 @@ export const StockArtPanel: React.FC = () => {
                 loadingSources.wikimedia && 'Wikimedia',
                 loadingSources.pixabay && 'Pixabay',
                 loadingSources.unsplash && 'Unsplash',
+                loadingSources.openart && 'Museum art',
               ]
                 .filter(Boolean)
                 .join(', ')}
@@ -1287,6 +1376,8 @@ export const StockArtPanel: React.FC = () => {
                             ? 'bg-rose-100 text-rose-800'
                             : item.source === 'unsplash'
                             ? 'bg-neutral-900 text-white'
+                            : item.source === 'openart'
+                            ? 'bg-teal-100 text-teal-800'
                             : 'bg-amber-100 text-amber-800'
                         }`}
                       >
@@ -1298,6 +1389,8 @@ export const StockArtPanel: React.FC = () => {
                           ? 'Pix'
                           : item.source === 'unsplash'
                           ? 'Uns'
+                          : item.source === 'openart'
+                          ? 'Art'
                           : item.sourceLabel}
                       </span>
                       {item.isSvg && (
@@ -1355,6 +1448,39 @@ export const StockArtPanel: React.FC = () => {
                     Pixabay
                   </a>
                   , used under the Pixabay Content License. Search results are cached for 24 hours.
+                </>
+              }
+            />
+          )}
+
+          {sourceFilter === 'openart' && oaItems.length > 0 && (
+            <ResultPaging
+              total={oaTotal}
+              page={oaPage}
+              perPage={18}
+              loading={oaLoadingMore}
+              onMore={() => runOpenAccessSearch(query, oaPage + 1, true)}
+              credit={
+                <>
+                  Public-domain art from the{' '}
+                  <a
+                    href="https://www.artic.edu/"
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="font-semibold text-[#5c4bb8] hover:underline"
+                  >
+                    Art Institute of Chicago
+                  </a>{' '}
+                  and the{' '}
+                  <a
+                    href="https://www.clevelandart.org/art/collection"
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="font-semibold text-[#5c4bb8] hover:underline"
+                  >
+                    Cleveland Museum of Art
+                  </a>
+                  .
                 </>
               }
             />

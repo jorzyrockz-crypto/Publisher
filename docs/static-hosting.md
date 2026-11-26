@@ -16,6 +16,7 @@ on GitHub Pages.
 | Pixabay (stock photos) | same function as production (`api/pixabay.js`) | ⚠ needs the serverless relay — see below |
 | Unsplash (stock photos) | same function as production (`api/unsplash.js`) | ⚠ needs the serverless relay for search only — see below |
 | AI Type Studio (headline ideas) | same function as production (`api/ai.js`) | ⚠ needs the serverless relay — see below |
+| Museum art (AIC + Cleveland) | same function as production (`api/openaccess.js`) | ⚠ needs the serverless relay — see below |
 
 Every resolver returns an ordered candidate list, so a failed request silently
 falls through to the next strategy instead of breaking the search.
@@ -145,6 +146,36 @@ server-side, never in the bundle.
   never dead-ends, with or without a network.
 - Ideas are inserted as ordinary WordArt text boxes, so exports and printing are
   unaffected.
+
+## Public-domain museum art
+
+Two CC0 collections behind one keyless relay — the strongest source in the panel
+for engravings, ornaments, botanical plates and period illustration:
+
+| Museum | API | Notes |
+| --- | --- | --- |
+| Art Institute of Chicago | `api.artic.edu/api/v1/artworks/search` | `fields=` must include `image_id`; images come from IIIF (`www.artic.edu/iiif/2/<id>/full/1200,/0/default.jpg`) |
+| Cleveland Museum of Art | `openaccess-api.clevelandart.org/api/artworks/` | filter `cc0=1&has_image=1`; `images.web` ≈ 630px, `images.print` ≈ 2200px |
+
+```
+GET /api/openaccess?mode=search&q=botanical&page=1&limit=18&source=all
+GET /api/openaccess?mode=image&url=https%3A%2F%2F…
+GET /api/openaccess?mode=diag
+```
+
+No key, no signup. The relay interleaves both museums so neither dominates the
+first screen, and `mode=image` is allow-listed to the two image hosts and cached
+for 30 days (`immutable`) — these files never change. Cleveland's "print"
+rendition is 2–5 MB, so the client downscales anything over 700 KB to 1600px
+before it enters the document (it lives in IndexedDB, but a 5 MB data URL hurts
+the editor all the same).
+
+Both collections are public domain/CC0, so attribution is optional — the panel
+credits both museums under the results anyway.
+
+Rejected candidates, for the record: Openclipart's `format=json` endpoint now
+returns HTML (scraping only), the Met's collection API refused automated
+requests during review, and Pexels/Europeana/Smithsonian all need keys.
 
 ### 2. Other static hosts (GitHub Pages, S3…)
 
