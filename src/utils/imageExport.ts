@@ -1,11 +1,24 @@
 import { DocumentProject, Page } from '../types/publisher';
 import { renderPageToCanvas } from './pdfExport';
 
-export async function exportToImage(page: Page, format: 'png' | 'jpeg', filename: string): Promise<void> {
-  const pageEl = document.getElementById(`print-page-${page.id}`);
+export async function exportToImage(
+  page: Page,
+  format: 'png' | 'jpeg',
+  filename: string,
+  elementPrefix = 'print-capture-'
+): Promise<void> {
+  const pageEl =
+    document.getElementById(`${elementPrefix}${page.id}`) ||
+    document.getElementById(`print-page-${page.id}`);
   if (!pageEl) return;
 
-  const canvas = await renderPageToCanvas(pageEl, page.width, page.height, 2);
+  const canvas = await renderPageToCanvas(
+    pageEl,
+    page.width,
+    page.height,
+    2,
+    page.backgroundColor || '#ffffff'
+  );
   const dataUrl = canvas.toDataURL(`image/${format}`, 0.95);
 
   const link = document.createElement('a');

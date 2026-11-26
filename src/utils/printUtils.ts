@@ -2,6 +2,11 @@ import { Page } from '../types/publisher';
 import { renderPageToCanvas } from './pdfExport';
 
 export interface PrintSettings {
+  printerName: 'System Print Dialog' | 'Save as PDF' | 'Office Color LaserJet' | 'Photo Inkjet Pro';
+  paperSize: 'auto' | 'letter' | 'a4' | 'legal' | 'tabloid';
+  qualityDpi: 150 | 300 | 600;
+  duplex: 'one-sided' | 'long-edge' | 'short-edge';
+  scaleMode: 'fit' | 'actual' | 'fill';
   rangeMode: 'all' | 'current' | 'custom';
   customRange: string;
   colorMode: 'color' | 'grayscale';
@@ -12,6 +17,11 @@ export interface PrintSettings {
 }
 
 export const DEFAULT_PRINT_SETTINGS: PrintSettings = {
+  printerName: 'System Print Dialog',
+  paperSize: 'auto',
+  qualityDpi: 300,
+  duplex: 'one-sided',
+  scaleMode: 'fit',
   rangeMode: 'all',
   customRange: '1',
   colorMode: 'color',

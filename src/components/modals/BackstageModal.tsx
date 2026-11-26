@@ -167,6 +167,7 @@ export const BackstageModal: React.FC = () => {
   const [previewTemplate, setPreviewTemplate] = useState<TemplateDefinition | null>(null);
 
   const [printSettings, setPrintSettings] = useState<PrintSettings>(DEFAULT_PRINT_SETTINGS);
+  const [showPrinterProps, setShowPrinterProps] = useState<boolean>(false);
   const [activeSheetIdx, setActiveSheetIdx] = useState<number>(0);
   const [showAllPrintSheets, setShowAllPrintSheets] = useState<boolean>(false);
   const [isPreparingPrint, setIsPreparingPrint] = useState<boolean>(false);
@@ -187,21 +188,33 @@ export const BackstageModal: React.FC = () => {
     return project.pages;
   };
 
-  const handlePrintNow = async () => {
-    const pagesToPrint = resolveSelectedPrintPages();
+  const runWithOffscreenCapture = async (
+    pagesToCapture: Page[],
+    action: () => Promise<void>
+  ) => {
     setIsPreparingPrint(true);
-    setPrintCapturePages(pagesToPrint);
+    setPrintCapturePages(pagesToCapture);
 
-    // Allow React 1 frame to render the full-resolution offscreen staging elements
     await new Promise<void>((res) => window.requestAnimationFrame(() => res()));
-    await new Promise<void>((res) => window.setTimeout(res, 60));
+    await new Promise<void>((res) => window.setTimeout(res, 80));
 
     try {
-      await executePrintJob(pagesToPrint, printSettings, 'print-capture-');
+      await action();
     } finally {
       setIsPreparingPrint(false);
       setPrintCapturePages(null);
     }
+  };
+
+  const handlePrintNow = async () => {
+    const pagesToPrint = resolveSelectedPrintPages();
+    await runWithOffscreenCapture(pagesToPrint, async () => {
+      if (printSettings.printerName === 'Save as PDF') {
+        await exportToPdf({ ...project, pages: pagesToPrint }, 'print-capture-');
+      } else {
+        await executePrintJob(pagesToPrint, printSettings, 'print-capture-');
+      }
+    });
   };
 
   return (
@@ -584,15 +597,137 @@ export const BackstageModal: React.FC = () => {
 
                     <button
                       type="button"
-                      onClick={async () => {
-                        await exportToPdf(project);
-                        confetti({ particleCount: 35 });
-                      }}
+                      disabled={isPreparingPrint}
+                      onClick={() =>
+                        runWithOffscreenCapture(project.pages, async () => {
+                          await exportToPdf(project, 'print-capture-');
+                          confetti({ particleCount: 35 });
+                        })
+                      }
                       className="w-full py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer"
                     >
                       <FileDown size={14} className="text-rose-600" />
                       <span>Export Print-Ready PDF</span>
                     </button>
+                  </div>
+
+                  {/* Printer Selector & Properties */}
+                  <div className="space-y-2 pt-3 border-t border-slate-100">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        Printer
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setShowPrinterProps(!showPrinterProps)}
+                        className="text-[10.5px] font-bold text-indigo-700 hover:underline"
+                      >
+                        {showPrinterProps ? 'Hide Properties' : 'Printer Properties'}
+                      </button>
+                    </div>
+                    <select
+                      value={printSettings.printerName}
+                      onChange={(e) =>
+                        setPrintSettings((s) => ({
+                          ...s,
+                          printerName: e.target.value as PrintSettings['printerName'],
+                        }))
+                      }
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-indigo-600 cursor-pointer"
+                    >
+                      <option value="System Print Dialog">System Print Dialog (Default)</option>
+                      <option value="Save as PDF">Save as PDF (Direct Download)</option>
+                      <option value="Office Color LaserJet">Office Color LaserJet</option>
+                      <option value="Photo Inkjet Pro">Photo Inkjet Pro</option>
+                    </select>
+
+                    {showPrinterProps && (
+                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2.5 text-[11px]">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">
+                              Paper Size
+                            </label>
+                            <select
+                              value={printSettings.paperSize}
+                              onChange={(e) =>
+                                setPrintSettings((s) => ({
+                                  ...s,
+                                  paperSize: e.target.value as PrintSettings['paperSize'],
+                                }))
+                              }
+                              className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-medium outline-none"
+                            >
+                              <option value="auto">Auto-Match</option>
+                              <option value="letter">Letter (8.5×11&quot;)</option>
+                              <option value="a4">A4 (210×297mm)</option>
+                              <option value="legal">Legal</option>
+                              <option value="tabloid">Tabloid (11×17&quot;)</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">
+                              Quality
+                            </label>
+                            <select
+                              value={printSettings.qualityDpi}
+                              onChange={(e) =>
+                                setPrintSettings((s) => ({
+                                  ...s,
+                                  qualityDpi: Number(e.target.value) as PrintSettings['qualityDpi'],
+                                }))
+                              }
+                              className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-medium outline-none"
+                            >
+                              <option value={150}>Draft (150 DPI)</option>
+                              <option value={300}>Standard (300 DPI)</option>
+                              <option value={600}>High (600 DPI)</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">
+                              Duplex / Sides
+                            </label>
+                            <select
+                              value={printSettings.duplex}
+                              onChange={(e) =>
+                                setPrintSettings((s) => ({
+                                  ...s,
+                                  duplex: e.target.value as PrintSettings['duplex'],
+                                }))
+                              }
+                              className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-medium outline-none"
+                            >
+                              <option value="one-sided">One-Sided</option>
+                              <option value="long-edge">2-Sided (Long)</option>
+                              <option value="short-edge">2-Sided (Short)</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">
+                              Scale Mode
+                            </label>
+                            <select
+                              value={printSettings.scaleMode}
+                              onChange={(e) =>
+                                setPrintSettings((s) => ({
+                                  ...s,
+                                  scaleMode: e.target.value as PrintSettings['scaleMode'],
+                                }))
+                              }
+                              className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-medium outline-none"
+                            >
+                              <option value="fit">Fit to Paper</option>
+                              <option value="actual">Actual (100%)</option>
+                              <option value="fill">Fill Sheet</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Copies */}
@@ -878,13 +1013,16 @@ export const BackstageModal: React.FC = () => {
                   </p>
                 </div>
                 <button
-                  onClick={async () => {
-                    await exportToPdf(project);
-                    confetti({ particleCount: 35 });
-                  }}
-                  className="mt-6 w-full py-2 bg-red-600 hover:bg-red-700 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-xs"
+                  disabled={isPreparingPrint}
+                  onClick={() =>
+                    runWithOffscreenCapture(project.pages, async () => {
+                      await exportToPdf(project, 'print-capture-');
+                      confetti({ particleCount: 35 });
+                    })
+                  }
+                  className="mt-6 w-full py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
                 >
-                  Create PDF
+                  {isPreparingPrint ? 'Exporting...' : 'Create PDF'}
                 </button>
               </div>
 
@@ -900,13 +1038,16 @@ export const BackstageModal: React.FC = () => {
                   </p>
                 </div>
                 <button
-                  onClick={async () => {
-                    await exportToImage(activePage, 'png', activePage.name);
-                    confetti({ particleCount: 35 });
-                  }}
-                  className="mt-6 w-full py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-xs"
+                  disabled={isPreparingPrint}
+                  onClick={() =>
+                    runWithOffscreenCapture([activePage], async () => {
+                      await exportToImage(activePage, 'png', activePage.name, 'print-capture-');
+                      confetti({ particleCount: 35 });
+                    })
+                  }
+                  className="mt-6 w-full py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
                 >
-                  Export PNG
+                  {isPreparingPrint ? 'Exporting...' : 'Export PNG'}
                 </button>
               </div>
 
@@ -922,13 +1063,16 @@ export const BackstageModal: React.FC = () => {
                   </p>
                 </div>
                 <button
-                  onClick={async () => {
-                    await exportToImage(activePage, 'jpeg', activePage.name);
-                    confetti({ particleCount: 35 });
-                  }}
-                  className="mt-6 w-full py-2 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-xs"
+                  disabled={isPreparingPrint}
+                  onClick={() =>
+                    runWithOffscreenCapture([activePage], async () => {
+                      await exportToImage(activePage, 'jpeg', activePage.name, 'print-capture-');
+                      confetti({ particleCount: 35 });
+                    })
+                  }
+                  className="mt-6 w-full py-2 bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
                 >
-                  Export JPEG
+                  {isPreparingPrint ? 'Exporting...' : 'Export JPEG'}
                 </button>
               </div>
             </div>
