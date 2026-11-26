@@ -123,6 +123,7 @@ interface PublisherContextType {
   toggleElementLock: (id: string) => void;
   toggleElementVisibility: (id: string) => void;
   selectElement: (id: string, multiSelect?: boolean) => void;
+  selectElements: (ids: string[], additive?: boolean) => void;
   selectAll: () => void;
   clearSelection: () => void;
   bringForward: () => void;
@@ -977,6 +978,30 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     [currentElements]
   );
 
+  const selectElements = useCallback(
+    (ids: string[], additive = false) => {
+      if (ids.length === 0) {
+        if (!additive) setSelectedElementIds([]);
+        return;
+      }
+      const groupSet = new Set<string>();
+      ids.forEach((id) => {
+        groupSet.add(id);
+        const target = currentElements.find((el) => el.id === id);
+        if (target?.groupId) {
+          currentElements
+            .filter((el) => el.groupId === target.groupId)
+            .forEach((el) => groupSet.add(el.id));
+        }
+      });
+      const expanded = Array.from(groupSet);
+      setSelectedElementIds((prev) =>
+        additive ? Array.from(new Set([...prev, ...expanded])) : expanded
+      );
+    },
+    [currentElements]
+  );
+
   const groupSelected = useCallback(() => {
     if (selectedElementIds.length < 2) return;
     const newGroupId = `grp-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
@@ -1656,6 +1681,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         toggleElementLock,
         toggleElementVisibility,
         selectElement,
+        selectElements,
         selectAll,
         clearSelection,
         bringForward,

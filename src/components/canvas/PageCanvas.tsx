@@ -45,6 +45,7 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
     gridVisible,
     snapToGuides,
     selectElement,
+    selectElements,
     clearSelection,
     updateElement,
     updateElementsBatch,
@@ -175,16 +176,28 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
   };
 
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Clicked directly on background canvas
+    // Only start marquee on left-click on background canvas
+    if (e.button !== 0) return;
     if (e.target === canvasRef.current || (e.target as HTMLElement).classList.contains('canvas-bg')) {
       setEditingTextId(null);
-      clearSelection();
+      const isAdditive = e.shiftKey || e.ctrlKey || e.metaKey;
+      if (!isAdditive) {
+        clearSelection();
+      }
 
       if (!canvasRef.current) return;
       const rect = canvasRef.current.getBoundingClientRect();
       const startX = Math.round((e.clientX - rect.left) / zoom);
       const startY = Math.round((e.clientY - rect.top) / zoom);
       setMarquee({ startX, startY, currentX: startX, currentY: startY });
+
+      const handleWindowMouseMove = (moveEvent: MouseEvent) => {
+        if (!canvasRef.current) return;
+        const moveRect = canvasRef.current.getBoundingClientRect();
+        const currentX = Math.round((moveEvent.clientX - moveRect.left) / zoom);
+        const currentY = Math.round((moveEvent.clientY - moveRect.top) / zoom);
+        setMarquee((prev) => (prev ? { ...prev, currentX, currentY } : null));
+      };
 
       const handleWindowMouseUp = () => {
         setMarquee((current) => {
@@ -194,24 +207,32 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
             const minY = Math.min(current.startY, current.currentY);
             const maxY = Math.max(current.startY, current.currentY);
 
-            // Select all elements intersecting marquee
-            if (maxX - minX > 5 && maxY - minY > 5) {
-              const intersecting = targetPage.elements.filter((el) => {
-                return (
-                  el.x < maxX &&
-                  el.x + el.width > minX &&
-                  el.y < maxY &&
-                  el.y + el.height > minY
-                );
-              });
-              intersecting.forEach((el) => selectElement(el.id, true));
+            // Select all visible, unlocked elements intersecting marquee
+            if (maxX - minX > 4 || maxY - minY > 4) {
+              const pool = isEditingMaster
+                ? project.masterPage?.elements || []
+                : targetPage.elements;
+              const intersectingIds = pool
+                .filter(
+                  (el) =>
+                    el.visible !== false &&
+                    !el.locked &&
+                    el.x < maxX &&
+                    el.x + el.width > minX &&
+                    el.y < maxY &&
+                    el.y + el.height > minY
+                )
+                .map((el) => el.id);
+              selectElements(intersectingIds, isAdditive);
             }
           }
           return null;
         });
+        window.removeEventListener('mousemove', handleWindowMouseMove);
         window.removeEventListener('mouseup', handleWindowMouseUp);
       };
 
+      window.addEventListener('mousemove', handleWindowMouseMove);
       window.addEventListener('mouseup', handleWindowMouseUp);
     }
   };
@@ -441,7 +462,7 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
       {/* Marquee Drag Selection Box */}
       {marquee && (
         <div
-          className="selection-marquee absolute z-50 pointer-events-none"
+          className="selection-marquee absolute z-50 pointer-events-none border-[1.5px] border-indigo-500 bg-indigo-500/12 rounded-[2px]"
           style={{
             left: `${Math.min(marquee.startX, marquee.currentX)}px`,
             top: `${Math.min(marquee.startY, marquee.currentY)}px`,
