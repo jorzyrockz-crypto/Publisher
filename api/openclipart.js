@@ -139,7 +139,9 @@ export function parseSearchPage(html, page, perPage) {
   // already walk the whole result set", since their page sizes vary by result.
   const fetchedSoFar = page * Math.max(1, items.length);
   const hasMore = pageCount > 0 ? page < pageCount : total > fetchedSoFar;
-  const clipartIndex = text.search(/clipart/i);
+  // Anchor the sample on the result count ("6,219 clipart"), not the site title,
+  // which also contains the word "clipart".
+  const clipartIndex = text.search(/[\d,]+\s*clipart/i);
   const textSample =
     clipartIndex >= 0
       ? text.slice(Math.max(0, clipartIndex - 60), clipartIndex + 80).trim()
