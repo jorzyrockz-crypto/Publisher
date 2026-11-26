@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import {
   PublisherElement,
@@ -14,10 +14,18 @@ import { Scissors, Quote, Award, QrCode, ImagePlus, Upload } from 'lucide-react'
 import { buildWavyRectPath } from '../../utils/shapePaths';
 import { buildShapePatternDataUri } from '../../utils/patternGenerator';
 import { PATTERN_CATALOG } from '../../utils/patternGenerator';
+import { layoutText, verticalOffset } from '../../utils/textLayout';
+import { buildTextEffectPainter } from '../../utils/textEffects';
+import { imageContentRect, imageFit, imageMaskClip } from '../../utils/imageFrame';
+import { useImageAspect } from '../../hooks/useImageAspect';
+import { elementClipPath } from '../../utils/shapeClip';
 
 interface ElementRendererProps {
   element: PublisherElement;
   isSelected: boolean;
+  isEditing?: boolean;
+  /** Image is being repositioned inside its frame: the crop is lifted. */
+  isPhotoEditing?: boolean;
   isDropTarget?: boolean;
   pageNumber?: number;
   totalPages?: number;
@@ -30,6 +38,8 @@ export const ElementRenderer: React.FC<ElementRendererProps> = React.memo(
   ({
     element,
     isSelected,
+    isEditing = false,
+    isPhotoEditing = false,
     isDropTarget = false,
     pageNumber = 1,
     totalPages = 1,
@@ -44,6 +54,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = React.memo(
           <TextRenderer
             element={element}
             isSelected={isSelected}
+            isEditing={isEditing}
             pageNumber={pageNumber}
             totalPages={totalPages}
             onTextChange={onTextChange}
@@ -55,6 +66,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = React.memo(
         return (
           <ImageRenderer
             element={element}
+            isPhotoEditing={isPhotoEditing}
             isDropTarget={isDropTarget}
             onImageReplace={onImageReplace}
           />
@@ -81,6 +93,11 @@ export const ElementRenderer: React.FC<ElementRendererProps> = React.memo(
   const scaleX = element.flipH ? -1 : 1;
   const scaleY = element.flipV ? -1 : 1;
 
+  // Images and shapes clip themselves; everything else is framed here so the
+  // clip means the same thing whatever is inside it.
+  const outerClip =
+    element.type !== 'image' && element.type !== 'shape' ? elementClipPath(element) : undefined;
+
   return (
     <div
       style={{
@@ -88,6 +105,8 @@ export const ElementRenderer: React.FC<ElementRendererProps> = React.memo(
         height: '100%',
         transform: scaleX !== 1 || scaleY !== 1 ? `scale(${scaleX}, ${scaleY})` : undefined,
         mixBlendMode: element.blendMode || 'normal',
+        clipPath: outerClip ? `path("${outerClip}")` : undefined,
+        WebkitClipPath: outerClip ? `path("${outerClip}")` : undefined,
       }}
     >
       {renderInner()}
@@ -97,6 +116,8 @@ export const ElementRenderer: React.FC<ElementRendererProps> = React.memo(
   (prev, next) =>
     prev.element === next.element &&
     prev.isSelected === next.isSelected &&
+    prev.isEditing === next.isEditing &&
+    prev.isPhotoEditing === next.isPhotoEditing &&
     prev.pageNumber === next.pageNumber &&
     prev.totalPages === next.totalPages
 );
@@ -104,156 +125,370 @@ export const ElementRenderer: React.FC<ElementRendererProps> = React.memo(
 const TextRenderer: React.FC<{
   element: TextElement;
   isSelected: boolean;
+  isEditing: boolean;
   pageNumber: number;
   totalPages: number;
   onTextChange?: (t: string) => void;
-}> = ({ element, isSelected, pageNumber, totalPages, onTextChange }) => {
+}> = ({ element, isEditing, pageNumber, totalPages, onTextChange }) => {
   const editorRef = useRef<HTMLDivElement>(null);
+  const viewRef = useRef<HTMLDivElement>(null);
 
-  // Sync element.text into the contentEditable DOM only when entering edit mode or when not focused
+  const resolvedText = useMemo(() => {
+    if (isEditing) return element.text;
+    return element.text
+      .replace(/{{PageNumber}}/gi, String(pageNumber))
+      .replace(/{{TotalPages}}/gi, String(totalPages));
+  }, [element.text, isEditing, pageNumber, totalPages]);
+
+  const layoutElement = useMemo(
+    () => (resolvedText === element.text ? element : { ...element, text: resolvedText }),
+    [element, resolvedText]
+  );
+
+  const layout = useMemo(() => layoutText(layoutElement), [layoutElement]);
+  const offset = useMemo(() => verticalOffset(layout, layoutElement), [layout, layoutElement]);
+
+  // Keyboard input is captured on every keystroke so nothing is lost if the
+  // box is deselected (or unmounted) without ever firing blur.
+  const pendingTextRef = useRef<string | null>(null);
+  const commitRef = useRef(onTextChange);
+  commitRef.current = onTextChange;
+
+  const flushPendingText = () => {
+    const pending = pendingTextRef.current;
+    pendingTextRef.current = null;
+    if (pending !== null && commitRef.current) commitRef.current(pending);
+  };
+
+  // Entering edit mode: seed the DOM, focus it and drop the caret at the end so
+  // the very first keystroke lands in the box.
   useEffect(() => {
-    if (isSelected && editorRef.current) {
-      if (document.activeElement !== editorRef.current) {
-        editorRef.current.innerText = element.text;
-      }
+    if (!isEditing) return;
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    editor.innerText = element.text;
+    if (document.activeElement !== editor) {
+      editor.focus({ preventScroll: true });
+      const range = document.createRange();
+      range.selectNodeContents(editor);
+      range.collapse(false);
+      const selection = window.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(range);
     }
-  }, [isSelected, element.id, element.text]);
 
-  const getWordArtClass = () => {
-    if (!element.isWordArt) return '';
-    switch (element.wordArtStyle) {
-      case 'rainbow':
-        return 'wordart-rainbow';
-      case 'gold3d':
-        return 'wordart-gold3d';
-      case 'outline':
-        return 'wordart-outline';
-      case 'retro':
-        return 'wordart-retro';
-      case 'neon-glow':
-        return 'wordart-neon-glow';
-      case 'chrome':
-        return 'wordart-chrome';
-      case 'fire':
-        return 'wordart-fire';
-      case 'comic-pop':
-        return 'wordart-comic-pop';
-      case 'emerald-3d':
-        return 'wordart-indigo-3d';
-      case 'sunset-gradient':
-        return 'wordart-sunset-gradient';
-      default:
-        return '';
-    }
-  };
+    return () => flushPendingText();
+  }, [isEditing, element.id]);
 
-  // Render drop cap if requested and text starts with a letter
-  const renderTextContent = () => {
-    const resolvedText = isSelected
-      ? element.text
-      : element.text
-          .replace(/{{PageNumber}}/gi, String(pageNumber))
-          .replace(/{{TotalPages}}/gi, String(totalPages));
+  // A contentEditable session writes a raw text node into the box. When we go
+  // back to the formatted view React mounts the line spans but does not know
+  // about that node, so it would render the text twice. Scrub it.
+  useEffect(() => {
+    if (isEditing) return;
+    const node = viewRef.current;
+    if (!node) return;
+    Array.from(node.childNodes).forEach((child) => {
+      if (child.nodeType === 3) child.remove();
+    });
+  }, [isEditing, element.id, element.text]);
 
-    if (element.dropCap && resolvedText && resolvedText.length > 0) {
-      const firstLetter = resolvedText[0];
-      const rest = resolvedText.slice(1);
-      return (
-        <span>
-          <span
-            style={{
-              float: 'left',
-              fontSize: `${element.fontSize * 2.8}px`,
-              lineHeight: 0.8,
-              paddingRight: '6px',
-              paddingTop: '4px',
-              fontFamily: 'Georgia, serif',
-              fontWeight: 'bold',
-              color: element.color,
-            }}
-          >
-            {firstLetter}
-          </span>
-          {rest}
-        </span>
-      );
-    }
-    return resolvedText;
-  };
-
-  const sharedStyle: React.CSSProperties = {
-    width: '100%',
-    height: '100%',
+  const boxStyle: React.CSSProperties = {
     backgroundColor: element.backgroundColor || 'transparent',
     border: element.borderWidth
       ? `${element.borderWidth}px ${element.borderStyle || 'solid'} ${element.borderColor || '#000'}`
       : 'none',
     borderRadius: element.borderRadius ? `${element.borderRadius}px` : undefined,
-    padding: `${element.padding}px`,
-    color: element.color,
-    fontFamily: element.fontFamily,
-    fontSize: `${element.fontSize}px`,
-    fontWeight: element.fontWeight,
-    fontStyle: element.fontStyle,
-    textDecoration: element.textDecoration,
-    textTransform: element.textTransform || 'none',
-    fontVariant: element.fontVariant || 'normal',
-    letterSpacing: element.letterSpacing ? `${element.letterSpacing}px` : undefined,
-    wordSpacing: element.wordSpacing ? `${element.wordSpacing}px` : undefined,
-    textIndent: element.textIndent ? `${element.textIndent}px` : undefined,
-    WebkitTextStroke: element.textStrokeWidth
-      ? `${element.textStrokeWidth}px ${element.textStrokeColor || '#000000'}`
-      : undefined,
-    textShadow: element.shadow
-      ? `2px 3px ${element.shadowBlur ?? 6}px ${element.shadowColor || 'rgba(0,0,0,0.35)'}`
-      : undefined,
-    transform: element.baselineShift ? `translateY(${-element.baselineShift}px)` : undefined,
-    textAlign: element.textAlign,
-    lineHeight: element.lineHeight,
-    columnCount: element.columns,
-    columnGap: `${element.columnGap}px`,
-    columnRule: element.columns > 1 ? '1px solid #e2e8f0' : 'none',
-    overflow: 'hidden',
-    whiteSpace: 'pre-wrap',
-    wordBreak: 'break-word',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent:
-      element.verticalAlign === 'middle'
-        ? 'center'
-        : element.verticalAlign === 'bottom'
-        ? 'flex-end'
-        : 'flex-start',
-    userSelect: isSelected ? 'text' : 'none',
-    WebkitUserSelect: isSelected ? 'text' : 'none',
-    cursor: isSelected ? 'text' : 'inherit',
     outline: 'none',
   };
 
-  if (isSelected) {
+  const wordArtClass = element.isWordArt ? wordArtClassName(element.wordArtStyle) : '';
+
+  if (isEditing) {
     return (
       <div
+        key="text-edit"
         ref={editorRef}
-        style={sharedStyle}
-        className={getWordArtClass()}
+        style={{
+          ...boxStyle,
+          width: '100%',
+          height: '100%',
+          padding: `${element.padding}px`,
+          color: element.color,
+          fontFamily: element.fontFamily,
+          // Paint at the fitted size so typing inside a shrunk box does not jump.
+          fontSize: `${layout.fontSize}px`,
+          fontWeight: element.fontWeight,
+          fontStyle: element.fontStyle,
+          textDecoration: element.textDecoration,
+          textTransform: element.textTransform || 'none',
+          fontVariant: element.fontVariant || 'normal',
+          letterSpacing: element.letterSpacing ? `${element.letterSpacing}px` : undefined,
+          wordSpacing: element.wordSpacing ? `${element.wordSpacing}px` : undefined,
+          textIndent: element.textIndent ? `${element.textIndent}px` : undefined,
+          textAlign: element.textAlign,
+          lineHeight: element.lineHeight,
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+          overflow: 'hidden',
+          cursor: 'text',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent:
+            element.verticalAlign === 'middle'
+              ? 'center'
+              : element.verticalAlign === 'bottom'
+              ? 'flex-end'
+              : 'flex-start',
+        }}
+        className={wordArtClass}
         contentEditable
         suppressContentEditableWarning
+        spellCheck
+        role="textbox"
+        tabIndex={0}
+        onInput={(e) => {
+          pendingTextRef.current = e.currentTarget.innerText;
+          // Keep the model in step while typing so thumbnails, counters and the
+          // inspector stay live; the DOM is never re-seeded while focused.
+          onTextChange?.(e.currentTarget.innerText);
+          pendingTextRef.current = null;
+        }}
         onBlur={(e) => {
           const next = e.currentTarget.innerText;
-          if (onTextChange && next !== element.text) {
-            onTextChange(next);
+          pendingTextRef.current = null;
+          if (onTextChange && next !== element.text) onTextChange(next);
+        }}
+        onKeyDown={(e) => {
+          // Keep typing inside the box: no global shortcuts, Escape leaves edit mode.
+          e.stopPropagation();
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            (e.currentTarget as HTMLDivElement).blur();
           }
         }}
+        onMouseDown={(e) => e.stopPropagation()}
       />
     );
   }
 
+  const paint = buildTextEffectPainter(element);
+
+  const gradientCss =
+    paint.gradient || element.textFillType === 'gradient'
+      ? `linear-gradient(${
+          paint.gradient?.angle ?? element.textGradientAngle ?? 90
+        }deg, ${paint.gradient?.from ?? element.color}, ${
+          paint.gradient?.to ?? element.textGradientColor2 ?? '#6e56cf'
+        })`
+      : undefined;
+
+  const strokeStyle = paint.strokeWidth
+    ? { WebkitTextStroke: `${paint.strokeWidth}px ${paint.strokeColor}` as const }
+    : {};
+
+  const baseColor = paint.fillTransparent ? 'transparent' : element.color;
+
+  const gradientStyle = (x: number, y: number): React.CSSProperties =>
+    gradientCss
+      ? {
+          backgroundImage: gradientCss,
+          backgroundSize: `${Math.max(1, element.width)}px ${Math.max(1, layout.contentHeight)}px`,
+          backgroundPosition: `${-x}px ${-y}px`,
+          WebkitBackgroundClip: 'text',
+          backgroundClip: 'text',
+          color: 'transparent',
+        }
+      : {};
+
+  const renderGlyphs = (color: string, prefix: string, withEffects: boolean) => {
+    if (layout.curve) {
+      return layout.curve.chars.map((char, index) =>
+        char.text.trim() ? (
+          <span
+            key={`${prefix}-c${index}`}
+            style={{
+              position: 'absolute',
+              left: char.x,
+              top: offset + char.y,
+              transform: `translate(-50%, -50%) rotate(${char.angle}deg)`,
+              fontSize: `${char.fontSize}px`,
+              lineHeight: 1,
+              whiteSpace: 'pre',
+              color,
+              ...(withEffects ? gradientStyle(char.x, offset + char.y) : {}),
+              ...(withEffects ? strokeStyle : {}),
+              textShadow: withEffects && paint.cssShadow ? paint.cssShadow : undefined,
+            }}
+          >
+            {char.text}
+          </span>
+        ) : null
+      );
+    }
+
+    return layout.lines.map((line, lineIndex) =>
+      line.runs.map((run, runIndex) => {
+        if (!run.text) return null;
+        const isSpace = run.kind === 'space';
+        const highlight =
+          withEffects && element.highlightColor && run.kind !== 'marker'
+            ? element.highlightColor
+            : undefined;
+        return (
+          <span
+            key={`${prefix}-${lineIndex}-${runIndex}`}
+            style={{
+              position: 'absolute',
+              left: run.x,
+              top: offset + line.textTop + run.baselineShift,
+              height: line.height,
+              display: 'inline-flex',
+              alignItems: 'center',
+              fontSize: `${run.fontSize}px`,
+              lineHeight: 1,
+              letterSpacing: element.letterSpacing ? `${element.letterSpacing}px` : undefined,
+              color: isSpace ? 'transparent' : color,
+              ...(withEffects && !isSpace
+                ? gradientStyle(run.x, offset + line.y)
+                : {}),
+              ...(withEffects ? strokeStyle : {}),
+              textShadow: withEffects && paint.cssShadow ? paint.cssShadow : undefined,
+              backgroundColor: highlight,
+              textDecoration: element.textDecoration,
+              width: isSpace ? run.width : undefined,
+              overflow: 'hidden',
+              whiteSpace: 'pre',
+            }}
+          >
+            {run.kind === 'leader' ? leaderDom(run, element) : run.text}
+          </span>
+        );
+      })
+    );
+  };
+
   return (
-    <div style={sharedStyle} className={getWordArtClass()}>
-      {renderTextContent()}
+    <div
+      key="text-view"
+      ref={viewRef}
+      style={{
+        ...boxStyle,
+        width: '100%',
+        height: '100%',
+        position: 'relative',
+        overflow: 'hidden',
+        fontFamily: element.fontFamily,
+        fontWeight: element.fontWeight,
+        fontStyle: element.fontStyle,
+        fontKerning: element.kerning === false ? 'none' : 'normal',
+        fontVariantLigatures: element.ligatures ? 'common-ligatures' : 'none',
+        userSelect: 'none',
+      }}
+      className={wordArtClass}
+    >
+      {layout.dropCap && (
+        <span
+          style={{
+            position: 'absolute',
+            left: layout.dropCap.x,
+            top: offset + layout.dropCap.y,
+            fontSize: `${layout.dropCap.size}px`,
+            lineHeight: 1,
+            fontWeight: 'bold',
+            fontFamily: element.fontFamily,
+            color: baseColor,
+            whiteSpace: 'pre',
+            ...strokeStyle,
+            textShadow: paint.cssShadow || undefined,
+          }}
+        >
+          {layout.dropCap.char}
+        </span>
+      )}
+
+      {/* Base copy carries the fill, stroke and shadows. */}
+      <div style={{ position: 'absolute', inset: 0 }}>
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            color: baseColor,
+          }}
+        >
+          {renderGlyphs(baseColor, 'base', true)}
+        </div>
+      </div>
+
+      {/* Splice / glitch slices: clipped copies offset in colour. */}
+      {paint.slices.map((slice, sliceIndex) => (
+        <div
+          key={`slice-${sliceIndex}`}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            clipPath: `inset(${slice.top * 100}% ${slice.right * 100}% ${
+              slice.bottom * 100
+            }% ${slice.left * 100}%)`,
+            transform: `translate(${slice.dx}px, ${slice.dy}px)`,
+            opacity: slice.opacity ?? 1,
+            pointerEvents: 'none',
+          }}
+        >
+          {renderGlyphs(slice.color, `slice-${sliceIndex}`, false)}
+        </div>
+      ))}
     </div>
   );
 };
+
+function wordArtClassName(style?: TextElement['wordArtStyle']): string {
+  switch (style) {
+    case 'rainbow':
+      return 'wordart-rainbow';
+    case 'gold3d':
+      return 'wordart-gold3d';
+    case 'outline':
+      return 'wordart-outline';
+    case 'retro':
+      return 'wordart-retro';
+    case 'neon-glow':
+      return 'wordart-neon-glow';
+    case 'chrome':
+      return 'wordart-chrome';
+    case 'fire':
+      return 'wordart-fire';
+    case 'comic-pop':
+      return 'wordart-comic-pop';
+    case 'emerald-3d':
+      return 'wordart-indigo-3d';
+    case 'sunset-gradient':
+      return 'wordart-sunset-gradient';
+    default:
+      return '';
+  }
+}
+
+function leaderDom(
+  run: { text: string; width: number },
+  element: TextElement
+): React.ReactNode {
+  if (run.text === '─') {
+    return (
+      <span
+        style={{
+          display: 'block',
+          width: run.width,
+          borderTop: `1px solid ${element.color}`,
+          height: 1,
+        }}
+      />
+    );
+  }
+  const unit = run.text === '-' ? '- ' : '. ';
+  const count = Math.max(0, Math.floor(run.width / 8));
+  return <span style={{ whiteSpace: 'pre' }}>{unit.repeat(count)}</span>;
+}
 
 const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
   const { width, height, shapeType, fillColor, strokeColor, strokeWidth, strokeDash, cornerRadius } =
@@ -581,6 +816,25 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
           />
         );
       case 'merged': {
+        // New merges are real geometry: one path, one fill, one outline.
+        if (element.mergedPath) {
+          const baseW = element.mergedBaseWidth || width || 1;
+          const baseH = element.mergedBaseHeight || height || 1;
+          const sx = width / baseW;
+          const sy = height / baseH;
+          return (
+            <path
+              d={element.mergedPath}
+              fillRule="nonzero"
+              fill={overrideFill ?? effectiveFill}
+              stroke={strokeColor}
+              strokeWidth={strokeWidth}
+              strokeDasharray={dashArray}
+              transform={sx !== 1 || sy !== 1 ? `scale(${sx} ${sy})` : undefined}
+            />
+          );
+        }
+
         const parts = element.mergedParts || [];
         if (parts.length === 0) return null;
         const op = element.mergeOp || 'union';
@@ -778,10 +1032,29 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
             </defs>
           );
         })()}
-        {element.fillType === 'pattern' && element.patternBgType === 'gradient' && (
-          <g>{renderSvgShape(`url(#${gradId})`)}</g>
-        )}
-        {renderSvgShape()}
+        {(() => {
+          const clipD = elementClipPath(element);
+          const shapeClipId = `shape-clip-${element.id}`;
+          const children = (
+            <>
+              {element.fillType === 'pattern' && element.patternBgType === 'gradient' && (
+                <g>{renderSvgShape(`url(#${gradId})`)}</g>
+              )}
+              {renderSvgShape()}
+            </>
+          );
+          if (!clipD) return children;
+          return (
+            <>
+              <defs>
+                <clipPath id={shapeClipId}>
+                  <path d={clipD} />
+                </clipPath>
+              </defs>
+              <g clipPath={`url(#${shapeClipId})`}>{children}</g>
+            </>
+          );
+        })()}
       </svg>
       {element.label && (
         <div
@@ -809,8 +1082,9 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
 const ImageRenderer: React.FC<{
   element: ImageElement;
   isDropTarget?: boolean;
+  isPhotoEditing?: boolean;
   onImageReplace?: (src: string, name?: string) => void;
-}> = ({ element, isDropTarget = false, onImageReplace }) => {
+}> = ({ element, isDropTarget = false, isPhotoEditing = false, onImageReplace }) => {
   const placeholderInputRef = useRef<HTMLInputElement>(null);
   const getFilterStyle = () => {
     const filters: string[] = [];
@@ -863,31 +1137,25 @@ const ImageRenderer: React.FC<{
   };
 
   const getMaskRadius = () => {
+    if (isPhotoEditing) return undefined;
     if (element.maskShape === 'circle') return '50%';
     if (element.maskShape === 'rounded') return '24px';
     return element.borderRadius ? `${element.borderRadius}px` : undefined;
   };
 
+  // While the photo is being repositioned the frame is lifted, so the whole
+  // picture is visible and only re-crops when the user clicks away. Circle and
+  // rounded frames stay on border-radius (they must follow the box aspect).
   const getClipPath = () => {
-    switch (element.maskShape) {
-      case 'star':
-        return 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)';
-      case 'diamond':
-        return 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)';
-      case 'hexagon':
-        return 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)';
-      case 'triangle':
-        return 'polygon(50% 0%, 0% 100%, 100% 100%)';
-      case 'heart':
-        return 'polygon(50% 88%, 12% 52%, 4% 28%, 18% 10%, 38% 10%, 50% 24%, 62% 10%, 82% 10%, 96% 28%, 88% 52%)';
-      default:
-        return undefined;
-    }
+    if (isPhotoEditing) return undefined;
+    if (element.maskShape === 'circle' || element.maskShape === 'rounded') return undefined;
+    return imageMaskClip(element);
   };
 
   const imgScale = element.imageScale || 1;
   const panX = element.panX || 0;
   const panY = element.panY || 0;
+  const natural = useImageAspect(element.src);
 
   const art = element.borderArt || 'none';
   const artColor = element.borderArtColor || element.borderColor || '#ffffff';
@@ -904,6 +1172,26 @@ const ImageRenderer: React.FC<{
       : 0);
   const effect = element.effectPreset || 'none';
   const isStickerMode = effect === 'sticker' || Boolean(element.isSticker);
+
+  // Candy-stripe art insets the picture by its padding; everything else fills
+  // the box. Absolute placement is measured from the padding box, so the
+  // offset has to be added back.
+  const picturePad = !isStickerMode && art === 'candy-stripe' ? 4 : 0;
+  const innerBox = {
+    width: Math.max(1, element.width - picturePad * 2),
+    height: Math.max(1, element.height - picturePad * 2),
+  };
+  // The picture is drawn at its fitted size times the zoom and then slid by
+  // `pan` — the same geometry the exporter and the crop gesture use, so a
+  // zoomed picture can still be composed inside its frame.
+  const picture = natural
+    ? imageContentRect(
+        innerBox,
+        natural,
+        { fit: imageFit(element), scale: imgScale },
+        { panX, panY }
+      )
+    : null;
 
   const getStickerContourFilter = (): string => {
     if (!isStickerMode) return '';
@@ -1050,6 +1338,8 @@ const ImageRenderer: React.FC<{
       backgroundImage = `linear-gradient(#ffffff, #ffffff), linear-gradient(135deg, ${artColor}, #fad0c4, ${artColor2}, #c2e9fb)`;
     }
 
+    const clipPathValue = getClipPath();
+
     const stampMask =
       art === 'stamp-postage'
         ? 'radial-gradient(8px at 8px 8px, #0000 98%, #000) -8px -8px / 20px 20px'
@@ -1060,14 +1350,16 @@ const ImageRenderer: React.FC<{
       height: '100%',
       position: 'relative',
       overflow:
+        isPhotoEditing ||
         art === 'washi-tape' ||
         art === 'dotted-double' ||
         art === 'doodle-box' ||
         art === 'puffy-clay'
           ? 'visible'
           : 'hidden',
-      borderRadius: borderRadiusStyle,
-      clipPath: getClipPath(),
+      borderRadius: element.clipPathD ? undefined : borderRadiusStyle,
+      clipPath: clipPathValue,
+      WebkitClipPath: clipPathValue,
       backgroundColor:
         art === 'polaroid' ||
         art === 'classic-frame' ||
@@ -1203,13 +1495,31 @@ const ImageRenderer: React.FC<{
               src={element.src}
               alt={element.alt || 'Publication image'}
               style={{
-                width: '100%',
-                height: '100%',
-                objectFit: isStickerMode ? element.objectFit || 'contain' : element.objectFit || 'cover',
-                objectPosition: `${50 + panX}% ${50 + panY}%`,
+                // Known intrinsic size: place the picture exactly (this is what
+                // lets a zoomed picture be panned). Until it loads, fall back
+                // to plain object-fit, which matches the same box at 1x.
+                ...(picture
+                  ? {
+                      position: 'absolute' as const,
+                      left: picturePad + picture.left,
+                      top: picturePad + picture.top,
+                      width: picture.width,
+                      height: picture.height,
+                      objectFit: 'fill' as const,
+                      // rotate/flip about the centre of the frame, like the exporter
+                      transformOrigin: `${innerBox.width / 2 - picture.left}px ${
+                        innerBox.height / 2 - picture.top
+                      }px`,
+                    }
+                  : {
+                      width: '100%',
+                      height: '100%',
+                      objectFit: imageFit(element),
+                      objectPosition: `${50 + panX}% ${50 + panY}%`,
+                    }),
                 transform:
                   [
-                    imgScale !== 1 ? `scale(${imgScale})` : '',
+                    !picture && imgScale !== 1 ? `scale(${imgScale})` : '',
                     element.imageRotation ? `rotate(${element.imageRotation}deg)` : '',
                     element.flipH ? 'scaleX(-1)' : '',
                     element.flipV ? 'scaleY(-1)' : '',

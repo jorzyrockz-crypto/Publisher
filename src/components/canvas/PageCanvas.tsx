@@ -5,7 +5,10 @@ import { SelectionBox } from './SelectionBox';
 import { calculateSnap } from '../../utils/snapping';
 import { buildPatternBackgroundStyle } from '../../utils/patternGenerator';
 import { computeTarpapelMetrics } from '../../utils/printUtils';
-import { PublisherElement, Page, ConnectorElement } from '../../types/publisher';
+import { resizeTextBox } from '../../utils/textResize';
+import { imageFit, imageHasFrame, imageMaskClip, panFromDrag, panRoom } from '../../utils/imageFrame';
+import { useImageAspect } from '../../hooks/useImageAspect';
+import { PublisherElement, Page, ConnectorElement, ImageElement } from '../../types/publisher';
 import {
   Copy,
   Clipboard,
@@ -81,6 +84,8 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
   const [activeAlignGuideH, setActiveAlignGuideH] = useState<number | undefined>();
   const [activeAlignGuideV, setActiveAlignGuideV] = useState<number | undefined>();
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
+  // Image whose frame is lifted so the photo can be moved inside it.
+  const [editingPhotoId, setEditingPhotoId] = useState<string | null>(null);
   const [dragOverPlaceholderId, setDragOverPlaceholderId] = useState<string | null>(null);
   const [marquee, setMarquee] = useState<{
     startX: number;
@@ -184,11 +189,75 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
     }
   };
 
+  useEffect(() => {
+    if (!editingPhotoId) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setEditingPhotoId(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [editingPhotoId]);
+
+
+  // Drag inside a lifted frame repositions the photo, not the element.
+  const handlePhotoPanMouseDown = (element: ImageElement, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startPan = { panX: element.panX || 0, panY: element.panY || 0 };
+    const holder = document.getElementById(`element-${element.id}`);
+    const img = (holder?.querySelector('img') as HTMLImageElement | null) ?? null;
+    const natural =
+      img && img.naturalWidth > 0
+        ? { width: img.naturalWidth, height: img.naturalHeight }
+        : null;
+
+    let raf: number | null = null;
+    let latest: MouseEvent | null = null;
+
+    const apply = () => {
+      raf = null;
+      if (!latest) return;
+      const next = panFromDrag(
+        startPan,
+        { x: (latest.clientX - startX) / zoom, y: (latest.clientY - startY) / zoom },
+        { width: element.width, height: element.height },
+        natural,
+        {
+          fit: imageFit(element),
+          scale: element.imageScale || 1,
+          rotation: element.imageRotation,
+          flipH: element.flipH,
+          flipV: element.flipV,
+        }
+      );
+      updateElement(element.id, {
+        panX: Math.round(next.panX * 10) / 10,
+        panY: Math.round(next.panY * 10) / 10,
+      });
+    };
+
+    const onMove = (ev: MouseEvent) => {
+      latest = ev;
+      if (raf === null) raf = requestAnimationFrame(apply);
+    };
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      if (raf !== null) cancelAnimationFrame(raf);
+      apply();
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  };
+
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     // Only start marquee on left-click on background canvas
     if (e.button !== 0) return;
     if (e.target === canvasRef.current || (e.target as HTMLElement).classList.contains('canvas-bg')) {
       setEditingTextId(null);
+      setEditingPhotoId(null);
       const isAdditive = e.shiftKey || e.ctrlKey || e.metaKey;
       if (!isAdditive) {
         clearSelection();
@@ -382,6 +451,36 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
     [];
 
   const displayedElements = isEditingMaster ? activeMasterEls : targetPage.elements;
+
+  const photoEditingElement = editingPhotoId
+    ? (displayedElements.find((el) => el.id === editingPhotoId) as ImageElement | undefined)
+    : undefined;
+  const photoEditingScale = photoEditingElement?.imageScale || 1;
+  const photoEditingAspect = useImageAspect(photoEditingElement?.src);
+  const photoEditingRoom = photoEditingElement
+    ? panRoom(
+        { width: photoEditingElement.width, height: photoEditingElement.height },
+        photoEditingAspect,
+        { fit: imageFit(photoEditingElement), scale: photoEditingElement.imageScale || 1 }
+      )
+    : null;
+
+  // A wheel over the lifted frame resizes the picture inside it. The listener
+  // is native so the page does not scroll instead.
+  useEffect(() => {
+    if (!editingPhotoId) return;
+    const holder = document.getElementById(`element-${editingPhotoId}`);
+    if (!holder) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const step = e.deltaY < 0 ? 1.08 : 1 / 1.08;
+      const next = Math.min(2.5, Math.max(1, photoEditingScale * step));
+      updateElement(editingPhotoId, { imageScale: Math.round(next * 100) / 100 });
+    };
+    holder.addEventListener('wheel', onWheel, { passive: false });
+    return () => holder.removeEventListener('wheel', onWheel);
+  }, [editingPhotoId, photoEditingScale, updateElement]);
 
   const masterElements = !isEditingMaster ? getMasterElementsForPage(targetPage) : [];
 
@@ -759,6 +858,12 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
         const isSelected = selectedElementIds.includes(element.id);
         const isEditingThisText =
           element.type === 'text' && isSelected && isActivePage && !element.locked && editingTextId === element.id;
+        const isEditingThisPhoto =
+          element.type === 'image' &&
+          isSelected &&
+          isActivePage &&
+          !element.locked &&
+          editingPhotoId === element.id;
 
         return (
           <div
@@ -767,6 +872,8 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
             className={`absolute ${
               element.locked
                 ? 'cursor-not-allowed'
+                : isEditingThisPhoto
+                ? 'cursor-move'
                 : isEditingThisText
                 ? 'cursor-text'
                 : element.type === 'text' && isSelected && isActivePage
@@ -784,6 +891,19 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
               opacity: element.opacity !== undefined ? element.opacity : 1,
             }}
             onDoubleClick={(e) => {
+              if (
+                element.type === 'image' &&
+                !element.collageMeta &&
+                !element.locked &&
+                isActivePage &&
+                imageHasFrame(element)
+              ) {
+                e.stopPropagation();
+                setEditingTextId(null);
+                setEditingPhotoId(isEditingThisPhoto ? null : element.id);
+                selectElement(element.id, false);
+                return;
+              }
               if (element.collageMeta && !element.locked) {
                 e.stopPropagation();
                 const groupMembers = element.groupId
@@ -862,6 +982,11 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
               reader.readAsDataURL(file);
             }}
             onMouseDown={(e) => {
+              if (isEditingThisPhoto && e.button === 0) {
+                handlePhotoPanMouseDown(element as ImageElement, e);
+                return;
+              }
+              if (editingPhotoId) setEditingPhotoId(null);
               // If already selected text box or in text edit mode, allow native I-beam caret & text selection!
               if (
                 element.type === 'text' &&
@@ -887,6 +1012,8 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
             <ElementRenderer
               element={element}
               isSelected={isSelected && isActivePage && !element.locked}
+              isEditing={isEditingThisText}
+              isPhotoEditing={isEditingThisPhoto}
               isDropTarget={dragOverPlaceholderId === element.id}
               pageNumber={targetPageIndex + 1}
               totalPages={project.pages.length}
@@ -904,6 +1031,26 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
               }}
             />
 
+            {/* Frame lifted: show where the crop will land */}
+            {isEditingThisPhoto && element.type === 'image' && (
+              <>
+                <div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{ clipPath: imageMaskClip(element) }}
+                >
+                  <div className="absolute inset-0 border-2 border-dashed border-[#6e56cf]/80 rounded-[inherit]" />
+                </div>
+                <div className="absolute left-1/2 -translate-x-1/2 -top-7 whitespace-nowrap pointer-events-none bg-[#6e56cf] text-white text-[9.5px] font-semibold px-2 py-0.5 rounded-full shadow-sm">
+                  Drag to move · scroll to resize · click outside to crop
+                </div>
+                {photoEditingRoom && (photoEditingRoom.x === 0 || photoEditingRoom.y === 0) && (
+                  <div className="absolute left-1/2 -translate-x-1/2 -top-[42px] whitespace-nowrap pointer-events-none bg-amber-500 text-white text-[9px] font-semibold px-2 py-0.5 rounded-full shadow-sm">
+                    Already fills the frame {photoEditingRoom.y === 0 && photoEditingRoom.x !== 0 ? 'vertically' : photoEditingRoom.x === 0 && photoEditingRoom.y !== 0 ? 'horizontally' : 'on both sides'} — scroll to zoom, then drag
+                  </div>
+                )}
+              </>
+            )}
+
             {/* Transform Controls & Handles when Selected */}
             {isSelected && isActivePage && !element.locked && (
               <SelectionBox
@@ -913,9 +1060,16 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
                   setEditingTextId(null);
                   handleElementMouseDown(element, e);
                 }}
-                onResize={(nx, ny, nw, nh) =>
-                  updateElement(element.id, { x: nx, y: ny, width: nw, height: nh })
-                }
+                onResize={(nx, ny, nw, nh, meta) => {
+                  if (element.type === 'text') {
+                    updateElement(
+                      element.id,
+                      resizeTextBox(element, { x: nx, y: ny, width: nw, height: nh }, meta)
+                    );
+                    return;
+                  }
+                  updateElement(element.id, { x: nx, y: ny, width: nw, height: nh });
+                }}
                 onRotate={(nrot) => updateElement(element.id, { rotation: nrot })}
                 onAdjustShape={(adjustValue) =>
                   updateElement(element.id, { adjustValue })

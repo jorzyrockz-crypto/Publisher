@@ -115,6 +115,7 @@ export const BrandKitModal: React.FC = () => {
       height: size,
       objectFit: 'contain',
       aspectRatioLocked: true,
+      borderWidth: 0,
     });
     setIsBrandKitModalOpen(false);
   };
@@ -142,7 +143,7 @@ export const BrandKitModal: React.FC = () => {
                 </span>
               </h2>
               <p className="text-[11px] text-slate-500">
-                Save your logo, fonts &amp; colors to intelligently rebrand any design across all artboards
+                Save your logo, fonts &amp; colors to intelligently rebrand any design across all artboards — vector clip art included
               </p>
             </div>
           </div>
@@ -433,7 +434,7 @@ export const BrandKitModal: React.FC = () => {
         {/* Footer */}
         <div className="px-6 py-4 border-t border-[#e5e9ee] bg-slate-50 flex items-center justify-between flex-wrap gap-2">
           <span className="text-xs text-slate-500">
-            Updates fonts, fills, gradients, patterns &amp; contrast-safe text (Undoable via Ctrl+Z)
+            Updates fonts, fills, gradients, patterns, contrast-safe text &amp; recolorable SVG clip art (Undoable via Ctrl+Z)
           </span>
           <div className="flex items-center gap-2">
             <button

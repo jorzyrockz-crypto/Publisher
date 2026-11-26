@@ -79,6 +79,11 @@ export interface BaseElement {
   locked?: boolean;
   visible?: boolean;
   groupId?: string;
+  /** Clip this element to an arbitrary shape (path in its own local pixels). */
+  clipPathD?: string;
+  /** Frame the clip path was generated for, so later resizes scale it. */
+  clipBaseWidth?: number;
+  clipBaseHeight?: number;
   opacity?: number;
   flipH?: boolean;
   flipV?: boolean;
@@ -121,6 +126,35 @@ export interface TextElement extends BaseElement {
   wordArtStyle?: WordArtStyle;
   dropCap?: boolean;
   linkedNextId?: string | null;
+  /** Paragraph-level list rendering. */
+  listStyle?: 'none' | 'bullet' | 'number';
+  listIndent?: number;
+  hangingIndent?: number;
+  /** Tab stops measured from the column's left edge. */
+  tabStops?: number[];
+  tabLeader?: 'none' | 'dot' | 'dash' | 'line';
+  /** Marker colour applied behind the glyphs. */
+  highlightColor?: string;
+  /** Shrink type until the block fits instead of clipping silently. */
+  autoFit?: 'none' | 'shrink';
+  /** Resizing the frame scales/rewraps the type instead of clipping it (default). */
+  autoSizeText?: boolean;
+  hyphenate?: boolean;
+  /** Kerning + optional ligatures. */
+  kerning?: boolean;
+  ligatures?: boolean;
+  /** Whole-box script treatment (a raised `st`/`th`), since runs are not styled. */
+  script?: 'normal' | 'super' | 'sub';
+  textFillType?: 'solid' | 'gradient';
+  textGradientColor2?: string;
+  textGradientAngle?: number;
+  /** Quick style tag, used by "restyle all with this style". */
+  textStyleId?: string;
+  /** Canva-style text effect (shadow, lift, hollow, neon, fire, glitch...). */
+  textEffect?: 'none' | 'shadow' | 'lift' | 'outline' | 'hollow' | 'echo' | 'splice' | 'neon' | 'fire' | 'glitch';
+  textEffectColor?: string;
+  /** Curved text: -100 (trough) .. 100 (full ring). */
+  textCurve?: number;
 }
 
 export interface ShapeElement extends BaseElement {
@@ -148,6 +182,11 @@ export interface ShapeElement extends BaseElement {
   waveAmplitude?: number;
   waveFrequency?: number;
   mergeOp?: 'union' | 'combine' | 'subtract' | 'intersect';
+  /** Boolean result baked into a single path (merged-local coordinates). */
+  mergedPath?: string;
+  /** Frame the merged path was generated for, so later resizes scale it. */
+  mergedBaseWidth?: number;
+  mergedBaseHeight?: number;
   mergedParts?: {
     d: string;
     x: number;

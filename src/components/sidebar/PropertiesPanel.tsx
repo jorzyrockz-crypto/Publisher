@@ -20,6 +20,8 @@ import { FontSelector } from '../common/FontSelector';
 import { FloatingDropdown } from '../common/FloatingDropdown';
 import { ShapePreviewIcon } from '../common/ShapePreviewIcon';
 import { SHAPE_CATALOG } from '../../utils/shapePaths';
+import { imageFit, panRoom } from '../../utils/imageFrame';
+import { useImageAspect } from '../../hooks/useImageAspect';
 import {
   PATTERN_CATALOG,
   DEFAULT_BACKGROUND_PATTERN,
@@ -36,11 +38,17 @@ import {
 } from '../../utils/pictureEffects';
 import { removeImageBackground } from '../../utils/bgRemoval';
 import {
-  RECOLOR_PALETTE_PRESETS,
+  analyzeSvgColors,
   extractSvgPalette,
+  getSmartRecolorTargets,
   isSvgDataUri,
   recolorSvgDataUri,
+  smartRecolorSvg,
+  type SmartRecolorMode,
 } from '../../utils/svgRecolor';
+import { getBackdropColorUnder } from '../../utils/brandRebrand';
+import { countWords, layoutText } from '../../utils/textLayout';
+import { TEXT_CURVE_PRESETS, TEXT_EFFECTS, buildTextEffectPainter } from '../../utils/textEffects';
 import { DesignIdeasPanel } from './DesignIdeasPanel';
 import { InspectorCard } from './InspectorCard';
 import { useResizablePanel, useWindowWidth } from '../../hooks/useResizablePanel';
@@ -69,6 +77,7 @@ import {
   PanelRightOpen,
   ChevronDown,
   GitMerge,
+  Scissors,
   Workflow,
   Waves,
   Group,
@@ -83,6 +92,76 @@ import {
   Eraser,
   Unlink,
 } from 'lucide-react';
+
+/**
+ * Pan X / Pan Y for a cropped picture. A picture can only slide on an axis
+ * where it is larger than its frame, so an axis with no slack is shown as
+ * unavailable instead of silently doing nothing.
+ */
+const PanAxes: React.FC<{
+  element: ImageElement;
+  onChange: (patch: Partial<ImageElement>) => void;
+}> = ({ element, onChange }) => {
+  const aspect = useImageAspect(element.src);
+  const room = panRoom(
+    { width: element.width, height: element.height },
+    aspect,
+    { fit: imageFit(element), scale: element.imageScale || 1 }
+  );
+
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-2">
+        {(
+          [
+            { key: 'panX', label: 'Pan X', room: room.x, where: 'horizontally' },
+            { key: 'panY', label: 'Pan Y', room: room.y, where: 'vertically' },
+          ] as const
+        ).map((axis) => {
+          const stuck = axis.room === 0 && aspect !== null;
+          return (
+            <div key={axis.key}>
+              <div
+                className={`flex justify-between text-[10px] mb-0.5 ${
+                  stuck ? 'text-slate-300' : 'text-slate-500'
+                }`}
+              >
+                <span>{axis.label}</span>
+                <span>{element[axis.key] ?? 0}%</span>
+              </div>
+              <input
+                type="range"
+                min={-50}
+                max={50}
+                disabled={stuck}
+                value={element[axis.key] ?? 0}
+                onChange={(e) => onChange({ [axis.key]: Number(e.target.value) })}
+                title={
+                  stuck
+                    ? `The picture already fills the frame ${axis.where} — raise Image Zoom to slide it`
+                    : undefined
+                }
+                className={`w-full accent-[#6e56cf] ${
+                  stuck ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'
+                }`}
+              />
+            </div>
+          );
+        })}
+      </div>
+      {aspect !== null && (room.x === 0 || room.y === 0) && (
+        <p className="text-[9.5px] text-slate-400 leading-tight">
+          A picture can only slide where it is bigger than its frame.
+          {room.x === 0 && room.y === 0
+            ? ' This one fits exactly — raise Image Zoom to move it.'
+            : room.y === 0
+              ? ' This one fills the frame vertically, so raise Image Zoom to slide it up or down.'
+              : ' This one fills the frame horizontally, so raise Image Zoom to slide it sideways.'}
+        </p>
+      )}
+    </>
+  );
+};
 
 export const PropertiesPanel: React.FC = () => {
   const {
@@ -109,6 +188,7 @@ export const PropertiesPanel: React.FC = () => {
     bringToFront,
     sendToBack,
     mergeSelectedShapes,
+    clipToShape,
     autoConnectSelectedShapes,
     disconnectSelectedShapes,
     addConnectedDiagramStep,
@@ -644,32 +724,79 @@ export const PropertiesPanel: React.FC = () => {
               </div>
             </InspectorCard>
 
+            {selectedElements.some((el) => el.type === 'shape') &&
+              selectedElements.filter((el) => el.type !== 'connector').length > 1 && (
+                <InspectorCard className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-2 shadow-2xs">
+                  <div className="font-bold text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-100">
+                    <Scissors size={14} className="text-[#5c4bb8]" />
+                    <span>Clip to Shape</span>
+                  </div>
+                  <p className="text-[10.5px] text-slate-500">
+                    Keep only what falls inside the shape — for an image or another shape, using
+                    the bottom-most selected shape as the frame.
+                  </p>
+                  <button
+                    onClick={clipToShape}
+                    className="w-full py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-[#efeafd] hover:border-[#d3c9f9] hover:text-[#5c4bb8] text-xs font-semibold transition"
+                  >
+                    Clip to shape
+                  </button>
+                  <p className="text-[9.5px] text-slate-400 leading-tight">
+                    An image adopts the frame's box and angle; a shape keeps its own place and
+                    just loses the part outside. Neither becomes a hole — that is Subtract.
+                  </p>
+                </InspectorCard>
+              )}
+
             <InspectorCard className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3 shadow-2xs">
               <div className="font-bold text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-100">
                 <GitMerge size={14} className="text-[#5c4bb8]" />
                 <span>Merge Shapes ({selectedElementIds.length} selected)</span>
               </div>
-              <p className="text-[10.5px] text-slate-500">
-                Combine overlapping shapes just like PowerPoint:
-              </p>
-              <div className="grid grid-cols-2 gap-1.5">
-                {(
-                  [
-                    { op: 'union', label: 'Union' },
-                    { op: 'combine', label: 'Combine' },
-                    { op: 'subtract', label: 'Subtract' },
-                    { op: 'intersect', label: 'Intersect' },
-                  ] as const
-                ).map((item) => (
-                  <button
-                    key={item.op}
-                    onClick={() => mergeSelectedShapes(item.op)}
-                    className="py-1.5 px-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-[#efeafd] hover:border-[#d3c9f9] hover:text-[#5c4bb8] text-xs font-semibold transition"
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
+              {(() => {
+                const selectedShapes = selectedElements.filter((el) => el.type === 'shape');
+                const canMerge = selectedShapes.length >= 2;
+                return (
+                  <>
+                    <p className="text-[10.5px] text-slate-500">
+                      {canMerge
+                        ? 'Real boolean geometry — one path, so it exports and stays crisp:'
+                        : 'Select two or more shapes. Text, images and connectors cannot be merged.'}
+                    </p>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {(
+                        [
+                          { op: 'union', label: 'Union' },
+                          { op: 'combine', label: 'Combine' },
+                          { op: 'subtract', label: 'Subtract' },
+                          { op: 'intersect', label: 'Intersect' },
+                        ] as const
+                      ).map((item) => (
+                        <button
+                          key={item.op}
+                          disabled={!canMerge}
+                          onClick={() => mergeSelectedShapes(item.op)}
+                          className={`py-1.5 px-2.5 rounded-xl border text-xs font-semibold transition ${
+                            canMerge
+                              ? 'border-slate-200 bg-slate-50 hover:bg-[#efeafd] hover:border-[#d3c9f9] hover:text-[#5c4bb8]'
+                              : 'border-slate-100 bg-slate-50/60 text-slate-300 cursor-not-allowed'
+                          }`}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                    {canMerge && (
+                      <p className="text-[9.5px] text-slate-400 leading-tight">
+                        Subtract removes the other shapes from the bottom-most one; the result is a
+                        single editable shape. To keep a shape's own fill and merely trim it to
+                        another outline, use <strong className="font-semibold">Clip to Shape</strong>{' '}
+                        above instead.
+                      </p>
+                    )}
+                  </>
+                );
+              })()}
             </InspectorCard>
 
             {(() => {
@@ -1186,6 +1313,103 @@ export const PropertiesPanel: React.FC = () => {
 
               {typoTab === 'character' && (
                 <div className="space-y-3">
+                  {/* Quick Styles — headings/body bound to the brand kit */}
+                  {(() => {
+                    const kit = activeBrandKit;
+                    const styles = [
+                      { id: 'title', label: 'Title', font: kit.headingFont, size: 40, weight: '800' as const, color: kit.colors.dark, italic: false },
+                      { id: 'h1', label: 'Heading 1', font: kit.headingFont, size: 28, weight: 'bold' as const, color: kit.colors.dark, italic: false },
+                      { id: 'h2', label: 'Heading 2', font: kit.headingFont, size: 20, weight: '600' as const, color: kit.colors.primary, italic: false },
+                      { id: 'h3', label: 'Heading 3', font: kit.headingFont, size: 15, weight: '600' as const, color: kit.colors.dark, italic: false },
+                      { id: 'body', label: 'Body', font: kit.bodyFont, size: 12, weight: 'normal' as const, color: kit.colors.dark, italic: false },
+                      { id: 'caption', label: 'Caption', font: kit.bodyFont, size: 9.5, weight: '500' as const, color: '#64748b', italic: false },
+                      { id: 'quote', label: 'Quote', font: kit.bodyFont, size: 14, weight: 'normal' as const, color: kit.colors.primary, italic: true },
+                    ];
+                    const siblings = elementsPool.filter(
+                      (el) => el.type === 'text' && el.textStyleId === (textEl.textStyleId || '')
+                    );
+                    return (
+                      <div className="space-y-1.5 pb-1">
+                        <label className="block text-[11px] font-semibold text-slate-500">
+                          Quick Styles · {kit.name}
+                        </label>
+                        <div className="grid grid-cols-4 gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60">
+                          {styles.map((st) => (
+                            <button
+                              key={st.id}
+                              type="button"
+                              title={`${st.label} · ${st.font} ${st.size}px`}
+                              onClick={() =>
+                                updateElement(textEl.id, {
+                                  textStyleId: st.id,
+                                  fontFamily: st.font,
+                                  fontSize: st.size,
+                                  fontWeight: st.weight,
+                                  fontStyle: st.italic ? 'italic' : 'normal',
+                                  color: st.color,
+                                })
+                              }
+                              className={`py-1 rounded-lg text-[9.5px] font-bold transition ${
+                                textEl.textStyleId === st.id
+                                  ? 'bg-white shadow-xs text-[#5c4bb8]'
+                                  : 'text-slate-600 hover:bg-white/60'
+                              }`}
+                            >
+                              {st.label}
+                            </button>
+                          ))}
+                          <button
+                            type="button"
+                            title="Clear formatting: back to plain body text"
+                            onClick={() =>
+                              updateElement(textEl.id, {
+                                textStyleId: undefined,
+                                fontWeight: 'normal',
+                                fontStyle: 'normal',
+                                textDecoration: 'none',
+                                textTransform: 'none',
+                                fontVariant: 'normal',
+                                letterSpacing: 0,
+                                wordSpacing: 0,
+                                baselineShift: 0,
+                                textStrokeWidth: 0,
+                                shadow: false,
+                                color: '#0f172a',
+                              })
+                            }
+                            className="py-1 rounded-lg text-[9.5px] font-bold text-rose-600 hover:bg-white/70"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                        {siblings.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateElementsBatch(
+                                Object.fromEntries(
+                                  siblings.map((el) => [
+                                    el.id,
+                                    {
+                                      fontFamily: textEl.fontFamily,
+                                      fontSize: textEl.fontSize,
+                                      fontWeight: textEl.fontWeight,
+                                      fontStyle: textEl.fontStyle,
+                                      color: textEl.color,
+                                    },
+                                  ])
+                                )
+                              )
+                            }
+                            className="text-[9.5px] font-semibold text-[#5c4bb8] hover:underline"
+                          >
+                            Apply this look to all {siblings.length} “{textEl.textStyleId}” blocks
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })()}
+
                   {/* Font Family */}
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-500 mb-1">
@@ -1463,6 +1687,149 @@ export const PropertiesPanel: React.FC = () => {
                     </div>
                   </div>
 
+                  {/* Script Position, Highlight, Text Fill */}
+                  <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
+                    <div>
+                      <label className="block text-[10.5px] font-semibold text-slate-500 mb-1">
+                        Position
+                      </label>
+                      <div className="grid grid-cols-3 gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60">
+                        {([
+                          { id: 'normal', label: 'Aa', title: 'Normal baseline' },
+                          { id: 'super', label: 'x²', title: 'Superscript (raised, smaller)' },
+                          { id: 'sub', label: 'x₂', title: 'Subscript (lowered, smaller)' },
+                        ] as const).map((opt) => (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            title={opt.title}
+                            onClick={() =>
+                              updateElement(textEl.id, {
+                                script: opt.id === (textEl.script || 'normal') ? 'normal' : opt.id,
+                              })
+                            }
+                            className={`py-1 rounded-lg text-[10.5px] font-bold transition ${
+                              (textEl.script || 'normal') === opt.id
+                                ? 'bg-white shadow-xs text-[#5c4bb8]'
+                                : 'text-slate-600 hover:bg-white/60'
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[10.5px] font-semibold text-slate-500 mb-1">
+                        Highlight
+                      </label>
+                      <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
+                        <ColorInput
+                          className="w-6 h-6 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0"
+                          value={textEl.highlightColor || '#fde68a'}
+                          onChange={(e) => updateElement(textEl.id, { highlightColor: e.target.value })}
+                          target="background"
+                        />
+                        <span className="font-mono text-[10px] text-slate-600 truncate flex-1">
+                          {textEl.highlightColor || 'none'}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => updateElement(textEl.id, { highlightColor: undefined })}
+                          className="text-[10px] font-semibold text-slate-500 hover:text-slate-800 px-1"
+                        >
+                          None
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Text fill: solid or two-stop gradient */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[10.5px] font-semibold text-slate-500">
+                        Text Fill
+                      </label>
+                      <div className="flex gap-1">
+                        {(['solid', 'gradient'] as const).map((mode) => (
+                          <button
+                            key={mode}
+                            type="button"
+                            onClick={() =>
+                              updateElement(textEl.id, {
+                                textFillType: mode,
+                                textGradientColor2:
+                                  textEl.textGradientColor2 ||
+                                  activeBrandKit.colors.secondary,
+                              })
+                            }
+                            className={`px-2 py-0.5 rounded-md text-[9.5px] font-bold capitalize transition ${
+                              (textEl.textFillType || 'solid') === mode
+                                ? 'bg-white shadow-xs text-[#5c4bb8] border border-[#d3c9f9]'
+                                : 'text-slate-600 hover:bg-white/70'
+                            }`}
+                          >
+                            {mode}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    {textEl.textFillType === 'gradient' && (
+                      <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
+                        <ColorInput
+                          className="w-6 h-6 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0"
+                          value={textEl.textGradientColor2 || activeBrandKit.colors.secondary}
+                          onChange={(e) =>
+                            updateElement(textEl.id, { textGradientColor2: e.target.value })
+                          }
+                          target="fill"
+                        />
+                        <input
+                          type="range"
+                          min={0}
+                          max={360}
+                          step={5}
+                          value={textEl.textGradientAngle ?? 90}
+                          onChange={(e) =>
+                            updateElement(textEl.id, { textGradientAngle: Number(e.target.value) })
+                          }
+                          className="flex-1 accent-[#6e56cf] cursor-pointer"
+                          title="Gradient angle"
+                        />
+                        <span className="font-mono text-[10px] text-slate-500 w-8 text-right">
+                          {textEl.textGradientAngle ?? 90}°
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* OpenType toggles + counter */}
+                  <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-100">
+                    <div className="flex items-center gap-2">
+                      <label className="flex items-center gap-1 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={textEl.kerning !== false}
+                          onChange={(e) => updateElement(textEl.id, { kerning: e.target.checked })}
+                          className="accent-[#6e56cf]"
+                        />
+                        Kerning
+                      </label>
+                      <label className="flex items-center gap-1 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(textEl.ligatures)}
+                          onChange={(e) => updateElement(textEl.id, { ligatures: e.target.checked })}
+                          className="accent-[#6e56cf]"
+                        />
+                        Ligatures
+                      </label>
+                    </div>
+                    <span className="font-mono">
+                      {countWords(textEl.text)}w · {textEl.text.length}c
+                    </span>
+                  </div>
+
                   {/* Fill Color & Text Stroke */}
                   <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
                     <div>
@@ -1626,6 +1993,185 @@ export const PropertiesPanel: React.FC = () => {
                     )}
                   </div>
 
+                  {/* Lists */}
+                  <div className="pt-1 border-t border-slate-100 space-y-2">
+                    <label className="block text-[11px] font-semibold text-slate-500">
+                      Lists & Indents
+                    </label>
+                    <div className="grid grid-cols-3 gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60">
+                      {([
+                        { id: 'none', label: 'None' },
+                        { id: 'bullet', label: '• Bullets' },
+                        { id: 'number', label: '1. Numbers' },
+                      ] as const).map((opt) => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() =>
+                            updateElement(textEl.id, {
+                              listStyle: opt.id,
+                              hangingIndent:
+                                opt.id === 'none' ? 0 : textEl.hangingIndent ?? 22,
+                            })
+                          }
+                          className={`py-1 rounded-lg text-[10px] font-semibold transition ${
+                            (textEl.listStyle || 'none') === opt.id
+                              ? 'bg-white text-[#5c4bb8] shadow-xs'
+                              : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                    {(textEl.listStyle || 'none') !== 'none' && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <div className="flex justify-between text-[10px] text-slate-500 font-medium mb-0.5">
+                            <span>Marker gutter</span>
+                            <span className="font-mono">{textEl.hangingIndent ?? 22}px</span>
+                          </div>
+                          <input
+                            type="range"
+                            min={12}
+                            max={48}
+                            value={textEl.hangingIndent ?? 22}
+                            onChange={(e) =>
+                              updateElement(textEl.id, { hangingIndent: Number(e.target.value) })
+                            }
+                            className="w-full accent-[#6e56cf] cursor-pointer"
+                          />
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-[10px] text-slate-500 font-medium mb-0.5">
+                            <span>List indent</span>
+                            <span className="font-mono">{textEl.listIndent ?? 0}px</span>
+                          </div>
+                          <input
+                            type="range"
+                            min={0}
+                            max={72}
+                            step={2}
+                            value={textEl.listIndent ?? 0}
+                            onChange={(e) =>
+                              updateElement(textEl.id, { listIndent: Number(e.target.value) })
+                            }
+                            className="w-full accent-[#6e56cf] cursor-pointer"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Tab stops with leaders */}
+                  <div className="pt-1 border-t border-slate-100 space-y-1.5">
+                    <label className="block text-[11px] font-semibold text-slate-500">
+                      Tab Leader
+                    </label>
+                    <div className="grid grid-cols-4 gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60">
+                      {([
+                        { id: 'none', label: 'None' },
+                        { id: 'dot', label: '···' },
+                        { id: 'dash', label: '---' },
+                        { id: 'line', label: '───' },
+                      ] as const).map((opt) => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => updateElement(textEl.id, { tabLeader: opt.id })}
+                          className={`py-1 rounded-lg text-[10px] font-semibold transition ${
+                            (textEl.tabLeader || 'none') === opt.id
+                              ? 'bg-white text-[#5c4bb8] shadow-xs'
+                              : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] text-slate-500 font-medium">Stop</span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={1200}
+                        value={textEl.tabStops?.[0] ?? 0}
+                        onChange={(e) => {
+                          const next = Math.max(0, Number(e.target.value) || 0);
+                          updateElement(textEl.id, { tabStops: next > 0 ? [next] : [] });
+                        }}
+                        className="w-16 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-[11px] font-mono text-center outline-none focus:bg-white"
+                      />
+                      <span className="text-[9.5px] text-slate-400 leading-tight">
+                        px from the left edge · 0 = right margin. Type a tab between label and value.
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Fitting: shrink to fit, fit box, hyphenation */}
+                  <div className="pt-1 border-t border-slate-100 space-y-1.5">
+                    <label className="block text-[11px] font-semibold text-slate-500">
+                      Fitting
+                    </label>
+                    <div className="grid grid-cols-2 gap-1">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateElement(textEl.id, {
+                            autoFit: textEl.autoFit === 'shrink' ? 'none' : 'shrink',
+                          })
+                        }
+                        className={`py-1 rounded-lg text-[10px] font-semibold border transition ${
+                          textEl.autoFit === 'shrink'
+                            ? 'bg-[#efeafd] border-[#d3c9f9] text-[#5c4bb8]'
+                            : 'bg-slate-50 border-slate-200 text-slate-600'
+                        }`}
+                      >
+                        Shrink to fit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const measured = layoutText({ ...textEl, autoFit: 'none' });
+                          updateElement(textEl.id, {
+                            height: Math.max(24, Math.ceil(measured.contentHeight + textEl.padding * 2)),
+                            autoFit: 'none',
+                          });
+                        }}
+                        className="py-1 rounded-lg text-[10px] font-semibold bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100"
+                      >
+                        Fit box to text
+                      </button>
+                    </div>
+                    <label className="flex items-center justify-between pt-1 cursor-pointer">
+                      <span className="text-[10.5px] text-slate-600 font-medium">
+                        Scale text when resized
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={textEl.autoSizeText !== false}
+                        onChange={(e) =>
+                          updateElement(textEl.id, { autoSizeText: e.target.checked })
+                        }
+                        className="accent-[#6e56cf]"
+                      />
+                    </label>
+                    <p className="text-[9.5px] text-slate-400 leading-tight -mt-0.5">
+                      Corner handles scale the type, side handles rewrap it and grow the box.
+                    </p>
+                    <label className="flex items-center justify-between pt-1 cursor-pointer">
+                      <span className="text-[10.5px] text-slate-600 font-medium">
+                        Hyphenate long words
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={Boolean(textEl.hyphenate)}
+                        onChange={(e) => updateElement(textEl.id, { hyphenate: e.target.checked })}
+                        className="accent-[#6e56cf]"
+                      />
+                    </label>
+                  </div>
+
                   {/* Drop Cap Toggle */}
                   <div
                     onClick={() =>
@@ -1646,6 +2192,157 @@ export const PropertiesPanel: React.FC = () => {
 
               {typoTab === 'effects' && (
                 <div className="space-y-3">
+                  {/* Canva-style text effects */}
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-semibold text-slate-500">
+                      Text Effects
+                    </label>
+                    <div className="grid grid-cols-4 gap-1">
+                      {TEXT_EFFECTS.map((fx) => {
+                        const active = (textEl.textEffect || (textEl.shadow ? 'shadow' : 'none')) === fx.id;
+                        return (
+                          <button
+                            key={fx.id}
+                            type="button"
+                            title={fx.description}
+                            onClick={() =>
+                              updateElement(textEl.id, {
+                                textEffect: fx.id,
+                                // the legacy flag would otherwise re-add a shadow
+                                shadow: fx.id === 'shadow' ? Boolean(textEl.shadow) : false,
+                              })
+                            }
+                            className={`py-1.5 rounded-lg border flex flex-col items-center gap-1 transition ${
+                              active
+                                ? 'bg-white border-[#b4a4f4] shadow-xs'
+                                : 'bg-slate-50 border-slate-200 hover:border-[#c9bdf7]'
+                            }`}
+                          >
+                            <span className="flex items-center -space-x-1">
+                              <span
+                                className="block w-2.5 h-2.5 rounded-full"
+                                style={{ backgroundColor: fx.swatch[0] }}
+                              />
+                              <span
+                                className="block w-2.5 h-2.5 rounded-full border border-white"
+                                style={{ backgroundColor: fx.swatch[1] }}
+                              />
+                            </span>
+                            <span className="text-[9px] font-bold text-slate-700">{fx.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {(() => {
+                      const paint = buildTextEffectPainter(textEl);
+                      if (paint.id === 'none') return null;
+                      return (
+                        <div className="flex items-center gap-2 bg-slate-50 p-1 rounded-xl border border-slate-200">
+                          <ColorInput
+                            className="w-6 h-6 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0"
+                            value={textEl.textEffectColor || '#6e56cf'}
+                            onChange={(e) =>
+                              updateElement(textEl.id, { textEffectColor: e.target.value })
+                            }
+                            target="fill"
+                          />
+                          <span className="text-[10px] text-slate-600 font-semibold flex-1">
+                            Effect colour
+                          </span>
+                          <span className="text-[9.5px] text-slate-400 font-mono">
+                            {paint.shadows.length > 0
+                              ? `${paint.shadows.length} layer${paint.shadows.length > 1 ? 's' : ''}`
+                              : paint.slices.length > 0
+                              ? `${paint.slices.length} slices`
+                              : 'stroke'}
+                          </span>
+                        </div>
+                      );
+                    })()}
+                    {(() => {
+                      const paint = buildTextEffectPainter(textEl);
+                      if (paint.strokeWidth <= 0 && paint.id === 'none') return null;
+                      return (
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
+                            <ColorInput
+                              className="w-5 h-5 rounded-full border border-slate-200 cursor-pointer p-0"
+                              value={textEl.textStrokeColor || paint.strokeColor || '#000000'}
+                              onChange={(e) =>
+                                updateElement(textEl.id, { textStrokeColor: e.target.value })
+                              }
+                              target="fill"
+                            />
+                            <span className="text-[10px] text-slate-600 font-semibold">Stroke</span>
+                          </div>
+                          <div>
+                            <div className="flex justify-between text-[10px] text-slate-500">
+                              <span>Width</span>
+                              <span>{paint.strokeWidth || 0}px</span>
+                            </div>
+                            <input
+                              type="range"
+                              min={0}
+                              max={12}
+                              step={0.5}
+                              value={textEl.textStrokeWidth ?? paint.strokeWidth}
+                              onChange={(e) =>
+                                updateElement(textEl.id, {
+                                  textStrokeWidth: Number(e.target.value),
+                                  textEffect: textEl.textEffect || 'outline',
+                                })
+                              }
+                              className="w-full accent-[#6e56cf] cursor-pointer"
+                            />
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Curved / circular text */}
+                  <div className="pt-2 border-t border-slate-100 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[11px] font-semibold text-slate-500">
+                        Curve
+                      </label>
+                      <span className="font-mono text-[10px] text-slate-500">
+                        {textEl.textCurve ?? 0}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={-100}
+                      max={100}
+                      step={5}
+                      value={textEl.textCurve ?? 0}
+                      onChange={(e) =>
+                        updateElement(textEl.id, { textCurve: Number(e.target.value) })
+                      }
+                      className="w-full accent-[#6e56cf] cursor-pointer"
+                    />
+                    <div className="grid grid-cols-3 gap-1">
+                      {TEXT_CURVE_PRESETS.map((preset) => (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          onClick={() => updateElement(textEl.id, { textCurve: preset.value })}
+                          className={`py-1 rounded-lg text-[9.5px] font-bold border transition ${
+                            (textEl.textCurve ?? 0) === preset.value
+                              ? 'bg-white border-[#b4a4f4] text-[#5c4bb8] shadow-xs'
+                              : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-[#c9bdf7]'
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[9.5px] text-slate-400 leading-tight">
+                      Positive arches up, negative bows down, ±100 closes the text into a ring.
+                      Curved text is laid out on one line.
+                    </p>
+                  </div>
+
                   {/* WordArt Style (Visual Preview Picker) */}
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-500 mb-1.5 flex items-center gap-1">
@@ -1730,7 +2427,17 @@ export const PropertiesPanel: React.FC = () => {
                   {/* Text Drop Shadow */}
                   <div className="pt-2 border-t border-slate-100 space-y-2">
                     <div
-                      onClick={() => updateElement(textEl.id, { shadow: !textEl.shadow })}
+                      onClick={() =>
+                        updateElement(textEl.id, {
+                          shadow: !textEl.shadow,
+                          // keep the effect picker in step with this legacy switch
+                          textEffect: !textEl.shadow
+                            ? 'shadow'
+                            : textEl.textEffect === 'shadow'
+                            ? 'none'
+                            : textEl.textEffect,
+                        })
+                      }
                       className="flex items-center justify-between cursor-pointer hover:opacity-90"
                     >
                       <div>
@@ -1887,6 +2594,26 @@ export const PropertiesPanel: React.FC = () => {
               <Square size={14} className="text-[#5c4bb8]" />
               <span>Shape Formatting</span>
             </div>
+
+            {Boolean((selectedElement as ShapeElement).clipPathD) && (
+              <div className="flex items-center justify-between bg-[#efeafd] border border-[#d3c9f9] rounded-xl px-2 py-1.5">
+                <span className="text-[10px] font-semibold text-[#5c4bb8] flex items-center gap-1">
+                  <Scissors size={11} /> Clipped to a shape
+                </span>
+                <button
+                  onClick={() =>
+                    updateElement(selectedElement.id, {
+                      clipPathD: undefined,
+                      clipBaseWidth: undefined,
+                      clipBaseHeight: undefined,
+                    })
+                  }
+                  className="text-[10px] font-bold text-[#5c4bb8] hover:text-rose-600"
+                >
+                  Remove
+                </button>
+              </div>
+            )}
 
             {/* Visual Shape Geometry Preview Picker */}
             <div>
@@ -2943,6 +3670,23 @@ export const PropertiesPanel: React.FC = () => {
                 {stk.src && isSvgDataUri(stk.src) && (() => {
                   const palette = extractSvgPalette(stk.src);
                   if (palette.length === 0) return null;
+                  const stickerBase =
+                    stk.originalSrc && isSvgDataUri(stk.originalSrc) ? stk.originalSrc : stk.src;
+                  const stickerBackdrop = getBackdropColorUnder(
+                    stk,
+                    elementsPool,
+                    activePage.backgroundColor || '#ffffff'
+                  );
+                  const stickerTargets = getSmartRecolorTargets(activeBrandKit, stickerBackdrop);
+                  const stickerModes: { id: SmartRecolorMode; label: string; swatches: string[] }[] = [
+                    {
+                      id: 'brand',
+                      label: 'Brand',
+                      swatches: [stickerTargets.dominant, stickerTargets.secondary, stickerTargets.accent],
+                    },
+                    { id: 'mono', label: 'Mono', swatches: [stickerTargets.ink] },
+                    { id: 'tint', label: 'Soft', swatches: [stickerTargets.dominant] },
+                  ];
                   return (
                     <div className="p-2.5 rounded-xl bg-amber-50/50 border border-amber-200/80 space-y-2">
                       <div className="flex items-center justify-between">
@@ -2991,23 +3735,32 @@ export const PropertiesPanel: React.FC = () => {
                         ))}
                       </div>
                       <div className="grid grid-cols-3 gap-1">
-                        {RECOLOR_PALETTE_PRESETS.slice(0, 3).map((preset) => (
+                        {stickerModes.map((mode) => (
                           <button
-                            key={preset.id}
+                            key={mode.id}
                             type="button"
                             onClick={() => {
-                              const map: Record<string, string> = {};
-                              palette.forEach((c, i) => {
-                                map[c] = preset.colors[i % preset.colors.length];
-                              });
-                              updateElement(stk.id, {
-                                originalSrc: stk.originalSrc || stk.src,
-                                src: recolorSvgDataUri(stk.src, map),
-                              });
+                              const next = smartRecolorSvg(
+                                stickerBase,
+                                activeBrandKit,
+                                stickerBackdrop,
+                                mode.id
+                              );
+                              if (!next || next === stk.src) return;
+                              updateElement(stk.id, { originalSrc: stickerBase, src: next });
                             }}
-                            className="py-1 px-1 rounded-lg bg-white border border-amber-200 hover:bg-amber-100/60 text-[9px] font-bold text-slate-700 truncate"
+                            className="px-1 py-1 rounded-lg bg-white border border-amber-200 hover:bg-amber-100/60 flex flex-col items-center gap-1"
                           >
-                            {preset.name}
+                            <span className="flex items-center -space-x-1">
+                              {mode.swatches.map((swatch, i) => (
+                                <span
+                                  key={`${mode.id}-${i}`}
+                                  className="block w-2.5 h-2.5 rounded-full border border-white shadow-2xs"
+                                  style={{ backgroundColor: swatch }}
+                                />
+                              ))}
+                            </span>
+                            <span className="text-[9px] font-bold text-slate-700">{mode.label}</span>
                           </button>
                         ))}
                       </div>
@@ -3151,18 +3904,63 @@ export const PropertiesPanel: React.FC = () => {
               )}
             </div>
 
-            {/* Recolor Vector Stock Art / Clipart */}
+            {/* Smart Recolor: follows the brand kit and the surface underneath */}
             {(selectedElement as ImageElement).src &&
               isSvgDataUri((selectedElement as ImageElement).src) && (() => {
                 const imgEl = selectedElement as ImageElement;
-                const palette = extractSvgPalette(imgEl.src);
-                if (palette.length === 0) return null;
+                const roles = analyzeSvgColors(imgEl.src);
+                if (roles.length === 0) return null;
+
+                const baseSrc =
+                  imgEl.originalSrc && isSvgDataUri(imgEl.originalSrc) ? imgEl.originalSrc : imgEl.src;
+                const backdrop = getBackdropColorUnder(
+                  imgEl,
+                  elementsPool,
+                  activePage.backgroundColor || '#ffffff'
+                );
+                const targets = getSmartRecolorTargets(activeBrandKit, backdrop);
+                const manualColors = roles
+                  .filter((r) => r.role !== 'highlight')
+                  .map((r) => r.color);
+
+                const applySmart = (mode: SmartRecolorMode) => {
+                  const next = smartRecolorSvg(baseSrc, activeBrandKit, backdrop, mode);
+                  if (!next || next === imgEl.src) return;
+                  updateElement(imgEl.id, { originalSrc: baseSrc, src: next });
+                };
+
+                const modes: { id: SmartRecolorMode; label: string; hint: string; swatches: string[] }[] = [
+                  {
+                    id: 'brand',
+                    label: 'Brand',
+                    hint: `Map the art onto ${activeBrandKit.name}`,
+                    swatches: [targets.dominant, targets.secondary, targets.accent, targets.ink],
+                  },
+                  {
+                    id: 'mono',
+                    label: 'Mono',
+                    hint: 'One ink colour, guaranteed readable on this surface',
+                    swatches: [targets.ink],
+                  },
+                  {
+                    id: 'tint',
+                    label: 'Soft',
+                    hint: 'Quiet watermark tint blended into the backdrop',
+                    swatches: [targets.dominant],
+                  },
+                ];
+
                 return (
                   <div className="p-2.5 rounded-xl bg-[#efeafd]/45 border border-[#d3c9f9]/70 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold text-indigo-950">
-                        Recolor Clipart / Stock Art
-                      </span>
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="text-[11px] font-bold text-indigo-950">Smart Recolor</div>
+                        <div className="text-[9.5px] text-slate-500 leading-tight">
+                          {activeBrandKit.name} · backdrop{' '}
+                          <span className="font-mono">{backdrop}</span>
+                          {targets.onDark ? ' (dark)' : ' (light)'}
+                        </div>
+                      </div>
                       {imgEl.originalSrc && isSvgDataUri(imgEl.originalSrc) && (
                         <button
                           type="button"
@@ -3172,14 +3970,44 @@ export const PropertiesPanel: React.FC = () => {
                               originalSrc: undefined,
                             })
                           }
-                          className="text-[10px] font-bold text-rose-600 hover:underline"
+                          className="text-[10px] font-bold text-rose-600 hover:underline shrink-0"
                         >
-                          Reset Colors
+                          Reset
                         </button>
                       )}
                     </div>
+
+                    <div className="grid grid-cols-3 gap-1">
+                      {modes.map((mode) => (
+                        <button
+                          key={mode.id}
+                          type="button"
+                          title={mode.hint}
+                          onClick={() => applySmart(mode.id)}
+                          className="px-1.5 py-1 rounded-lg bg-white border border-[#d3c9f9]/80 hover:bg-[#efeafd]/70 hover:border-[#b4a4f4] transition flex flex-col items-center gap-1"
+                        >
+                          <span className="flex items-center -space-x-1">
+                            {mode.swatches.map((swatch, i) => (
+                              <span
+                                key={`${mode.id}-${i}`}
+                                className="block w-2.5 h-2.5 rounded-full border border-white shadow-2xs"
+                                style={{ backgroundColor: swatch }}
+                              />
+                            ))}
+                          </span>
+                          <span className="text-[9.5px] font-bold text-slate-700">{mode.label}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9.5px] font-semibold text-slate-500">
+                        Manual · {manualColors.length} colours
+                      </span>
+                      <span className="text-[9px] text-slate-400">recolours one at a time</span>
+                    </div>
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      {palette.map((col) => (
+                      {manualColors.map((col) => (
                         <label
                           key={col}
                           className="relative cursor-pointer"
@@ -3200,29 +4028,8 @@ export const PropertiesPanel: React.FC = () => {
                             }}
                             className="sr-only"
                             target="fill"
-                            />
+                          />
                         </label>
-                      ))}
-                    </div>
-                    <div className="grid grid-cols-3 gap-1">
-                      {RECOLOR_PALETTE_PRESETS.slice(0, 6).map((preset) => (
-                        <button
-                          key={preset.id}
-                          type="button"
-                          onClick={() => {
-                            const map: Record<string, string> = {};
-                            palette.forEach((c, i) => {
-                              map[c] = preset.colors[i % preset.colors.length];
-                            });
-                            updateElement(imgEl.id, {
-                              originalSrc: imgEl.originalSrc || imgEl.src,
-                              src: recolorSvgDataUri(imgEl.src, map),
-                            });
-                          }}
-                          className="py-1 px-1 rounded-lg bg-white border border-[#d3c9f9]/80 hover:bg-[#efeafd]/60 text-[9px] font-bold text-slate-700 truncate"
-                        >
-                          {preset.name}
-                        </button>
                       ))}
                     </div>
                   </div>
@@ -3369,6 +4176,47 @@ export const PropertiesPanel: React.FC = () => {
               );
             })()}
 
+            {/* Plain outline: 0px means no frame (the default for inserted art) */}
+            <div className="space-y-2">
+              <label className="block text-[11px] font-semibold text-slate-500">
+                Outline ({(selectedElement as ImageElement).borderWidth ?? 0}px)
+              </label>
+              <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
+                <ColorInput
+                  className="w-6 h-6 rounded-full border border-slate-200 cursor-pointer p-0"
+                  value={(selectedElement as ImageElement).borderColor || '#cbd5e1'}
+                  onChange={(e) =>
+                    updateElement(selectedElement.id, {
+                      borderColor: e.target.value,
+                      borderWidth: (selectedElement as ImageElement).borderWidth || 1,
+                    })
+                  }
+                  target="stroke"
+                />
+                <input
+                  type="range"
+                  min={0}
+                  max={12}
+                  step={1}
+                  value={(selectedElement as ImageElement).borderWidth ?? 0}
+                  onChange={(e) =>
+                    updateElement(selectedElement.id, {
+                      borderWidth: Math.max(0, Number(e.target.value) || 0),
+                    })
+                  }
+                  className="flex-1 accent-[#6e56cf] cursor-pointer"
+                />
+                <button
+                  type="button"
+                  onClick={() => updateElement(selectedElement.id, { borderWidth: 0 })}
+                  className="text-[10px] font-semibold text-slate-500 hover:text-slate-800 px-1.5 whitespace-nowrap"
+                  title="Remove outline"
+                >
+                  None
+                </button>
+              </div>
+            </div>
+
             {/* BorderArt (Customizable Collage Frames) */}
             <div className="space-y-2">
               <label className="block text-[11px] font-semibold text-slate-500">
@@ -3514,7 +4362,15 @@ export const PropertiesPanel: React.FC = () => {
                 ).map((mask) => (
                   <button
                     key={mask}
-                    onClick={() => updateElement(selectedElement.id, { maskShape: mask })}
+                    onClick={() =>
+                      updateElement(selectedElement.id, {
+                        maskShape: mask,
+                        // a preset replaces any custom shape clip
+                        clipPathD: undefined,
+                        clipBaseWidth: undefined,
+                        clipBaseHeight: undefined,
+                      })
+                    }
                     className={`py-1 rounded-lg text-[10px] font-semibold capitalize transition-all ${
                       ((selectedElement as ImageElement).maskShape || 'none') === mask
                         ? 'bg-white text-[#5c4bb8] shadow-xs'
@@ -3525,6 +4381,33 @@ export const PropertiesPanel: React.FC = () => {
                   </button>
                 ))}
               </div>
+              {((selectedElement as ImageElement).maskShape &&
+                (selectedElement as ImageElement).maskShape !== 'none') ||
+              (selectedElement as ImageElement).clipPathD ? (
+                <p className="text-[9.5px] text-slate-400 leading-tight mt-1.5 px-1">
+                  Double-click the image to slide the photo inside the frame; click outside to
+                  crop it back.
+                </p>
+              ) : null}
+              {Boolean((selectedElement as ImageElement).clipPathD) && (
+                <div className="flex items-center justify-between mt-1.5 px-1">
+                  <span className="text-[10px] font-semibold text-[#5c4bb8] flex items-center gap-1">
+                    <Scissors size={11} /> Clipped to a custom shape
+                  </span>
+                  <button
+                    onClick={() =>
+                      updateElement(selectedElement.id, {
+                        clipPathD: undefined,
+                        clipBaseWidth: undefined,
+                        clipBaseHeight: undefined,
+                      })
+                    }
+                    className="text-[10px] font-bold text-slate-500 hover:text-rose-600"
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Frame Fit, Zoom & Pan */}
@@ -3574,7 +4457,7 @@ export const PropertiesPanel: React.FC = () => {
                     key={fit}
                     onClick={() => updateElement(selectedElement.id, { objectFit: fit })}
                     className={`py-1 rounded-lg text-[10px] font-semibold capitalize transition-all ${
-                      ((selectedElement as ImageElement).objectFit || 'cover') === fit
+                      imageFit(selectedElement as ImageElement) === fit
                         ? 'bg-white text-[#5c4bb8] shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
@@ -3601,40 +4484,10 @@ export const PropertiesPanel: React.FC = () => {
                   className="w-full accent-[#6e56cf] cursor-pointer"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <div className="flex justify-between text-[10px] text-slate-500 mb-0.5">
-                    <span>Pan X</span>
-                    <span>{(selectedElement as ImageElement).panX ?? 0}%</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={-50}
-                    max={50}
-                    value={(selectedElement as ImageElement).panX ?? 0}
-                    onChange={(e) =>
-                      updateElement(selectedElement.id, { panX: Number(e.target.value) })
-                    }
-                    className="w-full accent-[#6e56cf] cursor-pointer"
-                  />
-                </div>
-                <div>
-                  <div className="flex justify-between text-[10px] text-slate-500 mb-0.5">
-                    <span>Pan Y</span>
-                    <span>{(selectedElement as ImageElement).panY ?? 0}%</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={-50}
-                    max={50}
-                    value={(selectedElement as ImageElement).panY ?? 0}
-                    onChange={(e) =>
-                      updateElement(selectedElement.id, { panY: Number(e.target.value) })
-                    }
-                    className="w-full accent-[#6e56cf] cursor-pointer"
-                  />
-                </div>
-              </div>
+              <PanAxes
+                element={selectedElement as ImageElement}
+                onChange={(patch) => updateElement(selectedElement.id, patch)}
+              />
             </div>
 
             {/* Filter & Stylized Effect Presets */}
@@ -4023,6 +4876,27 @@ export const PropertiesPanel: React.FC = () => {
                 <span>{selectedElement.locked ? 'Locked' : 'Lock'}</span>
               </button>
             </div>
+
+            {/* Any element can be clipped to a shape; shapes show this in their own card */}
+            {selectedElement.type !== 'shape' && Boolean(selectedElement.clipPathD) && (
+              <div className="flex items-center justify-between bg-[#efeafd] border border-[#d3c9f9] rounded-xl px-2 py-1.5">
+                <span className="text-[10px] font-semibold text-[#5c4bb8] flex items-center gap-1">
+                  <Scissors size={11} /> Clipped to a shape
+                </span>
+                <button
+                  onClick={() =>
+                    updateElement(selectedElement.id, {
+                      clipPathD: undefined,
+                      clipBaseWidth: undefined,
+                      clipBaseHeight: undefined,
+                    })
+                  }
+                  className="text-[10px] font-bold text-[#5c4bb8] hover:text-rose-600"
+                >
+                  Remove
+                </button>
+              </div>
+            )}
 
             {/* Opacity Slider */}
             <div>

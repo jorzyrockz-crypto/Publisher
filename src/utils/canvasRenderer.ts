@@ -13,6 +13,10 @@ import {
 } from '../types/publisher';
 import { buildPatternSvg, buildShapePatternDataUri } from './patternGenerator';
 import { buildWavyRectPath, getShapeSvgPath } from './shapePaths';
+import { buildFontString, layoutText, measureTextWidth, verticalOffset } from './textLayout';
+import { buildTextEffectPainter } from './textEffects';
+import { elementClipPath } from './shapeClip';
+import { imageContentRect, imageFit } from './imageFrame';
 
 function loadImage(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
@@ -100,31 +104,6 @@ function drawPolygonMask(ctx: CanvasRenderingContext2D, mask: string | undefined
   }
 }
 
-function wrapTextLines(
-  ctx: CanvasRenderingContext2D,
-  text: string,
-  maxWidth: number
-): string[] {
-  const safeW = Math.max(20, maxWidth);
-  const lines: string[] = [];
-  for (const para of (text || '').split('\n')) {
-    const words = para.split(/\s+/);
-    let current = '';
-    for (const w of words) {
-      if (!w && !current) continue;
-      const test = current ? `${current} ${w}` : w;
-      if (ctx.measureText(test).width > safeW && current) {
-        lines.push(current);
-        current = w;
-      } else {
-        current = test;
-      }
-    }
-    lines.push(current);
-  }
-  return lines;
-}
-
 function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
   const { width, height } = el;
   if (el.backgroundColor && el.backgroundColor !== 'transparent') {
@@ -149,83 +128,319 @@ function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
     }
   }
 
-  let content = el.text || '';
-  if (el.textTransform === 'uppercase') content = content.toUpperCase();
-  else if (el.textTransform === 'lowercase') content = content.toLowerCase();
-  else if (el.textTransform === 'capitalize') {
-    content = content.replace(/\b\w/g, (c) => c.toUpperCase());
-  }
-
-  const pad = el.padding || 0;
-  const innerW = Math.max(20, width - pad * 2);
-  const innerH = Math.max(20, height - pad * 2);
-  const weight = el.fontWeight === 'bold' ? '700' : el.fontWeight || '400';
-  const style = el.fontStyle === 'italic' ? 'italic' : 'normal';
-  ctx.font = `${style} ${weight} ${el.fontSize}px ${el.fontFamily || 'sans-serif'}`;
-  ctx.textBaseline = 'top';
-
-  const lines = wrapTextLines(ctx, content, innerW);
-  const lh = el.fontSize * (el.lineHeight || 1.3);
-  const totalTextH = lines.length * lh;
-
-  let startY = pad;
-  if (el.verticalAlign === 'middle') startY = pad + Math.max(0, (innerH - totalTextH) / 2);
-  else if (el.verticalAlign === 'bottom') startY = pad + Math.max(0, innerH - totalTextH);
+  const layout = layoutText(el);
+  const paint = buildTextEffectPainter(el);
+  const top = verticalOffset(layout, el);
+  const letterSpacing = el.letterSpacing || 0;
+  const wordSpacing = el.wordSpacing || 0;
 
   ctx.save();
   ctx.beginPath();
-  ctx.rect(0, 0, width, height);
+  if (el.borderRadius) ctx.roundRect(0, 0, width, height, el.borderRadius);
+  else ctx.rect(0, 0, width, height);
   ctx.clip();
 
-  if (el.shadow || el.wordArtStyle === 'neon-glow') {
-    ctx.shadowColor = el.wordArtStyle === 'neon-glow' ? '#22d3ee' : el.shadowColor || 'rgba(0,0,0,0.35)';
-    ctx.shadowBlur = el.wordArtStyle === 'neon-glow' ? 14 : el.shadowBlur ?? 6;
-    ctx.shadowOffsetX = el.wordArtStyle === 'neon-glow' ? 0 : 2;
-    ctx.shadowOffsetY = el.wordArtStyle === 'neon-glow' ? 0 : 3;
-  }
-
-  if (el.wordArtStyle === 'rainbow') {
-    const g = ctx.createLinearGradient(0, 0, width, 0);
-    g.addColorStop(0, '#ec4899');
-    g.addColorStop(0.5, '#f59e0b');
-    g.addColorStop(1, '#06b6d4');
-    ctx.fillStyle = g;
-  } else if (el.wordArtStyle === 'gold3d') {
-    const g = ctx.createLinearGradient(0, startY, 0, startY + totalTextH);
-    g.addColorStop(0, '#fef08a');
-    g.addColorStop(0.5, '#eab308');
-    g.addColorStop(1, '#a16207');
-    ctx.fillStyle = g;
-  } else if (el.wordArtStyle === 'sunset-gradient') {
-    const g = ctx.createLinearGradient(0, 0, width, 0);
-    g.addColorStop(0, '#f43f5e');
-    g.addColorStop(1, '#f59e0b');
-    ctx.fillStyle = g;
-  } else {
-    ctx.fillStyle = el.color || '#0f172a';
-  }
-
-  lines.forEach((line, idx) => {
-    const y = startY + idx * lh;
-    let x = pad;
-    const mWidth = ctx.measureText(line).width;
-    if (el.textAlign === 'center') x = pad + (innerW - mWidth) / 2;
-    else if (el.textAlign === 'right') x = pad + innerW - mWidth;
-
-    if (el.textStrokeWidth && el.textStrokeWidth > 0) {
-      ctx.strokeStyle = el.textStrokeColor || '#000000';
-      ctx.lineWidth = el.textStrokeWidth;
-      ctx.strokeText(line, x, y);
+  if (el.highlightColor && el.highlightColor !== 'transparent') {
+    ctx.fillStyle = el.highlightColor;
+    for (const line of layout.lines) {
+      for (const run of line.runs) {
+        if (run.kind === 'marker') continue;
+        ctx.fillRect(run.x, top + line.y, run.width, line.height);
+      }
     }
-    ctx.fillText(line, x, y);
-  });
+  }
+
+  if (el.kerning === false && 'fontKerning' in ctx) {
+    (ctx as CanvasRenderingContext2D & { fontKerning: string }).fontKerning = 'none';
+  }
+
+  interface GlyphUnit {
+    text: string;
+    x: number;
+    y: number;
+    font: string;
+    /** Rotation in radians (curved text). */
+    angle: number;
+    centred: boolean;
+  }
+
+  const units: GlyphUnit[] = [];
+  if (layout.curve) {
+    const font = buildFontString(el, layout.fontSize);
+    for (const char of layout.curve.chars) {
+      if (!char.text.trim()) continue;
+      units.push({
+        text: char.text,
+        x: char.x,
+        y: top + char.y,
+        font,
+        angle: (char.angle * Math.PI) / 180,
+        centred: true,
+      });
+    }
+  } else {
+    for (const line of layout.lines) {
+      for (const run of line.runs) {
+        if (run.kind === 'leader' || !run.text || (run.kind === 'space' && !el.highlightColor)) {
+          continue;
+        }
+        if (run.kind === 'space') continue;
+        units.push({
+          text: run.text,
+          x: run.x,
+          y: top + line.textTop + run.baselineShift,
+          font: buildFontString(el, run.fontSize),
+          angle: 0,
+          centred: false,
+        });
+      }
+    }
+  }
+
+  const baseFont = buildFontString(el, layout.fontSize);
+
+  const drawUnits = (options: {
+    color?: string | CanvasGradient;
+    strokeColor?: string;
+    strokeWidth?: number;
+    offsetX?: number;
+    offsetY?: number;
+    blur?: number;
+    fill?: boolean;
+  }) => {
+    const {
+      color,
+      strokeColor,
+      strokeWidth = 0,
+      offsetX = 0,
+      offsetY = 0,
+      blur = 0,
+      fill = true,
+    } = options;
+
+    for (const unit of units) {
+      ctx.save();
+      if (blur > 0 && 'filter' in ctx) {
+        ctx.filter = `blur(${blur}px)`;
+      }
+      ctx.translate(unit.x + offsetX, unit.y + offsetY);
+      if (unit.angle) ctx.rotate(unit.angle);
+      ctx.font = unit.font;
+      ctx.textBaseline = unit.centred ? 'middle' : 'top';
+      ctx.textAlign = unit.centred ? 'center' : 'left';
+
+      if (fill && color !== undefined) {
+        ctx.fillStyle = color;
+        paintRun(ctx, unit.text, 0, 0, unit.font, letterSpacing, wordSpacing);
+      }
+      if (strokeWidth > 0 && strokeColor) {
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = strokeWidth;
+        strokeRun(ctx, unit.text, 0, 0, unit.font, letterSpacing, wordSpacing);
+      }
+      ctx.restore();
+    }
+  };
+
+  // 1. Shadow / glow layers behind the glyphs.
+  for (const shadow of paint.shadows) {
+    drawUnits({
+      color: shadow.color,
+      offsetX: shadow.dx,
+      offsetY: shadow.dy,
+      blur: shadow.blur,
+    });
+  }
+
+  // 2. Fill (gradient or flat), unless the effect is hollow.
+  let fillStyle: string | CanvasGradient = el.color || '#0f172a';
+  if (paint.gradient) {
+    fillStyle = gradientForBox(
+      ctx,
+      width,
+      height,
+      paint.gradient.angle,
+      paint.gradient.from,
+      paint.gradient.to
+    );
+  } else if (el.textFillType === 'gradient') {
+    fillStyle = gradientForBox(
+      ctx,
+      width,
+      height,
+      el.textGradientAngle ?? 90,
+      el.color || '#0f172a',
+      el.textGradientColor2 || '#6e56cf'
+    );
+  }
+  if (!paint.fillTransparent) {
+    drawUnits({ color: fillStyle });
+  }
+
+  // 3. Stroke.
+  if (paint.strokeWidth > 0) {
+    drawUnits({ fill: false, strokeColor: paint.strokeColor, strokeWidth: paint.strokeWidth });
+  }
+
+  // 4. Splice / glitch slices.
+  for (const slice of paint.slices) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(
+      width * slice.left,
+      height * slice.top,
+      width * (1 - slice.left - slice.right),
+      height * (1 - slice.top - slice.bottom)
+    );
+    ctx.clip();
+    drawUnits({ color: slice.color, offsetX: slice.dx, offsetY: slice.dy });
+    ctx.restore();
+  }
+
+  // 5. Tab leaders (never shadowed or sliced).
+  if (!layout.curve) {
+    for (const line of layout.lines) {
+      for (const run of line.runs) {
+        if (run.kind !== 'leader') continue;
+        const y = top + line.textTop;
+        if (run.text === '─') {
+          ctx.save();
+          ctx.strokeStyle = el.color || '#0f172a';
+          ctx.lineWidth = Math.max(1, layout.fontSize * 0.06);
+          ctx.beginPath();
+          ctx.moveTo(run.x, y + layout.fontSize * 0.72);
+          ctx.lineTo(run.x + run.width, y + layout.fontSize * 0.72);
+          ctx.stroke();
+          ctx.restore();
+        } else {
+          const dash = run.text === '-' ? '-' : '.';
+          const dashWidth = Math.max(1, measureTextWidth(dash, baseFont));
+          const step = el.tabLeader === 'dash' ? dashWidth * 1.6 : dashWidth * 2.2;
+          ctx.font = baseFont;
+          ctx.textBaseline = 'top';
+          ctx.textAlign = 'left';
+          ctx.fillStyle = el.color || '#0f172a';
+          let cursor = run.x;
+          while (cursor + dashWidth <= run.x + run.width) {
+            ctx.fillText(dash, cursor, y);
+            cursor += step;
+          }
+        }
+      }
+    }
+  }
+
+  // 6. Drop cap on top, matching the DOM order.
+  if (layout.dropCap) {
+    const cap = layout.dropCap;
+    const capFont = buildFontString(el, cap.size);
+    ctx.save();
+    ctx.font = capFont;
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'left';
+    for (const shadow of paint.shadows) {
+      if ('filter' in ctx && shadow.blur > 0) ctx.filter = `blur(${shadow.blur}px)`;
+      ctx.fillStyle = shadow.color;
+      paintRun(ctx, cap.char, cap.x + shadow.dx, top + cap.y + shadow.dy, capFont, 0, 0);
+      if ('filter' in ctx) ctx.filter = 'none';
+    }
+    if (!paint.fillTransparent) {
+      ctx.fillStyle = fillStyle;
+      paintRun(ctx, cap.char, cap.x, top + cap.y, capFont, 0, 0);
+    }
+    if (paint.strokeWidth > 0) {
+      ctx.strokeStyle = paint.strokeColor;
+      ctx.lineWidth = paint.strokeWidth;
+      strokeRun(ctx, cap.char, cap.x, top + cap.y, capFont, 0, 0);
+    }
+    ctx.restore();
+  }
 
   ctx.restore();
+}
+
+/** Draws a run glyph by glyph so tracking survives export everywhere. */
+function paintRun(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  font: string,
+  letterSpacing: number,
+  wordSpacing: number
+) {
+  if (!text) return;
+  if (!letterSpacing && !wordSpacing) {
+    ctx.fillText(text, x, y);
+    return;
+  }
+  ctx.save();
+  ctx.font = font;
+  let cursor = x;
+  for (const ch of text) {
+    ctx.fillText(ch, cursor, y);
+    cursor += measureTextWidth(ch, font) + letterSpacing + (ch === ' ' ? wordSpacing : 0);
+  }
+  ctx.restore();
+}
+
+function strokeRun(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  font: string,
+  letterSpacing: number,
+  wordSpacing: number
+) {
+  if (!text) return;
+  if (!letterSpacing && !wordSpacing) {
+    ctx.strokeText(text, x, y);
+    return;
+  }
+  ctx.save();
+  ctx.font = font;
+  let cursor = x;
+  for (const ch of text) {
+    ctx.strokeText(ch, cursor, y);
+    cursor += measureTextWidth(ch, font) + letterSpacing + (ch === ' ' ? wordSpacing : 0);
+  }
+  ctx.restore();
+}
+
+/** CSS-style gradient (0° = to top, 90° = to right) mapped onto a box. */
+function gradientForBox(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  angleDeg: number,
+  from: string,
+  to: string
+): CanvasGradient {
+  const rad = (angleDeg * Math.PI) / 180;
+  const dx = Math.sin(rad);
+  const dy = -Math.cos(rad);
+  const length = Math.abs(width * dx) + Math.abs(height * dy);
+  const cx = width / 2;
+  const cy = height / 2;
+  const g = ctx.createLinearGradient(
+    cx - (dx * length) / 2,
+    cy - (dy * length) / 2,
+    cx + (dx * length) / 2,
+    cy + (dy * length) / 2
+  );
+  g.addColorStop(0, from);
+  g.addColorStop(1, to);
+  return g;
 }
 
 async function drawShapeElement(ctx: CanvasRenderingContext2D, el: ShapeElement) {
   const { width, height, fillColor, strokeColor, strokeWidth, strokeDash } = el;
   ctx.save();
+
+  // "Clip to shape" applies to any element, shapes included.
+  const shapeClip = elementClipPath(el);
+  if (shapeClip) ctx.clip(new Path2D(shapeClip));
 
   if (el.shadow) {
     ctx.shadowColor = el.shadowColor || 'rgba(0,0,0,0.28)';
@@ -274,7 +489,28 @@ async function drawShapeElement(ctx: CanvasRenderingContext2D, el: ShapeElement)
     }
   }
 
-  if (el.shapeType === 'merged' && el.mergedParts && el.mergedParts.length > 0) {
+  if (el.shapeType === 'merged' && el.mergedPath) {
+    // Export the same single path the canvas shows, scaled like the preview.
+    const p2d = new Path2D(el.mergedPath);
+    ctx.save();
+    const baseW = el.mergedBaseWidth || width || 1;
+    const baseH = el.mergedBaseHeight || height || 1;
+    ctx.scale(width / baseW, height / baseH);
+    if (strokeDash === 'dashed') ctx.setLineDash([8, 4]);
+    else if (strokeDash === 'dotted') ctx.setLineDash([3, 3]);
+    if (patternBgGrad) {
+      ctx.fillStyle = patternBgGrad;
+      ctx.fill(p2d);
+    }
+    ctx.fillStyle = resolvedFillStyle;
+    ctx.fill(p2d);
+    if (strokeWidth > 0 && strokeColor && strokeColor !== 'transparent') {
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = strokeWidth;
+      ctx.stroke(p2d);
+    }
+    ctx.restore();
+  } else if (el.shapeType === 'merged' && el.mergedParts && el.mergedParts.length > 0) {
     ctx.strokeStyle = strokeColor || 'transparent';
     ctx.lineWidth = strokeWidth || 0;
     for (const part of el.mergedParts) {
@@ -370,6 +606,13 @@ async function drawShapeElement(ctx: CanvasRenderingContext2D, el: ShapeElement)
 
 async function drawImageElement(ctx: CanvasRenderingContext2D, el: ImageElement) {
   const { width, height } = el;
+
+  // A custom "clip to shape" applies to everything this element paints.
+  const customClip = elementClipPath(el);
+  if (customClip) {
+    ctx.save();
+    ctx.clip(new Path2D(customClip));
+  }
   const art = el.borderArt || 'none';
   const artColor = el.borderArtColor || el.borderColor || '#ffffff';
   const artColor2 = el.borderArtColor2 || '#4f46e5';
@@ -523,38 +766,24 @@ async function drawImageElement(ctx: CanvasRenderingContext2D, el: ImageElement)
     }
     if (filters.length > 0) ctx.filter = filters.join(' ');
 
-    const zoom = el.imageScale || 1;
-    const fit = el.objectFit || 'cover';
-    let drawW = innerW;
-    let drawH = innerH;
-    const imgRatio = img.width / Math.max(1, img.height);
-    const boxRatio = innerW / innerH;
-
-    if (fit === 'cover') {
-      if (imgRatio > boxRatio) {
-        drawH = innerH * zoom;
-        drawW = drawH * imgRatio;
-      } else {
-        drawW = innerW * zoom;
-        drawH = drawW / imgRatio;
-      }
-    } else if (fit === 'contain') {
-      if (imgRatio > boxRatio) {
-        drawW = innerW * zoom;
-        drawH = drawW / imgRatio;
-      } else {
-        drawH = innerH * zoom;
-        drawW = drawH * imgRatio;
-      }
-    } else {
-      drawW = innerW * zoom;
-      drawH = innerH * zoom;
-    }
-
-    const panXRatio = (50 + (el.panX || 0)) / 100;
-    const panYRatio = (50 + (el.panY || 0)) / 100;
-    const dx = (innerW - drawW) * panXRatio;
-    const dy = (innerH - drawH) * panYRatio;
+    // Placement comes from the same helper the DOM renderer and the crop
+    // gesture use, so the export cannot drift from what is on screen.
+    const rect = imageContentRect(
+      { width: innerW, height: innerH },
+      { width: img.width, height: img.height },
+      {
+        fit: imageFit(el),
+        scale: el.imageScale || 1,
+        rotation: el.imageRotation,
+        flipH: el.flipH,
+        flipV: el.flipV,
+      },
+      { panX: el.panX || 0, panY: el.panY || 0 }
+    );
+    const drawW = rect.width;
+    const drawH = rect.height;
+    const dx = rect.left;
+    const dy = rect.top;
     ctx.save();
     if (el.imageRotation || el.flipH || el.flipV) {
       ctx.translate(innerW / 2, innerH / 2);
@@ -716,6 +945,8 @@ async function drawImageElement(ctx: CanvasRenderingContext2D, el: ImageElement)
     ctx.fillText(el.borderArtCaption, Math.max(8, (width - mw) / 2), height - 5);
     ctx.restore();
   }
+
+  if (customClip) ctx.restore();
 }
 
 function drawTableElement(ctx: CanvasRenderingContext2D, el: TableElement) {
@@ -774,7 +1005,19 @@ function drawAccentElement(ctx: CanvasRenderingContext2D, el: AccentElement) {
     ctx.fillStyle = '#0f172a';
     ctx.font = 'italic 600 15px Georgia, serif';
     const text = el.text || el.title || '';
-    const lines = wrapTextLines(ctx, text, width - 32);
+    const maxW = width - 32;
+    const lines: string[] = [];
+    let currentLine = '';
+    for (const word of text.split(/\s+/)) {
+      const probe = currentLine ? `${currentLine} ${word}` : word;
+      if (ctx.measureText(probe).width > maxW && currentLine) {
+        lines.push(currentLine);
+        currentLine = word;
+      } else {
+        currentLine = probe;
+      }
+    }
+    if (currentLine) lines.push(currentLine);
     lines.forEach((line, idx) => {
       ctx.fillText(line, 16, 22 + idx * 20);
     });
@@ -977,6 +1220,13 @@ export async function renderPageModelToCanvas(
     if (el.rotation) ctx.rotate((el.rotation * Math.PI) / 180);
     if (el.flipH || el.flipV) ctx.scale(el.flipH ? -1 : 1, el.flipV ? -1 : 1);
     ctx.translate(-el.width / 2, -el.height / 2);
+
+    // Text, tables, QR codes etc. have no clip of their own — honour the frame
+    // here so "clip to shape" means the same thing for every element type.
+    if (el.type !== 'image' && el.type !== 'shape') {
+      const localClip = elementClipPath(el);
+      if (localClip) ctx.clip(new Path2D(localClip));
+    }
 
     if (el.type === 'shape') await drawShapeElement(ctx, el);
     else if (el.type === 'text') drawTextElement(ctx, el);

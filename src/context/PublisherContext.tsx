@@ -21,6 +21,8 @@ import {
   BackstageSection,
 } from '../types/publisher';
 import { buildMergedPartFromShape } from '../utils/shapePaths';
+import { mergeShapeGeometry } from '../utils/shapeBoolean';
+import { pageRingsToLocal, ringsToPath, shapeOutlineRings } from '../utils/shapeClip';
 import { TEMPLATES } from '../constants/templates';
 import { reflowElementsForSize } from '../utils/smartResize';
 import { CompositionStyle } from '../utils/designBlueprints';
@@ -210,6 +212,7 @@ interface PublisherContextType {
   groupSelected: () => void;
   ungroupSelected: () => void;
   mergeSelectedShapes: (op: 'union' | 'combine' | 'subtract' | 'intersect') => void;
+  clipToShape: () => void;
   autoConnectSelectedShapes: (style?: 'straight' | 'elbow' | 'curved') => void;
   disconnectSelectedShapes: () => void;
   addConnectedDiagramStep: (style?: 'straight' | 'elbow' | 'curved') => void;
@@ -1919,6 +1922,9 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         columnGap: 12,
         lineHeight: 1.4,
         padding: 8,
+        // Text behaves like type: no clipped words, ever.
+        autoFit: 'shrink',
+        autoSizeText: true,
         ...options,
       };
       addElement(defaultText);
@@ -1965,7 +1971,9 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         zIndex: 8,
         aspectRatioLocked: true,
         borderColor: '#cbd5e1',
-        borderWidth: 1,
+        // Clip art, logos and photos arrive without a frame; a border is only
+        // drawn once the user asks for one in Format → Border.
+        borderWidth: 0,
         maskShape: 'none',
         ...options,
       };
@@ -2208,14 +2216,31 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
       const base = shapes[0];
       const mergedParts = shapes.flatMap((s) =>
-        s.shapeType === 'merged' && s.mergedParts
-          ? s.mergedParts.map((p) => ({
-              ...p,
-              x: p.x + (s.x - minX),
-              y: p.y + (s.y - minY),
-            }))
+        s.shapeType === 'merged' && (s.mergedPath || s.mergedParts)
+          ? s.mergedPath
+            ? [
+                {
+                  d: s.mergedPath,
+                  x: s.x - minX,
+                  y: s.y - minY,
+                  width: s.width,
+                  height: s.height,
+                  rotation: s.rotation || 0,
+                  // the path is stored in the frame it was generated for
+                  scaleX: s.width / (s.mergedBaseWidth || s.width || 1),
+                  scaleY: s.height / (s.mergedBaseHeight || s.height || 1),
+                },
+              ]
+            : (s.mergedParts || []).map((p) => ({
+                ...p,
+                x: p.x + (s.x - minX),
+                y: p.y + (s.y - minY),
+              }))
           : [buildMergedPartFromShape(s, minX, minY)]
       );
+
+      // One real path: true union / subtract / intersect instead of a mask.
+      const mergedPath = mergeShapeGeometry(mergedParts, op) ?? undefined;
 
       const mergedShape: ShapeElement = {
         id: `shp-merged-${Date.now()}`,
@@ -2240,6 +2265,9 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         glowColor: base.glowColor,
         glowSize: base.glowSize,
         mergeOp: op,
+        mergedPath,
+        mergedBaseWidth: mergedPath ? Math.max(20, Math.round(maxX - minX)) : undefined,
+        mergedBaseHeight: mergedPath ? Math.max(20, Math.round(maxY - minY)) : undefined,
         mergedParts,
       };
 
@@ -2251,6 +2279,50 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     },
     [currentElements, selectedElementIds, commitCurrentElements]
   );
+
+  // Clip the selected content to a shape's boundary (image or shape content)
+  const clipToShape = useCallback(() => {
+    const selected = currentElements.filter((el) => selectedElementIds.includes(el.id));
+    const shapes = selected.filter((el): el is ShapeElement => el.type === 'shape');
+    if (shapes.length === 0) return;
+
+    // The bottom-most selected shape is the frame; everything else is content.
+    const frame = shapes[0];
+    const content = selected.filter((el) => el.id !== frame.id);
+    if (content.length === 0) return;
+
+    const updates: Record<string, Partial<PublisherElement>> = {};
+    const frameUnrotated = shapeOutlineRings({ ...frame, rotation: 0 });
+    const frameLocalPath = ringsToPath(frameUnrotated, frame.x, frame.y);
+    const framePageRings = shapeOutlineRings(frame);
+
+    for (const el of content) {
+      if (el.type === 'image') {
+        // The image adopts the frame: same box, same angle, clipped to it.
+        updates[el.id] = {
+          x: frame.x,
+          y: frame.y,
+          width: frame.width,
+          height: frame.height,
+          rotation: frame.rotation || 0,
+          clipPathD: frameLocalPath,
+          clipBaseWidth: frame.width,
+          clipBaseHeight: frame.height,
+          maskShape: 'none',
+          zIndex: (frame.zIndex || 0) + 0.5,
+        };
+      } else if (el.type === 'shape') {
+        // Shapes keep their place; the frame is expressed in their local space.
+        updates[el.id] = {
+          clipPathD: pageRingsToLocal(framePageRings, el),
+          clipBaseWidth: el.width,
+          clipBaseHeight: el.height,
+        };
+      }
+    }
+
+    if (Object.keys(updates).length > 0) updateElementsBatch(updates);
+  }, [currentElements, selectedElementIds, updateElementsBatch]);
 
   // Auto-connect 2+ selected elements (or update existing connector style without duplicating)
   const autoConnectSelectedShapes = useCallback(
@@ -2574,6 +2646,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         addConnectedDiagramStep,
 
         addTextBox,
+    clipToShape,
         addShape,
         addImage,
         addPicturePlaceholder,
