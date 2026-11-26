@@ -136,7 +136,7 @@ export const MailMergeModal: React.FC = () => {
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center select-none p-4 animate-in fade-in duration-150">
       <div className="bg-white rounded-[15px] shadow-[0_20px_70px_rgba(21,35,45,0.22)] border border-[#e5e9ee]/90 w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="bg-gradient-to-r from-[#064e3b] to-[#047857] text-white px-6 py-4 flex items-center justify-between">
+        <div className="bg-gradient-to-r from-[#5a44c9] to-[#8a6ff0] text-white px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2 font-bold text-sm">
             <Mail size={18} />
             <span>Mail Merge Studio</span>
@@ -152,17 +152,17 @@ export const MailMergeModal: React.FC = () => {
         {/* Content */}
         <div className="p-6 overflow-y-auto space-y-6 text-xs text-slate-700">
           {/* Explanation Banner */}
-          <div className="bg-[#e5f4f3] border border-[#b7dddd]/80 rounded-2xl p-4 text-indigo-950 leading-relaxed shadow-2xs">
-            <span className="font-bold text-[#087477]">Mail Merge Workflow:</span> Place tokens like{' '}
-            <code className="bg-white px-1.5 py-0.5 rounded-md border border-[#b7dddd] font-mono text-[11px] font-semibold text-[#087477] shadow-2xs">
+          <div className="bg-[#efeafd] border border-[#d3c9f9]/80 rounded-2xl p-4 text-indigo-950 leading-relaxed shadow-2xs">
+            <span className="font-bold text-[#5c4bb8]">Mail Merge Workflow:</span> Place tokens like{' '}
+            <code className="bg-white px-1.5 py-0.5 rounded-md border border-[#d3c9f9] font-mono text-[11px] font-semibold text-[#5c4bb8] shadow-2xs">
               {'{{FirstName}}'}
             </code>
             ,{' '}
-            <code className="bg-white px-1.5 py-0.5 rounded-md border border-[#b7dddd] font-mono text-[11px] font-semibold text-[#087477] shadow-2xs">
+            <code className="bg-white px-1.5 py-0.5 rounded-md border border-[#d3c9f9] font-mono text-[11px] font-semibold text-[#5c4bb8] shadow-2xs">
               {'{{Company}}'}
             </code>{' '}
             or{' '}
-            <code className="bg-white px-1.5 py-0.5 rounded-md border border-[#b7dddd] font-mono text-[11px] font-semibold text-[#087477] shadow-2xs">
+            <code className="bg-white px-1.5 py-0.5 rounded-md border border-[#d3c9f9] font-mono text-[11px] font-semibold text-[#5c4bb8] shadow-2xs">
               {'{{Address}}'}
             </code>{' '}
             into any text box. Running the merge will generate individual personalized pages for every
@@ -173,7 +173,7 @@ export const MailMergeModal: React.FC = () => {
           <div>
             <div className="flex justify-between items-center mb-2.5 font-bold text-slate-800 text-sm">
               <span className="flex items-center gap-1.5">
-                <Users size={15} className="text-[#087477]" />
+                <Users size={15} className="text-[#5c4bb8]" />
                 <span>Recipient Records ({recipients.length})</span>
               </span>
             </div>
@@ -215,7 +215,7 @@ export const MailMergeModal: React.FC = () => {
           {/* Add Recipient Form */}
           <div className="bg-slate-50/80 p-4 rounded-2xl border border-[#e5e9ee] space-y-2.5 shadow-2xs">
             <span className="font-bold text-slate-700 flex items-center gap-1.5">
-              <UserPlus size={14} className="text-[#087477]" />
+              <UserPlus size={14} className="text-[#5c4bb8]" />
               <span>Add Recipient</span>
             </span>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -224,28 +224,28 @@ export const MailMergeModal: React.FC = () => {
                 placeholder="First Name"
                 value={newFirstName}
                 onChange={(e) => setNewFirstName(e.target.value)}
-                className="bg-white border border-[#e5e9ee] rounded-xl px-2.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-[#087f83]/20 focus:border-[#73b9b7] font-medium"
+                className="bg-white border border-[#e5e9ee] rounded-xl px-2.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-[#6e56cf]/20 focus:border-[#b3a4f2] font-medium"
               />
               <input
                 type="text"
                 placeholder="Last Name"
                 value={newLastName}
                 onChange={(e) => setNewLastName(e.target.value)}
-                className="bg-white border border-[#e5e9ee] rounded-xl px-2.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-[#087f83]/20 focus:border-[#73b9b7] font-medium"
+                className="bg-white border border-[#e5e9ee] rounded-xl px-2.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-[#6e56cf]/20 focus:border-[#b3a4f2] font-medium"
               />
               <input
                 type="text"
                 placeholder="Company"
                 value={newCompany}
                 onChange={(e) => setNewCompany(e.target.value)}
-                className="bg-white border border-[#e5e9ee] rounded-xl px-2.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-[#087f83]/20 focus:border-[#73b9b7] font-medium"
+                className="bg-white border border-[#e5e9ee] rounded-xl px-2.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-[#6e56cf]/20 focus:border-[#b3a4f2] font-medium"
               />
               <input
                 type="text"
                 placeholder="Address"
                 value={newAddress}
                 onChange={(e) => setNewAddress(e.target.value)}
-                className="bg-white border border-[#e5e9ee] rounded-xl px-2.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-[#087f83]/20 focus:border-[#73b9b7] font-medium"
+                className="bg-white border border-[#e5e9ee] rounded-xl px-2.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-[#6e56cf]/20 focus:border-[#b3a4f2] font-medium"
               />
             </div>
             <button
@@ -299,7 +299,7 @@ export const MailMergeModal: React.FC = () => {
             </button>
             <button
               onClick={handleExecuteMerge}
-              className="px-5 py-2 rounded-xl bg-[#087f83] hover:bg-[#06696c] active:scale-95 text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5"
+              className="px-5 py-2 rounded-xl bg-[#6e56cf] hover:bg-[#5c4bb8] active:scale-95 text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5"
             >
               <Play size={13} />
               <span>Execute Mail Merge</span>

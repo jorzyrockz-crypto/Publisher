@@ -13,7 +13,7 @@ export const ShapePreviewIcon: React.FC<ShapePreviewIconProps> = ({
   shapeType,
   size = 24,
   fill = '#d1fae5',
-  stroke = '#047857',
+  stroke = '#6e56cf',
 }) => {
   const d = getShapeSvgPath({
     shapeType,

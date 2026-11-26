@@ -35,7 +35,7 @@ export const DocumentTabsBar: React.FC = () => {
     duplicateWorkspaceTab,
     moveWorkspaceTab,
     setWorkspaceTabColor,
-    setIsBackstageOpen,
+    openBackstage,
   } = usePublisher();
 
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
@@ -81,7 +81,7 @@ export const DocumentTabsBar: React.FC = () => {
         <button
           type="button"
           onClick={() => scrollTabs(-160)}
-          className="p-1 rounded-[6px] hover:bg-[#eef5f5] hover:text-[#087477] text-[#778391] transition cursor-pointer"
+          className="p-1 rounded-[6px] hover:bg-[#f4f2ff] hover:text-[#5c4bb8] text-[#5b6673] transition cursor-pointer"
           title="Scroll sheet tabs left"
         >
           <ChevronLeft size={13} />
@@ -89,7 +89,7 @@ export const DocumentTabsBar: React.FC = () => {
         <button
           type="button"
           onClick={() => scrollTabs(160)}
-          className="p-1 rounded-[6px] hover:bg-[#eef5f5] hover:text-[#087477] text-[#778391] transition cursor-pointer"
+          className="p-1 rounded-[6px] hover:bg-[#f4f2ff] hover:text-[#5c4bb8] text-[#5b6673] transition cursor-pointer"
           title="Scroll sheet tabs right"
         >
           <ChevronRight size={13} />
@@ -101,7 +101,7 @@ export const DocumentTabsBar: React.FC = () => {
             setContextMenu(null);
             setIsAllSheetsOpen((o) => !o);
           }}
-          className="p-1 rounded-[6px] hover:bg-[#eef5f5] hover:text-[#087477] text-[#778391] transition cursor-pointer"
+          className="p-1 rounded-[6px] hover:bg-[#f4f2ff] hover:text-[#5c4bb8] text-[#5b6673] transition cursor-pointer"
           title="All Sheets"
         >
           <List size={12} />
@@ -114,7 +114,7 @@ export const DocumentTabsBar: React.FC = () => {
           onClick={(e) => e.stopPropagation()}
           className="absolute bottom-9 left-2 w-64 bg-white rounded-[12px] shadow-[0_8px_28px_rgba(28,44,58,0.12)] border border-[#e5e9ee] p-1.5 z-50 space-y-0.5 max-h-64 overflow-y-auto"
         >
-          <div className="px-2 py-1 text-[10px] font-bold text-[#9aa4ae] uppercase tracking-[0.09em]">
+          <div className="px-2 py-1 text-[10px] font-bold text-[#6a7682] uppercase tracking-[0.09em]">
             Open Sheets ({workspaceTabs.length})
           </div>
           {workspaceTabs.map((t) => {
@@ -129,18 +129,18 @@ export const DocumentTabsBar: React.FC = () => {
                 }}
                 className={`w-full px-2 py-1.5 rounded-[8px] text-left text-[11px] flex items-center justify-between transition cursor-pointer ${
                   isCur
-                    ? 'bg-[#e5f4f3] text-[#087477] font-semibold'
-                    : 'text-[#202833] hover:bg-[#eef5f5]'
+                    ? 'bg-[#efeafd] text-[#5c4bb8] font-semibold'
+                    : 'text-[#161a22] hover:bg-[#f4f2ff]'
                 }`}
               >
                 <span className="flex items-center gap-2 truncate">
                   <span
                     className="w-2 h-2 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: t.tabColor || '#087f83' }}
+                    style={{ backgroundColor: t.tabColor || '#6e56cf' }}
                   />
                   <span className="truncate">{t.project.name.replace(/\.pub$/i, '')}</span>
                 </span>
-                <span className="text-[10px] text-[#9aa4ae] tabular-nums">{t.project.pages.length}p</span>
+                <span className="text-[10px] text-[#6a7682] tabular-nums">{t.project.pages.length}p</span>
               </button>
             );
           })}
@@ -156,7 +156,7 @@ export const DocumentTabsBar: React.FC = () => {
           const isActive = tab.id === activeTabId;
           const displayName = tab.project.name.replace(/\.pub$/i, '');
           const isEditing = editingTabId === tab.id;
-          const accentColor = tab.tabColor || '#087f83';
+          const accentColor = tab.tabColor || '#6e56cf';
 
           return (
             <div
@@ -184,8 +184,8 @@ export const DocumentTabsBar: React.FC = () => {
               }
               className={`group relative flex items-center gap-1.5 h-full px-2.5 rounded-[6px] text-[11px] cursor-pointer transition-colors max-w-[190px] flex-shrink-0 ${
                 isActive
-                  ? 'bg-[#e5f4f3] text-[#087477] font-semibold'
-                  : 'bg-transparent text-[#52606c] font-medium hover:bg-[#eef5f5] hover:text-[#202833]'
+                  ? 'bg-[#efeafd] text-[#5c4bb8] font-semibold'
+                  : 'bg-transparent text-[#4a5661] font-medium hover:bg-[#f4f2ff] hover:text-[#161a22]'
               }`}
             >
               {isEditing ? (
@@ -200,14 +200,14 @@ export const DocumentTabsBar: React.FC = () => {
                     else if (e.key === 'Escape') setEditingTabId(null);
                   }}
                   onClick={(e) => e.stopPropagation()}
-                  className="w-28 px-1 py-0 text-[11px] bg-white border border-[#73b9b7] rounded outline-none text-[#202833] font-semibold"
+                  className="w-28 px-1 py-0 text-[11px] bg-white border border-[#b3a4f2] rounded outline-none text-[#161a22] font-semibold"
                 />
               ) : (
                 <span className="truncate">{displayName}</span>
               )}
               <span
                 className={`text-[9px] px-1 rounded tabular-nums ${
-                  isActive ? 'bg-white/80 text-[#087477]' : 'text-[#9aa4ae]'
+                  isActive ? 'bg-white/80 text-[#5c4bb8]' : 'text-[#6a7682]'
                 }`}
               >
                 {tab.project.pages.length}p
@@ -218,7 +218,7 @@ export const DocumentTabsBar: React.FC = () => {
                   e.stopPropagation();
                   closeWorkspaceTab(tab.id);
                 }}
-                className="p-0.5 rounded-full hover:bg-rose-100 hover:text-rose-600 text-[#9aa4ae] opacity-0 group-hover:opacity-100 transition"
+                className="p-0.5 rounded-full hover:bg-rose-100 hover:text-rose-600 text-[#6a7682] opacity-0 group-hover:opacity-100 transition"
                 title={workspaceTabs.length > 1 ? 'Close sheet' : 'Reset to blank sheet'}
               >
                 <X size={10} />
@@ -232,7 +232,7 @@ export const DocumentTabsBar: React.FC = () => {
           <button
             type="button"
             onClick={() => createNewTab()}
-            className="w-5 h-5 rounded-[6px] border border-[#e5e9ee] bg-[#f8fafb] hover:bg-[#e5f4f3] hover:border-[#b7dddd] hover:text-[#087477] text-[#778391] flex items-center justify-center transition cursor-pointer"
+            className="w-5 h-5 rounded-[6px] border border-[#e5e9ee] bg-[#f8fafb] hover:bg-[#efeafd] hover:border-[#d3c9f9] hover:text-[#5c4bb8] text-[#5b6673] flex items-center justify-center transition cursor-pointer"
             title="New Sheet (Blank Publication)"
           >
             <Plus size={12} />
@@ -243,8 +243,8 @@ export const DocumentTabsBar: React.FC = () => {
       {/* Right: Templates Shortcut */}
       <button
         type="button"
-        onClick={() => setIsBackstageOpen(true)}
-        className="h-5 px-2 rounded bg-white/80 hover:bg-white border border-slate-300/80 text-[10px] font-semibold text-slate-700 hover:text-emerald-700 flex items-center gap-1 transition flex-shrink-0 cursor-pointer"
+        onClick={() => openBackstage('new')}
+        className="h-5 px-2 rounded bg-white/80 hover:bg-white border border-slate-300/80 text-[10px] font-semibold text-slate-700 hover:text-[#5c4bb8] flex items-center gap-1 transition flex-shrink-0 cursor-pointer"
         title="Open Templates Gallery or Saved Files"
       >
         <LayoutTemplate size={11} />

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
+import { SelectionToolbar } from './SelectionToolbar';
 import { PageCanvas } from './PageCanvas';
 import { HorizontalRuler, VerticalRuler } from './Ruler';
 import {
@@ -50,6 +51,37 @@ export const CanvasArea: React.FC = () => {
   const [isSpaceHeld, setIsSpaceHeld] = useState(false);
   const [spreadMode, setSpreadMode] = useState<'reading' | 'pairs'>('reading');
   const containerRef = useRef<HTMLDivElement>(null);
+  const didInitialFitRef = useRef(false);
+
+  // Auto-fit the artboard on first mount so Page 1 is fully framed between the
+  // rulers and the floating zoom toolbar (critical on 1280x800 laptops where a
+  // fixed 80% zoom used to clip the page top/bottom).
+  useEffect(() => {
+    if (didInitialFitRef.current) return;
+    let cancelled = false;
+    let frames = 0;
+
+    const tryInitialFit = () => {
+      if (cancelled || didInitialFitRef.current) return;
+      const el = containerRef.current;
+      if (el && el.clientWidth > 160 && el.clientHeight > 160) {
+        didInitialFitRef.current = true;
+        zoomFit();
+        return;
+      }
+      if (frames++ < 60) {
+        requestAnimationFrame(tryInitialFit);
+      }
+    };
+
+    const raf = requestAnimationFrame(tryInitialFit);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
+    };
+    // Only ever run once for the initial load; user zoom is never overridden.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Smoothly scroll canvas to active page whenever activePageIndex changes (e.g. clicking in Pages sidebar)
   useEffect(() => {
@@ -286,6 +318,7 @@ export const CanvasArea: React.FC = () => {
         {/* Scrollable Pasteboard Workspace */}
         <div
           ref={containerRef}
+          data-canvas-viewport="true"
           onWheel={handleWheel}
           onMouseDown={handleWorkspaceMouseDown}
           className={`flex-1 h-full overflow-auto relative ${
@@ -348,8 +381,8 @@ export const CanvasArea: React.FC = () => {
                       onMouseDown={(e) => handleArtboardDragStart(idx, e)}
                       className={`artboard-drag-handle mb-1.5 flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold cursor-grab active:cursor-grabbing transition shadow-xs ${
                         isActive
-                          ? 'bg-[#087f83] text-white'
-                          : 'bg-white/90 text-slate-600 border border-slate-200 hover:bg-white hover:border-[#b7dddd]'
+                          ? 'bg-[#6e56cf] text-white'
+                          : 'bg-white/90 text-slate-600 border border-slate-200 hover:bg-white hover:border-[#d3c9f9]'
                       }`}
                       title="Drag to move this paper anywhere on the canvas"
                     >
@@ -358,7 +391,7 @@ export const CanvasArea: React.FC = () => {
                       {pg.name && <span className="opacity-80">• {pg.name}</span>}
                       <span
                         className={`ml-1 text-[9.5px] font-mono px-1.5 py-0.2 rounded-full ${
-                          isActive ? 'bg-[#06696c]/80 text-[#e5f4f3]' : 'bg-slate-100 text-slate-500'
+                          isActive ? 'bg-[#5c4bb8]/80 text-[#efeafd]' : 'bg-slate-100 text-slate-500'
                         }`}
                       >
                         {(pg.width / 96).toFixed(1)}"×{(pg.height / 96).toFixed(1)}"
@@ -374,7 +407,7 @@ export const CanvasArea: React.FC = () => {
                           title="Delete This Artboard"
                           className={`ml-1 p-0.5 rounded-full transition ${
                             isActive
-                              ? 'hover:bg-rose-500 text-[#e5f4f3] hover:text-white'
+                              ? 'hover:bg-rose-500 text-[#efeafd] hover:text-white'
                               : 'hover:bg-rose-100 text-slate-400 hover:text-rose-600'
                           }`}
                         >
@@ -408,17 +441,17 @@ export const CanvasArea: React.FC = () => {
                   >
                     <button
                       onClick={addPage}
-                      className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl border-2 border-dashed border-slate-300 bg-white/80 hover:bg-white hover:border-[#b7dddd] text-slate-600 hover:text-[#087477] font-semibold text-xs transition-all shadow-xs active:scale-95"
+                      className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl border-2 border-dashed border-slate-300 bg-white/80 hover:bg-white hover:border-[#d3c9f9] text-slate-600 hover:text-[#5c4bb8] font-semibold text-xs transition-all shadow-xs active:scale-95"
                     >
                       <Plus size={15} />
                       <span>Add Artboard</span>
                     </button>
                     <button
                       onClick={() => setIsBrandBoardModalOpen(true)}
-                      className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl border border-[#b7dddd] bg-[#e5f4f3] hover:bg-[#e5f4f3] text-[#087477] font-semibold text-xs transition-all shadow-xs active:scale-95"
+                      className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl border border-[#d3c9f9] bg-[#efeafd] hover:bg-[#efeafd] text-[#5c4bb8] font-semibold text-xs transition-all shadow-xs active:scale-95"
                       title="Convert design to multiple sizes on Brand Board"
                     >
-                      <Sparkles size={14} className="text-[#087477]" />
+                      <Sparkles size={14} className="text-[#5c4bb8]" />
                       <span>Brand Multi-Size</span>
                     </button>
                   </div>
@@ -438,7 +471,7 @@ export const CanvasArea: React.FC = () => {
                       onClick={() => setActivePageIndex(idx)}
                       className={`flex items-center gap-2 px-2.5 py-0.5 rounded-full text-[11px] font-semibold cursor-pointer transition ${
                         isActive
-                          ? 'bg-[#087f83] text-white shadow-xs'
+                          ? 'bg-[#6e56cf] text-white shadow-xs'
                           : 'bg-white/80 text-slate-600 border border-slate-200 hover:bg-white'
                       }`}
                     >
@@ -456,7 +489,7 @@ export const CanvasArea: React.FC = () => {
 
               <button
                 onClick={addPage}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl border-2 border-dashed border-slate-300 bg-white/70 hover:bg-white hover:border-[#b7dddd] text-slate-600 hover:text-[#087477] font-semibold text-xs transition-all shadow-2xs active:scale-95"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl border-2 border-dashed border-slate-300 bg-white/70 hover:bg-white hover:border-[#d3c9f9] text-slate-600 hover:text-[#5c4bb8] font-semibold text-xs transition-all shadow-2xs active:scale-95"
               >
                 <Plus size={15} />
                 <span>Add New Page</span>
@@ -472,7 +505,7 @@ export const CanvasArea: React.FC = () => {
                   onClick={() => setSpreadMode('reading')}
                   className={`px-3 py-1 rounded-full transition ${
                     spreadMode === 'reading'
-                      ? 'bg-[#087f83] text-white shadow-2xs'
+                      ? 'bg-[#6e56cf] text-white shadow-2xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -482,7 +515,7 @@ export const CanvasArea: React.FC = () => {
                   onClick={() => setSpreadMode('pairs')}
                   className={`px-3 py-1 rounded-full transition ${
                     spreadMode === 'pairs'
-                      ? 'bg-[#087f83] text-white shadow-2xs'
+                      ? 'bg-[#6e56cf] text-white shadow-2xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -500,7 +533,7 @@ export const CanvasArea: React.FC = () => {
                       <React.Fragment key={pg.id}>
                         {itemIdx === 1 && (
                           <div
-                            className="w-0 border-l-2 border-dashed border-[#b7dddd] mx-1 self-stretch relative"
+                            className="w-0 border-l-2 border-dashed border-[#d3c9f9] mx-1 self-stretch relative"
                             title="Booklet Center Spine / Fold"
                           />
                         )}
@@ -509,7 +542,7 @@ export const CanvasArea: React.FC = () => {
                             onClick={() => setActivePageIndex(idx)}
                             className={`text-[10px] font-bold px-2 py-0.5 rounded-full cursor-pointer ${
                               idx === project.activePageIndex
-                                ? 'bg-[#087f83] text-white'
+                                ? 'bg-[#6e56cf] text-white'
                                 : 'bg-white/80 text-slate-500 border border-slate-200'
                             }`}
                           >
@@ -529,7 +562,7 @@ export const CanvasArea: React.FC = () => {
 
               <button
                 onClick={addPage}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl border-2 border-dashed border-slate-300 bg-white/70 hover:bg-white hover:border-[#b7dddd] text-slate-600 hover:text-[#087477] font-semibold text-xs transition-all shadow-2xs active:scale-95"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl border-2 border-dashed border-slate-300 bg-white/70 hover:bg-white hover:border-[#d3c9f9] text-slate-600 hover:text-[#5c4bb8] font-semibold text-xs transition-all shadow-2xs active:scale-95"
               >
                 <Plus size={15} />
                 <span>Add New Page</span>
@@ -549,7 +582,7 @@ export const CanvasArea: React.FC = () => {
                 onClick={() => setToolMode('select')}
                 className={`p-1 rounded-full transition ${
                   !effectivePanMode
-                    ? 'bg-white text-[#087477] shadow-2xs'
+                    ? 'bg-white text-[#5c4bb8] shadow-2xs'
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
                 title="Select Tool (V)"
@@ -560,7 +593,7 @@ export const CanvasArea: React.FC = () => {
                 onClick={() => setToolMode('pan')}
                 className={`p-1 rounded-full transition ${
                   effectivePanMode
-                    ? 'bg-[#087f83] text-white shadow-2xs'
+                    ? 'bg-[#6e56cf] text-white shadow-2xs'
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
                 title="Hand / Pan Canvas Tool (H or hold Space)"
@@ -575,7 +608,7 @@ export const CanvasArea: React.FC = () => {
                 onClick={() => setViewMode('artboard')}
                 className={`p-1 rounded-full transition ${
                   viewMode === 'artboard'
-                    ? 'bg-white text-[#087477] shadow-2xs'
+                    ? 'bg-white text-[#5c4bb8] shadow-2xs'
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
                 title="Freeform Artboards (Move papers & mix sizes)"
@@ -586,7 +619,7 @@ export const CanvasArea: React.FC = () => {
                 onClick={() => setViewMode('single')}
                 className={`p-1 rounded-full transition ${
                   viewMode === 'single'
-                    ? 'bg-white text-[#087477] shadow-2xs'
+                    ? 'bg-white text-[#5c4bb8] shadow-2xs'
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
                 title="Single Page View"
@@ -597,7 +630,7 @@ export const CanvasArea: React.FC = () => {
                 onClick={() => setViewMode('continuous')}
                 className={`p-1 rounded-full transition ${
                   viewMode === 'continuous'
-                    ? 'bg-white text-[#087477] shadow-2xs'
+                    ? 'bg-white text-[#5c4bb8] shadow-2xs'
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
                 title="All Pages Vertical Scroll"
@@ -608,7 +641,7 @@ export const CanvasArea: React.FC = () => {
                 onClick={() => setViewMode('spread')}
                 className={`p-1 rounded-full transition ${
                   viewMode === 'spread'
-                    ? 'bg-white text-[#087477] shadow-2xs'
+                    ? 'bg-white text-[#5c4bb8] shadow-2xs'
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
                 title="2-Page Spread View"
@@ -643,15 +676,18 @@ export const CanvasArea: React.FC = () => {
 
             <button
               onClick={zoomFit}
-              className="flex items-center gap-1 px-2 py-0.5 rounded-full hover:bg-[#e5f4f3] hover:text-[#087477] text-[11px] font-medium transition"
+              className="flex items-center gap-1 px-2 py-0.5 rounded-full hover:bg-[#efeafd] hover:text-[#5c4bb8] text-[11px] font-medium transition"
               title="Fit to Window"
             >
-              <Maximize size={11} className="text-[#087477]" />
+              <Maximize size={11} className="text-[#5c4bb8]" />
               <span>Fit</span>
             </button>
           </div>
         </div>
       </div>
+
+      {/* Contextual object toolbar (align / z-order / duplicate / lock / delete) */}
+      <SelectionToolbar />
     </div>
   );
 };

@@ -47,6 +47,7 @@ An authentic, modern, desktop-grade clone of **Microsoft Publisher** built with 
   - Publisher "BorderArt" decorative borders.
 - **Interactive Tables**:
   - Editable cell contents, custom header and cell background colors, and border widths.
+- **Stock Art Sources**: five live sources — built-in graphics, Iconify (200k+ icons), Wikimedia Commons, **Openverse** (keyless CC imagery that works on static hosts) and the optional Clipart.Free key.
 - **Building Blocks**:
   - Tear-off Coupons with dashed scissor lines.
   - Pull Quotes with large quotation marks.
@@ -63,9 +64,34 @@ An authentic, modern, desktop-grade clone of **Microsoft Publisher** built with 
 
 ### 5. Export & Publishing
 - **PDF Export**: Generates multi-page vector PDF documents ready for printing.
+- **Print-Shop Ready**: Optional **bleed** (0.125" / 0.25") with mirrored edge extension plus **crop marks and trim guides**, so files drop straight into a commercial press workflow.
 - **Image Export**: 300 DPI PNG and JPEG image exports.
+- **Batch Export**: **All Pages as PNG (ZIP)** renders every page at 300 DPI and packages them into a single download (JSZip loads on demand, with live progress).
 - **Project File**: Save and reload `.pub` files directly to disk.
 - **Print**: Direct browser print integration formatted for exact page sizes.
+
+### 6. UI Shell & Design System
+- **"Iris" accent palette**: a Radix-Violet design token set (`#6e56cf`) defined in `src/index.css` — deliberately distinct from Microsoft Publisher's green, with an ink ramp that meets WCAG AA (≥4.5:1) at 10–11px label sizes.
+- **Compact chrome**: 46px quick-access bar, ribbon that folds itself on <820px-tall laptops (`Ctrl+F1`, chevron, or click the active tab), and a triaged status bar that drops non-essential metadata on narrow viewports.
+- **Contextual selection toolbar**: align / distribute / z-order / group / duplicate / lock / delete float at the bottom of the canvas, so common object work never requires the inspector.
+- **Collapsible inspector**: every inspector section is a fold-out card with a clickable header, and the sticky header shows the current selection type.
+- **Consistent zoom**: one 20–300% range everywhere, with a click-to-type zoom percentage in the status bar.
+
+### 7. Smart, Document-Aware Colour Picker
+Every colour swatch in the app (37 of them — fill, stroke, text, table, page background, collage, brand kits) now opens a **smart palette** derived from the document you are editing:
+- **Mined colours** — every fill, stroke, text and table colour in the project, weighted by page and by element area, so the palette reflects the artwork rather than a generic rainbow.
+- **Harmonies** — complementary, split-complementary, analogous and triadic sets generated from the dominant hue, plus tints/shades and neutrals tuned to the page background.
+- **Role-aware filtering** — text swatches are auto-adjusted until they clear **WCAG AA (4.5:1)** against the surface they land on, fills are rejected if they vanish into the background, and background swatches are only offered when the document's text stays readable on them.
+- **Click the swatch itself** to open the palette (no extra badge crowding the control); a hex field and a **Custom colour…** button keep the system colour wheel one click away.
+- Hollow dot markers flag swatches that were lightened/darkened to pass contrast; tooltips show the hex and the measured contrast ratio.
+
+Logic lives in `src/utils/documentPalette.ts`; the UI is `src/components/common/ColorInput.tsx`, a drop-in replacement for `<input type="color">`.
+
+### 8. Performance & Static Hosting
+- **Code-split bundle**: the editor shell loads first; every modal (`Backstage`, `AI Image`, `Collage`, `Mail Merge`, `Brand Board/Kits`, `Shortcuts`) and the export stack (jsPDF, html2canvas, JSZip) are lazy chunks. Initial JS dropped from ~1.9 MB to ~0.9 MB (−52%).
+- **Auto-fit on load**: the artboard measures the real viewport on first paint and zooms to frame Page 1 exactly — no clipped pages on 1280×800 laptops.
+- **Works on GitHub Pages and Vercel**: Cloud AI (Pollinations), Iconify, Wikimedia and Openverse are called directly from production builds (all CORS-enabled); Clipart.Free can use an optional CORS proxy. See [docs/static-hosting.md](docs/static-hosting.md) and [`workers/clipart-proxy.js`](workers/clipart-proxy.js).
+- **Vercel**: the `studiopress` project builds fine (`npm run build` → `dist/`), but push-to-deploy is disabled and Deployment Protection gates non-production URLs behind a Vercel login — see the [Vercel checklist](docs/static-hosting.md#vercel-checklist-project-studiopress) before assuming the deployment is broken.
 
 ---
 
@@ -89,11 +115,24 @@ Open **`http://localhost:5173`** in your browser.
 ---
 
 ## ⌨️ Keyboard Shortcuts
-- `Ctrl + Z`: Undo
-- `Ctrl + Y`: Redo
-- `Ctrl + D`: Duplicate selected element
-- `Ctrl + A`: Select all elements on active page
-- `Delete` / `Backspace`: Delete selected element(s)
-- `Arrow Keys`: Nudge element by 1px
-- `Shift + Arrow Keys`: Nudge element by 10px
-- `Escape`: Deselect all
+
+Press `?` (or the keyboard icon in the Quick Access Toolbar) for the in-app
+cheatsheet with a live filter.
+
+| Shortcut | Action |
+| --- | --- |
+| `Ctrl + S` | Save publication (`.pub`) |
+| `Ctrl + P` | Open **File ▸ Print Publication** |
+| `Ctrl + K` | Command search |
+| `Ctrl + Z` / `Ctrl + Y` | Undo / Redo |
+| `Ctrl + C` / `Ctrl + V` | Copy / Paste |
+| `Ctrl + D` | Duplicate selected element |
+| `Ctrl + A` | Select all elements on active page |
+| `Delete` / `Backspace` | Delete selected element(s) |
+| `Arrow Keys` | Nudge element by 1px |
+| `Shift + Arrow Keys` | Nudge element by 10px |
+| `Space` + drag | Pan the pasteboard |
+| `H` / `V` | Hand (pan) / Select tool |
+| `Ctrl + Wheel` | Zoom in / out |
+| `Escape` | Deselect all / close dialog |
+| `?` | Shortcuts cheatsheet |

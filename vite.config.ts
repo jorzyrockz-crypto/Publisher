@@ -9,7 +9,28 @@ export default defineConfig({
     tailwindcss(),
     react(),
   ],
+  build: {
+    chunkSizeWarningLimit: 900,
+    rollupOptions: {
+      output: {
+        // Keep the React runtime in its own long-lived cache chunk.
+        manualChunks(id: string) {
+          if (
+            id.includes('node_modules/react/') ||
+            id.includes('node_modules/react-dom/') ||
+            id.includes('node_modules/scheduler/')
+          ) {
+            return 'react-vendor';
+          }
+          return undefined;
+        },
+      },
+    },
+  },
   server: {
+    host: '0.0.0.0',
+    port: 5173,
+    allowedHosts: true,
     proxy: {
       '/api/pollinations': {
         target: 'https://image.pollinations.ai',

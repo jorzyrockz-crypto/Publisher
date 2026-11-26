@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
+import { ColorInput } from '../common/ColorInput';
 import {
   COLLAGE_LAYOUTS,
   DYNAMIC_MODE_LABELS,
@@ -938,14 +939,14 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
         {/* Header */}
         <div className="px-5 py-3 border-b border-[#e5e9ee] flex items-center justify-between bg-slate-50">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-2xl bg-[#087f83] text-white flex items-center justify-center shadow-sm">
+            <div className="w-9 h-9 rounded-2xl bg-[#6e56cf] text-white flex items-center justify-center shadow-sm">
               <LayoutGrid size={18} />
             </div>
             <div>
               <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                 <span>Photo Collage Studio</span>
                 {isEditMode && (
-                  <span className="px-2 py-0.5 rounded-full bg-[#e5f4f3] text-[#087477] text-[10px] font-bold">
+                  <span className="px-2 py-0.5 rounded-full bg-[#efeafd] text-[#5c4bb8] text-[10px] font-bold">
                     Editing Group
                   </span>
                 )}
@@ -1019,7 +1020,7 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                 onClick={() => setLeftPanelTab('vibe')}
                 className={`py-1.5 rounded-lg text-[10.5px] font-bold flex items-center justify-center gap-1 transition cursor-pointer ${
                   leftPanelTab === 'vibe'
-                    ? 'bg-white text-[#087477] shadow-xs'
+                    ? 'bg-white text-[#5c4bb8] shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -1031,7 +1032,7 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                 onClick={() => setLeftPanelTab('layouts')}
                 className={`py-1.5 rounded-lg text-[10.5px] font-bold flex items-center justify-center gap-1 transition cursor-pointer ${
                   leftPanelTab === 'layouts'
-                    ? 'bg-white text-[#087477] shadow-xs'
+                    ? 'bg-white text-[#5c4bb8] shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -1053,7 +1054,7 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                         type="checkbox"
                         checked={includeVibeStickers}
                         onChange={(e) => setIncludeVibeStickers(e.target.checked)}
-                        className="accent-[#087f83] rounded"
+                        className="accent-[#6e56cf] rounded"
                       />
                       <span>+ Stickers</span>
                     </label>
@@ -1072,8 +1073,8 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                           title={pack.description}
                           className={`p-1.5 rounded-xl border text-left transition cursor-pointer flex flex-col gap-1.5 ${
                             isActive
-                              ? 'border-indigo-600 bg-[#e5f4f3] ring-1 ring-[#087f83]/30 shadow-xs'
-                              : 'border-[#e5e9ee] bg-white hover:border-[#b7dddd] hover:bg-slate-50'
+                              ? 'border-indigo-600 bg-[#efeafd] ring-1 ring-[#6e56cf]/30 shadow-xs'
+                              : 'border-[#e5e9ee] bg-white hover:border-[#d3c9f9] hover:bg-slate-50'
                           }`}
                         >
                           {/* Mini 3-tile preview card */}
@@ -1128,7 +1129,7 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                     <button
                       type="button"
                       onClick={handleAutoMatchLayout}
-                      className="px-2 py-0.5 rounded-lg bg-[#e5f4f3] hover:bg-[#e5f4f3] text-[#087477] text-[10px] font-bold flex items-center gap-1 transition cursor-pointer"
+                      className="px-2 py-0.5 rounded-lg bg-[#efeafd] hover:bg-[#efeafd] text-[#5c4bb8] text-[10px] font-bold flex items-center gap-1 transition cursor-pointer"
                       title="Pick best layout based on your uploaded photos"
                     >
                       <Wand2 size={11} />
@@ -1184,8 +1185,8 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                           }
                           className={`p-1.5 rounded-xl border flex items-center gap-2 text-left transition cursor-pointer ${
                             isActive
-                              ? 'border-indigo-600 bg-[#e5f4f3]/75 ring-1 ring-[#087f83]/30'
-                              : 'border-[#e5e9ee] bg-white hover:border-[#b7dddd] hover:bg-slate-50'
+                              ? 'border-indigo-600 bg-[#efeafd]/75 ring-1 ring-[#6e56cf]/30'
+                              : 'border-[#e5e9ee] bg-white hover:border-[#d3c9f9] hover:bg-slate-50'
                           }`}
                         >
                           <div className="relative w-11 h-11 flex-shrink-0 bg-slate-100 rounded-md overflow-hidden p-0.5">
@@ -1202,7 +1203,7 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                                   zIndex: s.zIndex,
                                 }}
                                 className={`rounded-[2px] border border-white/70 ${
-                                  isActive ? 'bg-[#087f83]/85' : 'bg-slate-400/75'
+                                  isActive ? 'bg-[#6e56cf]/85' : 'bg-slate-400/75'
                                 }`}
                               />
                             ))}
@@ -1224,28 +1225,28 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
             </div>
 
             {/* Bottom-Pinned Dynamic Custom / Auto Layout Card */}
-            <div className="p-2.5 rounded-2xl bg-[#e5f4f3] border border-[#b7dddd]/80 space-y-2 flex-shrink-0">
+            <div className="p-2.5 rounded-2xl bg-[#efeafd] border border-[#d3c9f9]/80 space-y-2 flex-shrink-0">
               <div className="flex items-center justify-between gap-2">
                 <div>
                   <div className="text-[11px] font-bold text-indigo-950 flex items-center gap-1.5">
                     <span>Custom / Auto Layout</span>
-                    <span className="px-1.5 py-0.5 rounded-full bg-[#087f83] text-white text-[9.5px] font-bold">
+                    <span className="px-1.5 py-0.5 rounded-full bg-[#6e56cf] text-white text-[9.5px] font-bold">
                       {filledPhotosCount > 0 ? `${filledPhotosCount} photos` : `${activeLayout.slotCount} slots`}
                     </span>
                   </div>
-                  <p className="text-[9.5px] text-[#087477]/80">
+                  <p className="text-[9.5px] text-[#5c4bb8]/80">
                     Size-aware for 1–24 photos &amp; paper ratio
                   </p>
                 </div>
                 <label
-                  className="flex items-center gap-1 text-[10px] font-bold text-[#087477] cursor-pointer"
+                  className="flex items-center gap-1 text-[10px] font-bold text-[#5c4bb8] cursor-pointer"
                   title="Automatically adjust layout when importing, deleting, or resizing"
                 >
                   <input
                     type="checkbox"
                     checked={autoAdaptLayout}
                     onChange={(e) => setAutoAdaptLayout(e.target.checked)}
-                    className="accent-[#087f83] rounded"
+                    className="accent-[#6e56cf] rounded"
                   />
                   <span>Auto</span>
                 </label>
@@ -1261,8 +1262,8 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                       onClick={() => applyDynamicMode(mode, meta.customLayout?.columns)}
                       className={`px-2 py-1 rounded-xl text-[10px] font-bold border transition cursor-pointer ${
                         isDynamicActive
-                          ? 'bg-[#087f83] text-white border-indigo-600 shadow-2xs'
-                          : 'bg-white text-slate-700 border-[#b7dddd]/70 hover:bg-[#e5f4f3]/60'
+                          ? 'bg-[#6e56cf] text-white border-indigo-600 shadow-2xs'
+                          : 'bg-white text-slate-700 border-[#d3c9f9]/70 hover:bg-[#efeafd]/60'
                       }`}
                     >
                       {DYNAMIC_MODE_LABELS[mode]}
@@ -1273,7 +1274,7 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
 
               {(!meta.customLayout || meta.customLayout.mode === 'smart-grid') && (
                 <div className="flex items-center justify-between gap-1 pt-0.5">
-                  <span className="text-[10px] font-semibold text-[#087477]">Columns:</span>
+                  <span className="text-[10px] font-semibold text-[#5c4bb8]">Columns:</span>
                   <div className="flex items-center gap-1">
                     {([undefined, 1, 2, 3, 4, 5, 6] as Array<number | undefined>).map((col) => {
                       const isColActive =
@@ -1286,8 +1287,8 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                           onClick={() => applyDynamicMode('smart-grid', col)}
                           className={`px-1.5 py-0.5 rounded-md text-[9.5px] font-bold border transition cursor-pointer ${
                             isColActive
-                              ? 'bg-[#087f83] text-white border-indigo-600'
-                              : 'bg-white text-slate-600 border-[#e5e9ee] hover:border-[#b7dddd]'
+                              ? 'bg-[#6e56cf] text-white border-indigo-600'
+                              : 'bg-white text-slate-600 border-[#e5e9ee] hover:border-[#d3c9f9]'
                           }`}
                         >
                           {col ?? 'Auto'}
@@ -1335,7 +1336,7 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                       onClick={() => commitMeta((prev) => ({ ...prev, aspectRatio: ar.id }))}
                       className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition cursor-pointer ${
                         meta.aspectRatio === ar.id
-                          ? 'bg-[#087f83] text-white border-indigo-600'
+                          ? 'bg-[#6e56cf] text-white border-indigo-600'
                           : 'bg-white text-slate-600 border-[#e5e9ee] hover:bg-slate-100'
                       }`}
                     >
@@ -1352,7 +1353,7 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                     type="button"
                     onClick={handleAddSlot}
                     disabled={activeLayout.slotCount >= 24}
-                    className="px-2 py-1 rounded-lg bg-white border border-[#e5e9ee] hover:bg-[#e5f4f3] hover:border-[#b7dddd] disabled:opacity-40 text-slate-700 text-[10.5px] font-bold flex items-center gap-1 transition cursor-pointer"
+                    className="px-2 py-1 rounded-lg bg-white border border-[#e5e9ee] hover:bg-[#efeafd] hover:border-[#d3c9f9] disabled:opacity-40 text-slate-700 text-[10.5px] font-bold flex items-center gap-1 transition cursor-pointer"
                     title="Add another photo slot and reflow layout"
                   >
                     <Plus size={12} />
@@ -1361,7 +1362,7 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                   <button
                     type="button"
                     onClick={() => multiFileRef.current?.click()}
-                    className="px-2.5 py-1 rounded-lg bg-[#087f83] hover:bg-[#06696c] text-white text-[10.5px] font-bold flex items-center gap-1 shadow-2xs transition cursor-pointer"
+                    className="px-2.5 py-1 rounded-lg bg-[#6e56cf] hover:bg-[#5c4bb8] text-white text-[10.5px] font-bold flex items-center gap-1 shadow-2xs transition cursor-pointer"
                   >
                     <Upload size={12} />
                     <span>Add Photos</span>
@@ -1400,10 +1401,10 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                       sizeSeed: ((prev.sizeSeed ?? 0) + 1) % 12,
                     }))
                   }
-                  className="px-2 py-1 rounded-lg bg-white border border-[#e5e9ee] hover:bg-[#e5f4f3] hover:border-[#b7dddd] text-[10px] font-semibold text-slate-700 flex items-center gap-1 transition cursor-pointer"
+                  className="px-2 py-1 rounded-lg bg-white border border-[#e5e9ee] hover:bg-[#efeafd] hover:border-[#d3c9f9] text-[10px] font-semibold text-slate-700 flex items-center gap-1 transition cursor-pointer"
                   title="Vary photo sizes across the layout"
                 >
-                  <Sparkles size={11} className="text-[#087477]" />
+                  <Sparkles size={11} className="text-[#5c4bb8]" />
                   <span>Shuffle Sizes</span>
                 </button>
                 <button
@@ -1456,7 +1457,7 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                       onClick={() => setPreviewZoom(z)}
                       className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold transition ${
                         Math.abs(previewZoom - z) < 0.05
-                          ? 'bg-[#087f83] text-white'
+                          ? 'bg-[#6e56cf] text-white'
                           : 'text-slate-600 hover:bg-slate-100'
                       }`}
                     >
@@ -1671,7 +1672,7 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                               </button>
                             </>
                           ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center gap-0.5 text-slate-400 group-hover:text-[#087477]">
+                            <div className="w-full h-full flex flex-col items-center justify-center gap-0.5 text-slate-400 group-hover:text-[#5c4bb8]">
                               <Upload size={14} />
                               <span className="text-[9.5px] font-bold">Slot {idx + 1}</span>
                             </div>
@@ -1739,7 +1740,7 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                   type="checkbox"
                   checked={groupSlots}
                   onChange={(e) => setGroupSlots(e.target.checked)}
-                  className="accent-[#087f83] rounded"
+                  className="accent-[#6e56cf] rounded"
                 />
                 <span>Group collage slots together</span>
               </label>
@@ -1747,7 +1748,7 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
               <button
                 type="button"
                 onClick={handleSaveCollage}
-                className="py-2 px-4 rounded-xl bg-[#087f83] hover:bg-[#06696c] text-white text-xs font-bold shadow-sm flex items-center gap-1.5 transition cursor-pointer"
+                className="py-2 px-4 rounded-xl bg-[#6e56cf] hover:bg-[#5c4bb8] text-white text-xs font-bold shadow-sm flex items-center gap-1.5 transition cursor-pointer"
               >
                 <ImagePlus size={14} />
                 <span>{isEditMode ? 'Update Collage' : 'Insert Collage'}</span>
@@ -1764,7 +1765,7 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                 onClick={() => setInspectorScope('all')}
                 className={`py-1 rounded-lg text-[10.5px] font-bold transition ${
                   inspectorScope === 'all'
-                    ? 'bg-white text-[#087477] shadow-xs'
+                    ? 'bg-white text-[#5c4bb8] shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -1775,7 +1776,7 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                 onClick={() => setInspectorScope('slot')}
                 className={`py-1 rounded-lg text-[10.5px] font-bold transition ${
                   inspectorScope === 'slot'
-                    ? 'bg-white text-[#087477] shadow-xs'
+                    ? 'bg-white text-[#5c4bb8] shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -1811,21 +1812,21 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
 
               <div className="grid grid-cols-2 gap-1.5">
                 <label className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-xl border border-[#e5e9ee] cursor-pointer">
-                  <input
-                    type="color"
+                  <ColorInput
                     value={activeStyleForInspector.frameColor}
                     onChange={(e) => updateInspectorStyle({ frameColor: e.target.value })}
                     className="w-4 h-4 rounded border-0 p-0 cursor-pointer"
-                  />
+                    target="fill"
+                    />
                   <span className="text-[10px] font-semibold text-slate-600">Frame</span>
                 </label>
                 <label className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-xl border border-[#e5e9ee] cursor-pointer">
-                  <input
-                    type="color"
+                  <ColorInput
                     value={activeStyleForInspector.accentColor}
                     onChange={(e) => updateInspectorStyle({ accentColor: e.target.value })}
                     className="w-4 h-4 rounded border-0 p-0 cursor-pointer"
-                  />
+                    target="fill"
+                    />
                   <span className="text-[10px] font-semibold text-slate-600">Accent</span>
                 </label>
               </div>
@@ -1843,7 +1844,7 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                   onChange={(e) =>
                     updateInspectorStyle({ frameThickness: Number(e.target.value) })
                   }
-                  className="w-full accent-[#087f83] cursor-pointer"
+                  className="w-full accent-[#6e56cf] cursor-pointer"
                 />
               </div>
             </div>
@@ -1868,7 +1869,7 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                     onClick={() => updateInspectorStyle({ effect: ef.id as StyleEffectId })}
                     className={`py-1 rounded-lg text-[10px] font-bold border transition ${
                       activeStyleForInspector.effect === ef.id
-                        ? 'bg-[#087f83] text-white border-indigo-600'
+                        ? 'bg-[#6e56cf] text-white border-indigo-600'
                         : 'bg-slate-50 text-slate-600 border-[#e5e9ee] hover:bg-slate-100'
                     }`}
                   >
@@ -1890,7 +1891,7 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                       onClick={() => updateInspectorStyle({ mask })}
                       className={`py-1 rounded-lg text-[10px] font-semibold capitalize border transition ${
                         activeStyleForInspector.mask === mask
-                          ? 'bg-[#e5f4f3] text-[#087477] border-[#b7dddd]'
+                          ? 'bg-[#efeafd] text-[#5c4bb8] border-[#d3c9f9]'
                           : 'bg-slate-50 text-slate-600 border-[#e5e9ee] hover:bg-slate-100'
                       }`}
                     >
@@ -1919,7 +1920,7 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                       globalStyle: { ...prev.globalStyle, gap: Number(e.target.value) },
                     }))
                   }
-                  className="w-full accent-[#087f83] cursor-pointer"
+                  className="w-full accent-[#6e56cf] cursor-pointer"
                 />
               </div>
 
@@ -1939,7 +1940,7 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                       globalStyle: { ...prev.globalStyle, slotScale: Number(e.target.value) / 100 },
                     }))
                   }
-                  className="w-full accent-[#087f83] cursor-pointer"
+                  className="w-full accent-[#6e56cf] cursor-pointer"
                 />
               </div>
 
@@ -1959,7 +1960,7 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                       globalStyle: { ...prev.globalStyle, cornerRadius: Number(e.target.value) },
                     }))
                   }
-                  className="w-full accent-[#087f83] cursor-pointer"
+                  className="w-full accent-[#6e56cf] cursor-pointer"
                 />
               </div>
 
@@ -1974,7 +1975,7 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                       globalStyle: { ...prev.globalStyle, scatterTilt: e.target.checked },
                     }))
                   }
-                  className="accent-[#087f83] rounded"
+                  className="accent-[#6e56cf] rounded"
                 />
               </label>
             </div>
@@ -1991,7 +1992,7 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                     activeUploadSlotRef.current = selectedSlotIdx;
                     singleFileRef.current?.click();
                   }}
-                  className="text-[10px] font-bold text-[#087477] hover:underline"
+                  className="text-[10px] font-bold text-[#5c4bb8] hover:underline"
                 >
                   Replace
                 </button>
@@ -2017,7 +2018,7 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                       return { ...prev, slots: nextSlots };
                     })
                   }
-                  className="w-full accent-[#087f83] cursor-pointer"
+                  className="w-full accent-[#6e56cf] cursor-pointer"
                 />
               </div>
 
@@ -2114,7 +2115,7 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                     })
                   }
                   placeholder="Polaroid caption..."
-                  className="w-full px-2 py-1 rounded-lg border border-[#e5e9ee] bg-white text-[10.5px] outline-none focus:border-[#b7dddd]"
+                  className="w-full px-2 py-1 rounded-lg border border-[#e5e9ee] bg-white text-[10.5px] outline-none focus:border-[#d3c9f9]"
                 />
               )}
             </div>
@@ -2145,8 +2146,7 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                   <option value="dot-grid">Dot Grid</option>
                 </select>
                 {meta.backdrop.type !== 'none' && (
-                  <input
-                    type="color"
+                  <ColorInput
                     value={meta.backdrop.color}
                     onChange={(e) =>
                       commitMeta((prev) => ({
@@ -2155,7 +2155,8 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                       }))
                     }
                     className="w-7 h-7 rounded-lg border border-[#e5e9ee] p-0 cursor-pointer"
-                  />
+                    target="text"
+                    />
                 )}
               </div>
               {meta.backdrop.type === 'pastel-gradient' && (
@@ -2186,7 +2187,7 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                           }
                           className={`h-5 rounded-md border transition cursor-pointer ${
                             isSel
-                              ? 'border-indigo-600 ring-1 ring-[#087f83]/40 scale-105'
+                              ? 'border-indigo-600 ring-1 ring-[#6e56cf]/40 scale-105'
                               : 'border-[#e5e9ee] hover:scale-105'
                           }`}
                           style={{
@@ -2223,8 +2224,7 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                       ))}
                     </select>
                     {meta.backdrop.patternType && meta.backdrop.patternType !== 'none' && (
-                      <input
-                        type="color"
+                      <ColorInput
                         value={meta.backdrop.patternColor || '#4f46e5'}
                         onChange={(e) =>
                           commitMeta((prev) => ({
@@ -2234,7 +2234,8 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                         }
                         className="w-6 h-6 rounded-lg border border-[#e5e9ee] p-0 cursor-pointer"
                         title="Pattern Ink Color"
-                      />
+                        target="fill"
+                        />
                     )}
                   </div>
                   <div>
@@ -2253,10 +2254,10 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                           backdrop: { ...prev.backdrop, padding: Number(e.target.value) },
                         }))
                       }
-                      className="w-full accent-[#087f83] cursor-pointer"
+                      className="w-full accent-[#6e56cf] cursor-pointer"
                     />
                   </div>
-                  <label className="flex items-center justify-between text-[10px] font-semibold text-[#087477] bg-[#e5f4f3] px-2 py-1.5 rounded-xl border border-[#b7dddd]/70 cursor-pointer">
+                  <label className="flex items-center justify-between text-[10px] font-semibold text-[#5c4bb8] bg-[#efeafd] px-2 py-1.5 rounded-xl border border-[#d3c9f9]/70 cursor-pointer">
                     <span>Cover document page background</span>
                     <input
                       type="checkbox"
@@ -2267,7 +2268,7 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                           coverDocumentBackground: e.target.checked,
                         }))
                       }
-                      className="accent-[#087f83] rounded"
+                      className="accent-[#6e56cf] rounded"
                     />
                   </label>
                 </>

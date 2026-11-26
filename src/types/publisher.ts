@@ -397,3 +397,6 @@ export interface HistoryState {
   past: DocumentProject[];
   future: DocumentProject[];
 }
+
+/** Sections available in the File (Backstage) view. */
+export type BackstageSection = 'info' | 'new' | 'open' | 'save' | 'print' | 'export';

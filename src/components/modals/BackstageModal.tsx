@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+﻿import React, { useRef, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
 import { TEMPLATES, TemplateDefinition } from '../../constants/templates';
 import { ElementRenderer } from '../canvas/ElementRenderer';
@@ -7,6 +7,7 @@ import {
   saveProjectToFile,
   loadProjectFromFile,
   exportToImage,
+  exportAllPagesToPngZip,
 } from '../../utils/imageExport';
 import { exportToPdf, exportBookletPdf, exportTarpapelPdf } from '../../utils/pdfExport';
 import { buildPatternBackgroundStyle } from '../../utils/patternGenerator';
@@ -158,6 +159,8 @@ export const BackstageModal: React.FC = () => {
     project,
     activePage,
     isBackstageOpen,
+    backstageSection,
+    setBackstageSection,
     setIsBackstageOpen,
     loadTemplate,
     setProject,
@@ -172,9 +175,10 @@ export const BackstageModal: React.FC = () => {
     matchPageToTarpapelRatio,
   } = usePublisher();
 
-  const [activeSection, setActiveSection] = useState<
-    'info' | 'new' | 'open' | 'save' | 'print' | 'export'
-  >('new');
+  // Section is owned by the context so e.g. the toolbar Print button can jump
+  // straight to File ▸ Print even when the File view is closed.
+  const activeSection = backstageSection;
+  const setActiveSection = setBackstageSection;
   const [templateGroupFilter, setTemplateGroupFilter] = useState<string>('All');
   const [templateSearch, setTemplateSearch] = useState<string>('');
   const [previewTemplate, setPreviewTemplate] = useState<TemplateDefinition | null>(null);
@@ -184,6 +188,9 @@ export const BackstageModal: React.FC = () => {
   const [showAllPrintSheets, setShowAllPrintSheets] = useState<boolean>(false);
   const [isPreparingPrint, setIsPreparingPrint] = useState<boolean>(false);
   const [transparentPng, setTransparentPng] = useState<boolean>(false);
+  const [pdfBleedIn, setPdfBleedIn] = useState<number>(0);
+  const [pdfCropMarks, setPdfCropMarks] = useState<boolean>(false);
+  const [zipProgress, setZipProgress] = useState<{ done: number; total: number } | null>(null);
   const [tarpapelPreviewMode, setTarpapelPreviewMode] = useState<'map' | 'tile'>('map');
   const [tarpapelInspectTileIdx, setTarpapelInspectTileIdx] = useState<number>(0);
   const [tarpapelInfoOpen, setTarpapelInfoOpen] = useState<'overlap' | 'guides' | null>(null);
@@ -388,7 +395,7 @@ export const BackstageModal: React.FC = () => {
                   placeholder="Search templates (e.g. menu, poster, resume)..."
                   value={templateSearch}
                   onChange={(e) => setTemplateSearch(e.target.value)}
-                  className="w-full md:w-64 px-3.5 py-2 rounded-xl border border-[#e5e9ee] bg-white text-xs outline-none focus:ring-2 focus:ring-[#087f83]/20 focus:border-[#73b9b7] shadow-2xs"
+                  className="w-full md:w-64 px-3.5 py-2 rounded-xl border border-[#e5e9ee] bg-white text-xs outline-none focus:ring-2 focus:ring-[#6e56cf]/20 focus:border-[#b3a4f2] shadow-2xs"
                 />
               </div>
 
@@ -400,7 +407,7 @@ export const BackstageModal: React.FC = () => {
                     onClick={() => setTemplateGroupFilter(tab)}
                     className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition ${
                       templateGroupFilter === tab
-                        ? 'bg-[#087f83] text-white shadow-xs'
+                        ? 'bg-[#6e56cf] text-white shadow-xs'
                         : 'bg-white border border-[#e5e9ee] text-slate-600 hover:bg-slate-100'
                     }`}
                   >
@@ -428,7 +435,7 @@ export const BackstageModal: React.FC = () => {
                             loadTemplate(tpl.id);
                             confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
                           }}
-                          className="bg-white border border-[#e5e9ee] rounded-2xl p-4 shadow-sm hover:shadow-xl hover:border-[#b7dddd] cursor-pointer transition-all hover:-translate-y-1 group flex flex-col justify-between"
+                          className="bg-white border border-[#e5e9ee] rounded-2xl p-4 shadow-sm hover:shadow-xl hover:border-[#d3c9f9] cursor-pointer transition-all hover:-translate-y-1 group flex flex-col justify-between"
                         >
                           <div>
                             <div
@@ -456,7 +463,7 @@ export const BackstageModal: React.FC = () => {
                                   e.stopPropagation();
                                   setPreviewTemplate(tpl);
                                 }}
-                                className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-900/80 hover:bg-[#087f83] text-white text-[10.5px] font-semibold opacity-0 group-hover:opacity-100 transition-all shadow-md"
+                                className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-900/80 hover:bg-[#6e56cf] text-white text-[10.5px] font-semibold opacity-0 group-hover:opacity-100 transition-all shadow-md"
                                 title="Full Preview"
                               >
                                 <Eye size={12} />
@@ -465,7 +472,7 @@ export const BackstageModal: React.FC = () => {
                             </div>
 
                             <div className="flex items-center gap-2 mb-1.5">
-                              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-[#e5f4f3] text-[#087477] border border-[#b7dddd]/60">
+                              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-[#efeafd] text-[#5c4bb8] border border-[#d3c9f9]/60">
                                 {tpl.category}
                               </span>
                               <span className="text-[11px] font-medium text-slate-400">
@@ -474,7 +481,7 @@ export const BackstageModal: React.FC = () => {
                               </span>
                             </div>
 
-                            <h3 className="font-bold text-sm text-slate-800 group-hover:text-[#087477] transition">
+                            <h3 className="font-bold text-sm text-slate-800 group-hover:text-[#5c4bb8] transition">
                               {tpl.name}
                             </h3>
                             <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
@@ -482,7 +489,7 @@ export const BackstageModal: React.FC = () => {
                             </p>
                           </div>
 
-                          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-[#087477]">
+                          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-[#5c4bb8]">
                             <span>Create Publication</span>
                             <span className="group-hover:translate-x-1 transition-transform">→</span>
                           </div>
@@ -524,15 +531,15 @@ export const BackstageModal: React.FC = () => {
                         }}
                         className={`p-3 rounded-xl border flex items-center justify-between gap-2 cursor-pointer transition ${
                           isCur
-                            ? 'border-[#b7dddd] bg-[#e5f4f3]'
-                            : 'border-[#e5e9ee] hover:border-[#b7dddd] hover:bg-slate-50'
+                            ? 'border-[#d3c9f9] bg-[#efeafd]'
+                            : 'border-[#e5e9ee] hover:border-[#d3c9f9] hover:bg-slate-50'
                         }`}
                       >
                         <div className="min-w-0">
                           <div className="text-xs font-bold text-slate-800 truncate flex items-center gap-1.5">
                             <span>{tab.project.name}</span>
                             {isCur && (
-                              <span className="px-1.5 py-0.5 rounded bg-[#087f83] text-white text-[9px]">
+                              <span className="px-1.5 py-0.5 rounded bg-[#6e56cf] text-white text-[9px]">
                                 Active
                               </span>
                             )}
@@ -562,7 +569,7 @@ export const BackstageModal: React.FC = () => {
             )}
 
             <div className="bg-white p-10 rounded-2xl border border-[#e5e9ee] shadow-sm text-center space-y-4">
-              <div className="w-16 h-16 rounded-2xl bg-[#e5f4f3] text-[#087477] flex items-center justify-center mx-auto shadow-xs">
+              <div className="w-16 h-16 rounded-2xl bg-[#efeafd] text-[#5c4bb8] flex items-center justify-center mx-auto shadow-xs">
                 <FolderOpen size={32} />
               </div>
               <div>
@@ -594,7 +601,7 @@ export const BackstageModal: React.FC = () => {
 
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="px-6 py-2.5 bg-[#087f83] hover:bg-[#06696c] active:scale-95 text-white rounded-xl font-semibold text-xs transition shadow-sm"
+                className="px-6 py-2.5 bg-[#6e56cf] hover:bg-[#5c4bb8] active:scale-95 text-white rounded-xl font-semibold text-xs transition shadow-sm"
               >
                 Browse Files...
               </button>
@@ -615,7 +622,7 @@ export const BackstageModal: React.FC = () => {
                   type="text"
                   value={project.name}
                   onChange={(e) => (project.name = e.target.value)}
-                  className="w-full border border-[#e5e9ee] rounded-xl px-3.5 py-2 text-sm outline-none focus:ring-2 focus:ring-[#087f83]/20 focus:border-[#73b9b7] font-medium"
+                  className="w-full border border-[#e5e9ee] rounded-xl px-3.5 py-2 text-sm outline-none focus:ring-2 focus:ring-[#6e56cf]/20 focus:border-[#b3a4f2] font-medium"
                 />
               </div>
 
@@ -625,7 +632,7 @@ export const BackstageModal: React.FC = () => {
                     saveProjectToFile(project);
                     setIsBackstageOpen(false);
                   }}
-                  className="px-6 py-2.5 bg-[#087f83] hover:bg-[#06696c] active:scale-95 text-white rounded-xl font-semibold text-xs transition shadow-sm flex items-center gap-2"
+                  className="px-6 py-2.5 bg-[#6e56cf] hover:bg-[#5c4bb8] active:scale-95 text-white rounded-xl font-semibold text-xs transition shadow-sm flex items-center gap-2"
                 >
                   <Save size={14} />
                   <span>Download .pub File</span>
@@ -653,7 +660,7 @@ export const BackstageModal: React.FC = () => {
                     Configure sheet imposition, grayscale ink proofing, trim marks, and print directly.
                   </p>
                 </div>
-                <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#e5f4f3] text-[#087477] border border-[#b7dddd]/70">
+                <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#efeafd] text-[#5c4bb8] border border-[#d3c9f9]/70">
                   {selectedPages.length} {selectedPages.length === 1 ? 'Page' : 'Pages'} • {sheets.length}{' '}
                   {sheets.length === 1 ? 'Sheet' : 'Sheets'}
                 </span>
@@ -668,7 +675,7 @@ export const BackstageModal: React.FC = () => {
                       type="button"
                       disabled={isPreparingPrint}
                       onClick={handlePrintNow}
-                      className="w-full py-3 bg-[#087f83] hover:bg-[#06696c] disabled:bg-indigo-400 active:scale-95 text-white rounded-xl font-bold text-sm transition shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                      className="w-full py-3 bg-[#6e56cf] hover:bg-[#5c4bb8] disabled:bg-indigo-400 active:scale-95 text-white rounded-xl font-bold text-sm transition shadow-md flex items-center justify-center gap-2 cursor-pointer"
                     >
                       {isPreparingPrint ? (
                         <>
@@ -728,7 +735,7 @@ export const BackstageModal: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setShowPrinterProps(!showPrinterProps)}
-                        className="text-[10.5px] font-bold text-[#087477] hover:underline"
+                        className="text-[10.5px] font-bold text-[#5c4bb8] hover:underline"
                       >
                         {showPrinterProps ? 'Hide Properties' : 'Printer Properties'}
                       </button>
@@ -741,7 +748,7 @@ export const BackstageModal: React.FC = () => {
                           printerName: e.target.value as PrintSettings['printerName'],
                         }))
                       }
-                      className="w-full rounded-xl border border-[#e5e9ee] bg-slate-50 hover:bg-slate-100 px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#73b9b7] cursor-pointer"
+                      className="w-full rounded-xl border border-[#e5e9ee] bg-slate-50 hover:bg-slate-100 px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#b3a4f2] cursor-pointer"
                     >
                       <option value="System Print Dialog">System Print Dialog (Default)</option>
                       <option value="Save as PDF">Save as PDF (Direct Download)</option>
@@ -853,7 +860,7 @@ export const BackstageModal: React.FC = () => {
                           copies: Math.max(1, Math.min(99, Number(e.target.value) || 1)),
                         }))
                       }
-                      className="w-20 px-2.5 py-1 rounded-xl border border-[#e5e9ee] bg-slate-50 text-xs font-bold text-center outline-none focus:border-[#73b9b7]"
+                      className="w-20 px-2.5 py-1 rounded-xl border border-[#e5e9ee] bg-slate-50 text-xs font-bold text-center outline-none focus:border-[#b3a4f2]"
                     />
                   </div>
 
@@ -879,7 +886,7 @@ export const BackstageModal: React.FC = () => {
                           }}
                           className={`py-1 px-1.5 rounded-lg text-[10.5px] font-semibold transition ${
                             printSettings.rangeMode === opt.id
-                              ? 'bg-white text-[#087477] shadow-2xs'
+                              ? 'bg-white text-[#5c4bb8] shadow-2xs'
                               : 'text-slate-600 hover:text-slate-900'
                           }`}
                         >
@@ -896,7 +903,7 @@ export const BackstageModal: React.FC = () => {
                           setActiveSheetIdx(0);
                         }}
                         placeholder="e.g. 1, 3-4"
-                        className="w-full px-2.5 py-1.5 rounded-xl border border-[#e5e9ee] bg-slate-50 focus:bg-white text-xs font-mono outline-none focus:border-[#73b9b7]"
+                        className="w-full px-2.5 py-1.5 rounded-xl border border-[#e5e9ee] bg-slate-50 focus:bg-white text-xs font-mono outline-none focus:border-[#b3a4f2]"
                       />
                     )}
                   </div>
@@ -921,7 +928,7 @@ export const BackstageModal: React.FC = () => {
                           }
                           className={`py-1.5 rounded-lg text-[11px] font-semibold transition ${
                             printSettings.colorMode === mode.id
-                              ? 'bg-white text-[#087477] shadow-2xs'
+                              ? 'bg-white text-[#5c4bb8] shadow-2xs'
                               : 'text-slate-600 hover:text-slate-900'
                           }`}
                         >
@@ -956,7 +963,7 @@ export const BackstageModal: React.FC = () => {
                           }}
                           className={`py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${
                             printSettings.printMode === m.id
-                              ? 'bg-white text-[#087477] shadow-2xs'
+                              ? 'bg-white text-[#5c4bb8] shadow-2xs'
                               : 'text-slate-600 hover:text-slate-900'
                           }`}
                         >
@@ -989,7 +996,7 @@ export const BackstageModal: React.FC = () => {
                             }
                             className={`py-1 rounded-lg text-[10.5px] font-semibold transition cursor-pointer ${
                               printSettings.sheetOrientation === ori.id
-                                ? 'bg-white text-[#087477] shadow-2xs'
+                                ? 'bg-white text-[#5c4bb8] shadow-2xs'
                                 : 'text-slate-600 hover:text-slate-900'
                             }`}
                           >
@@ -1011,7 +1018,7 @@ export const BackstageModal: React.FC = () => {
                             }}
                             className={`py-1.5 rounded-lg text-[11px] font-semibold transition ${
                               printSettings.pagesPerSheet === n
-                                ? 'bg-white text-[#087477] shadow-2xs'
+                                ? 'bg-white text-[#5c4bb8] shadow-2xs'
                                 : 'text-slate-600 hover:text-slate-900'
                             }`}
                           >
@@ -1022,8 +1029,8 @@ export const BackstageModal: React.FC = () => {
                     )}
 
                     {printSettings.printMode === 'booklet' && (
-                      <div className="p-2.5 rounded-xl bg-[#e5f4f3] border border-[#b7dddd]/70 space-y-2">
-                        <div className="text-[10.5px] font-bold text-[#087477]">
+                      <div className="p-2.5 rounded-xl bg-[#efeafd] border border-[#d3c9f9]/70 space-y-2">
+                        <div className="text-[10.5px] font-bold text-[#5c4bb8]">
                           Booklet Saddle-Stitch Imposition
                         </div>
                         <div className="grid grid-cols-3 gap-1">
@@ -1043,7 +1050,7 @@ export const BackstageModal: React.FC = () => {
                               }}
                               className={`py-1 rounded-lg text-[10px] font-bold border transition cursor-pointer ${
                                 printSettings.bookletSides === side.id
-                                  ? 'bg-[#087f83] text-white border-indigo-600'
+                                  ? 'bg-[#6e56cf] text-white border-indigo-600'
                                   : 'bg-white text-slate-600 border-[#e5e9ee]'
                               }`}
                             >
@@ -1061,7 +1068,7 @@ export const BackstageModal: React.FC = () => {
                                 bookletShowFoldLine: e.target.checked,
                               }))
                             }
-                            className="accent-[#087f83] rounded"
+                            className="accent-[#6e56cf] rounded"
                           />
                           <span>Show Center Fold Line</span>
                         </label>
@@ -1377,7 +1384,7 @@ export const BackstageModal: React.FC = () => {
                                 setTarpapelOverlayVisible(true);
                                 setIsBackstageOpen(false);
                               }}
-                              className="py-1.5 px-2 rounded-lg bg-[#087f83] hover:bg-[#06696c] text-white text-[10px] font-bold transition cursor-pointer"
+                              className="py-1.5 px-2 rounded-lg bg-[#6e56cf] hover:bg-[#5c4bb8] text-white text-[10px] font-bold transition cursor-pointer"
                               title="Return to editor with live R1·C1 Tarpapel grid lines on the canvas so you can resize your photo"
                             >
                               Grid on Canvas
@@ -1400,7 +1407,7 @@ export const BackstageModal: React.FC = () => {
                         onChange={(e) =>
                           setPrintSettings((s) => ({ ...s, showCropMarks: e.target.checked }))
                         }
-                        className="accent-[#087f83] rounded"
+                        className="accent-[#6e56cf] rounded"
                       />
                       <span>Corner Crop / Trim Marks</span>
                     </label>
@@ -1411,7 +1418,7 @@ export const BackstageModal: React.FC = () => {
                         onChange={(e) =>
                           setPrintSettings((s) => ({ ...s, showMarginBox: e.target.checked }))
                         }
-                        className="accent-[#087f83] rounded"
+                        className="accent-[#6e56cf] rounded"
                       />
                       <span>Show Safe Margin Box (Preview)</span>
                     </label>
@@ -1439,7 +1446,7 @@ export const BackstageModal: React.FC = () => {
                           onClick={() => setShowAllPrintSheets(!showAllPrintSheets)}
                           className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition ${
                             showAllPrintSheets
-                              ? 'bg-[#087f83] text-white border-indigo-600'
+                              ? 'bg-[#6e56cf] text-white border-indigo-600'
                               : 'bg-white text-slate-600 border-[#e5e9ee] hover:bg-slate-50'
                           }`}
                         >
@@ -1453,7 +1460,7 @@ export const BackstageModal: React.FC = () => {
                             type="button"
                             disabled={safeSheetIdx === 0}
                             onClick={() => setActiveSheetIdx((i) => Math.max(0, i - 1))}
-                            className="p-0.5 text-slate-600 disabled:opacity-30 hover:text-[#087477]"
+                            className="p-0.5 text-slate-600 disabled:opacity-30 hover:text-[#5c4bb8]"
                           >
                             <ChevronLeft size={14} />
                           </button>
@@ -1466,7 +1473,7 @@ export const BackstageModal: React.FC = () => {
                             onClick={() =>
                               setActiveSheetIdx((i) => Math.min(sheets.length - 1, i + 1))
                             }
-                            className="p-0.5 text-slate-600 disabled:opacity-30 hover:text-[#087477]"
+                            className="p-0.5 text-slate-600 disabled:opacity-30 hover:text-[#5c4bb8]"
                           >
                             <ChevronRight size={14} />
                           </button>
@@ -1528,7 +1535,7 @@ export const BackstageModal: React.FC = () => {
                                 </span>
                               </div>
                             </div>
-                            <span className="text-[10.5px] font-semibold text-[#087477]">
+                            <span className="text-[10.5px] font-semibold text-[#5c4bb8]">
                               Sheet {bs.sheetNumber} • {bs.side} ({bs.leftPageNum ? `P${bs.leftPageNum}` : 'Blank'} |{' '}
                               {bs.rightPageNum ? `P${bs.rightPageNum}` : 'Blank'})
                             </span>
@@ -1883,12 +1890,42 @@ export const BackstageModal: React.FC = () => {
                   <p className="text-xs text-slate-500 mt-1 leading-relaxed">
                     Export high-resolution multi-page PDF document ready for commercial printing.
                   </p>
+
+                  <div className="mt-3 space-y-2 rounded-xl bg-slate-50 border border-[#e5e9ee] p-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-semibold text-slate-700">Bleed</span>
+                      <select
+                        value={pdfBleedIn}
+                        onChange={(e) => setPdfBleedIn(Number(e.target.value))}
+                        className="bg-white border border-[#e5e9ee] rounded-lg px-2 py-1 text-[11px] font-medium text-slate-700 outline-none focus:border-[#b3a4f2] cursor-pointer"
+                      >
+                        <option value={0}>None (trim only)</option>
+                        <option value={0.125}>0.125&quot; (standard)</option>
+                        <option value={0.25}>0.25&quot; (wide)</option>
+                      </select>
+                    </div>
+                    <label className="flex items-center gap-2 text-[11px] font-semibold text-slate-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={pdfCropMarks}
+                        onChange={(e) => setPdfCropMarks(e.target.checked)}
+                        className="accent-[#6e56cf] rounded"
+                      />
+                      <span>Crop marks &amp; trim guides</span>
+                    </label>
+                    <p className="text-[10px] leading-snug text-slate-400">
+                      Bleed extends artwork past the trim edge and adds a 0.25&quot; margin for printer marks.
+                    </p>
+                  </div>
                 </div>
                 <button
                   disabled={isPreparingPrint}
                   onClick={() =>
                     runExportOrPrintTask(async () => {
-                      await exportToPdf(project);
+                      await exportToPdf(project, {
+                        bleedIn: pdfBleedIn,
+                        cropMarks: pdfCropMarks,
+                      });
                       confetti({ particleCount: 35 });
                     })
                   }
@@ -1913,7 +1950,7 @@ export const BackstageModal: React.FC = () => {
                       type="checkbox"
                       checked={transparentPng}
                       onChange={(e) => setTransparentPng(e.target.checked)}
-                      className="accent-[#087f83] rounded"
+                      className="accent-[#6e56cf] rounded"
                     />
                     <span>Transparent Background</span>
                   </label>
@@ -1969,6 +2006,42 @@ export const BackstageModal: React.FC = () => {
                 </button>
               </div>
             </div>
+
+            {/* Batch export strip */}
+            <div className="bg-white p-5 rounded-2xl border border-[#e5e9ee] shadow-sm flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-violet-50 text-violet-700 flex items-center justify-center flex-shrink-0">
+                  <ImageIcon size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-slate-800">All Pages as PNG (ZIP)</h3>
+                  <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                    Every page rendered at 300 DPI and packaged into one downloadable ZIP
+                    {zipProgress ? ` — ${zipProgress.done}/${zipProgress.total} pages…` : '.'}
+                  </p>
+                </div>
+              </div>
+              <button
+                disabled={isPreparingPrint}
+                onClick={() =>
+                  runExportOrPrintTask(async () => {
+                    setZipProgress({ done: 0, total: project.pages.length });
+                    try {
+                      await exportAllPagesToPngZip(project, {
+                        scale: 2,
+                        onProgress: (done, total) => setZipProgress({ done, total }),
+                      });
+                      confetti({ particleCount: 35 });
+                    } finally {
+                      setZipProgress(null);
+                    }
+                  })
+                }
+                className="flex-shrink-0 px-4 py-2 bg-[#6e56cf] hover:bg-[#5c4bb8] disabled:bg-violet-300 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+              >
+                {isPreparingPrint ? 'Packaging...' : 'Download All Pages (PNG)'}
+              </button>
+            </div>
           </div>
         )}
 
@@ -2021,7 +2094,7 @@ export const BackstageModal: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setActiveSection('print')}
-                    className="px-4 py-2 rounded-xl bg-[#087f83] hover:bg-[#06696c] text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+                    className="px-4 py-2 rounded-xl bg-[#6e56cf] hover:bg-[#5c4bb8] text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition cursor-pointer"
                   >
                     <Printer size={14} />
                     <span>Print Preview</span>
@@ -2046,7 +2119,7 @@ export const BackstageModal: React.FC = () => {
                       onChange={(e) =>
                         setProject({ ...project, name: e.target.value || 'Untitled.pub' })
                       }
-                      className="w-full px-3 py-1.5 rounded-xl border border-[#e5e9ee] bg-slate-50 focus:bg-white font-bold text-slate-800 outline-none focus:border-[#73b9b7]"
+                      className="w-full px-3 py-1.5 rounded-xl border border-[#e5e9ee] bg-slate-50 focus:bg-white font-bold text-slate-800 outline-none focus:border-[#b3a4f2]"
                     />
                   </div>
 
@@ -2089,7 +2162,7 @@ export const BackstageModal: React.FC = () => {
                         key={stat.label}
                         className="p-2.5 rounded-xl bg-slate-50 border border-[#e5e9ee]/70 text-center"
                       >
-                        <div className="text-base font-extrabold text-[#087477]">{stat.count}</div>
+                        <div className="text-base font-extrabold text-[#5c4bb8]">{stat.count}</div>
                         <div className="text-[10px] font-semibold text-slate-500">{stat.label}</div>
                       </div>
                     ))}
@@ -2105,7 +2178,7 @@ export const BackstageModal: React.FC = () => {
                         usedFonts.map((f) => (
                           <span
                             key={f}
-                            className="px-2 py-0.5 rounded-full bg-[#e5f4f3] text-[#087477] border border-[#b7dddd]/60 text-[10.5px] font-semibold"
+                            className="px-2 py-0.5 rounded-full bg-[#efeafd] text-[#5c4bb8] border border-[#d3c9f9]/60 text-[10.5px] font-semibold"
                           >
                             {f}
                           </span>
@@ -2153,7 +2226,7 @@ export const BackstageModal: React.FC = () => {
             <div className="px-6 py-4 border-b border-[#e5e9ee] flex items-center justify-between bg-slate-50">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-[#e5f4f3] text-[#087477]">
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-[#efeafd] text-[#5c4bb8]">
                     {previewTemplate.category}
                   </span>
                   <h2 className="text-lg font-bold text-slate-800">{previewTemplate.name}</h2>
@@ -2167,7 +2240,7 @@ export const BackstageModal: React.FC = () => {
                     setPreviewTemplate(null);
                     confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
                   }}
-                  className="px-4 py-2 rounded-xl bg-[#087f83] hover:bg-[#06696c] text-white text-xs font-bold shadow-sm transition cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-[#6e56cf] hover:bg-[#5c4bb8] text-white text-xs font-bold shadow-sm transition cursor-pointer"
                 >
                   Use This Template
                 </button>

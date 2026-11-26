@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
+﻿import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import {
   DocumentProject,
   Page,
@@ -18,6 +18,7 @@ import {
   QRElement,
   ConnectorElement,
   ShapeType,
+  BackstageSection,
 } from '../types/publisher';
 import { buildMergedPartFromShape } from '../utils/shapePaths';
 import { TEMPLATES } from '../constants/templates';
@@ -41,6 +42,9 @@ interface PublisherContextType {
   pan: { x: number; y: number };
   activeTab: 'home' | 'insert' | 'page-design' | 'mailings' | 'view';
   isBackstageOpen: boolean;
+  /** Active File (Backstage) section — shared so any button can deep-link. */
+  backstageSection: BackstageSection;
+  setBackstageSection: (section: BackstageSection) => void;
   isMailMergeOpen: boolean;
   isWordArtModalOpen: boolean;
   isBuildingBlocksModalOpen: boolean;
@@ -99,6 +103,8 @@ interface PublisherContextType {
   padToBookletMultiple: () => void;
   setActiveTab: (tab: 'home' | 'insert' | 'page-design' | 'mailings' | 'view') => void;
   setIsBackstageOpen: (open: boolean) => void;
+  /** Opens the File view on a specific section (e.g. 'print'). */
+  openBackstage: (section?: BackstageSection) => void;
   setIsMailMergeOpen: (open: boolean) => void;
   setIsWordArtModalOpen: (open: boolean) => void;
   setIsBuildingBlocksModalOpen: (open: boolean) => void;
@@ -364,6 +370,14 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const [activeTab, setActiveTab] = useState<'home' | 'insert' | 'page-design' | 'mailings' | 'view'>('home');
   const [isBackstageOpen, setIsBackstageOpen] = useState(false);
+  // The File view section lives here so the toolbar, ribbon and status bar can
+  // deep-link straight to Print / Export / New without prop drilling.
+  const [backstageSection, setBackstageSection] = useState<BackstageSection>('new');
+
+  const openBackstage = useCallback((section?: BackstageSection) => {
+    if (section) setBackstageSection(section);
+    setIsBackstageOpen(true);
+  }, []);
   const [tarpapelOverlayVisible, setTarpapelOverlayVisible] = useState(false);
   const [printSettings, setPrintSettings] = useState<PrintSettings>(DEFAULT_PRINT_SETTINGS);
   const [isMailMergeOpen, setIsMailMergeOpen] = useState(false);
@@ -2382,13 +2396,20 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, []);
 
   const zoomFit = useCallback(() => {
-    // Fits standard page nicely in viewport
-    const containerW = window.innerWidth - 380;
-    const containerH = window.innerHeight - 240;
-    const scaleX = containerW / activePage.width;
-    const scaleY = containerH / activePage.height;
-    const fitScale = Math.min(scaleX, scaleY, 1.2) * 0.9;
-    setZoomState(Number(fitScale.toFixed(2)));
+    // Measure the real canvas viewport (falls back to window math when the
+    // workspace has not mounted yet, e.g. during first paint).
+    const viewport = document.querySelector('[data-canvas-viewport]') as HTMLElement | null;
+    const containerW = viewport?.clientWidth || window.innerWidth - 380;
+    const containerH = viewport?.clientHeight || window.innerHeight - 240;
+
+    // Reserve room for rulers (~24px), page drop shadow and the floating
+    // zoom toolbar so the artboard is always fully framed.
+    const padX = 72;
+    const padY = 96;
+    const scaleX = (containerW - padX) / activePage.width;
+    const scaleY = (containerH - padY) / activePage.height;
+    const fitScale = Math.min(scaleX, scaleY, 1.2);
+    setZoomState(Number(Math.min(3.0, Math.max(0.2, fitScale)).toFixed(2)));
     setPan({ x: 0, y: 0 });
   }, [activePage]);
 
@@ -2402,6 +2423,8 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         pan,
         activeTab,
         isBackstageOpen,
+        backstageSection,
+        setBackstageSection,
         isMailMergeOpen,
         isWordArtModalOpen,
         isBuildingBlocksModalOpen,
@@ -2465,6 +2488,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         padToBookletMultiple,
         setActiveTab,
         setIsBackstageOpen,
+        openBackstage,
         setIsMailMergeOpen,
         setIsWordArtModalOpen,
         setIsBuildingBlocksModalOpen,

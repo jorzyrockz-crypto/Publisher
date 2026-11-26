@@ -1,5 +1,6 @@
-import React, { useRef, useState } from 'react';
+﻿import React, { useRef, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
+import { ColorInput } from '../common/ColorInput';
 import { PAGE_SIZES } from '../../constants/pageSizes';
 import { COLOR_SCHEMES } from '../../constants/colorSchemes';
 import { FloatingDropdown } from '../common/FloatingDropdown';
@@ -22,7 +23,7 @@ export const PageDesignTab: React.FC = () => {
     setPageMargins,
     setPageBackgroundColor,
     setColorScheme,
-    setIsBackstageOpen,
+    openBackstage,
     setIsBrandBoardModalOpen,
     setIsBrandKitModalOpen,
     activeBrandKit,
@@ -41,29 +42,29 @@ export const PageDesignTab: React.FC = () => {
   const [isSchemesDropdownOpen, setIsSchemesDropdownOpen] = useState(false);
 
   return (
-    <div className="flex items-center h-[84px] px-2 py-1.5 gap-2 text-xs text-[#202833] overflow-x-auto select-none">
+    <div className="flex items-center h-[84px] px-2 py-1.5 gap-2 text-xs text-[#161a22] overflow-x-auto select-none">
       {/* 1. Template Group */}
       <div className="flex flex-col justify-between h-full py-1 pr-2 border-r border-[#e5e9ee] flex-shrink-0">
         <div className="my-auto flex items-center gap-1">
           <button
-            onClick={() => setIsBackstageOpen(true)}
-            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+            onClick={() => openBackstage('new')}
+            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#f4f2ff] hover:text-[#5c4bb8] active:scale-95 rounded-[8px] text-xs font-medium text-[#161a22] transition-all cursor-pointer"
             title="Browse Templates"
           >
-            <FileText size={15} className="text-[#087f83]" />
+            <FileText size={15} className="text-[#6e56cf]" />
             <span>Templates</span>
           </button>
 
           <button
             onClick={() => setIsBrandBoardModalOpen(true)}
-            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#f4f2ff] hover:text-[#5c4bb8] active:scale-95 rounded-[8px] text-xs font-medium text-[#161a22] transition-all cursor-pointer"
             title="Generate Multiple Brand Sizes on Artboard"
           >
-            <LayoutGrid size={15} className="text-[#087f83]" />
+            <LayoutGrid size={15} className="text-[#6e56cf]" />
             <span>Brand Board</span>
           </button>
         </div>
-        <span className="text-[10px] text-[#9aa4ae] font-bold uppercase tracking-[0.09em] text-center">Library</span>
+        <span className="text-[10px] text-[#6a7682] font-bold uppercase tracking-[0.09em] text-center">Library</span>
       </div>
 
       {/* 2. Page Setup Group */}
@@ -75,23 +76,23 @@ export const PageDesignTab: React.FC = () => {
               <button
                 ref={marginsBtnRef}
                 onClick={() => setIsMarginsDropdownOpen(!isMarginsDropdownOpen)}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-[8px] border border-[#e5e9ee] bg-[#f8fafb] hover:bg-[#eef5f5] hover:text-[#087477] text-[11px] font-medium transition cursor-pointer"
+                className="flex items-center gap-1 px-2.5 py-1 rounded-[8px] border border-[#e5e9ee] bg-[#f8fafb] hover:bg-[#f4f2ff] hover:text-[#5c4bb8] text-[11px] font-medium transition cursor-pointer"
               >
                 <span>Margins</span>
-                <ChevronDown size={10} className="text-[#9aa4ae]" />
+                <ChevronDown size={10} className="text-[#6a7682]" />
               </button>
               <FloatingDropdown
                 isOpen={isMarginsDropdownOpen}
                 onClose={() => setIsMarginsDropdownOpen(false)}
                 anchorRef={marginsBtnRef}
-                className="p-1.5 w-40 space-y-0.5 text-[#202833]"
+                className="p-1.5 w-40 space-y-0.5 text-[#161a22]"
               >
                 <button
                   onClick={() => {
                     setPageMargins({ top: 48, right: 48, bottom: 48, left: 48 });
                     setIsMarginsDropdownOpen(false);
                   }}
-                  className="w-full text-left px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] rounded-[8px] text-xs transition cursor-pointer"
+                  className="w-full text-left px-2 py-1 hover:bg-[#f4f2ff] hover:text-[#5c4bb8] rounded-[8px] text-xs transition cursor-pointer"
                 >
                   Normal (0.5")
                 </button>
@@ -100,7 +101,7 @@ export const PageDesignTab: React.FC = () => {
                     setPageMargins({ top: 24, right: 24, bottom: 24, left: 24 });
                     setIsMarginsDropdownOpen(false);
                   }}
-                  className="w-full text-left px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] rounded-[8px] text-xs transition cursor-pointer"
+                  className="w-full text-left px-2 py-1 hover:bg-[#f4f2ff] hover:text-[#5c4bb8] rounded-[8px] text-xs transition cursor-pointer"
                 >
                   Narrow (0.25")
                 </button>
@@ -109,7 +110,7 @@ export const PageDesignTab: React.FC = () => {
                     setPageMargins({ top: 96, right: 96, bottom: 96, left: 96 });
                     setIsMarginsDropdownOpen(false);
                   }}
-                  className="w-full text-left px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] rounded-[8px] text-xs transition cursor-pointer"
+                  className="w-full text-left px-2 py-1 hover:bg-[#f4f2ff] hover:text-[#5c4bb8] rounded-[8px] text-xs transition cursor-pointer"
                 >
                   Wide (1.0")
                 </button>
@@ -118,7 +119,7 @@ export const PageDesignTab: React.FC = () => {
                     setPageMargins({ top: 0, right: 0, bottom: 0, left: 0 });
                     setIsMarginsDropdownOpen(false);
                   }}
-                  className="w-full text-left px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] rounded-[8px] text-xs transition cursor-pointer"
+                  className="w-full text-left px-2 py-1 hover:bg-[#f4f2ff] hover:text-[#5c4bb8] rounded-[8px] text-xs transition cursor-pointer"
                 >
                   None (0")
                 </button>
@@ -131,8 +132,8 @@ export const PageDesignTab: React.FC = () => {
                 onClick={() => setPageOrientation('portrait')}
                 className={`px-2.5 py-0.5 text-[11px] font-semibold rounded-[6px] transition-all cursor-pointer ${
                   activePage.orientation === 'portrait'
-                    ? 'bg-[#e5f4f3] text-[#087477]'
-                    : 'text-[#52606c] hover:text-[#202833]'
+                    ? 'bg-[#efeafd] text-[#5c4bb8]'
+                    : 'text-[#4a5661] hover:text-[#161a22]'
                 }`}
               >
                 Portrait
@@ -141,8 +142,8 @@ export const PageDesignTab: React.FC = () => {
                 onClick={() => setPageOrientation('landscape')}
                 className={`px-2.5 py-0.5 text-[11px] font-semibold rounded-[6px] transition-all cursor-pointer ${
                   activePage.orientation === 'landscape'
-                    ? 'bg-[#e5f4f3] text-[#087477]'
-                    : 'text-[#52606c] hover:text-[#202833]'
+                    ? 'bg-[#efeafd] text-[#5c4bb8]'
+                    : 'text-[#4a5661] hover:text-[#161a22]'
                 }`}
               >
                 Landscape
@@ -155,20 +156,20 @@ export const PageDesignTab: React.FC = () => {
             <button
               ref={sizeBtnRef}
               onClick={() => setIsSizeDropdownOpen(!isSizeDropdownOpen)}
-              className="flex items-center justify-between w-full px-2.5 py-1 rounded-[8px] border border-[#e5e9ee] bg-[#f8fafb] hover:bg-[#eef5f5] hover:text-[#087477] text-[11px] font-medium transition cursor-pointer"
+              className="flex items-center justify-between w-full px-2.5 py-1 rounded-[8px] border border-[#e5e9ee] bg-[#f8fafb] hover:bg-[#f4f2ff] hover:text-[#5c4bb8] text-[11px] font-medium transition cursor-pointer"
             >
               <span className="truncate max-w-[140px]">
                 {PAGE_SIZES.find(
                   (s) => s.width === activePage.width && s.height === activePage.height
                 )?.displayName || 'Custom Size'}
               </span>
-              <ChevronDown size={10} className="text-[#9aa4ae]" />
+              <ChevronDown size={10} className="text-[#6a7682]" />
             </button>
             <FloatingDropdown
               isOpen={isSizeDropdownOpen}
               onClose={() => setIsSizeDropdownOpen(false)}
               anchorRef={sizeBtnRef}
-              className="p-2 w-56 max-h-64 overflow-y-auto space-y-0.5 text-[#202833]"
+              className="p-2 w-56 max-h-64 overflow-y-auto space-y-0.5 text-[#161a22]"
             >
               {PAGE_SIZES.map((size) => (
                 <button
@@ -177,7 +178,7 @@ export const PageDesignTab: React.FC = () => {
                     setPageSize(size.name);
                     setIsSizeDropdownOpen(false);
                   }}
-                  className="w-full text-left px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] rounded-[8px] text-xs transition cursor-pointer"
+                  className="w-full text-left px-2 py-1 hover:bg-[#f4f2ff] hover:text-[#5c4bb8] rounded-[8px] text-xs transition cursor-pointer"
                 >
                   {size.displayName}
                 </button>
@@ -185,7 +186,7 @@ export const PageDesignTab: React.FC = () => {
             </FloatingDropdown>
           </div>
         </div>
-        <span className="text-[10px] text-[#9aa4ae] font-bold uppercase tracking-[0.09em] text-center">Setup</span>
+        <span className="text-[10px] text-[#6a7682] font-bold uppercase tracking-[0.09em] text-center">Setup</span>
       </div>
 
       {/* 3. Brand Kit & Color Schemes Group */}
@@ -193,27 +194,27 @@ export const PageDesignTab: React.FC = () => {
         <div className="my-auto flex items-center gap-1">
           <button
             onClick={() => setIsBrandKitModalOpen(true)}
-            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#f4f2ff] hover:text-[#5c4bb8] active:scale-95 rounded-[8px] text-xs font-medium text-[#161a22] transition-all cursor-pointer"
             title={`Open Brand Kit Studio (Active: ${activeBrandKit.name})`}
           >
-            <Sparkles size={15} className="text-[#087f83]" />
+            <Sparkles size={15} className="text-[#6e56cf]" />
             <span>Brand Kit</span>
           </button>
 
           <button
             ref={schemesBtnRef}
             onClick={() => setIsSchemesDropdownOpen(!isSchemesDropdownOpen)}
-            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#f4f2ff] hover:text-[#5c4bb8] active:scale-95 rounded-[8px] text-xs font-medium text-[#161a22] transition-all cursor-pointer"
             title="Change Color Scheme"
           >
-            <Palette size={15} className="text-[#087f83]" />
+            <Palette size={15} className="text-[#6e56cf]" />
             <span>Schemes</span>
-            <ChevronDown size={10} className="text-[#9aa4ae]" />
+            <ChevronDown size={10} className="text-[#6a7682]" />
           </button>
 
           <button
             onClick={() => applyBrandKit(activeBrandKit, 'all')}
-            className="hidden sm:flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+            className="hidden sm:flex items-center gap-1.5 px-2 py-1 hover:bg-[#f4f2ff] hover:text-[#5c4bb8] active:scale-95 rounded-[8px] text-xs font-medium text-[#161a22] transition-all cursor-pointer"
             title={`Apply "${activeBrandKit.name}" to all artboards`}
           >
             <div className="grid grid-cols-2 gap-0.5 w-3.5 h-3.5">
@@ -229,9 +230,9 @@ export const PageDesignTab: React.FC = () => {
             isOpen={isSchemesDropdownOpen}
             onClose={() => setIsSchemesDropdownOpen(false)}
             anchorRef={schemesBtnRef}
-            className="p-2 w-56 space-y-1 text-[#202833]"
+            className="p-2 w-56 space-y-1 text-[#161a22]"
           >
-            <div className="text-[10px] font-bold text-[#9aa4ae] px-2 py-1 uppercase tracking-[0.09em]">
+            <div className="text-[10px] font-bold text-[#6a7682] px-2 py-1 uppercase tracking-[0.09em]">
               Palette Presets
             </div>
             {COLOR_SCHEMES.map((scheme) => (
@@ -241,8 +242,8 @@ export const PageDesignTab: React.FC = () => {
                   setColorScheme(scheme.id);
                   setIsSchemesDropdownOpen(false);
                 }}
-                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-[8px] hover:bg-[#eef5f5] transition cursor-pointer ${
-                  project.colorScheme === scheme.id ? 'bg-[#e5f4f3] text-[#087477]' : ''
+                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-[8px] hover:bg-[#f4f2ff] transition cursor-pointer ${
+                  project.colorScheme === scheme.id ? 'bg-[#efeafd] text-[#5c4bb8]' : ''
                 }`}
               >
                 <span className="text-xs font-medium">{scheme.name}</span>
@@ -255,27 +256,27 @@ export const PageDesignTab: React.FC = () => {
             ))}
           </FloatingDropdown>
         </div>
-        <span className="text-[10px] text-[#9aa4ae] font-bold uppercase tracking-[0.09em] text-center">Colors</span>
+        <span className="text-[10px] text-[#6a7682] font-bold uppercase tracking-[0.09em] text-center">Colors</span>
       </div>
 
       {/* 4. Canvas Background */}
       <div className="flex flex-col justify-between h-full py-1 px-2 border-r border-[#e5e9ee] flex-shrink-0">
         <div className="flex items-center gap-2 my-auto">
-          <input
-            type="color"
+          <ColorInput
             value={activePage.backgroundColor}
             onChange={(e) => setPageBackgroundColor(e.target.value)}
             className="w-7 h-7 rounded-[8px] border border-[#e5e9ee] cursor-pointer overflow-hidden p-0"
             title="Change Canvas Background Color"
-          />
+            target="background"
+            />
           <button
             onClick={() => setPageBackgroundColor('#ffffff')}
-            className="text-[11px] font-medium px-2.5 py-1 rounded-[8px] border border-[#e5e9ee] bg-[#f8fafb] hover:bg-[#eef5f5] hover:text-[#087477] transition cursor-pointer"
+            className="text-[11px] font-medium px-2.5 py-1 rounded-[8px] border border-[#e5e9ee] bg-[#f8fafb] hover:bg-[#f4f2ff] hover:text-[#5c4bb8] transition cursor-pointer"
           >
             White
           </button>
         </div>
-        <span className="text-[10px] text-[#9aa4ae] font-bold uppercase tracking-[0.09em] text-center">Canvas</span>
+        <span className="text-[10px] text-[#6a7682] font-bold uppercase tracking-[0.09em] text-center">Canvas</span>
       </div>
 
       {/* 5. Snapping & Grid Switches */}
@@ -285,8 +286,8 @@ export const PageDesignTab: React.FC = () => {
             onClick={() => setSnapToGuides(!snapToGuides)}
             className="flex items-center justify-between gap-2.5 cursor-pointer hover:opacity-90"
           >
-            <span className="text-[11px] font-medium text-[#52606c] flex items-center gap-1">
-              <Magnet size={12} className="text-[#087f83]" />
+            <span className="text-[11px] font-medium text-[#4a5661] flex items-center gap-1">
+              <Magnet size={12} className="text-[#6e56cf]" />
               <span>Snap</span>
             </span>
             <div className={`fluent-switch ${snapToGuides ? 'active' : ''}`}>
@@ -298,8 +299,8 @@ export const PageDesignTab: React.FC = () => {
             onClick={() => setGridVisible(!gridVisible)}
             className="flex items-center justify-between gap-2.5 cursor-pointer hover:opacity-90"
           >
-            <span className="text-[11px] font-medium text-[#52606c] flex items-center gap-1">
-              <Grid size={12} className="text-[#087f83]" />
+            <span className="text-[11px] font-medium text-[#4a5661] flex items-center gap-1">
+              <Grid size={12} className="text-[#6e56cf]" />
               <span>Grid</span>
             </span>
             <div className={`fluent-switch ${gridVisible ? 'active' : ''}`}>
@@ -307,7 +308,7 @@ export const PageDesignTab: React.FC = () => {
             </div>
           </div>
         </div>
-        <span className="text-[10px] text-[#9aa4ae] font-bold uppercase tracking-[0.09em] text-center">Guides</span>
+        <span className="text-[10px] text-[#6a7682] font-bold uppercase tracking-[0.09em] text-center">Guides</span>
       </div>
     </div>
   );

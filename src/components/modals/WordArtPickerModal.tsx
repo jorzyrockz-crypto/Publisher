@@ -41,7 +41,7 @@ export const WordArtPickerModal: React.FC = () => {
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center select-none p-4 animate-in fade-in duration-150">
       <div className="bg-white rounded-[15px] shadow-[0_20px_70px_rgba(21,35,45,0.22)] border border-[#e5e9ee]/90 w-full max-w-lg overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="bg-gradient-to-r from-[#064e3b] to-[#047857] text-white px-5 py-3.5 flex items-center justify-between">
+        <div className="bg-gradient-to-r from-[#5a44c9] to-[#8a6ff0] text-white px-5 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-2 font-bold text-sm">
             <Sparkles size={16} className="text-amber-300" />
             <span>WordArt Gallery</span>
@@ -64,7 +64,7 @@ export const WordArtPickerModal: React.FC = () => {
               type="text"
               value={wordArtText}
               onChange={(e) => setWordArtText(e.target.value)}
-              className="w-full border border-[#e5e9ee] rounded-xl px-3.5 py-2 text-sm outline-none focus:ring-2 focus:ring-[#087f83]/20 focus:border-[#73b9b7] font-bold text-slate-800"
+              className="w-full border border-[#e5e9ee] rounded-xl px-3.5 py-2 text-sm outline-none focus:ring-2 focus:ring-[#6e56cf]/20 focus:border-[#b3a4f2] font-bold text-slate-800"
             />
           </div>
 
@@ -111,7 +111,7 @@ export const WordArtPickerModal: React.FC = () => {
           </button>
           <button
             onClick={handleInsert}
-            className="px-5 py-2 rounded-xl bg-[#087f83] hover:bg-[#06696c] active:scale-95 text-white text-xs font-bold transition shadow-xs"
+            className="px-5 py-2 rounded-xl bg-[#6e56cf] hover:bg-[#5c4bb8] active:scale-95 text-white text-xs font-bold transition shadow-xs"
           >
             Insert WordArt
           </button>

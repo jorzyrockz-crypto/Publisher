@@ -1,3 +1,4 @@
+import { resolvePollinationsUrls } from './apiEndpoints';
 export type AIEngineMode = 'hybrid' | 'cloud' | 'procedural';
 export type AICloudModel = 'flux' | 'gemini' | 'flux-schnell' | 'turbo';
 export type AICreationType = 'photo' | 'clipart' | 'logo' | 'backdrop';
@@ -797,12 +798,11 @@ export async function generateCloudAIImage(
 
   // Pollinations Free Tier strictly requires 768x768 square; non-square or sizes > 768 return 402.
   // We fetch at 768x768 (free & fast) and then crop to the user's requested aspect ratio (e.g. 800x600, 600x800, 960x540).
-  const endpoints = [
-    // 1. Local Vite proxy endpoint (bypasses browser CORS & adblock completely)
-    `/api/pollinations/prompt/${encoded}?model=flux&width=768&height=768&seed=${options.seed}&nologo=true`,
-    // 2. Direct public endpoint fallback
-    `https://image.pollinations.ai/prompt/${encoded}?model=flux&width=768&height=768&seed=${options.seed}&nologo=true`,
-  ];
+  // Development goes through the Vite proxy (bypasses CORS & adblock); a static
+  // production build calls the CORS-enabled public endpoint directly.
+  const endpoints = resolvePollinationsUrls(
+    `/prompt/${encoded}?model=flux&width=768&height=768&seed=${options.seed}&nologo=true`
+  );
 
   const timeoutController = new AbortController();
   const timeoutId = window.setTimeout(() => timeoutController.abort(), 45000);

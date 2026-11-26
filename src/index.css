@@ -1,5 +1,38 @@
 @import "tailwindcss";
 
+/* ============================================================
+   StudioPress design tokens — "Iris" (Radix Violet) accent
+   Deliberately distinct from Microsoft Publisher / Office greens.
+   All values meet WCAG AA on white (>= 4.5:1) at small sizes.
+   ============================================================ */
+:root {
+  /* Accent */
+  --sp-accent: #6e56cf;          /* primary fill, 5.4:1 with white text */
+  --sp-accent-hover: #5c4bb8;
+  --sp-accent-ink: #5c4bb8;      /* accent text on light, 6.7:1 */
+  --sp-accent-soft: #efeafd;     /* tinted surfaces */
+  --sp-accent-soft-hover: #f4f2ff;
+  --sp-accent-line: #d3c9f9;     /* tinted borders */
+  --sp-accent-focus: #b3a4f2;
+  --sp-accent-from: #8a6ff0;     /* emblem gradient */
+  --sp-accent-to: #5a44c9;
+
+  /* Ink ramp (contrast ratios on #fff) */
+  --sp-ink: #161a22;             /* 16.9:1 */
+  --sp-ink-body: #3d4854;        /* 10.2:1 */
+  --sp-ink-secondary: #4a5661;   /* 8.1:1 */
+  --sp-ink-muted: #5b6673;       /* 5.8:1 */
+  --sp-ink-subtle: #66727e;      /* 4.9:1 */
+  --sp-ink-placeholder: #6a7682; /* 4.6:1 */
+  --sp-ink-faint: #8d99a5;       /* decorative only */
+
+  /* Surfaces */
+  --sp-line: #e5e9ee;
+  --sp-surface: #ffffff;
+  --sp-surface-sunken: #f8fafb;
+  --sp-canvas: #edf0f3;
+}
+
 @layer base {
   * {
     box-sizing: border-box;
@@ -12,7 +45,7 @@
     user-select: none;
     -webkit-user-select: none;
     background-color: #f3f5f7;
-    color: #202833;
+    color: #161a22;
     overflow: hidden;
     letter-spacing: -0.01em;
   }
@@ -27,7 +60,7 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #d5dde5;
+  background: #d5d9e2;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
@@ -36,7 +69,16 @@
 
 /* Calm flat pasteboard background */
 .pasteboard-bg {
-  background-color: #edf0f3;
+  background-color: var(--sp-canvas);
+}
+
+/* Collapsible inspector cards: everything after the first child (the header)
+   hides when a card is collapsed. */
+.inspector-card[data-collapsed='true'] > *:not(:first-child) {
+  display: none !important;
+}
+.inspector-card[data-collapsed='true'] {
+  padding-bottom: 0.75rem;
 }
 
 /* Modern circular resize handles */
@@ -44,7 +86,7 @@
   width: 10px;
   height: 10px;
   background: #ffffff;
-  border: 2px solid #087f83;
+  border: 2px solid #6e56cf;
   border-radius: 9999px;
   position: absolute;
   z-index: 50;
@@ -52,7 +94,7 @@
   transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .resize-handle-modern:hover {
-  background: #087f83;
+  background: #6e56cf;
   transform: scale(1.3);
 }
 
@@ -140,7 +182,7 @@
   cursor: pointer;
 }
 .fluent-switch.active {
-  background-color: #087f83;
+  background-color: #6e56cf;
 }
 .fluent-switch-knob {
   position: absolute;

@@ -63,13 +63,13 @@ export const BrandBoardModal: React.FC = () => {
         {/* Header */}
         <div className="px-6 py-4 border-b border-[#e5e9ee] flex items-center justify-between bg-slate-50">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-[#0c9c9c] to-[#075f77] text-white flex items-center justify-center shadow-sm">
+            <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-[#8a6ff0] to-[#5a44c9] text-white flex items-center justify-center shadow-sm">
               <LayoutGrid size={18} />
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
                 <span>Brand Planning Board — Magic Multi-Size</span>
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#e5f4f3] text-[#087477]">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#efeafd] text-[#5c4bb8]">
                   Smart Reflow
                 </span>
               </h2>
@@ -110,7 +110,7 @@ export const BrandBoardModal: React.FC = () => {
                   onClick={() => setLayoutStyle(opt.id)}
                   className={`px-3 py-1 rounded-lg text-[11px] font-semibold transition ${
                     layoutStyle === opt.id
-                      ? 'bg-white text-[#087477] shadow-2xs'
+                      ? 'bg-white text-[#5c4bb8] shadow-2xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -126,7 +126,7 @@ export const BrandBoardModal: React.FC = () => {
               <button
                 type="button"
                 onClick={selectSocialSuite}
-                className="px-3 py-1.5 rounded-xl bg-[#e5f4f3] hover:bg-[#e5f4f3] border border-[#b7dddd] text-[#087477] text-xs font-semibold transition cursor-pointer"
+                className="px-3 py-1.5 rounded-xl bg-[#efeafd] hover:bg-[#efeafd] border border-[#d3c9f9] text-[#5c4bb8] text-xs font-semibold transition cursor-pointer"
               >
                 + Social Media Suite
               </button>
@@ -140,7 +140,7 @@ export const BrandBoardModal: React.FC = () => {
               <button
                 type="button"
                 onClick={selectWebBrandKit}
-                className="px-3 py-1.5 rounded-xl bg-[#e5f4f3] hover:bg-[#e5f4f3] border border-[#b7dddd] text-[#087477] text-xs font-semibold transition cursor-pointer"
+                className="px-3 py-1.5 rounded-xl bg-[#efeafd] hover:bg-[#efeafd] border border-[#d3c9f9] text-[#5c4bb8] text-xs font-semibold transition cursor-pointer"
               >
                 + Web & Brand Kit
               </button>
@@ -176,8 +176,8 @@ export const BrandBoardModal: React.FC = () => {
                         onClick={() => toggleSize(size.name)}
                         className={`p-3 rounded-2xl border text-left flex items-center gap-3 transition cursor-pointer ${
                           isChecked
-                            ? 'border-indigo-600 bg-[#e5f4f3] ring-1 ring-[#087f83]/30 shadow-2xs'
-                            : 'border-[#e5e9ee] bg-white hover:border-[#b7dddd] hover:bg-slate-50'
+                            ? 'border-indigo-600 bg-[#efeafd] ring-1 ring-[#6e56cf]/30 shadow-2xs'
+                            : 'border-[#e5e9ee] bg-white hover:border-[#d3c9f9] hover:bg-slate-50'
                         }`}
                       >
                         <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
@@ -201,7 +201,7 @@ export const BrandBoardModal: React.FC = () => {
                         <div
                           className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 border ${
                             isChecked
-                              ? 'bg-[#087f83] border-indigo-600 text-white'
+                              ? 'bg-[#6e56cf] border-indigo-600 text-white'
                               : 'border-slate-300 bg-white'
                           }`}
                         >
@@ -225,7 +225,7 @@ export const BrandBoardModal: React.FC = () => {
             type="button"
             disabled={selectedSizes.length === 0}
             onClick={handleGenerate}
-            className="py-2 px-5 rounded-xl bg-[#087f83] hover:bg-[#06696c] disabled:bg-slate-300 text-white text-xs font-bold shadow-sm flex items-center gap-1.5 transition cursor-pointer"
+            className="py-2 px-5 rounded-xl bg-[#6e56cf] hover:bg-[#5c4bb8] disabled:bg-slate-300 text-white text-xs font-bold shadow-sm flex items-center gap-1.5 transition cursor-pointer"
           >
             <Sparkles size={14} />
             <span>Generate {selectedSizes.length} Brand Artboards</span>
