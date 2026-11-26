@@ -1760,7 +1760,8 @@ export const StockArtPanel: React.FC = () => {
             <ResultPaging
               total={ocTotal}
               page={ocPage}
-              perPage={48}
+              // Openclipart serves 25 results per page, unlike the keyed APIs.
+              perPage={25}
               loading={ocLoadingMore}
               onMore={() => runOpenclipartSearch(query, ocPage + 1, true)}
               credit={

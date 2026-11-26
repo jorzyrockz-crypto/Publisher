@@ -167,6 +167,29 @@ export default async function handler(req, res) {
         // A page that parses to zero means the markup moved and the regex needs
         // adjusting — worth knowing before users see an empty panel.
         out.parserHealthy = result.items.length > 0;
+
+        // The SVG path is the whole point of this source: prove the download
+        // endpoint answers with vector bytes rather than an HTML interstitial.
+        const firstId = result.items[0]?.id;
+        if (firstId) {
+          try {
+            const svgRes = await fetch(`${ORIGIN}/download/${firstId}`, {
+              headers: { ...BROWSER_HEADERS, Accept: 'image/svg+xml,image/*,*/*;q=0.8' },
+              redirect: 'follow',
+            });
+            const buf = Buffer.from(await svgRes.arrayBuffer());
+            const head = buf.subarray(0, 200).toString('utf8');
+            out.svg = {
+              status: svgRes.status,
+              contentType: svgRes.headers.get('content-type'),
+              bytes: buf.length,
+              startsWithSvg: /<\?xml|<svg/i.test(head),
+              bodyHead: svgRes.ok ? undefined : head.slice(0, 120),
+            };
+          } catch (error) {
+            out.svg = { error: String(error).slice(0, 160) };
+          }
+        }
       } catch (error) {
         out.upstreamStatus = error.status || null;
         out.upstreamError = String(error).slice(0, 200);
