@@ -36,6 +36,16 @@ export const AIImageModal: React.FC = () => {
   const [motif, setMotif] = useState<ProceduralMotif>('aurora-mesh');
   const [ratioId, setRatioId] = useState<AIAspectRatio>('4:3');
   const [seed, setSeed] = useState<number>(() => Math.floor(Math.random() * 999999));
+  const [complexity, setComplexity] = useState<number>(5);
+  const [grain, setGrain] = useState<number>(18);
+  const [hdPrint, setHdPrint] = useState<boolean>(false);
+  const [useCustomPalette, setUseCustomPalette] = useState<boolean>(false);
+  const [customPalette, setCustomPalette] = useState({
+    bg1: '#0f172a',
+    bg2: '#064e3b',
+    accent1: '#10b981',
+    accent2: '#f59e0b',
+  });
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -64,6 +74,10 @@ export const AIImageModal: React.FC = () => {
         style: artStyle,
         motif,
         seed: activeSeed,
+        complexity,
+        grain,
+        hdPrint,
+        customPalette: useCustomPalette ? customPalette : undefined,
       });
       setCurrentResult(result);
       setHistory((prev) => [result, ...prev.slice(0, 5)]);
@@ -92,6 +106,20 @@ export const AIImageModal: React.FC = () => {
       height,
       x: Math.round((activePage.width - width) / 2),
       y: Math.round((activePage.height - height) / 2),
+    });
+    setIsAIImageModalOpen(false);
+  };
+
+  const handleSetAsBackground = () => {
+    if (!currentResult?.dataUrl) return;
+    addImage(currentResult.dataUrl, {
+      name: `Page Background: ${currentResult.prompt.slice(0, 20)}`,
+      x: 0,
+      y: 0,
+      width: activePage.width,
+      height: activePage.height,
+      zIndex: 0,
+      objectFit: 'cover',
     });
     setIsAIImageModalOpen(false);
   };
@@ -247,28 +275,109 @@ export const AIImageModal: React.FC = () => {
               </div>
             </div>
 
-            {/* Offline Procedural Motif (shown when Hybrid or Procedural) */}
+            {/* Offline Procedural Motif & Controls (shown when Hybrid or Procedural) */}
             {engineMode !== 'cloud' && (
-              <div>
-                <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                  Procedural Pattern Motif (Instant / Fallback)
-                </label>
-                <div className="grid grid-cols-3 gap-1">
-                  {PROCEDURAL_MOTIFS.map((m) => (
-                    <button
-                      key={m.id}
-                      type="button"
-                      onClick={() => setMotif(m.id)}
-                      className={`py-1 px-1.5 rounded-lg border text-[10.5px] font-semibold transition ${
-                        motif === m.id
-                          ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
-                          : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600'
-                      }`}
-                    >
-                      {m.label}
-                    </button>
-                  ))}
+              <div className="space-y-3 pt-2 border-t border-slate-100">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                    Procedural Pattern Motif (11 Styles)
+                  </label>
+                  <div className="grid grid-cols-3 gap-1 max-h-28 overflow-y-auto pr-0.5">
+                    {PROCEDURAL_MOTIFS.map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => setMotif(m.id)}
+                        className={`py-1 px-1.5 rounded-lg border text-[10.5px] font-semibold transition ${
+                          motif === m.id
+                            ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
+                            : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600'
+                        }`}
+                      >
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+
+                {/* Complexity & Film Grain */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <div className="flex justify-between text-[10px] text-slate-500 font-semibold mb-0.5">
+                      <span>Detail</span>
+                      <span>{complexity}/10</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={1}
+                      max={10}
+                      value={complexity}
+                      onChange={(e) => setComplexity(Number(e.target.value))}
+                      className="w-full accent-emerald-600 cursor-pointer"
+                    />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-[10px] text-slate-500 font-semibold mb-0.5">
+                      <span>Film Grain</span>
+                      <span>{grain}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={grain}
+                      onChange={(e) => setGrain(Number(e.target.value))}
+                      className="w-full accent-emerald-600 cursor-pointer"
+                    />
+                  </div>
+                </div>
+
+                {/* Custom Palette & 2x Print-HD */}
+                <div className="flex items-center justify-between gap-2">
+                  <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-600 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={useCustomPalette}
+                      onChange={(e) => setUseCustomPalette(e.target.checked)}
+                      className="accent-emerald-600 rounded"
+                    />
+                    <span>Custom Colors</span>
+                  </label>
+                  <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-600 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={hdPrint}
+                      onChange={(e) => setHdPrint(e.target.checked)}
+                      className="accent-emerald-600 rounded"
+                    />
+                    <span>2× Print-HD</span>
+                  </label>
+                </div>
+
+                {useCustomPalette && (
+                  <div className="grid grid-cols-4 gap-1.5 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
+                    {(
+                      [
+                        { key: 'bg1', label: 'BG 1' },
+                        { key: 'bg2', label: 'BG 2' },
+                        { key: 'accent1', label: 'Art 1' },
+                        { key: 'accent2', label: 'Art 2' },
+                      ] as const
+                    ).map((item) => (
+                      <div key={item.key} className="flex flex-col items-center gap-0.5">
+                        <input
+                          type="color"
+                          value={customPalette[item.key]}
+                          onChange={(e) =>
+                            setCustomPalette((p) => ({ ...p, [item.key]: e.target.value }))
+                          }
+                          className="w-6 h-6 rounded-full border border-slate-200 cursor-pointer p-0"
+                        />
+                        <span className="text-[9px] text-slate-500 font-semibold">{item.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -399,7 +508,7 @@ export const AIImageModal: React.FC = () => {
                 </div>
               )}
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200">
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 flex-wrap">
                 <button
                   type="button"
                   disabled={!currentResult}
@@ -408,6 +517,14 @@ export const AIImageModal: React.FC = () => {
                 >
                   <Download size={14} />
                   <span>Download PNG</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={!currentResult}
+                  onClick={handleSetAsBackground}
+                  className="py-2 px-3.5 rounded-xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 disabled:opacity-40 text-emerald-800 text-xs font-semibold transition cursor-pointer"
+                >
+                  Set as Page Background
                 </button>
                 <button
                   type="button"

@@ -13,7 +13,15 @@ export type ProceduralMotif =
   | 'liquid-waves'
   | 'bauhaus-geo'
   | 'cyber-grid'
-  | 'bokeh-glow';
+  | 'bokeh-glow'
+  | 'liquid-marble'
+  | 'topo-contours'
+  | 'low-poly-3d'
+  | 'halftone-pop'
+  | 'mandala-radial'
+  | 'editorial-portrait';
+
+export type PaletteMode = 'auto' | 'custom';
 
 export type AIAspectRatio = '1:1' | '4:3' | '3:4' | '16:9';
 
@@ -48,6 +56,12 @@ export const PROCEDURAL_MOTIFS: { id: ProceduralMotif; label: string }[] = [
   { id: 'bauhaus-geo', label: 'Bauhaus Geo' },
   { id: 'cyber-grid', label: 'Cyber Grid' },
   { id: 'bokeh-glow', label: 'Bokeh Glow' },
+  { id: 'liquid-marble', label: 'Liquid Marble' },
+  { id: 'topo-contours', label: 'Topo Contours' },
+  { id: 'low-poly-3d', label: 'Low-Poly 3D' },
+  { id: 'halftone-pop', label: 'Halftone Pop' },
+  { id: 'mandala-radial', label: 'Mandala' },
+  { id: 'editorial-portrait', label: 'Portrait Art' },
 ];
 
 export const PROMPT_PRESETS: string[] = [
@@ -166,31 +180,51 @@ export function generateProceduralArtwork(
     motif: ProceduralMotif;
     style: AIArtStyle;
     seed: number;
+    complexity?: number;
+    grain?: number;
+    hdPrint?: boolean;
+    customPalette?: { bg1: string; bg2: string; accent1: string; accent2: string };
   }
 ): GeneratedImageResult {
-  const { ratio, motif, style, seed } = options;
+  const {
+    ratio,
+    motif,
+    style,
+    seed,
+    complexity = 5,
+    grain = 18,
+    hdPrint = false,
+    customPalette,
+  } = options;
   const effectiveSeed = hashString(`${prompt}|${motif}|${style}|${seed}`);
   const rng = createRng(effectiveSeed);
-  const palette = resolvePalette(prompt, seed);
+  const palette: Palette = customPalette
+    ? {
+        bg1: customPalette.bg1,
+        bg2: customPalette.bg2,
+        accents: [customPalette.accent1, customPalette.accent2, customPalette.accent1, customPalette.accent2],
+      }
+    : resolvePalette(prompt, seed);
+
+  const scaleFactor = hdPrint ? 2 : 1;
+  const w = ratio.width * scaleFactor;
+  const h = ratio.height * scaleFactor;
 
   const canvas = document.createElement('canvas');
-  canvas.width = ratio.width;
-  canvas.height = ratio.height;
+  canvas.width = w;
+  canvas.height = h;
   const ctx = canvas.getContext('2d');
 
   if (!ctx) {
     return {
       dataUrl: '',
       source: 'procedural',
-      width: ratio.width,
-      height: ratio.height,
+      width: w,
+      height: h,
       seed,
       prompt,
     };
   }
-
-  const w = ratio.width;
-  const h = ratio.height;
 
   // Base gradient backdrop
   const angle = rng() * Math.PI * 2;
@@ -329,6 +363,210 @@ export function generateProceduralArtwork(
     ctx.restore();
   }
 
+  if (motif === 'liquid-marble') {
+    const ribbons = 8 + complexity * 2;
+    for (let i = 0; i < ribbons; i++) {
+      const color = palette.accents[i % palette.accents.length];
+      ctx.save();
+      ctx.globalAlpha = 0.22 + rng() * 0.35;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = (18 + rng() * 55) * scaleFactor;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      let x = -w * 0.1;
+      let y = rng() * h;
+      ctx.moveTo(x, y);
+      const segs = 6;
+      for (let s = 1; s <= segs; s++) {
+        const nx = (s / segs) * w * 1.2 - w * 0.1;
+        const ny = y + (rng() - 0.5) * h * 0.55;
+        const cx = (x + nx) / 2;
+        const cy = y + (rng() - 0.5) * h * 0.4;
+        ctx.quadraticCurveTo(cx, cy, nx, ny);
+        x = nx;
+        y = ny;
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  if (motif === 'topo-contours') {
+    const rings = 10 + complexity * 2;
+    const cx = w * (0.3 + rng() * 0.4);
+    const cy = h * (0.3 + rng() * 0.4);
+    ctx.save();
+    ctx.lineWidth = 1.6 * scaleFactor;
+    for (let r = 1; r <= rings; r++) {
+      const baseR = (r / rings) * Math.max(w, h) * 0.85;
+      ctx.strokeStyle = palette.accents[r % palette.accents.length];
+      ctx.globalAlpha = 0.3 + (r / rings) * 0.45;
+      ctx.beginPath();
+      const pts = 72;
+      for (let p = 0; p <= pts; p++) {
+        const a = (p / pts) * Math.PI * 2;
+        const wobble =
+          Math.sin(a * 3 + r * 0.35) * 18 * scaleFactor +
+          Math.cos(a * 5 - r * 0.2) * 10 * scaleFactor;
+        const px = cx + Math.cos(a) * (baseR + wobble);
+        const py = cy + Math.sin(a) * (baseR * 0.78 + wobble);
+        if (p === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  if (motif === 'low-poly-3d') {
+    const cols = Math.max(4, 4 + Math.round(complexity * 0.8));
+    const rows = Math.max(4, 4 + Math.round(complexity * 0.8));
+    const cellW = w / cols;
+    const cellH = h / rows;
+    const grid: { x: number; y: number }[][] = [];
+    for (let r = 0; r <= rows; r++) {
+      const rowPts: { x: number; y: number }[] = [];
+      for (let c = 0; c <= cols; c++) {
+        const jx = c === 0 || c === cols ? 0 : (rng() - 0.5) * cellW * 0.72;
+        const jy = r === 0 || r === rows ? 0 : (rng() - 0.5) * cellH * 0.72;
+        rowPts.push({ x: c * cellW + jx, y: r * cellH + jy });
+      }
+      grid.push(rowPts);
+    }
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const p1 = grid[r][c];
+        const p2 = grid[r][c + 1];
+        const p3 = grid[r + 1][c];
+        const p4 = grid[r + 1][c + 1];
+        const tris = [
+          [p1, p2, p4],
+          [p1, p4, p3],
+        ];
+        tris.forEach((tri, idx) => {
+          ctx.save();
+          ctx.fillStyle = palette.accents[(r + c + idx) % palette.accents.length];
+          ctx.globalAlpha = 0.25 + rng() * 0.55;
+          ctx.beginPath();
+          ctx.moveTo(tri[0].x, tri[0].y);
+          ctx.lineTo(tri[1].x, tri[1].y);
+          ctx.lineTo(tri[2].x, tri[2].y);
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+          ctx.lineWidth = 1 * scaleFactor;
+          ctx.stroke();
+          ctx.restore();
+        });
+      }
+    }
+  }
+
+  if (motif === 'halftone-pop') {
+    const spacing = Math.max(14, (36 - complexity * 2)) * scaleFactor;
+    ctx.save();
+    for (let y = spacing / 2; y < h; y += spacing) {
+      for (let x = spacing / 2; x < w; x += spacing) {
+        const t = (x / w + y / h) * 0.5;
+        const r = spacing * (0.12 + t * 0.36);
+        ctx.fillStyle = palette.accents[Math.floor(t * palette.accents.length) % palette.accents.length];
+        ctx.globalAlpha = 0.65;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+
+  if (motif === 'mandala-radial') {
+    const petals = 8 + complexity * 2;
+    const rings = 4 + Math.floor(complexity / 2);
+    const cx = w / 2;
+    const cy = h / 2;
+    const maxR = Math.min(w, h) * 0.44;
+    ctx.save();
+    ctx.translate(cx, cy);
+    for (let ring = rings; ring >= 1; ring--) {
+      const r = (ring / rings) * maxR;
+      const color = palette.accents[ring % palette.accents.length];
+      ctx.fillStyle = color;
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.lineWidth = 1.5 * scaleFactor;
+      ctx.globalAlpha = 0.35 + (ring / rings) * 0.45;
+      for (let p = 0; p < petals; p++) {
+        ctx.save();
+        ctx.rotate((p / petals) * Math.PI * 2 + ring * 0.15);
+        ctx.beginPath();
+        ctx.ellipse(r * 0.55, 0, r * 0.45, r * 0.18, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+    ctx.restore();
+  }
+
+  if (motif === 'editorial-portrait') {
+    const cx = w / 2;
+    const cy = h * 0.48;
+    const unit = Math.min(w, h) * 0.32;
+    ctx.save();
+    // Editorial backdrop halo
+    ctx.fillStyle = palette.accents[0];
+    ctx.globalAlpha = 0.35;
+    ctx.beginPath();
+    ctx.arc(cx - unit * 0.2, cy - unit * 0.15, unit * 1.05, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Stylized geometric bust / shoulders
+    ctx.fillStyle = palette.accents[1] || '#f59e0b';
+    ctx.globalAlpha = 0.88;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + unit * 0.95, unit * 0.95, unit * 0.65, 0, Math.PI, 0);
+    ctx.fill();
+
+    // Head silhouette
+    ctx.fillStyle = palette.accents[2] || '#fde047';
+    ctx.globalAlpha = 0.92;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy - unit * 0.15, unit * 0.44, unit * 0.56, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Continuous Matisse-style one-line facial contour
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 4 * scaleFactor;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.globalAlpha = 0.95;
+    ctx.beginPath();
+    ctx.moveTo(cx - unit * 0.22, cy - unit * 0.32);
+    ctx.quadraticCurveTo(cx - unit * 0.05, cy - unit * 0.38, cx, cy - unit * 0.28);
+    ctx.lineTo(cx - unit * 0.04, cy - unit * 0.02);
+    ctx.quadraticCurveTo(cx + unit * 0.06, cy + unit * 0.04, cx + unit * 0.02, cy + unit * 0.08);
+    ctx.moveTo(cx + unit * 0.14, cy - unit * 0.28);
+    ctx.arc(cx + unit * 0.16, cy - unit * 0.28, unit * 0.03, 0, Math.PI * 2);
+    ctx.moveTo(cx - unit * 0.1, cy + unit * 0.18);
+    ctx.quadraticCurveTo(cx, cy + unit * 0.25, cx + unit * 0.12, cy + unit * 0.18);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Optional film grain texture
+  if (grain > 0) {
+    const imgData = ctx.getImageData(0, 0, w, h);
+    const data = imgData.data;
+    const strength = (grain / 100) * 28;
+    for (let i = 0; i < data.length; i += 4) {
+      const noise = (rng() - 0.5) * strength;
+      data[i] = Math.min(255, Math.max(0, data[i] + noise));
+      data[i + 1] = Math.min(255, Math.max(0, data[i + 1] + noise));
+      data[i + 2] = Math.min(255, Math.max(0, data[i + 2] + noise));
+    }
+    ctx.putImageData(imgData, 0, 0);
+  }
+
   // Subtle editorial highlight vignette / sheen
   const sheen = ctx.createRadialGradient(w * 0.35, h * 0.25, 20, w * 0.5, h * 0.5, Math.max(w, h) * 0.75);
   sheen.addColorStop(0, 'rgba(255,255,255,0.14)');
@@ -418,6 +656,10 @@ export async function generateHybridAIImage(
     style: AIArtStyle;
     motif: ProceduralMotif;
     seed: number;
+    complexity?: number;
+    grain?: number;
+    hdPrint?: boolean;
+    customPalette?: { bg1: string; bg2: string; accent1: string; accent2: string };
     signal?: AbortSignal;
   }
 ): Promise<GeneratedImageResult> {
