@@ -18,6 +18,7 @@ import {
 } from '../types/publisher';
 import { buildMergedPartFromShape } from '../utils/shapePaths';
 import { TEMPLATES } from '../constants/templates';
+import { reflowElementsForSize } from '../utils/smartResize';
 import { PAGE_SIZES } from '../constants/pageSizes';
 import { COLOR_SCHEMES } from '../constants/colorSchemes';
 
@@ -34,6 +35,7 @@ interface PublisherContextType {
   isBuildingBlocksModalOpen: boolean;
   isAIImageModalOpen: boolean;
   isCollageModalOpen: boolean;
+  isBrandBoardModalOpen: boolean;
   rulerVisible: boolean;
   guidesVisible: boolean;
   gridVisible: boolean;
@@ -62,6 +64,7 @@ interface PublisherContextType {
   setIsBuildingBlocksModalOpen: (open: boolean) => void;
   setIsAIImageModalOpen: (open: boolean) => void;
   setIsCollageModalOpen: (open: boolean) => void;
+  setIsBrandBoardModalOpen: (open: boolean) => void;
   setRulerVisible: (visible: boolean) => void;
   setGuidesVisible: (visible: boolean) => void;
   setGridVisible: (visible: boolean) => void;
@@ -78,6 +81,8 @@ interface PublisherContextType {
   addPage: () => void;
   duplicateActivePage: () => void;
   deleteActivePage: () => void;
+  deletePageById: (pageId: string) => void;
+  generateBrandBoardSizes: (sizeNames: string[]) => void;
   setPageSize: (sizeName: string) => void;
   setPageOrientation: (orientation: 'portrait' | 'landscape') => void;
   updatePagePosition: (pageIndex: number, x: number, y: number) => void;
@@ -206,6 +211,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [isBuildingBlocksModalOpen, setIsBuildingBlocksModalOpen] = useState(false);
   const [isAIImageModalOpen, setIsAIImageModalOpen] = useState(false);
   const [isCollageModalOpen, setIsCollageModalOpen] = useState(false);
+  const [isBrandBoardModalOpen, setIsBrandBoardModalOpen] = useState(false);
 
   const [rulerVisible, setRulerVisible] = useState(true);
   const [guidesVisible, setGuidesVisible] = useState(true);
@@ -332,22 +338,58 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setSelectedElementIds([]);
   }, [project, commitProject]);
 
+  const deletePageById = useCallback(
+    (pageId: string) => {
+      if (project.pages.length <= 1) return; // Always keep at least one artboard
+      const targetIdx = project.pages.findIndex((pg) => pg.id === pageId);
+      if (targetIdx === -1) return;
+      const newPages = project.pages.filter((pg) => pg.id !== pageId);
+      let nextActiveIdx = project.activePageIndex;
+      if (targetIdx < project.activePageIndex) {
+        nextActiveIdx = project.activePageIndex - 1;
+      } else if (targetIdx === project.activePageIndex) {
+        nextActiveIdx = Math.max(0, Math.min(targetIdx, newPages.length - 1));
+      }
+      commitProject({
+        ...project,
+        pages: newPages,
+        activePageIndex: nextActiveIdx,
+      });
+      setSelectedElementIds([]);
+    },
+    [project, commitProject]
+  );
+
   const setPageSize = useCallback(
     (sizeName: string) => {
       const def = PAGE_SIZES.find((s) => s.name === sizeName);
       if (!def) return;
-      const newPages = project.pages.map((pg, idx) =>
-        idx === project.activePageIndex
-          ? {
-              ...pg,
-              width: def.width,
-              height: def.height,
-              orientation: (def.width > def.height ? 'landscape' : 'portrait') as
-                | 'portrait'
-                | 'landscape',
-            }
-          : pg
-      );
+      const newPages = project.pages.map((pg, idx) => {
+        if (idx !== project.activePageIndex) return pg;
+        const marginPad = def.width < 520 || def.height < 420 ? 18 : 40;
+        const nextMargins = { top: marginPad, right: marginPad, bottom: marginPad, left: marginPad };
+        return {
+          ...pg,
+          width: def.width,
+          height: def.height,
+          orientation: (def.width > def.height ? 'landscape' : 'portrait') as
+            | 'portrait'
+            | 'landscape',
+          margins: nextMargins,
+          elements:
+            pg.elements.length > 0
+              ? reflowElementsForSize(
+                  pg.elements,
+                  pg.width,
+                  pg.height,
+                  def.width,
+                  def.height,
+                  nextMargins,
+                  false
+                )
+              : pg.elements,
+        };
+      });
       commitProject({
         ...project,
         pageSizeName: sizeName,
@@ -368,6 +410,10 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           orientation,
           width: h,
           height: w,
+          elements:
+            pg.elements.length > 0
+              ? reflowElementsForSize(pg.elements, w, h, h, w, pg.margins, false)
+              : pg.elements,
         };
       });
       commitProject({
@@ -376,6 +422,80 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       });
     },
     [project, commitProject]
+  );
+
+  const generateBrandBoardSizes = useCallback(
+    (sizeNames: string[]) => {
+      const defs = sizeNames
+        .map((name) => PAGE_SIZES.find((s) => s.name === name))
+        .filter((d): d is NonNullable<typeof d> => Boolean(d));
+      if (defs.length === 0) return;
+
+      // Start laying out new artboards in a neat wrapped row to the right of existing artboards
+      let startX = 80;
+      let startY = 80;
+      project.pages.forEach((pg, idx) => {
+        const px = pg.x ?? 80 + idx * (pg.width + 80);
+        const py = pg.y ?? 80;
+        startX = Math.max(startX, px + pg.width + 100);
+        startY = Math.min(startY, py);
+      });
+
+      const gap = 90;
+      const maxRowWidth = startX + 3600;
+      let cursorX = startX;
+      let cursorY = startY;
+      let rowMaxH = 0;
+
+      const generatedPages: Page[] = defs.map((def, i) => {
+        if (i > 0 && cursorX + def.width > maxRowWidth) {
+          cursorX = startX;
+          cursorY += rowMaxH + gap;
+          rowMaxH = 0;
+        }
+
+        const marginPad = def.width < 520 || def.height < 420 ? 18 : 40;
+        const targetMargins = { top: marginPad, right: marginPad, bottom: marginPad, left: marginPad };
+        const reflowedElements = reflowElementsForSize(
+          activePage.elements,
+          activePage.width,
+          activePage.height,
+          def.width,
+          def.height,
+          targetMargins,
+          true
+        );
+
+        const newPage: Page = {
+          id: `page-brand-${Date.now()}-${i}`,
+          name: def.displayName.split(' (')[0],
+          x: cursorX,
+          y: cursorY,
+          width: def.width,
+          height: def.height,
+          orientation: def.width > def.height ? 'landscape' : 'portrait',
+          backgroundColor: activePage.backgroundColor,
+          backgroundPattern: activePage.backgroundPattern
+            ? { ...activePage.backgroundPattern }
+            : undefined,
+          margins: targetMargins,
+          guides: [],
+          elements: reflowedElements,
+        };
+
+        cursorX += def.width + gap;
+        rowMaxH = Math.max(rowMaxH, def.height);
+        return newPage;
+      });
+
+      commitProject({
+        ...project,
+        pages: [...project.pages, ...generatedPages],
+        activePageIndex: project.pages.length,
+      });
+      setSelectedElementIds([]);
+    },
+    [project, activePage, commitProject]
   );
 
   const updatePagePosition = useCallback(
@@ -1386,6 +1506,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         isBuildingBlocksModalOpen,
         isAIImageModalOpen,
         isCollageModalOpen,
+        isBrandBoardModalOpen,
         rulerVisible,
         guidesVisible,
         gridVisible,
@@ -1413,6 +1534,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setIsBuildingBlocksModalOpen,
         setIsAIImageModalOpen,
         setIsCollageModalOpen,
+        setIsBrandBoardModalOpen,
         setRulerVisible,
         setGuidesVisible,
         setGridVisible,
@@ -1427,6 +1549,8 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         addPage,
         duplicateActivePage,
         deleteActivePage,
+        deletePageById,
+        generateBrandBoardSizes,
         setPageSize,
         setPageOrientation,
         updatePagePosition,

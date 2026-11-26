@@ -10,6 +10,7 @@ import { WordArtPickerModal } from './components/modals/WordArtPickerModal';
 import { MailMergeModal } from './components/modals/MailMergeModal';
 import { AIImageModal } from './components/modals/AIImageModal';
 import { CollageModal } from './components/modals/CollageModal';
+import { BrandBoardModal } from './components/modals/BrandBoardModal';
 
 export const AppContent: React.FC = () => {
   return (
@@ -33,6 +34,7 @@ export const AppContent: React.FC = () => {
       <MailMergeModal />
       <AIImageModal />
       <CollageModal />
+      <BrandBoardModal />
     </div>
   );
 };

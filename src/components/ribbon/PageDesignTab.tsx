@@ -9,6 +9,7 @@ import {
   ChevronDown,
   Magnet,
   Grid,
+  LayoutGrid,
 } from 'lucide-react';
 
 export const PageDesignTab: React.FC = () => {
@@ -21,6 +22,7 @@ export const PageDesignTab: React.FC = () => {
     setPageBackgroundColor,
     setColorScheme,
     setIsBackstageOpen,
+    setIsBrandBoardModalOpen,
     snapToGuides,
     setSnapToGuides,
     gridVisible,
@@ -38,7 +40,7 @@ export const PageDesignTab: React.FC = () => {
     <div className="flex items-center h-24 px-3 py-1 gap-3 text-xs text-slate-700 overflow-x-auto select-none">
       {/* 1. Template Group */}
       <div className="flex flex-col justify-between h-full py-1 pr-3 border-r border-slate-200 flex-shrink-0">
-        <div className="my-auto">
+        <div className="my-auto flex items-center gap-1.5">
           <button
             onClick={() => setIsBackstageOpen(true)}
             className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
@@ -48,6 +50,17 @@ export const PageDesignTab: React.FC = () => {
               <FileText size={16} />
             </div>
             <span className="text-[10px] font-medium mt-1 text-slate-600">Templates</span>
+          </button>
+
+          <button
+            onClick={() => setIsBrandBoardModalOpen(true)}
+            className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
+            title="Generate Multiple Brand Sizes on Artboard"
+          >
+            <div className="w-8 h-8 rounded-xl bg-violet-50 border border-violet-200 text-violet-700 flex items-center justify-center group-hover:bg-violet-600 group-hover:text-white transition-all shadow-xs">
+              <LayoutGrid size={16} />
+            </div>
+            <span className="text-[10px] font-semibold mt-1 text-violet-800">Brand Board</span>
           </button>
         </div>
         <span className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider text-center">Library</span>

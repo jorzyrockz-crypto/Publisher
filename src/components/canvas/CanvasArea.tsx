@@ -14,6 +14,8 @@ import {
   MousePointer2,
   LayoutDashboard,
   GripVertical,
+  Trash2,
+  Sparkles,
 } from 'lucide-react';
 
 export const CanvasArea: React.FC = () => {
@@ -27,6 +29,8 @@ export const CanvasArea: React.FC = () => {
     setToolMode,
     isRightPanelOpen,
     addPage,
+    deletePageById,
+    setIsBrandBoardModalOpen,
     setActivePageIndex,
     updatePagePosition,
     zoom,
@@ -300,6 +304,24 @@ export const CanvasArea: React.FC = () => {
                       >
                         {(pg.width / 96).toFixed(1)}"×{(pg.height / 96).toFixed(1)}"
                       </span>
+                      {project.pages.length > 1 && (
+                        <button
+                          type="button"
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deletePageById(pg.id);
+                          }}
+                          title="Delete This Artboard"
+                          className={`ml-1 p-0.5 rounded-full transition ${
+                            isActive
+                              ? 'hover:bg-rose-500 text-indigo-100 hover:text-white'
+                              : 'hover:bg-rose-100 text-slate-400 hover:text-rose-600'
+                          }`}
+                        >
+                          <Trash2 size={11} />
+                        </button>
+                      )}
                     </div>
 
                     <PageCanvas
@@ -311,24 +333,36 @@ export const CanvasArea: React.FC = () => {
                 );
               })}
 
-              {/* Quick + Add Artboard button positioned near last page */}
+              {/* Quick + Add Artboard & + Brand Board buttons positioned near last page */}
               {(() => {
                 const lastIdx = project.pages.length - 1;
                 const lastPg = project.pages[lastIdx];
                 const lastCoords = getArtboardCoords(lastIdx);
                 return (
-                  <button
-                    onClick={addPage}
+                  <div
                     style={{
                       position: 'absolute',
                       left: `${(lastCoords.x + lastPg.width + 60) * zoom}px`,
                       top: `${(lastCoords.y + 36) * zoom}px`,
                     }}
-                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl border-2 border-dashed border-slate-300 bg-white/80 hover:bg-white hover:border-indigo-500 text-slate-600 hover:text-indigo-700 font-semibold text-xs transition-all shadow-xs active:scale-95"
+                    className="flex flex-col gap-2"
                   >
-                    <Plus size={15} />
-                    <span>Add Artboard</span>
-                  </button>
+                    <button
+                      onClick={addPage}
+                      className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl border-2 border-dashed border-slate-300 bg-white/80 hover:bg-white hover:border-indigo-500 text-slate-600 hover:text-indigo-700 font-semibold text-xs transition-all shadow-xs active:scale-95"
+                    >
+                      <Plus size={15} />
+                      <span>Add Artboard</span>
+                    </button>
+                    <button
+                      onClick={() => setIsBrandBoardModalOpen(true)}
+                      className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 font-semibold text-xs transition-all shadow-xs active:scale-95"
+                      title="Convert design to multiple sizes on Brand Board"
+                    >
+                      <Sparkles size={14} className="text-indigo-600" />
+                      <span>Brand Multi-Size</span>
+                    </button>
+                  </div>
                 );
               })()}
             </div>

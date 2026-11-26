@@ -92,6 +92,7 @@ export const PropertiesPanel: React.FC = () => {
     setPageMargins,
     setPageBackgroundColor,
     setPageBackgroundPattern,
+    setIsBrandBoardModalOpen,
   } = usePublisher();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -483,6 +484,14 @@ export const PropertiesPanel: React.FC = () => {
                     </option>
                   ))}
                 </select>
+                <button
+                  type="button"
+                  onClick={() => setIsBrandBoardModalOpen(true)}
+                  className="mt-2 w-full py-1.5 px-2.5 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 text-[11px] font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer"
+                >
+                  <Sparkles size={12} className="text-indigo-600" />
+                  <span>Convert to Multi-Size Brand Board</span>
+                </button>
               </div>
 
               {/* Orientation */}
