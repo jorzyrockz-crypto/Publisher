@@ -88,14 +88,16 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     gradient: {
       angle: 180,
       stops: [
-        { offset: 0, color: '#fef08a' },
-        { offset: 0.5, color: '#eab308' },
-        { offset: 1, color: '#a16207' },
+        { offset: 0, color: '#fde68a' },
+        { offset: 0.45, color: '#f59e0b' },
+        { offset: 1, color: '#b45309' },
       ],
     },
+    // the brown edge is what keeps gold legible on cream certificates
+    stroke: { width: 2, color: '#7c2d12' },
     shadows: [
-      { dx: 0, dy: 2, blur: 2, color: 'rgba(161,98,7,0.4)' },
-      { dx: 0, dy: 4, blur: 8, color: 'rgba(0,0,0,0.2)' },
+      { dx: 0, dy: 2, blur: 3, color: 'rgba(120,53,15,0.35)' },
+      { dx: 0, dy: 4, blur: 10, color: 'rgba(0,0,0,0.18)' },
     ],
   },
   outline: {
@@ -126,12 +128,13 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     gradient: {
       angle: 180,
       stops: [
-        { offset: 0, color: '#ffffff' },
-        { offset: 0.45, color: '#cbd5e1' },
-        { offset: 0.52, color: '#475569' },
+        { offset: 0, color: '#f8fafc' },
+        { offset: 0.4, color: '#cbd5e1' },
+        { offset: 0.55, color: '#475569' },
         { offset: 1, color: '#e2e8f0' },
       ],
     },
+    stroke: { width: 1.5, color: '#1e293b' },
     shadows: [{ dx: 0, dy: 2, blur: 3, color: 'rgba(15,23,42,0.45)' }],
   },
   fire: {

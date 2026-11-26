@@ -7,6 +7,8 @@ import type {
   TextElement,
 } from '../types/publisher';
 import type { TemplateCategory } from '../constants/templates';
+import { WORD_ART_STYLES, wordArtPaint } from './wordArt';
+import type { WordArtStyle } from '../types/publisher';
 
 /**
  * Template design pass.
@@ -36,6 +38,8 @@ export interface EnhanceStats {
   roundedPhotos: number;
   gradients: number;
   styleTags: number;
+  recolored: number;
+  balanced: number;
 }
 
 const EMPTY_STATS: EnhanceStats = {
@@ -47,33 +51,42 @@ const EMPTY_STATS: EnhanceStats = {
   roundedPhotos: 0,
   gradients: 0,
   styleTags: 0,
+  recolored: 0,
+  balanced: 0,
 };
 
-/** WordArt palettes by purpose, split by how dark the page is. */
-const LIGHT_PAGE_STYLES: Partial<Record<TemplateCategory, TextElement['wordArtStyle'][]>> = {
-  Certificate: ['gold3d', 'chrome'],
-  Poster: ['sunset-gradient', 'fire'],
-  Tarpapel: ['sunset-gradient', 'fire', 'comic-pop'],
-  Invitation: ['gold3d', 'sunset-gradient'],
-  Card: ['sunset-gradient', 'gold3d', 'retro'],
-  'Social Media': ['neon-glow', 'sunset-gradient'],
-  'Hero Banner': ['gradient-blue', 'neon-glow'],
-  Collage: ['retro', 'sunset-gradient'],
-  Program: ['gold3d', 'emerald-3d'],
-  Menu: ['gold3d', 'retro'],
-  Flyer: ['fire', 'sunset-gradient'],
-  Brochure: ['gradient-blue', 'emerald-3d'],
-  Newsletter: ['gradient-blue', 'chrome'],
-  Resume: ['gradient-blue', 'emerald-3d'],
-  'Business Card': ['chrome', 'gradient-blue'],
-  Postcard: ['sunset-gradient', 'retro'],
-  Calendar: ['gradient-blue', 'gold3d'],
-  'Cover Document': ['chrome', 'gradient-blue'],
-  'Narrative Report': ['gradient-blue', 'emerald-3d'],
-  Email: ['gradient-blue', 'emerald-3d'],
+/**
+ * WordArt palettes by purpose. Order is a design preference — the first style
+ * that actually reads on the page wins — so a certificate gets a deep blue
+ * gradient before a chrome gimmick.
+ */
+const LIGHT_PAGE_STYLES: Partial<Record<TemplateCategory, WordArtStyle[]>> = {
+  Certificate: ['gradient-blue', 'gold3d', 'chrome', 'comic-pop'],
+  Poster: ['retro', 'sunset-gradient', 'fire', 'comic-pop'],
+  Tarpapel: ['comic-pop', 'fire', 'sunset-gradient', 'gradient-blue'],
+  Invitation: ['gradient-blue', 'sunset-gradient', 'gold3d', 'retro'],
+  Card: ['gradient-blue', 'sunset-gradient', 'retro'],
+  'Social Media': ['gradient-blue', 'comic-pop', 'retro', 'sunset-gradient'],
+  'Hero Banner': ['gradient-blue', 'retro', 'comic-pop'],
+  Collage: ['retro', 'sunset-gradient', 'comic-pop', 'gradient-blue'],
+  Program: ['gradient-blue', 'emerald-3d', 'gold3d', 'retro'],
+  Menu: ['retro', 'gold3d', 'gradient-blue'],
+  Flyer: ['retro', 'comic-pop', 'sunset-gradient', 'gradient-blue'],
+  Brochure: ['gradient-blue', 'emerald-3d', 'retro'],
+  Newsletter: ['gradient-blue', 'retro', 'emerald-3d'],
+  Resume: ['gradient-blue', 'emerald-3d', 'retro'],
+  'Business Card': ['gold3d', 'gradient-blue', 'chrome'],
+  Postcard: ['retro', 'sunset-gradient', 'comic-pop'],
+  Calendar: ['gradient-blue', 'retro', 'emerald-3d'],
+  'Cover Document': ['gradient-blue', 'chrome', 'emerald-3d'],
+  'Narrative Report': ['gradient-blue', 'emerald-3d', 'retro'],
+  Email: ['gradient-blue', 'emerald-3d', 'retro'],
+  Logo: ['gradient-blue', 'gold3d', 'chrome'],
 };
 
-const DARK_PAGE_STYLES: TextElement['wordArtStyle'][] = ['chrome', 'neon-glow', 'gold3d', 'sunset-gradient'];
+/** On a dark page the light-on-dark styles come first. */
+const DARK_PAGE_STYLES: WordArtStyle[] = ['gold3d', 'chrome', 'neon-glow', 'fire', 'rainbow', 'sunset-gradient'];
+
 
 export function hexLuminance(color?: string): number {
   if (!color) return 1;
@@ -169,21 +182,88 @@ function appliesWordArt(el: TextElement, category: TemplateCategory, page: Page)
   const plain = el.text.replace(/\{\{[^}]+\}\}/g, '').replace(/\s+/g, ' ').trim();
   if (plain.length < 3 || plain.length > 48) return false;
   if (/[.!?]$/.test(plain) && plain.length > 24) return false; // a sentence, not a title
-  const dark = hexLuminance(page.backgroundColor) < 0.42;
-  const palette = dark
-    ? DARK_PAGE_STYLES
-    : LIGHT_PAGE_STYLES[category] ?? ['gradient-blue'];
-  return palette.length > 0;
+  void category;
+  // the style picker returns undefined when nothing reads on this page
+  return true;
 }
 
+/** A shape or page's own paint, as one colour to judge contrast against. */
+function paintColor(el: PublisherElement): string | undefined {
+  const any = el as unknown as {
+    fill?: string;
+    fillColor?: string;
+    fillType?: string;
+    gradientColor1?: string;
+    gradientColor2?: string;
+    backgroundColor?: string;
+  };
+  const base = any.fillColor || any.fill;
+  if (any.fillType === 'linear-gradient') return any.gradientColor1 || base;
+  if (base && base !== 'none' && base !== 'transparent') return base;
+  if (any.backgroundColor && any.backgroundColor !== 'transparent') return any.backgroundColor;
+  return undefined;
+}
+
+/**
+ * What the element actually sits on. A page background is only half the
+ * story — most covers put a coloured shape or band behind the headline, and
+ * a style chosen against the page colour can land invisible on that band.
+ */
+export function effectiveBackground(el: PublisherElement, page: Page): string {
+  let color = page.backgroundGradient?.color1 || page.backgroundColor || '#ffffff';
+  const cx = el.x + el.width / 2;
+  const cy = el.y + el.height / 2;
+  const ordered = [...page.elements].sort((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0));
+  for (const other of ordered) {
+    if (other.id === el.id || other.visible === false) continue;
+    if (other.type === 'text' || other.type === 'image' || other.type === 'table') continue;
+    if (cx < other.x || cx > other.x + other.width || cy < other.y || cy > other.y + other.height) continue;
+    const paint = paintColor(other);
+    if (paint) color = paint;
+  }
+  return color;
+}
+
+/** Luminance of every colour a WordArt style puts on the page. */
+function styleStops(style: WordArtStyle): number[] {
+  const paint = wordArtPaint(style);
+  if (!paint) return [0.5];
+  if (paint.gradient) return paint.gradient.stops.map((stop) => hexLuminance(stop.color));
+  return [hexLuminance(paint.fill)];
+}
+
+/**
+ * How well a style reads on this background.
+ *
+ * A WordArt outline is what the eye uses when the fill is pale, so a style
+ * with a contrasting stroke is judged by its edge. A gradient is only as
+ * legible as its *worst* stop — gold-on-cream has contrast in the middle of
+ * the word and nothing at the top, which is exactly how it looks.
+ */
+function contrastScore(style: WordArtStyle, backgroundLum: number): number {
+  const paint = wordArtPaint(style);
+  if (paint?.stroke) return Math.abs(hexLuminance(paint.stroke.color) - backgroundLum) * 0.85;
+  const stops = styleStops(style);
+  return Math.min(...stops.map((stop) => Math.abs(stop - backgroundLum)));
+}
+
+const MIN_CONTRAST = 0.34;
+
 function wordArtChoice(el: TextElement, category: TemplateCategory, page: Page): TextElement['wordArtStyle'] {
-  const dark = hexLuminance(page.backgroundColor) < 0.42;
-  const palette = dark
-    ? DARK_PAGE_STYLES
-    : LIGHT_PAGE_STYLES[category] ?? ['gradient-blue'];
-  // a deterministic pick, so thumbnails never shuffle between renders
-  const seed = Array.from(el.id).reduce((acc, c) => acc + c.charCodeAt(0), 0);
-  return palette[seed % palette.length];
+  const bgLum = hexLuminance(effectiveBackground(el, page));
+  const dark = bgLum < 0.42;
+  const palette = dark ? DARK_PAGE_STYLES : LIGHT_PAGE_STYLES[category] ?? ['gradient-blue', 'retro'];
+
+  // design preference first, legibility second
+  for (const id of palette) if (contrastScore(id, bgLum) >= MIN_CONTRAST) return id;
+
+  // nothing in the category palette reads here (gold on cream, sunset on
+  // orange) — fall back to whatever paints clearest on this page
+  const global = [...WORD_ART_STYLES]
+    .map((option) => ({ id: option.id, score: contrastScore(option.id, bgLum) }))
+    .sort((a, b) => b.score - a.score);
+
+  return global[0] && global[0].score >= MIN_CONTRAST ? global[0].id : undefined;
 }
 
 const BULLET = /^[\u2022\u00b7\u25aa\u25e6]\s+/;
@@ -193,8 +273,9 @@ function enhanceText(el: TextElement, page: Page, category: TemplateCategory, ta
   list: number;
   dropCap: number;
   styleTag: number;
+  recolored: number;
 } {
-  const result = { wordArt: 0, list: 0, dropCap: 0, styleTag: 0 };
+  const result = { wordArt: 0, list: 0, dropCap: 0, styleTag: 0, recolored: 0 };
   const headline = findHeadline(page.elements);
   const isHeadline = headline?.id === el.id;
 
@@ -203,6 +284,22 @@ function enhanceText(el: TextElement, page: Page, category: TemplateCategory, ta
   if (!el.textStyleId) {
     el.textStyleId = roleStyle(el, isHeadline);
     result.styleTag = 1;
+  }
+
+  // WordArt paints heavier than the weight the layout was measured with, so
+  // every styled line is allowed to shrink back into its box.
+  if (el.isWordArt) {
+    el.autoFit = el.autoFit ?? 'shrink';
+    // An authored style that vanishes into its background is a bug, not a
+    // choice (pink retro on a coral band) — repaint it with something that reads.
+    const bgLum = hexLuminance(effectiveBackground(el, page));
+    if (el.wordArtStyle && el.wordArtStyle !== 'none' && contrastScore(el.wordArtStyle, bgLum) < MIN_CONTRAST) {
+      const better = wordArtChoice(el, category, page);
+      if (better && better !== el.wordArtStyle) {
+        el.wordArtStyle = better;
+        result.wordArt++;
+      }
+    }
   }
 
   // One WordArt moment per page: if the artwork already celebrates a line,
@@ -225,13 +322,36 @@ function enhanceText(el: TextElement, page: Page, category: TemplateCategory, ta
   // take over from hand-typed glyphs.
   if (!el.listStyle || el.listStyle === 'none') {
     const lines = el.text.split('\n');
-    const bullets = lines.filter((l) => BULLET.test(l));
-    if (bullets.length >= 2) {
+    const filled = lines.filter((l) => l.trim().length > 0);
+    const bullets = filled.filter((l) => BULLET.test(l));
+    // only a clean run converts — mixed bullet/continuation lists (an event
+    // line followed by a wrapped venue) must keep their hand-made layout
+    if (filled.length >= 2 && bullets.length === filled.length) {
       el.text = lines.map((l) => l.replace(BULLET, '')).join('\n');
       el.listStyle = 'bullet';
       el.listIndent = el.listIndent ?? 18;
       result.list++;
     }
+  }
+
+  // Design QA: type that blends into what it sits on gets flipped to ink or
+  // paper, whichever the background calls for.
+  if (!el.isWordArt && !sitsOnPhoto(el, page) && !el.textFillType) {
+    const bgLum = hexLuminance(el.backgroundColor && el.backgroundColor !== 'transparent'
+      ? el.backgroundColor
+      : effectiveBackground(el, page));
+    const textLum = hexLuminance(el.color);
+    if (Math.abs(textLum - bgLum) < 0.22) {
+      el.color = bgLum < 0.5 ? '#ffffff' : '#0f172a';
+      result.recolored = 1;
+    }
+  }
+
+  // Justified type in narrow columns opens rivers between words; designers
+  // leave it ragged instead.
+  if (el.textAlign === 'justify') {
+    const columnWidth = el.width / Math.max(1, el.columns ?? 1);
+    if (columnWidth < 320 || el.fontSize < 13) el.textAlign = 'left';
   }
 
   const bodyLength = el.text.trim().length;
@@ -294,6 +414,97 @@ function enhanceTable(el: TableElement, accent: string): number {
   return 1;
 }
 
+
+/**
+ * Vertical balance. Templates were drawn tight to the top and left a hole at
+ * the bottom of the sheet; Canva layouts breathe evenly all the way down.
+ *
+ * The page is cut into bands by anything structural (full-bleed art, panels,
+ * rules). Inside a band, the content blocks are re-seated on even spacing, so
+ * the spare room is shared between every gap instead of pooling at the bottom.
+ * Even spacing is a fixed point: running the pass twice lands on the same
+ * pixels, which keeps the whole enhancement idempotent.
+ */
+export function balancePage(page: Page, stats: EnhanceStats): void {
+  if (page.elements.some((el) => (el as unknown as { collageMeta?: unknown }).collageMeta)) return;
+
+  const pageArea = page.width * page.height;
+  const visible = page.elements.filter((el) => el.visible !== false);
+  const isStructural = (el: PublisherElement) => {
+    const area = (el.width * el.height) / pageArea;
+    return area > 0.3 || el.width > page.width * 0.85 || el.height > page.height * 0.85;
+  };
+  const anchors = visible.filter(isStructural);
+  const movable = visible.filter((el) => !isStructural(el));
+  if (movable.length < 2) return;
+
+  const overlaps = (a: { x: number; y: number; width: number; height: number }, b: PublisherElement) =>
+    a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+
+  // content blocks, grouped by vertical proximity
+  const ordered = [...movable].sort((a, b) => a.y - b.y);
+  const blocks: PublisherElement[][] = [];
+  for (const el of ordered) {
+    const last = blocks[blocks.length - 1];
+    if (last && el.y <= Math.max(...last.map((e) => e.y + e.height)) + 22) {
+      last.push(el);
+      continue;
+    }
+    blocks.push([el]);
+  }
+
+  const box = (block: PublisherElement[]) => ({
+    x: Math.min(...block.map((e) => e.x)),
+    y: Math.min(...block.map((e) => e.y)),
+    width: Math.max(...block.map((e) => e.x + e.width)) - Math.min(...block.map((e) => e.x)),
+    height: Math.max(...block.map((e) => e.y + e.height)) - Math.min(...block.map((e) => e.y)),
+    bottom: Math.max(...block.map((e) => e.y + e.height)),
+  });
+  // a block sitting on artwork or a panel is pinned to it
+  const pinned = (block: PublisherElement[]) => anchors.some((anchor) => overlaps(box(block), anchor));
+
+  const topLimit = page.margins?.top ?? 0;
+  const bottomLimit = page.height - (page.margins?.bottom ?? 0);
+  let moved = false;
+
+  let index = 0;
+  while (index < blocks.length) {
+    if (pinned(blocks[index])) { index++; continue; }
+    let end = index;
+    while (end + 1 < blocks.length && !pinned(blocks[end + 1])) end++;
+
+    if (end > index) {
+      const run = blocks.slice(index, end + 1);
+      const areas = run.map(box);
+      const bandTop = index > 0 ? Math.max(topLimit, box(blocks[index - 1]).bottom) : topLimit;
+      const bandBottom =
+        end + 1 < blocks.length ? Math.min(bottomLimit, Math.min(...blocks[end + 1].map((e) => e.y))) : bottomLimit;
+      const totalHeight = areas.reduce((sum, area) => sum + area.height, 0);
+      const slots = run.length - 1;
+      // already evenly spaced? then this run is a fixed point — leave it alone
+      const gaps = areas.slice(1).map((area, i) => area.y - areas[i].bottom);
+      if (Math.max(...gaps) - Math.min(...gaps) < 12) { index = end + 1; continue; }
+      const gap = (bandBottom - bandTop - totalHeight) / slots;
+      const currentGap = (areas[areas.length - 1].bottom - areas[0].y - totalHeight) / slots;
+      // only spread when the room is real; never compress what is already tight
+      if (gap > currentGap + 6 && gap > 0) {
+        const capped = Math.min(gap, Math.max(120, currentGap * 2.2));
+        let cursor = bandTop;
+        run.forEach((block, i) => {
+          const dy = Math.round(cursor - areas[i].y);
+          if (dy !== 0) {
+            for (const el of block) el.y += dy;
+            moved = true;
+          }
+          cursor = areas[i].y + dy + areas[i].height + capped;
+        });
+      }
+    }
+    index = end + 1;
+  }
+  if (moved) stats.balanced++;
+}
+
 export function enhancePage(page: Page, category: TemplateCategory, accent: string, stats: EnhanceStats): void {
   // Dark pages gain depth from a gradient in their own hue, which leaves the
   // contrast of every element exactly as designed.
@@ -305,7 +516,10 @@ export function enhancePage(page: Page, category: TemplateCategory, accent: stri
     }
   }
 
-  const taken = { dropCap: false };
+  balancePage(page, stats);
+
+  // a page carries one drop cap, authored or added
+  const taken = { dropCap: page.elements.some((el) => isText(el) && !!el.dropCap) };
   for (const el of page.elements) {
     if (el.visible === false) continue;
     if (isText(el)) {
@@ -314,6 +528,7 @@ export function enhancePage(page: Page, category: TemplateCategory, accent: stri
       stats.lists += r.list;
       stats.dropCaps += r.dropCap;
       stats.styleTags += r.styleTag;
+      stats.recolored += r.recolored;
     } else if (el.type === 'image') {
       const img = enhanceImage(el);
       stats.masks += img.masks;
