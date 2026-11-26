@@ -17,6 +17,7 @@ import {
   toProxiedWikimediaUrl,
   WikimediaItem,
 } from '../../utils/clipartSearch';
+import { IS_STATIC_HOST, getClipartProxyBase, saveClipartProxyBase } from '../../utils/apiEndpoints';
 import {
   Images,
   Search,
@@ -67,6 +68,7 @@ export const StockArtPanel: React.FC = () => {
     () => getSavedClipartFreeKey() || 'cf_12a1b9727cf3c4f4e3d3fafc0e01e0ddd2eb714f'
   );
   const [showKeyBar, setShowKeyBar] = useState(false);
+  const [clipartProxyUrl, setClipartProxyUrl] = useState<string>(() => getClipartProxyBase());
 
   // Per-source results & loading states so fast sources render immediately
   const [builtinItems, setBuiltinItems] = useState<UnifiedStockItem[]>([]);
@@ -395,7 +397,7 @@ export const StockArtPanel: React.FC = () => {
       {/* Search & Filters */}
       <div className="p-3 border-b border-[#e5e9ee] space-y-2.5 bg-white">
         {showKeyBar && (
-          <div className="p-2 rounded-[8px] bg-[#f8fafb] border border-[#e5e9ee] space-y-1">
+          <div className="p-2 rounded-[8px] bg-[#f8fafb] border border-[#e5e9ee] space-y-1.5">
             <label className="block text-[10px] font-bold uppercase tracking-[0.09em] text-[#9aa4ae]">
               Clipart.Free API Key (cf_...)
             </label>
@@ -418,6 +420,25 @@ export const StockArtPanel: React.FC = () => {
                 Done
               </button>
             </div>
+
+            <label className="block pt-0.5 text-[10px] font-bold uppercase tracking-[0.09em] text-[#9aa4ae]">
+              CORS Proxy (static hosting)
+            </label>
+            <input
+              type="url"
+              value={clipartProxyUrl}
+              onChange={(e) => {
+                setClipartProxyUrl(e.target.value);
+                saveClipartProxyBase(e.target.value);
+              }}
+              placeholder="https://your-worker.workers.dev"
+              className="w-full bg-white px-2 py-1 rounded-[8px] border border-[#e5e9ee] text-[11px] outline-none focus:border-[#73b9b7]"
+            />
+            <p className="text-[9.5px] leading-snug text-[#9aa4ae]">
+              {IS_STATIC_HOST
+                ? 'Optional. Iconify & Wikimedia work without a proxy; Clipart.Free needs one on GitHub Pages.'
+                : 'Optional. The Vite dev server already proxies these requests.'}
+            </p>
           </div>
         )}
 

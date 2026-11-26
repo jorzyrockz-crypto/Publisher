@@ -50,6 +50,37 @@ export const CanvasArea: React.FC = () => {
   const [isSpaceHeld, setIsSpaceHeld] = useState(false);
   const [spreadMode, setSpreadMode] = useState<'reading' | 'pairs'>('reading');
   const containerRef = useRef<HTMLDivElement>(null);
+  const didInitialFitRef = useRef(false);
+
+  // Auto-fit the artboard on first mount so Page 1 is fully framed between the
+  // rulers and the floating zoom toolbar (critical on 1280x800 laptops where a
+  // fixed 80% zoom used to clip the page top/bottom).
+  useEffect(() => {
+    if (didInitialFitRef.current) return;
+    let cancelled = false;
+    let frames = 0;
+
+    const tryInitialFit = () => {
+      if (cancelled || didInitialFitRef.current) return;
+      const el = containerRef.current;
+      if (el && el.clientWidth > 160 && el.clientHeight > 160) {
+        didInitialFitRef.current = true;
+        zoomFit();
+        return;
+      }
+      if (frames++ < 60) {
+        requestAnimationFrame(tryInitialFit);
+      }
+    };
+
+    const raf = requestAnimationFrame(tryInitialFit);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
+    };
+    // Only ever run once for the initial load; user zoom is never overridden.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Smoothly scroll canvas to active page whenever activePageIndex changes (e.g. clicking in Pages sidebar)
   useEffect(() => {
@@ -286,6 +317,7 @@ export const CanvasArea: React.FC = () => {
         {/* Scrollable Pasteboard Workspace */}
         <div
           ref={containerRef}
+          data-canvas-viewport="true"
           onWheel={handleWheel}
           onMouseDown={handleWorkspaceMouseDown}
           className={`flex-1 h-full overflow-auto relative ${

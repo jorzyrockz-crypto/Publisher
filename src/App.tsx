@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { Suspense, useEffect, useRef } from 'react';
 import { PublisherProvider, usePublisher } from './context/PublisherContext';
 import { useWindowWidth } from './hooks/useResizablePanel';
 import { Ribbon } from './components/ribbon/Ribbon';
@@ -8,13 +8,32 @@ import { CanvasArea } from './components/canvas/CanvasArea';
 import { PropertiesPanel } from './components/sidebar/PropertiesPanel';
 import { StockArtPanel } from './components/sidebar/StockArtPanel';
 import { StatusBar } from './components/statusbar/StatusBar';
-import { BackstageModal } from './components/modals/BackstageModal';
-import { WordArtPickerModal } from './components/modals/WordArtPickerModal';
-import { MailMergeModal } from './components/modals/MailMergeModal';
-import { AIImageModal } from './components/modals/AIImageModal';
-import { CollageModal } from './components/modals/CollageModal';
-import { BrandBoardModal } from './components/modals/BrandBoardModal';
-import { BrandKitModal } from './components/modals/BrandKitModal';
+// Heavy overlay dialogs are code-split so the initial bundle only ships the
+// editor shell (ribbon + canvas + sidebar). Each chunk loads on first open.
+const BackstageModal = React.lazy(() =>
+  import('./components/modals/BackstageModal').then((m) => ({ default: m.BackstageModal }))
+);
+const WordArtPickerModal = React.lazy(() =>
+  import('./components/modals/WordArtPickerModal').then((m) => ({ default: m.WordArtPickerModal }))
+);
+const MailMergeModal = React.lazy(() =>
+  import('./components/modals/MailMergeModal').then((m) => ({ default: m.MailMergeModal }))
+);
+const AIImageModal = React.lazy(() =>
+  import('./components/modals/AIImageModal').then((m) => ({ default: m.AIImageModal }))
+);
+const CollageModal = React.lazy(() =>
+  import('./components/modals/CollageModal').then((m) => ({ default: m.CollageModal }))
+);
+const BrandBoardModal = React.lazy(() =>
+  import('./components/modals/BrandBoardModal').then((m) => ({ default: m.BrandBoardModal }))
+);
+const BrandKitModal = React.lazy(() =>
+  import('./components/modals/BrandKitModal').then((m) => ({ default: m.BrandKitModal }))
+);
+const ShortcutsModal = React.lazy(() =>
+  import('./components/modals/ShortcutsModal').then((m) => ({ default: m.ShortcutsModal }))
+);
 
 export const AppContent: React.FC = () => {
   const {
@@ -59,14 +78,17 @@ export const AppContent: React.FC = () => {
       <DocumentTabsBar />
       <StatusBar />
 
-      {/* 4. Full-screen & Overlay Modals */}
-      <BackstageModal />
-      <WordArtPickerModal />
-      <MailMergeModal />
-      <AIImageModal />
-      <CollageModal />
-      <BrandBoardModal />
-      <BrandKitModal />
+      {/* 4. Full-screen & Overlay Modals (lazy — loaded on first open) */}
+      <Suspense fallback={null}>
+        <BackstageModal />
+        <WordArtPickerModal />
+        <MailMergeModal />
+        <AIImageModal />
+        <CollageModal />
+        <BrandBoardModal />
+        <BrandKitModal />
+        <ShortcutsModal />
+      </Suspense>
     </div>
   );
 };

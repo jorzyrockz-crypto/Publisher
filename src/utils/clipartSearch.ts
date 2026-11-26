@@ -1,4 +1,12 @@
 import { encodeSvgDataUri } from './svgRecolor';
+import {
+  CLIPART_PROXY_HINT,
+  IS_STATIC_HOST,
+  fetchFirstOk,
+  resolveClipartAssetUrls,
+  resolveClipartSearchUrls,
+  resolveWikimediaAssetUrls,
+} from './apiEndpoints';
 
 export interface ClipartFreeItem {
   slug: string;
@@ -56,12 +64,14 @@ export function saveClipartFreeKey(key: string): void {
   }
 }
 
+/**
+ * Preferred, directly-usable URL for a Clipart.Free asset.
+ * Development hits the Vite proxy, production hits Clipart.Free (or a configured proxy).
+ */
 export function toProxiedClipartUrl(rawUrl: string): string {
   if (!rawUrl) return '';
-  if (rawUrl.startsWith('https://clipart.free/')) {
-    return rawUrl.replace('https://clipart.free/', '/api/clipart-free/');
-  }
-  return rawUrl;
+  const candidates = resolveClipartAssetUrls(rawUrl);
+  return candidates[0] || rawUrl;
 }
 
 export async function searchClipartFree(
@@ -87,8 +97,19 @@ export async function searchClipartFree(
     params.set('category', options.category);
   }
 
-  const proxyUrl = `/api/clipart-free/api/clipart/search?${params.toString()}`;
-  const res = await fetch(proxyUrl, { signal: options.signal });
+  const pathAndQuery = `/api/clipart/search?${params.toString()}`;
+  const candidates = resolveClipartSearchUrls(pathAndQuery);
+
+  let res: Response;
+  try {
+    res = await fetchFirstOk(candidates, { signal: options.signal });
+  } catch (err) {
+    if (options.signal?.aborted) throw err;
+    if (IS_STATIC_HOST) {
+      throw new Error(CLIPART_PROXY_HINT);
+    }
+    throw err instanceof Error ? err : new Error('Clipart.Free search failed');
+  }
 
   if (!res.ok) {
     let errText = `Clipart.Free HTTP ${res.status}`;
@@ -99,6 +120,9 @@ export async function searchClipartFree(
       }
     } catch {
       // ignore parse error
+    }
+    if (IS_STATIC_HOST && (res.status === 0 || res.type === 'opaque')) {
+      errText = CLIPART_PROXY_HINT;
     }
     throw new Error(errText);
   }
@@ -122,7 +146,7 @@ function blobToDataUrl(blob: Blob): Promise<string> {
 export async function fetchClipartAsDataUrl(item: ClipartFreeItem): Promise<string> {
   if (item.svg_url) {
     try {
-      const svgRes = await fetch(toProxiedClipartUrl(item.svg_url));
+      const svgRes = await fetchFirstOk(resolveClipartAssetUrls(item.svg_url));
       if (svgRes.ok) {
         const svgText = await svgRes.text();
         if (svgText.includes('<svg')) {
@@ -138,7 +162,7 @@ export async function fetchClipartAsDataUrl(item: ClipartFreeItem): Promise<stri
   if (!pngUrl) {
     throw new Error('No downloadable image URL found for this clipart.');
   }
-  const pngRes = await fetch(toProxiedClipartUrl(pngUrl));
+  const pngRes = await fetchFirstOk(resolveClipartAssetUrls(pngUrl));
   if (!pngRes.ok) {
     throw new Error(`Failed to download clipart (HTTP ${pngRes.status})`);
   }
@@ -229,15 +253,15 @@ export interface WikimediaItem {
   height: number;
 }
 
+/**
+ * Preferred, directly-usable URL for a Wikimedia asset.
+ * `upload.wikimedia.org` sends permissive CORS headers, so a static host can
+ * load these directly — the dev build still routes through the Vite proxy.
+ */
 export function toProxiedWikimediaUrl(rawUrl: string): string {
   if (!rawUrl) return '';
-  if (rawUrl.startsWith('https://upload.wikimedia.org/')) {
-    return rawUrl.replace('https://upload.wikimedia.org/', '/api/wikimedia-upload/');
-  }
-  if (rawUrl.startsWith('https://thumb.wikimedia.org/')) {
-    return rawUrl.replace('https://thumb.wikimedia.org/', '/api/wikimedia-thumb/');
-  }
-  return rawUrl;
+  const candidates = resolveWikimediaAssetUrls(rawUrl);
+  return candidates[0] || rawUrl;
 }
 
 export async function searchWikimedia(
@@ -320,11 +344,15 @@ export async function searchWikimedia(
 }
 
 export async function fetchWikimediaAsDataUrl(item: WikimediaItem): Promise<string> {
-  const proxied = toProxiedWikimediaUrl(item.insertUrl);
-  let res = await fetch(proxied);
-  if (!res.ok) {
+  let res: Response;
+  try {
+    res = await fetchFirstOk(resolveWikimediaAssetUrls(item.insertUrl));
+  } catch {
     // fallback to thumbUrl if insertUrl failed
-    res = await fetch(toProxiedWikimediaUrl(item.thumbUrl));
+    res = await fetchFirstOk(resolveWikimediaAssetUrls(item.thumbUrl));
+  }
+  if (!res.ok) {
+    res = await fetchFirstOk(resolveWikimediaAssetUrls(item.thumbUrl));
   }
   if (!res.ok) {
     throw new Error(`Failed to load Wikimedia file (HTTP ${res.status})`);

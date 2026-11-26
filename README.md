@@ -63,9 +63,16 @@ An authentic, modern, desktop-grade clone of **Microsoft Publisher** built with 
 
 ### 5. Export & Publishing
 - **PDF Export**: Generates multi-page vector PDF documents ready for printing.
+- **Print-Shop Ready**: Optional **bleed** (0.125" / 0.25") with mirrored edge extension plus **crop marks and trim guides**, so files drop straight into a commercial press workflow.
 - **Image Export**: 300 DPI PNG and JPEG image exports.
+- **Batch Export**: **All Pages as PNG (ZIP)** renders every page at 300 DPI and packages them into a single download (JSZip loads on demand, with live progress).
 - **Project File**: Save and reload `.pub` files directly to disk.
 - **Print**: Direct browser print integration formatted for exact page sizes.
+
+### 6. Performance & Static Hosting
+- **Code-split bundle**: the editor shell loads first; every modal (`Backstage`, `AI Image`, `Collage`, `Mail Merge`, `Brand Board/Kits`, `Shortcuts`) and the export stack (jsPDF, html2canvas, JSZip) are lazy chunks. Initial JS dropped from ~1.9 MB to ~0.9 MB (−52%).
+- **Auto-fit on load**: the artboard measures the real viewport on first paint and zooms to frame Page 1 exactly — no clipped pages on 1280×800 laptops.
+- **Works on GitHub Pages**: Cloud AI (Pollinations), Iconify and Wikimedia are called directly from production builds (all CORS-enabled); Clipart.Free can use an optional CORS proxy. See [docs/static-hosting.md](docs/static-hosting.md) and [`workers/clipart-proxy.js`](workers/clipart-proxy.js).
 
 ---
 
@@ -89,11 +96,24 @@ Open **`http://localhost:5173`** in your browser.
 ---
 
 ## ⌨️ Keyboard Shortcuts
-- `Ctrl + Z`: Undo
-- `Ctrl + Y`: Redo
-- `Ctrl + D`: Duplicate selected element
-- `Ctrl + A`: Select all elements on active page
-- `Delete` / `Backspace`: Delete selected element(s)
-- `Arrow Keys`: Nudge element by 1px
-- `Shift + Arrow Keys`: Nudge element by 10px
-- `Escape`: Deselect all
+
+Press `?` (or the keyboard icon in the Quick Access Toolbar) for the in-app
+cheatsheet with a live filter.
+
+| Shortcut | Action |
+| --- | --- |
+| `Ctrl + S` | Save publication (`.pub`) |
+| `Ctrl + P` | Print / Save as PDF |
+| `Ctrl + K` | Command search |
+| `Ctrl + Z` / `Ctrl + Y` | Undo / Redo |
+| `Ctrl + C` / `Ctrl + V` | Copy / Paste |
+| `Ctrl + D` | Duplicate selected element |
+| `Ctrl + A` | Select all elements on active page |
+| `Delete` / `Backspace` | Delete selected element(s) |
+| `Arrow Keys` | Nudge element by 1px |
+| `Shift + Arrow Keys` | Nudge element by 10px |
+| `Space` + drag | Pan the pasteboard |
+| `H` / `V` | Hand (pan) / Select tool |
+| `Ctrl + Wheel` | Zoom in / out |
+| `Escape` | Deselect all / close dialog |
+| `?` | Shortcuts cheatsheet |

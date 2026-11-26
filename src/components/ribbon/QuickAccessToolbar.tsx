@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
 import { saveProjectToFile, triggerPrint } from '../../utils/imageExport';
 import { exportToPdf } from '../../utils/pdfExport';
+import { openShortcutsModal } from '../../utils/uiEvents';
 import {
   Save,
   Undo2,
@@ -11,6 +12,7 @@ import {
   LayoutGrid,
   Search,
   CheckCircle2,
+  Keyboard,
 } from 'lucide-react';
 
 export const QuickAccessToolbar: React.FC = () => {
@@ -34,6 +36,31 @@ export const QuickAccessToolbar: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Global app shortcuts that live in the shell: Ctrl+K command search,
+  // Ctrl+S save (.pub) and Ctrl+P print — matching the cheatsheet.
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+      const key = e.key.toLowerCase();
+
+      if (key === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+        setIsSearchOpen(true);
+      } else if (key === 's') {
+        e.preventDefault();
+        saveProjectToFile(project);
+      } else if (key === 'p') {
+        e.preventDefault();
+        triggerPrint();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [project]);
 
   const quickActions = [
     { label: 'Add Text Box', icon: 'T', action: () => addTextBox() },
@@ -44,6 +71,7 @@ export const QuickAccessToolbar: React.FC = () => {
     { label: 'Mail Merge', icon: '✉', action: () => setIsMailMergeOpen(true) },
     { label: 'WordArt Gallery', icon: '✨', action: () => setIsWordArtModalOpen(true) },
     { label: 'Export to PDF', icon: '📄', action: () => exportToPdf(project) },
+    { label: 'Keyboard Shortcuts', icon: '?', action: () => openShortcutsModal() },
   ];
 
   const filteredActions = quickActions.filter((a) =>
@@ -130,6 +158,7 @@ export const QuickAccessToolbar: React.FC = () => {
             className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#9aa4ae] pointer-events-none"
           />
           <input
+            ref={searchInputRef}
             type="text"
             placeholder="Search commands, tools... (Ctrl+K)"
             value={searchQuery}
@@ -172,8 +201,17 @@ export const QuickAccessToolbar: React.FC = () => {
         )}
       </div>
 
-      {/* Right: Ghost Print + Botanical Teal Export CTA */}
+      {/* Right: Ghost Help + Print + Botanical Teal Export CTA */}
       <div className="flex items-center gap-2">
+        <button
+          onClick={openShortcutsModal}
+          className="p-1.5 hover:bg-[#eef5f5] text-[#52606c] hover:text-[#087477] active:scale-95 rounded-[8px] transition-all cursor-pointer"
+          title="Keyboard shortcuts (?)"
+          aria-label="Keyboard shortcuts"
+        >
+          <Keyboard size={16} />
+        </button>
+
         <button
           onClick={triggerPrint}
           className="p-1.5 hover:bg-[#eef5f5] text-[#52606c] hover:text-[#087477] active:scale-95 rounded-[8px] transition-all cursor-pointer"

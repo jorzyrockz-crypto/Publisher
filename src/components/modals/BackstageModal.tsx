@@ -7,6 +7,7 @@ import {
   saveProjectToFile,
   loadProjectFromFile,
   exportToImage,
+  exportAllPagesToPngZip,
 } from '../../utils/imageExport';
 import { exportToPdf, exportBookletPdf, exportTarpapelPdf } from '../../utils/pdfExport';
 import { buildPatternBackgroundStyle } from '../../utils/patternGenerator';
@@ -184,6 +185,9 @@ export const BackstageModal: React.FC = () => {
   const [showAllPrintSheets, setShowAllPrintSheets] = useState<boolean>(false);
   const [isPreparingPrint, setIsPreparingPrint] = useState<boolean>(false);
   const [transparentPng, setTransparentPng] = useState<boolean>(false);
+  const [pdfBleedIn, setPdfBleedIn] = useState<number>(0);
+  const [pdfCropMarks, setPdfCropMarks] = useState<boolean>(false);
+  const [zipProgress, setZipProgress] = useState<{ done: number; total: number } | null>(null);
   const [tarpapelPreviewMode, setTarpapelPreviewMode] = useState<'map' | 'tile'>('map');
   const [tarpapelInspectTileIdx, setTarpapelInspectTileIdx] = useState<number>(0);
   const [tarpapelInfoOpen, setTarpapelInfoOpen] = useState<'overlap' | 'guides' | null>(null);
@@ -1883,12 +1887,42 @@ export const BackstageModal: React.FC = () => {
                   <p className="text-xs text-slate-500 mt-1 leading-relaxed">
                     Export high-resolution multi-page PDF document ready for commercial printing.
                   </p>
+
+                  <div className="mt-3 space-y-2 rounded-xl bg-slate-50 border border-[#e5e9ee] p-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-semibold text-slate-700">Bleed</span>
+                      <select
+                        value={pdfBleedIn}
+                        onChange={(e) => setPdfBleedIn(Number(e.target.value))}
+                        className="bg-white border border-[#e5e9ee] rounded-lg px-2 py-1 text-[11px] font-medium text-slate-700 outline-none focus:border-[#73b9b7] cursor-pointer"
+                      >
+                        <option value={0}>None (trim only)</option>
+                        <option value={0.125}>0.125&quot; (standard)</option>
+                        <option value={0.25}>0.25&quot; (wide)</option>
+                      </select>
+                    </div>
+                    <label className="flex items-center gap-2 text-[11px] font-semibold text-slate-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={pdfCropMarks}
+                        onChange={(e) => setPdfCropMarks(e.target.checked)}
+                        className="accent-[#087f83] rounded"
+                      />
+                      <span>Crop marks &amp; trim guides</span>
+                    </label>
+                    <p className="text-[10px] leading-snug text-slate-400">
+                      Bleed extends artwork past the trim edge and adds a 0.25&quot; margin for printer marks.
+                    </p>
+                  </div>
                 </div>
                 <button
                   disabled={isPreparingPrint}
                   onClick={() =>
                     runExportOrPrintTask(async () => {
-                      await exportToPdf(project);
+                      await exportToPdf(project, {
+                        bleedIn: pdfBleedIn,
+                        cropMarks: pdfCropMarks,
+                      });
                       confetti({ particleCount: 35 });
                     })
                   }
@@ -1968,6 +2002,42 @@ export const BackstageModal: React.FC = () => {
                   {isPreparingPrint ? 'Exporting...' : 'Export JPEG'}
                 </button>
               </div>
+            </div>
+
+            {/* Batch export strip */}
+            <div className="bg-white p-5 rounded-2xl border border-[#e5e9ee] shadow-sm flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center flex-shrink-0">
+                  <ImageIcon size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-slate-800">All Pages as PNG (ZIP)</h3>
+                  <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                    Every page rendered at 300 DPI and packaged into one downloadable ZIP
+                    {zipProgress ? ` — ${zipProgress.done}/${zipProgress.total} pages…` : '.'}
+                  </p>
+                </div>
+              </div>
+              <button
+                disabled={isPreparingPrint}
+                onClick={() =>
+                  runExportOrPrintTask(async () => {
+                    setZipProgress({ done: 0, total: project.pages.length });
+                    try {
+                      await exportAllPagesToPngZip(project, {
+                        scale: 2,
+                        onProgress: (done, total) => setZipProgress({ done, total }),
+                      });
+                      confetti({ particleCount: 35 });
+                    } finally {
+                      setZipProgress(null);
+                    }
+                  })
+                }
+                className="flex-shrink-0 px-4 py-2 bg-[#087f83] hover:bg-[#06696c] disabled:bg-teal-300 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+              >
+                {isPreparingPrint ? 'Packaging...' : 'Download All Pages (PNG)'}
+              </button>
             </div>
           </div>
         )}

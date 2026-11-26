@@ -1,12 +1,66 @@
-import jsPDF from 'jspdf';
 import { DocumentProject, Page } from '../types/publisher';
 import { renderPageModelToCanvas } from './canvasRenderer';
+import { expandCanvasWithBleed } from './imageExport';
 import {
   PrintSettings,
   buildBookletSheets,
   resolvePaperBaseDimensions,
   slicePageIntoTarpapelTiles,
 } from './printUtils';
+
+/**
+ * jsPDF is ~350 kB of the old single-chunk bundle. Loading it on demand means
+ * the editor shell boots without it and export pays the cost only when used.
+ */
+let jsPdfModulePromise: Promise<typeof import('jspdf')> | null = null;
+function loadJsPdf() {
+  if (!jsPdfModulePromise) jsPdfModulePromise = import('jspdf');
+  return jsPdfModulePromise;
+}
+
+export interface PdfExportOptions {
+  /** Bleed width in inches applied on all four sides (0, 0.125 or 0.25). */
+  bleedIn?: number;
+  /** Draw printer crop marks outside the trim box. */
+  cropMarks?: boolean;
+  /** Extra margin (inches) reserved for crop marks. Defaults to 0.25". */
+  cropMarkMarginIn?: number;
+}
+
+/** Two short registration lines per corner, standard print-shop style. */
+function drawCropMarks(
+  pdf: {
+    setDrawColor: (r: number, g: number, b: number) => void;
+    setLineWidth: (w: number) => void;
+    line: (x1: number, y1: number, x2: number, y2: number) => void;
+  },
+  trimX: number,
+  trimY: number,
+  trimW: number,
+  trimH: number
+) {
+  const gap = 4; // pt between trim edge and mark start
+  const len = 12; // pt mark length
+  pdf.setDrawColor(0, 0, 0);
+  pdf.setLineWidth(0.4);
+
+  const top = trimY;
+  const bottom = trimY + trimH;
+  const left = trimX;
+  const right = trimX + trimW;
+
+  // Horizontal marks
+  pdf.line(left - gap - len, top, left - gap, top);
+  pdf.line(right + gap, top, right + gap + len, top);
+  pdf.line(left - gap - len, bottom, left - gap, bottom);
+  pdf.line(right + gap, bottom, right + gap + len, bottom);
+
+  // Vertical marks
+  pdf.line(left, top - gap - len, left, top - gap);
+  pdf.line(right, top - gap - len, right, top - gap);
+  pdf.line(left, bottom + gap, left, bottom + gap + len);
+  pdf.line(right, bottom + gap, right, bottom + gap + len);
+}
 
 function resolveMasterElementsForPdf(project: DocumentProject, page: Page) {
   if (page.hideMaster || project.masterPage?.showOnAllPages === false) return [];
@@ -19,34 +73,79 @@ function resolveMasterElementsForPdf(project: DocumentProject, page: Page) {
   return project.masterPage?.elements || [];
 }
 
-export async function exportToPdf(project: DocumentProject): Promise<void> {
+export async function exportToPdf(
+  project: DocumentProject,
+  options: PdfExportOptions = {}
+): Promise<void> {
   if (project.pages.length === 0) return;
+
+  const { jsPDF } = await loadJsPdf();
+  const bleedIn = Math.max(0, options.bleedIn ?? 0);
+  const cropMarks = Boolean(options.cropMarks);
+  const markMarginIn = cropMarks ? Math.max(0.15, options.cropMarkMarginIn ?? 0.25) : 0;
+  const ptPerIn = 72;
+  const bleedPt = bleedIn * ptPerIn;
 
   const firstPage = project.pages[0];
   const orientation = firstPage.width > firstPage.height ? 'l' : 'p';
+  const mediaSize = (page: Page): [number, number] => [
+    (page.width + (bleedIn + markMarginIn) * 2) * ptPerIn,
+    (page.height + (bleedIn + markMarginIn) * 2) * ptPerIn,
+  ];
 
   const pdf = new jsPDF({
     orientation,
     unit: 'pt',
-    format: [firstPage.width * 0.75, firstPage.height * 0.75],
+    format: mediaSize(firstPage),
   });
 
   for (let i = 0; i < project.pages.length; i++) {
     const page = project.pages[i];
     if (i > 0) {
-      pdf.addPage(
-        [page.width * 0.75, page.height * 0.75],
-        page.width > page.height ? 'l' : 'p'
-      );
+      pdf.addPage(mediaSize(page), page.width > page.height ? 'l' : 'p');
     }
 
     const masterEls = resolveMasterElementsForPdf(project, page);
-    const canvas = await renderPageModelToCanvas(page, 2, false, masterEls);
+    let canvas = await renderPageModelToCanvas(page, 2, false, masterEls);
+
+    // Bleed: mirror the outer edge pixels so artwork runs past the trim line.
+    if (bleedIn > 0) {
+      const bleedPx = Math.round((bleedIn / page.width) * canvas.width);
+      const bg =
+        page.backgroundColor || (page.backgroundGradient ? page.backgroundGradient.color1 : '#ffffff');
+      canvas = expandCanvasWithBleed(canvas, bleedPx, bg);
+    }
+
     const imgData = canvas.toDataURL('image/jpeg', 0.95);
-    pdf.addImage(imgData, 'JPEG', 0, 0, page.width * 0.75, page.height * 0.75);
+
+    // Trim box = where the design gets cut (page bounds, inset by the mark margin)
+    const trimX = markMarginIn * ptPerIn + bleedPt;
+    const trimY = trimX;
+    const trimW = page.width * ptPerIn;
+    const trimH = page.height * ptPerIn;
+
+    // The rendered canvas already includes the mirrored bleed when requested,
+    // so it is drawn outwards from the trim box by exactly `bleedPt`.
+    pdf.addImage(
+      imgData,
+      'JPEG',
+      trimX - bleedPt,
+      trimY - bleedPt,
+      trimW + bleedPt * 2,
+      trimH + bleedPt * 2
+    );
+
+    if (cropMarks) {
+      drawCropMarks(pdf, trimX, trimY, trimW, trimH);
+      // Thin trim guides help visual proofing without affecting the cut
+      pdf.setDrawColor(190, 196, 204);
+      pdf.setLineWidth(0.25);
+      pdf.line(trimX, trimY + trimH + 2, trimX + trimW, trimY + trimH + 2);
+    }
   }
 
-  const filename = (project.name || 'publication').replace(/\.pub$/i, '') + '.pdf';
+  const suffix = bleedIn > 0 ? '-bleed' : '';
+  const filename = (project.name || 'publication').replace(/\.pub$/i, '') + suffix + '.pdf';
   pdf.save(filename);
 }
 
@@ -59,6 +158,7 @@ export async function exportBookletPdf(
   const bookletSheets = buildBookletSheets(pages, settings.bookletSides);
   if (bookletSheets.length === 0) return;
 
+  const { jsPDF } = await loadJsPdf();
   const isPortrait = settings.sheetOrientation === 'portrait';
   const refPage = pages[0];
   const sheetW = isPortrait ? Math.min(refPage.width * 1.5, 816 * 0.75) : refPage.width * 1.5;
@@ -105,6 +205,7 @@ export async function exportTarpapelPdf(
   page: Page,
   settings: PrintSettings
 ): Promise<void> {
+  const { jsPDF } = await loadJsPdf();
   const masterEls = resolveMasterElementsForPdf(project, page);
   const tiles = await slicePageIntoTarpapelTiles(page, settings, masterEls);
   if (tiles.length === 0) return;

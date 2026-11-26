@@ -2382,13 +2382,20 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, []);
 
   const zoomFit = useCallback(() => {
-    // Fits standard page nicely in viewport
-    const containerW = window.innerWidth - 380;
-    const containerH = window.innerHeight - 240;
-    const scaleX = containerW / activePage.width;
-    const scaleY = containerH / activePage.height;
-    const fitScale = Math.min(scaleX, scaleY, 1.2) * 0.9;
-    setZoomState(Number(fitScale.toFixed(2)));
+    // Measure the real canvas viewport (falls back to window math when the
+    // workspace has not mounted yet, e.g. during first paint).
+    const viewport = document.querySelector('[data-canvas-viewport]') as HTMLElement | null;
+    const containerW = viewport?.clientWidth || window.innerWidth - 380;
+    const containerH = viewport?.clientHeight || window.innerHeight - 240;
+
+    // Reserve room for rulers (~24px), page drop shadow and the floating
+    // zoom toolbar so the artboard is always fully framed.
+    const padX = 72;
+    const padY = 96;
+    const scaleX = (containerW - padX) / activePage.width;
+    const scaleY = (containerH - padY) / activePage.height;
+    const fitScale = Math.min(scaleX, scaleY, 1.2);
+    setZoomState(Number(Math.min(3.0, Math.max(0.2, fitScale)).toFixed(2)));
     setPan({ x: 0, y: 0 });
   }, [activePage]);
 

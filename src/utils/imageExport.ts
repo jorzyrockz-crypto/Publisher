@@ -1,5 +1,6 @@
 import { DocumentProject, Page, PublisherElement } from '../types/publisher';
 import { renderPageModelToCanvas } from './canvasRenderer';
+import { resolveMasterElementsForProject } from './printUtils';
 
 export async function exportToImage(
   page: Page,
@@ -64,4 +65,109 @@ export function loadProjectFromFile(file: File): Promise<DocumentProject> {
 
 export function triggerPrint(): void {
   window.print();
+}
+
+
+/**
+ * Extends a rendered page canvas by `bleedPx` on every side by mirroring the
+ * outermost pixels. Print shops need artwork to run past the trim line; mirrored
+ * edge extension is the standard trick for flat colours, gradients and photos and
+ * keeps the trim area pixel-identical to the design.
+ */
+export function expandCanvasWithBleed(
+  src: HTMLCanvasElement,
+  bleedPx: number,
+  background: string = '#ffffff'
+): HTMLCanvasElement {
+  const bleed = Math.round(bleedPx);
+  if (bleed <= 0) return src;
+
+  const out = document.createElement('canvas');
+  out.width = src.width + bleed * 2;
+  out.height = src.height + bleed * 2;
+  const ctx = out.getContext('2d');
+  if (!ctx) return src;
+
+  ctx.fillStyle = background || '#ffffff';
+  ctx.fillRect(0, 0, out.width, out.height);
+
+  // Original artwork
+  ctx.drawImage(src, bleed, bleed);
+
+  const strip = Math.max(1, bleed);
+  const sw = Math.min(strip, src.width);
+  const sh = Math.min(strip, src.height);
+
+  // Left + right edge mirroring (horizontal flip)
+  ctx.save();
+  ctx.translate(bleed, bleed);
+  ctx.scale(-1, 1);
+  ctx.drawImage(src, 0, 0, sw, src.height, 0, 0, bleed, src.height);
+  ctx.restore();
+
+  ctx.save();
+  ctx.translate(bleed + src.width + bleed, bleed);
+  ctx.scale(-1, 1);
+  ctx.drawImage(src, src.width - sw, 0, sw, src.height, 0, 0, bleed, src.height);
+  ctx.restore();
+
+  // Top + bottom edge mirroring (vertical flip)
+  ctx.save();
+  ctx.translate(bleed, bleed);
+  ctx.scale(1, -1);
+  ctx.drawImage(src, 0, 0, src.width, sh, 0, 0, src.width, bleed);
+  ctx.restore();
+
+  ctx.save();
+  ctx.translate(bleed, bleed + src.height + bleed);
+  ctx.scale(1, -1);
+  ctx.drawImage(src, 0, src.height - sh, src.width, sh, 0, 0, src.width, bleed);
+  ctx.restore();
+
+  return out;
+}
+
+export interface BatchPngOptions {
+  transparent?: boolean;
+  scale?: number;
+  onProgress?: (done: number, total: number) => void;
+}
+
+/**
+ * Renders every page at print resolution and packages them into a single ZIP
+ * (one PNG per page) — far more convenient than N separate browser downloads.
+ * JSZip is imported dynamically so it never lands in the initial bundle.
+ */
+export async function exportAllPagesToPngZip(
+  project: DocumentProject,
+  options: BatchPngOptions = {}
+): Promise<void> {
+  const { default: JSZip } = await import('jszip');
+  const scale = options.scale ?? 2;
+  const zip = new JSZip();
+  const safeBase = (project.name || 'publication').replace(/\.pub$/i, '').replace(/[^\w\-. ]+/g, '_');
+  const folder = zip.folder(safeBase) || zip;
+
+  const total = project.pages.length;
+  for (let i = 0; i < total; i++) {
+    const page = project.pages[i];
+    const masters = resolveMasterElementsForProject(project, page);
+    const canvas = await renderPageModelToCanvas(page, scale, Boolean(options.transparent), masters);
+    const dataUrl = canvas.toDataURL('image/png');
+    const base64 = dataUrl.split(',')[1] || '';
+    const index = String(i + 1).padStart(2, '0');
+    const pageName = (page.name || `Page-${index}`).replace(/[^\w\-. ]+/g, '_');
+    folder.file(`${index}-${pageName}.png`, base64, { base64: true });
+    options.onProgress?.(i + 1, total);
+  }
+
+  const blob = await zip.generateAsync({ type: 'blob' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${safeBase}-pages.zip`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
