@@ -8,6 +8,7 @@ import { StatusBar } from './components/statusbar/StatusBar';
 import { BackstageModal } from './components/modals/BackstageModal';
 import { WordArtPickerModal } from './components/modals/WordArtPickerModal';
 import { MailMergeModal } from './components/modals/MailMergeModal';
+import { AIImageModal } from './components/modals/AIImageModal';
 
 export const AppContent: React.FC = () => {
   return (
@@ -29,6 +30,7 @@ export const AppContent: React.FC = () => {
       <BackstageModal />
       <WordArtPickerModal />
       <MailMergeModal />
+      <AIImageModal />
     </div>
   );
 };

@@ -31,6 +31,7 @@ interface PublisherContextType {
   isMailMergeOpen: boolean;
   isWordArtModalOpen: boolean;
   isBuildingBlocksModalOpen: boolean;
+  isAIImageModalOpen: boolean;
   rulerVisible: boolean;
   guidesVisible: boolean;
   gridVisible: boolean;
@@ -57,6 +58,7 @@ interface PublisherContextType {
   setIsMailMergeOpen: (open: boolean) => void;
   setIsWordArtModalOpen: (open: boolean) => void;
   setIsBuildingBlocksModalOpen: (open: boolean) => void;
+  setIsAIImageModalOpen: (open: boolean) => void;
   setRulerVisible: (visible: boolean) => void;
   setGuidesVisible: (visible: boolean) => void;
   setGridVisible: (visible: boolean) => void;
@@ -197,6 +199,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [isMailMergeOpen, setIsMailMergeOpen] = useState(false);
   const [isWordArtModalOpen, setIsWordArtModalOpen] = useState(false);
   const [isBuildingBlocksModalOpen, setIsBuildingBlocksModalOpen] = useState(false);
+  const [isAIImageModalOpen, setIsAIImageModalOpen] = useState(false);
 
   const [rulerVisible, setRulerVisible] = useState(true);
   const [guidesVisible, setGuidesVisible] = useState(true);
@@ -1351,6 +1354,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         isMailMergeOpen,
         isWordArtModalOpen,
         isBuildingBlocksModalOpen,
+        isAIImageModalOpen,
         rulerVisible,
         guidesVisible,
         gridVisible,
@@ -1376,6 +1380,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setIsMailMergeOpen,
         setIsWordArtModalOpen,
         setIsBuildingBlocksModalOpen,
+        setIsAIImageModalOpen,
         setRulerVisible,
         setGuidesVisible,
         setGridVisible,

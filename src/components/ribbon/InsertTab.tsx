@@ -16,6 +16,7 @@ import {
   QrCode,
   Hash,
   Images,
+  Wand2,
 } from 'lucide-react';
 
 export const InsertTab: React.FC = () => {
@@ -30,6 +31,7 @@ export const InsertTab: React.FC = () => {
     addQRCode,
     addPageNumberToken,
     setIsWordArtModalOpen,
+    setIsAIImageModalOpen,
   } = usePublisher();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -160,6 +162,18 @@ export const InsertTab: React.FC = () => {
               <ImageIcon size={16} />
             </div>
             <span className="text-[10px] font-medium mt-1 text-slate-600">Picture</span>
+          </button>
+
+          {/* Free Hybrid AI Image Studio */}
+          <button
+            onClick={() => setIsAIImageModalOpen(true)}
+            className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
+            title="Free AI Image Studio (Hybrid Cloud + Offline Art)"
+          >
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-100 border border-emerald-300 text-emerald-700 flex items-center justify-center group-hover:from-emerald-600 group-hover:to-teal-600 group-hover:text-white transition-all shadow-xs">
+              <Wand2 size={16} />
+            </div>
+            <span className="text-[10px] font-semibold mt-1 text-emerald-800">AI Image</span>
           </button>
 
           {/* Stock Graphics Picker */}
