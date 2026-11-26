@@ -1,6 +1,13 @@
 import type { TextElement } from '../types/publisher';
 import { layoutText } from './textLayout';
-import type { ResizeMeta } from '../components/canvas/SelectionBox';
+
+/** Drag context handed over by the selection box (structurally typed). */
+export interface TextResizeMeta {
+  handle: string;
+  startWidth: number;
+  startHeight: number;
+  startFontSize?: number;
+}
 
 /**
  * Text boxes behave like type, not like picture frames. Resizing one should
@@ -18,7 +25,7 @@ import type { ResizeMeta } from '../components/canvas/SelectionBox';
 export function resizeTextBox(
   el: TextElement,
   box: { x: number; y: number; width: number; height: number },
-  meta?: ResizeMeta
+  meta?: TextResizeMeta
 ): Partial<TextElement> {
   const { x, y, width, height } = box;
   if (el.autoSizeText === false) return { x, y, width, height };
