@@ -99,30 +99,36 @@ The project is `studiopress` in team `jorzyrockz-cryptos-projects`
 (`prj_urOoVH6gb6XuFziG0t1fAsczqRe3`), linked to
 `github.com/jorzyrockz-crypto/Publisher`, framework preset **Vite**, build
 command `npm run build` (`tsc -b && vite build`), output `dist/`, Node 26.x.
-The build itself is fine — three subtle project settings are what make the
-deployment *look* broken:
+The build itself is fine and the GitHub integration **is** connected — a push
+to any branch produces a preview deployment (`source: "git"`, e.g.
+`dpl_EdBkQnBAkUxw389eLUsvWDDTqWsm` for commit `efff43f`). What never updated was
+**production**, for two reasons:
 
-1. **Push-to-deploy is off.**
-   `gitProviderOptions.createDeployments = "disabled"` and
-   `disableRepositoryDispatchEvents = true`, so no commit ever triggers a
-   build and the site silently keeps the last imported commit forever.
-   Fix in the dashboard: *Project → Settings → Git → enable automatic
-   deployments for the repository* (or reconnect the GitHub app).
-2. **Production branch mismatch.** Vercel tracks `main`, but this repo's
-   default branch is `master` (and feature work happens on
-   `arena/*` branches). Fix under *Settings → Git → Production Branch →
-   `master`*, otherwise even a re-enabled integration would promote the wrong
-   branch.
-3. **Deployment Protection hides non-production URLs.**
-   `ssoProtection = { deploymentType: "all_except_custom_domains" }` sends
-   every preview/branch URL to `vercel.com/login` ("Protected Deployment –
-   Vercel"), which reads exactly like a broken app when a link is opened
-   outside the owner's browser. Production aliases (`studiopress-blue.vercel.app`)
-   stay public; if previews must be shareable, set
-   *Settings → Deployment Protection → Vercel Authentication → Disabled* (or
-   *Standard Protection*) and note that any custom domain is exempt.
+1. **Production branch mismatch — the real culprit.** Vercel builds production
+   only from the branch in *Settings → Git → Production Branch*, which is
+   `main`. This repo's default branch is `master` (feature work happens on
+   `arena/*`), so every push landed as a preview and production stayed on the
+   commit created by the **import** (`6715a35`). `main` is a separate lineage
+   (61 commits, tree identical to `master`) that the GitHub Pages workflow also
+   builds from. Fix: set the Production Branch to `master` (or merge into
+   `main`) — after that, merging to `master` deploys production automatically.
+2. **`gitProviderOptions.createDeployments = "disabled"`** does *not* stop
+   builds. It only suppresses the GitHub *Deployment* objects/statuses Vercel
+   would otherwise create on commits — GitHub's deployments API shows only
+   `github-pages` entries, which is how you can tell. Don't chase this switch
+   expecting the site to start updating.
 
-### Shipping a fix while push-to-deploy is off
+### Deployment Protection (separate problem)
+
+`ssoProtection = { deploymentType: "all_except_custom_domains" }` sends every
+**preview/branch** URL to `vercel.com/login` ("Protected Deployment – Vercel"),
+which reads exactly like a broken app when a preview link is opened outside the
+owner's browser. Production aliases (`studiopress-blue.vercel.app`) stay
+public. To share previews, set *Settings → Deployment Protection → Vercel
+Authentication → Disabled* (or *Standard Protection*); any custom domain is
+exempt.
+
+### Shipping a fix from a branch (no dashboard access)
 
 Build the branch straight from git — no token or local CLI needed:
 
