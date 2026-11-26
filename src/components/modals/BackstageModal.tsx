@@ -1,6 +1,8 @@
 import React, { useRef, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
 import { TEMPLATES, TemplateDefinition } from '../../constants/templates';
+import { ElementRenderer } from '../canvas/ElementRenderer';
+import { ConnectorElement, Page } from '../../types/publisher';
 import {
   saveProjectToFile,
   loadProjectFromFile,
@@ -19,7 +21,95 @@ import {
   Image as ImageIcon,
   Info,
   Sparkles,
+  Eye,
+  X,
 } from 'lucide-react';
+
+const TemplatePagePreview: React.FC<{
+  page: Page;
+  maxWidth: number;
+  maxHeight: number;
+}> = React.memo(({ page, maxWidth, maxHeight }) => {
+  const scale = Math.min(maxWidth / page.width, maxHeight / page.height);
+  const scaledW = Math.round(page.width * scale);
+  const scaledH = Math.round(page.height * scale);
+  const connectors = page.elements.filter(
+    (el): el is ConnectorElement => el.type === 'connector' && el.visible !== false
+  );
+
+  return (
+    <div
+      className="relative shadow-md border border-slate-200/80 overflow-hidden bg-white flex-shrink-0"
+      style={{
+        width: `${scaledW}px`,
+        height: `${scaledH}px`,
+        backgroundColor: page.backgroundColor || '#ffffff',
+      }}
+    >
+      <div
+        className="pointer-events-none select-none"
+        style={{
+          width: `${page.width}px`,
+          height: `${page.height}px`,
+          transform: `scale(${scale})`,
+          transformOrigin: 'top left',
+          position: 'relative',
+        }}
+      >
+        {page.elements
+          .filter((el) => el.visible !== false && el.type !== 'connector')
+          .map((el) => (
+            <div
+              key={el.id}
+              style={{
+                position: 'absolute',
+                left: `${el.x}px`,
+                top: `${el.y}px`,
+                width: `${el.width}px`,
+                height: `${el.height}px`,
+                transform: `rotate(${el.rotation}deg)`,
+                transformOrigin: 'center center',
+                zIndex: el.zIndex,
+                opacity: el.opacity !== undefined ? el.opacity : 1,
+              }}
+            >
+              <ElementRenderer element={el} isSelected={false} pageNumber={1} totalPages={1} />
+            </div>
+          ))}
+
+        {connectors.length > 0 && (
+          <svg
+            className="absolute inset-0 pointer-events-none"
+            width={page.width}
+            height={page.height}
+            style={{ zIndex: 45, overflow: 'visible' }}
+          >
+            {connectors.map((conn) => {
+              const fromEl = page.elements.find((e) => e.id === conn.fromId);
+              const toEl = page.elements.find((e) => e.id === conn.toId);
+              if (!fromEl || !toEl) return null;
+              const x1 = fromEl.x + fromEl.width / 2;
+              const y1 = fromEl.y + fromEl.height / 2;
+              const x2 = toEl.x + toEl.width / 2;
+              const y2 = toEl.y + toEl.height / 2;
+              return (
+                <line
+                  key={conn.id}
+                  x1={x1}
+                  y1={y1}
+                  x2={x2}
+                  y2={y2}
+                  stroke={conn.strokeColor}
+                  strokeWidth={conn.strokeWidth || 3}
+                />
+              );
+            })}
+          </svg>
+        )}
+      </div>
+    </div>
+  );
+});
 
 export const BackstageModal: React.FC = () => {
   const {
@@ -36,6 +126,7 @@ export const BackstageModal: React.FC = () => {
   >('new');
   const [templateGroupFilter, setTemplateGroupFilter] = useState<string>('All');
   const [templateSearch, setTemplateSearch] = useState<string>('');
+  const [previewTemplate, setPreviewTemplate] = useState<TemplateDefinition | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -227,15 +318,36 @@ export const BackstageModal: React.FC = () => {
                         >
                           <div>
                             <div
-                              className="w-full h-36 rounded-xl mb-3.5 flex items-center justify-center text-white font-bold p-4 relative overflow-hidden shadow-inner"
+                              className="w-full h-44 rounded-xl mb-3.5 flex items-center justify-center p-3 relative overflow-hidden border border-slate-200/70"
                               style={{
-                                background: tpl.thumbnailGradient || tpl.thumbnailColor,
+                                background:
+                                  tpl.category === 'Blank'
+                                    ? '#f1f5f9'
+                                    : tpl.thumbnailGradient || '#f1f5f9',
                               }}
                             >
-                              <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#fff_1.5px,transparent_1.5px)] [background-size:16px_16px]" />
-                              <span className="text-center text-base drop-shadow-md z-10 font-bold px-2">
-                                {tpl.name}
-                              </span>
+                              <div className="absolute inset-0 bg-white/15" />
+                              <div className="relative z-10 transition-transform duration-200 group-hover:scale-[1.03]">
+                                {tpl.project.pages[0] && (
+                                  <TemplatePagePreview
+                                    page={tpl.project.pages[0]}
+                                    maxWidth={240}
+                                    maxHeight={148}
+                                  />
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setPreviewTemplate(tpl);
+                                }}
+                                className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-900/80 hover:bg-emerald-600 text-white text-[10.5px] font-semibold opacity-0 group-hover:opacity-100 transition-all shadow-md"
+                                title="Full Preview"
+                              >
+                                <Eye size={12} />
+                                <span>Preview</span>
+                              </button>
                             </div>
 
                             <div className="flex items-center gap-2 mb-1.5">
@@ -492,6 +604,61 @@ export const BackstageModal: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Full Template Preview Lightbox */}
+      {previewTemplate && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-6"
+          onClick={() => setPreviewTemplate(null)}
+        >
+          <div
+            className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                    {previewTemplate.category}
+                  </span>
+                  <h2 className="text-lg font-bold text-slate-800">{previewTemplate.name}</h2>
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">{previewTemplate.description}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    loadTemplate(previewTemplate.id);
+                    setPreviewTemplate(null);
+                    confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
+                  }}
+                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition cursor-pointer"
+                >
+                  Use This Template
+                </button>
+                <button
+                  onClick={() => setPreviewTemplate(null)}
+                  className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 transition"
+                  title="Close Preview"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 bg-slate-100 flex flex-wrap items-start justify-center gap-6">
+              {previewTemplate.project.pages.map((pg, idx) => (
+                <div key={pg.id} className="flex flex-col items-center gap-2">
+                  <TemplatePagePreview page={pg} maxWidth={440} maxHeight={520} />
+                  <span className="text-[11px] font-semibold text-slate-500">
+                    Page {idx + 1}: {pg.name || `Page ${idx + 1}`} ({pg.width}×{pg.height}px)
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
