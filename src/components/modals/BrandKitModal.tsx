@@ -115,6 +115,7 @@ export const BrandKitModal: React.FC = () => {
       height: size,
       objectFit: 'contain',
       aspectRatioLocked: true,
+      borderWidth: 0,
     });
     setIsBrandKitModalOpen(false);
   };

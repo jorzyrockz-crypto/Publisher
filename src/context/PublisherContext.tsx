@@ -1965,7 +1965,9 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         zIndex: 8,
         aspectRatioLocked: true,
         borderColor: '#cbd5e1',
-        borderWidth: 1,
+        // Clip art, logos and photos arrive without a frame; a border is only
+        // drawn once the user asks for one in Format → Border.
+        borderWidth: 0,
         maskShape: 'none',
         ...options,
       };

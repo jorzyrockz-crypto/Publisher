@@ -382,6 +382,9 @@ export const StockArtPanel: React.FC = () => {
         x: Math.round((activePage.width - width) / 2),
         y: Math.round((activePage.height - height) / 2),
         objectFit: item.isSvg || asSticker ? 'contain' : 'cover',
+        // Stock art is transparent clip art: any outline here reads as a box
+        // around the drawing, so never frame it on insert.
+        borderWidth: 0,
         ...(asSticker
           ? {
               effectPreset: 'sticker' as const,
@@ -389,7 +392,6 @@ export const StockArtPanel: React.FC = () => {
               stickerOutlineColor: '#ffffff',
               stickerOutlineWidth: 5,
               stickerFinish: 'matte' as const,
-              borderWidth: 0,
             }
           : {}),
       });

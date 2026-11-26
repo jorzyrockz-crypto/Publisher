@@ -234,6 +234,7 @@ export const AIImageModal: React.FC = () => {
       x: Math.round((activePage.width - (asSticker ? Math.min(200, width) : width)) / 2),
       y: Math.round((activePage.height - (asSticker ? Math.min(200, height) : height)) / 2),
       objectFit: asSticker || currentResult.bgRemoved ? 'contain' : 'cover',
+      borderWidth: 0,
       ...(asSticker
         ? {
             effectPreset: 'sticker' as const,
@@ -241,7 +242,6 @@ export const AIImageModal: React.FC = () => {
             stickerOutlineColor: '#ffffff',
             stickerOutlineWidth: 5,
             stickerFinish: 'matte' as const,
-            borderWidth: 0,
           }
         : {}),
     });

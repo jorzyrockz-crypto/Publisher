@@ -3369,6 +3369,47 @@ export const PropertiesPanel: React.FC = () => {
               );
             })()}
 
+            {/* Plain outline: 0px means no frame (the default for inserted art) */}
+            <div className="space-y-2">
+              <label className="block text-[11px] font-semibold text-slate-500">
+                Outline ({(selectedElement as ImageElement).borderWidth ?? 0}px)
+              </label>
+              <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
+                <ColorInput
+                  className="w-6 h-6 rounded-full border border-slate-200 cursor-pointer p-0"
+                  value={(selectedElement as ImageElement).borderColor || '#cbd5e1'}
+                  onChange={(e) =>
+                    updateElement(selectedElement.id, {
+                      borderColor: e.target.value,
+                      borderWidth: (selectedElement as ImageElement).borderWidth || 1,
+                    })
+                  }
+                  target="stroke"
+                />
+                <input
+                  type="range"
+                  min={0}
+                  max={12}
+                  step={1}
+                  value={(selectedElement as ImageElement).borderWidth ?? 0}
+                  onChange={(e) =>
+                    updateElement(selectedElement.id, {
+                      borderWidth: Math.max(0, Number(e.target.value) || 0),
+                    })
+                  }
+                  className="flex-1 accent-[#6e56cf] cursor-pointer"
+                />
+                <button
+                  type="button"
+                  onClick={() => updateElement(selectedElement.id, { borderWidth: 0 })}
+                  className="text-[10px] font-semibold text-slate-500 hover:text-slate-800 px-1.5 whitespace-nowrap"
+                  title="Remove outline"
+                >
+                  None
+                </button>
+              </div>
+            </div>
+
             {/* BorderArt (Customizable Collage Frames) */}
             <div className="space-y-2">
               <label className="block text-[11px] font-semibold text-slate-500">
