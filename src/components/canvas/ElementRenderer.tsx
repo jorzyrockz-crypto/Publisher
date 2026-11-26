@@ -177,6 +177,14 @@ const TextRenderer: React.FC<{
           wordBreak: 'break-word',
           overflow: 'hidden',
           cursor: 'text',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent:
+            element.verticalAlign === 'middle'
+              ? 'center'
+              : element.verticalAlign === 'bottom'
+              ? 'flex-end'
+              : 'flex-start',
         }}
         className={wordArtClass}
         contentEditable
