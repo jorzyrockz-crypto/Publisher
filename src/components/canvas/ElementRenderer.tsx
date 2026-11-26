@@ -101,6 +101,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = React.memo(
   (prev, next) =>
     prev.element === next.element &&
     prev.isSelected === next.isSelected &&
+    prev.isEditing === next.isEditing &&
     prev.pageNumber === next.pageNumber &&
     prev.totalPages === next.totalPages
 );
@@ -130,15 +131,38 @@ const TextRenderer: React.FC<{
   const layout = useMemo(() => layoutText(layoutElement), [layoutElement]);
   const offset = useMemo(() => verticalOffset(layout, layoutElement), [layout, layoutElement]);
 
-  // Sync element.text into the contentEditable DOM only when entering edit mode
-  // or while it is not focused, so typing is never interrupted.
+  // Keyboard input is captured on every keystroke so nothing is lost if the
+  // box is deselected (or unmounted) without ever firing blur.
+  const pendingTextRef = useRef<string | null>(null);
+  const commitRef = useRef(onTextChange);
+  commitRef.current = onTextChange;
+
+  const flushPendingText = () => {
+    const pending = pendingTextRef.current;
+    pendingTextRef.current = null;
+    if (pending !== null && commitRef.current) commitRef.current(pending);
+  };
+
+  // Entering edit mode: seed the DOM, focus it and drop the caret at the end so
+  // the very first keystroke lands in the box.
   useEffect(() => {
-    if (isEditing && editorRef.current) {
-      if (document.activeElement !== editorRef.current) {
-        editorRef.current.innerText = element.text;
-      }
+    if (!isEditing) return;
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    editor.innerText = element.text;
+    if (document.activeElement !== editor) {
+      editor.focus({ preventScroll: true });
+      const range = document.createRange();
+      range.selectNodeContents(editor);
+      range.collapse(false);
+      const selection = window.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(range);
     }
-  }, [isEditing, element.id, element.text]);
+
+    return () => flushPendingText();
+  }, [isEditing, element.id]);
 
   const boxStyle: React.CSSProperties = {
     backgroundColor: element.backgroundColor || 'transparent',
@@ -189,11 +213,30 @@ const TextRenderer: React.FC<{
         className={wordArtClass}
         contentEditable
         suppressContentEditableWarning
-        spellCheck={element.hyphenate !== false}
+        spellCheck
+        role="textbox"
+        tabIndex={0}
+        onInput={(e) => {
+          pendingTextRef.current = e.currentTarget.innerText;
+          // Keep the model in step while typing so thumbnails, counters and the
+          // inspector stay live; the DOM is never re-seeded while focused.
+          onTextChange?.(e.currentTarget.innerText);
+          pendingTextRef.current = null;
+        }}
         onBlur={(e) => {
           const next = e.currentTarget.innerText;
+          pendingTextRef.current = null;
           if (onTextChange && next !== element.text) onTextChange(next);
         }}
+        onKeyDown={(e) => {
+          // Keep typing inside the box: no global shortcuts, Escape leaves edit mode.
+          e.stopPropagation();
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            (e.currentTarget as HTMLDivElement).blur();
+          }
+        }}
+        onMouseDown={(e) => e.stopPropagation()}
       />
     );
   }
