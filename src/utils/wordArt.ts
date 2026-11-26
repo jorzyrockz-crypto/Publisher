@@ -404,6 +404,46 @@ export function wordArtPaint(style?: WordArtStyle): WordArtPaint | undefined {
 
 /** The weight a style forces on the type (layout must measure with it too). */
 /**
+ * The exporter-facing view of a style: one angle and one stop list, which is
+ * what a CanvasLinearGradient wants. Derived from `PAINT` — never authored by
+ * hand — so the canvas module and the stylesheet cannot drift.
+ */
+export interface WordArtSpec {
+  id?: WordArtStyle;
+  /** CSS convention: 0deg points up, 180deg points down. */
+  angle: number;
+  stops: { offset: number; color: string }[];
+  italic?: boolean;
+  glints?: boolean;
+  stroke?: { width: number; color: string };
+  extrusion?: WordArtExtrusion;
+  bloom?: { blur: number; color: string }[];
+  castShadow?: WordArtShadow;
+  /** Extra authored shadows, painted nearest the glyphs. */
+  shadows: WordArtShadow[];
+}
+
+export function wordArtSpec(style?: WordArtStyle): WordArtSpec | undefined {
+  const paint = wordArtPaint(style);
+  if (!paint) return undefined;
+  return {
+    id: style,
+    angle: paint.gradient?.angle ?? 180,
+    stops: paint.gradient?.stops ?? [
+      { offset: 0, color: paint.fill ?? '#111827' },
+      { offset: 1, color: paint.fill ?? '#111827' },
+    ],
+    italic: paint.italic,
+    glints: paint.glints,
+    stroke: paint.stroke,
+    extrusion: paint.extrusion,
+    bloom: paint.bloom,
+    castShadow: paint.castShadow,
+    shadows: paint.shadows,
+  };
+}
+
+/**
  * The `.wordart-*` rule for a style, generated from the paint spec. The
  * stylesheet in src/index.css is written by this function (see
  * `scripts/wordart-css.ts`), so a gallery preview and the canvas painter can
@@ -460,18 +500,14 @@ export interface WordArtGlint {
 
 /** Where the sparkles land, as fractions of the text box. */
 const GLINT_ANCHORS: { fx: number; fy: number; scale: number; opacity: number }[] = [
-  { fx: 0.055, fy: 0.24, scale: 0.9, opacity: 0.9 },
-  { fx: 0.45, fy: 0.06, scale: 0.5, opacity: 0.62 },
-  { fx: 0.88, fy: 0.28, scale: 1, opacity: 0.85 },
-  { fx: 0.3, fy: 0.6, scale: 0.42, opacity: 0.5 },
-  { fx: 0.68, fy: 0.54, scale: 0.64, opacity: 0.6 },
+  { fx: 0.08, fy: 0.14, scale: 1, opacity: 0.95 }, // top-left, the hero sparkle
+  { fx: 0.92, fy: 0.1, scale: 0.85, opacity: 0.85 }, // top-right
+  { fx: 0.38, fy: 0.78, scale: 0.55, opacity: 0.6 }, // lower specular
 ];
 
 /** Too small to read, too large to sit on the letters. */
-const GLINT_MIN = 4;
-const GLINT_MAX = 12;
-
-const fract = (value: number) => value - Math.floor(value);
+const GLINT_MIN = 5;
+const GLINT_MAX = 26;
 
 /**
  * Sparkle pass for the styles that ask for one. Deterministic from the style
@@ -484,20 +520,14 @@ export function wordArtGlints(
 ): WordArtGlint[] {
   const paint = wordArtPaint(style);
   if (!paint?.glints || width <= 0 || height <= 0) return [];
-  const seed = [...String(style)].reduce((acc, char) => acc + char.charCodeAt(0), 0) * 0.6180339;
-  const base = Math.max(GLINT_MIN, Math.min(GLINT_MAX, height * 0.1));
-  return GLINT_ANCHORS.map((anchor, index) => {
-    const jx = fract(Math.sin((index + 1) * 12.9898 + seed) * 43758.5453);
-    const jy = fract(Math.sin((index + 1) * 78.233 + seed) * 43758.5453);
-    const jr = fract(Math.sin((index + 1) * 37.719 + seed) * 43758.5453);
-    return {
-      x: Math.min(width - 2, Math.max(2, (anchor.fx + (jx - 0.5) * 0.05) * width)),
-      y: Math.min(height - 2, Math.max(2, (anchor.fy + (jy - 0.5) * 0.06) * height)),
-      radius: base * anchor.scale,
-      rotation: jr * Math.PI * 0.5,
-      opacity: anchor.opacity,
-    };
-  });
+  const base = Math.max(GLINT_MIN, Math.min(GLINT_MAX, height * 0.28));
+  return GLINT_ANCHORS.map((anchor) => ({
+    x: Math.min(width - 1, Math.max(1, anchor.fx * width)),
+    y: Math.min(height - 1, Math.max(1, anchor.fy * height)),
+    radius: Math.min(GLINT_MAX, Math.max(GLINT_MIN, base * anchor.scale)),
+    rotation: 0,
+    opacity: anchor.opacity,
+  }));
 }
 
 /** The star as an eight-point polygon — shared by the canvas and the DOM. */
@@ -505,7 +535,7 @@ export function glintStarPoints(glint: WordArtGlint): { x: number; y: number }[]
   const points: { x: number; y: number }[] = [];
   for (let i = 0; i < 8; i += 1) {
     const angle = glint.rotation + (i * Math.PI) / 4;
-    const radius = i % 2 === 0 ? glint.radius : glint.radius * 0.32;
+    const radius = i % 2 === 0 ? glint.radius : glint.radius * 0.18;
     points.push({
       x: glint.x + Math.cos(angle) * radius,
       y: glint.y + Math.sin(angle) * radius,
@@ -525,8 +555,8 @@ export function wordArtWeight(style?: WordArtStyle): '800' | '900' | undefined {
   return wordArtPaint(style)?.weight;
 }
 
-/** Linear mix of two hex colours, for the extrusion ramp. */
-function mixHex(a: string, b: string, t: number): string {
+/** Linear mix of two hex colours — the extrusion ramp, shared by CSS and canvas. */
+export function lerpHex(a: string, b: string, t: number): string {
   const parse = (hex: string) => {
     const h = hex.replace('#', '');
     return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
@@ -555,7 +585,7 @@ export function wordArtShadowChain(paint?: WordArtPaint): WordArtShadow[] {
         dx: round2(dx * i),
         dy: round2(dy * i),
         blur: 0,
-        color: mixHex(startColor, endColor, steps === 1 ? 1 : (i - 1) / (steps - 1)),
+        color: lerpHex(startColor, endColor, steps === 1 ? 1 : (i - 1) / (steps - 1)),
       });
     }
   }

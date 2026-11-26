@@ -13,12 +13,13 @@ import {
 } from '../types/publisher';
 import { buildPatternSvg, buildShapePatternDataUri } from './patternGenerator';
 import { buildWavyRectPath, getShapeSvgPath } from './shapePaths';
-import { buildFontString, layoutText, measureTextWidth, verticalOffset } from './textLayout';
-import type { TextLayoutResult } from './textLayout';
+import { buildFontString, layoutText, lineGlyphBoxes, measureTextWidth, verticalOffset } from './textLayout';
 import { buildTextEffectPainter } from './textEffects';
 import { elementClipPath } from './shapeClip';
 import { imageContentRect, imageFit } from './imageFrame';
-import { glintStarPoints, wordArtGlints, wordArtPaint, wordArtShadowChain } from './wordArt';
+import { wordArtPaint, wordArtShadowChain, wordArtSpec } from './wordArt';
+import { renderWordArtCanvas } from './wordArtCanvas';
+import type { WordArtPass } from './wordArtCanvas';
 
 function loadImage(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
@@ -167,6 +168,8 @@ function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
     /** Rotation in radians (curved text). */
     angle: number;
     centred: boolean;
+    /** Which laid-out line this run belongs to (WordArt paints per line). */
+    lineIndex: number;
   }
 
   const units: GlyphUnit[] = [];
@@ -181,10 +184,11 @@ function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
         font,
         angle: (char.angle * Math.PI) / 180,
         centred: true,
+        lineIndex: 0,
       });
     }
   } else {
-    for (const line of layout.lines) {
+    for (const [lineIndex, line] of layout.lines.entries()) {
       for (const run of line.runs) {
         if (run.kind === 'leader' || !run.text || (run.kind === 'space' && !el.highlightColor)) {
           continue;
@@ -197,6 +201,7 @@ function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
           font: buildFontString(el, run.fontSize),
           angle: 0,
           centred: false,
+          lineIndex,
         });
       }
     }
@@ -205,6 +210,8 @@ function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
   const baseFont = buildFontString(el, layout.fontSize);
 
   const drawUnits = (options: {
+    /** Paint only these units; defaults to the whole element. */
+    units?: GlyphUnit[];
     color?: string | CanvasGradient;
     /**
      * Built per glyph from element-space coordinates, so a diagonal ramp runs
@@ -225,6 +232,7 @@ function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
     fill?: boolean;
   }) => {
     const {
+      units: scope,
       color,
       gradient,
       strokeColor,
@@ -235,7 +243,7 @@ function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
       fill = true,
     } = options;
 
-    for (const unit of units) {
+    for (const unit of scope ?? units) {
       ctx.save();
       if (blur > 0 && 'filter' in ctx) {
         // Canvas `blur(r)` means σ = r; every CSS shadow (drop-shadow and
@@ -267,48 +275,68 @@ function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
     }
   };
 
-  // 1. Everything behind the glyphs, in one chain shared with the CSS painter:
-  // the extrusion marching copies, hand-authored shadows, the cast shadow and
-  // the bloom. CSS lists the nearest layer first; canvas paints farthest-first,
-  // so the chain is walked backwards and the crisp offsets land on top.
-  for (const shadow of [...wordArtShadowChain(wa)].reverse().concat(paint.shadows)) {
-    drawUnits({
-      color: shadow.color,
-      offsetX: shadow.dx,
-      offsetY: shadow.dy,
-      blur: shadow.blur,
+  // WordArt goes through the dedicated painter: one call per line, each with
+  // its own glyph box, so the gradient spans the letters exactly like the CSS
+  // `background-clip: text` box and the paint order matches the stylesheet.
+  const spec = wa ? wordArtSpec(el.wordArtStyle) : undefined;
+  if (spec) {
+    const boxes = layout.curve
+      ? [{ x: 0, y: top, width, height }]
+      : lineGlyphBoxes(layout, top);
+    layout.lines.forEach((line, lineIndex) => {
+      const box = boxes[lineIndex] ?? boxes[0];
+      const lineUnits = units.filter((unit) => unit.lineIndex === lineIndex);
+      if (!lineUnits.length) return;
+      renderWordArtCanvas(
+        ctx,
+        spec,
+        {
+          text: line.runs.map((run) => run.text).join(''),
+          x: 0,
+          y: 0,
+          box,
+        },
+        {
+          paint: (pass: WordArtPass) =>
+            drawUnits({
+              units: lineUnits,
+              color: pass.style,
+              // A gradient has to be rebuilt inside each glyph's own transform,
+              // or the ramp restarts inside every letter.
+              gradient: pass.gradient
+                ? {
+                    width: pass.gradient.box.width,
+                    height: pass.gradient.box.height,
+                    angle: pass.gradient.angle,
+                    stops: pass.gradient.stops,
+                    origin: { x: pass.gradient.box.x, y: pass.gradient.box.y },
+                  }
+                : undefined,
+              fill: pass.mode === 'fill',
+              strokeColor: pass.mode === 'stroke' ? (pass.style as string) : undefined,
+              strokeWidth: pass.lineWidth ?? 0,
+              offsetX: pass.offsetX,
+              offsetY: pass.offsetY,
+              blur: pass.blur,
+            }),
+        }
+      );
     });
-  }
-
-  // CSS paints -webkit-text-stroke behind the fill, so the WordArt outline goes
-  // down before the glyphs do.
-  if (wa?.stroke) {
-    drawUnits({ fill: false, strokeColor: wa.stroke.color, strokeWidth: wa.stroke.width });
+  } else {
+    // Plain text effects keep the shared layer chain.
+    for (const shadow of [...wordArtShadowChain(undefined)].reverse().concat(paint.shadows)) {
+      drawUnits({
+        color: shadow.color,
+        offsetX: shadow.dx,
+        offsetY: shadow.dy,
+        blur: shadow.blur,
+      });
+    }
   }
 
   // 2. Fill (gradient or flat), unless the effect is hollow.
   let fillStyle: string | CanvasGradient = el.color || '#0f172a';
-  let waGradient:
-    | {
-        width: number;
-        height: number;
-        angle: number;
-        stops: { offset: number; color: string }[];
-        origin: { x: number; y: number };
-      }
-    | undefined;
-  if (wa?.gradient) {
-    const box = glyphBox(layout, top);
-    waGradient = {
-      width: box.width,
-      height: box.height,
-      angle: wa.gradient.angle,
-      stops: wa.gradient.stops,
-      origin: { x: box.x, y: box.y },
-    };
-  } else if (wa?.fill) {
-    fillStyle = wa.fill;
-  } else if (paint.gradient) {
+  if (paint.gradient && !wa) {
     fillStyle = gradientForBox(
       ctx,
       width,
@@ -327,12 +355,12 @@ function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
       el.textGradientColor2 || '#6e56cf'
     );
   }
-  if (!paint.fillTransparent || wa) {
-    drawUnits(waGradient ? { gradient: waGradient, color: fillStyle } : { color: fillStyle });
+  if (!wa && (!paint.fillTransparent || fillStyle)) {
+    drawUnits({ color: fillStyle });
   }
 
-  // 3. Stroke (a WordArt outline has already been drawn underneath).
-  if (!wa?.stroke && paint.strokeWidth > 0) {
+  // 3. Non-WordArt stroke (WordArt rims are painted inside the painter).
+  if (!wa && paint.strokeWidth > 0) {
     drawUnits({ fill: false, strokeColor: paint.strokeColor, strokeWidth: paint.strokeWidth });
   }
 
@@ -408,29 +436,6 @@ function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
       ctx.lineWidth = paint.strokeWidth;
       strokeRun(ctx, cap.char, cap.x, top + cap.y, capFont, 0, 0);
     }
-    ctx.restore();
-  }
-
-  // 6. Sparkles — the last thing on top, inside the element clip.
-  for (const glint of wordArtGlints(wa ? el.wordArtStyle : undefined, width, height)) {
-    ctx.save();
-    ctx.globalAlpha = glint.opacity;
-    const halo = ctx.createRadialGradient(glint.x, glint.y, 0, glint.x, glint.y, glint.radius * 2);
-    halo.addColorStop(0, 'rgba(255,255,255,0.85)');
-    halo.addColorStop(0.45, 'rgba(255,255,255,0.22)');
-    halo.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = halo;
-    ctx.beginPath();
-    ctx.arc(glint.x, glint.y, glint.radius * 2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    glintStarPoints(glint).forEach((point, index) => {
-      if (index === 0) ctx.moveTo(point.x, point.y);
-      else ctx.lineTo(point.x, point.y);
-    });
-    ctx.closePath();
-    ctx.fill();
     ctx.restore();
   }
 
@@ -510,41 +515,6 @@ function gradientForBox(
   g.addColorStop(0, from);
   g.addColorStop(1, to);
   return g;
-}
-
-/**
- * The inline box the glyphs actually occupy. CSS clips a WordArt gradient to
- * the glyphs' own inline boxes, not to the element frame, so the exporter has
- * to measure the same rectangle or a horizon stop lands at a different height
- * in the editor than in the PNG.
- */
-function glyphBox(
-  layout: TextLayoutResult,
-  top: number
-): { x: number; y: number; width: number; height: number } {
-  const lines = layout.lines.length ? layout.lines : [];
-  if (!lines.length) return { x: 0, y: 0, width: 1, height: 1 };
-  let x0 = Infinity;
-  let x1 = -Infinity;
-  for (const line of lines) {
-    for (const run of line.runs) {
-      if (!run.text.trim()) continue;
-      x0 = Math.min(x0, run.x);
-      x1 = Math.max(x1, run.x + run.width);
-    }
-  }
-  if (!Number.isFinite(x0)) { x0 = 0; x1 = layout.columnWidth; }
-  const first = lines[0];
-  const last = lines[lines.length - 1];
-  const y0 = top + first.textTop;
-  const lastSize = last.runs.reduce((max, run) => Math.max(max, run.fontSize), layout.fontSize);
-  const y1 = top + last.textTop + lastSize;
-  return {
-    x: x0,
-    y: y0,
-    width: Math.max(1, x1 - x0),
-    height: Math.max(1, y1 - y0),
-  };
 }
 
 /** Multi-stop version of `gradientForBox`, for WordArt palettes. */

@@ -215,6 +215,42 @@ interface RawLine {
   level: number;
 }
 
+/** A glyph box, in element-local pixels. */
+export interface GlyphBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * The box a line's glyphs actually occupy. CSS clips a WordArt gradient to the
+ * inline box of the text, so both renderers have to measure the same rectangle
+ * or a horizon stop lands at a different height in the editor than in the PNG.
+ */
+export function lineGlyphBoxes(layout: TextLayoutResult, top: number): GlyphBox[] {
+  return layout.lines.map((line) => {
+    let x0 = Infinity;
+    let x1 = -Infinity;
+    for (const run of line.runs) {
+      if (!run.text.trim()) continue;
+      x0 = Math.min(x0, run.x);
+      x1 = Math.max(x1, run.x + run.width);
+    }
+    if (!Number.isFinite(x0)) {
+      x0 = layout.textLeft;
+      x1 = layout.textLeft + layout.columnWidth;
+    }
+    const size = line.runs.reduce((max, run) => Math.max(max, run.fontSize), layout.fontSize);
+    return {
+      x: x0,
+      y: top + line.textTop,
+      width: Math.max(1, x1 - x0),
+      height: Math.max(1, size),
+    };
+  });
+}
+
 export interface TextLayoutOptions {
   /** Override the element's size (auto-fit walks this down). */
   fontSize?: number;

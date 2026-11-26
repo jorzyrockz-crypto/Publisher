@@ -14,7 +14,8 @@ import { Scissors, Quote, Award, QrCode, ImagePlus, Upload } from 'lucide-react'
 import { buildWavyRectPath } from '../../utils/shapePaths';
 import { buildShapePatternDataUri } from '../../utils/patternGenerator';
 import { PATTERN_CATALOG } from '../../utils/patternGenerator';
-import { layoutText, verticalOffset } from '../../utils/textLayout';
+import { layoutText, lineGlyphBoxes, verticalOffset } from '../../utils/textLayout';
+import type { GlyphBox } from '../../utils/textLayout';
 import { buildTextEffectPainter } from '../../utils/textEffects';
 import { imageContentRect, imageFit, imageMaskClip } from '../../utils/imageFrame';
 import { glintStarPath, wordArtCss, wordArtGlints } from '../../utils/wordArt';
@@ -318,18 +319,30 @@ const TextRenderer: React.FC<{
   // the WordArt stack in the exporter, so they come first here too.
   const glyphShadow = paint.cssShadow || undefined;
 
+  // One box per line: the gradient and the sparkles are clipped/placed by it.
+  const boxes: GlyphBox[] = lineGlyphBoxes(layout, offset);
+
   const baseColor = waCss.color ?? (paint.fillTransparent ? 'transparent' : element.color);
-  // Sparkles are shared geometry: the exporter draws the same list.
+  // Sparkles are shared geometry: the exporter draws the same stars from the
+  // same per-line boxes.
   const glints = element.isWordArt
-    ? wordArtGlints(element.wordArtStyle, element.width, element.height)
+    ? boxes.flatMap((box) =>
+        wordArtGlints(element.wordArtStyle, box.width, box.height).map((glint) => ({
+          ...glint,
+          x: box.x + glint.x,
+          y: box.y + glint.y,
+        }))
+      )
     : [];
 
-  const gradientStyle = (x: number, y: number): React.CSSProperties =>
+  // The gradient is clipped to the line's glyph box, exactly like the exporter
+  // measures it, so a horizon stop lands at the same height in both.
+  const gradientStyle = (x: number, y: number, box: GlyphBox): React.CSSProperties =>
     gradientCss
       ? {
           backgroundImage: gradientCss,
-          backgroundSize: `${Math.max(1, element.width)}px ${Math.max(1, layout.contentHeight)}px`,
-          backgroundPosition: `${-x}px ${-y}px`,
+          backgroundSize: `${Math.max(1, box.width)}px ${Math.max(1, box.height)}px`,
+          backgroundPosition: `${box.x - x}px ${box.y - y}px`,
           WebkitBackgroundClip: 'text',
           backgroundClip: 'text',
           color: 'transparent',
@@ -351,7 +364,7 @@ const TextRenderer: React.FC<{
               lineHeight: 1,
               whiteSpace: 'pre',
               color,
-              ...(withEffects ? gradientStyle(char.x, offset + char.y) : {}),
+              ...(withEffects ? gradientStyle(char.x, offset + char.y, boxes[0]) : {}),
               ...(withEffects ? strokeStyle : {}),
               textShadow: withEffects ? glyphShadow : undefined,
             }}
@@ -385,7 +398,7 @@ const TextRenderer: React.FC<{
               letterSpacing: element.letterSpacing ? `${element.letterSpacing}px` : undefined,
               color: isSpace ? 'transparent' : color,
               ...(withEffects && !isSpace
-                ? gradientStyle(run.x, offset + line.y)
+                ? gradientStyle(run.x, offset + line.textTop, boxes[lineIndex] ?? boxes[0])
                 : {}),
               ...(withEffects ? strokeStyle : {}),
               textShadow: withEffects ? glyphShadow : undefined,
