@@ -6,7 +6,8 @@ import { calculateSnap } from '../../utils/snapping';
 import { buildPatternBackgroundStyle } from '../../utils/patternGenerator';
 import { computeTarpapelMetrics } from '../../utils/printUtils';
 import { resizeTextBox } from '../../utils/textResize';
-import { PublisherElement, Page, ConnectorElement } from '../../types/publisher';
+import { imageHasFrame, imageMaskClip, panFromDrag } from '../../utils/imageFrame';
+import { PublisherElement, Page, ConnectorElement, ImageElement } from '../../types/publisher';
 import {
   Copy,
   Clipboard,
@@ -82,6 +83,8 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
   const [activeAlignGuideH, setActiveAlignGuideH] = useState<number | undefined>();
   const [activeAlignGuideV, setActiveAlignGuideV] = useState<number | undefined>();
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
+  // Image whose frame is lifted so the photo can be moved inside it.
+  const [editingPhotoId, setEditingPhotoId] = useState<string | null>(null);
   const [dragOverPlaceholderId, setDragOverPlaceholderId] = useState<string | null>(null);
   const [marquee, setMarquee] = useState<{
     startX: number;
@@ -185,11 +188,68 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
     }
   };
 
+  useEffect(() => {
+    if (!editingPhotoId) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setEditingPhotoId(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [editingPhotoId]);
+
+  // Drag inside a lifted frame repositions the photo, not the element.
+  const handlePhotoPanMouseDown = (element: ImageElement, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startPan = { panX: element.panX || 0, panY: element.panY || 0 };
+    const img = document.querySelector(`#element-${element.id} img`) as HTMLImageElement | null;
+    const natural =
+      img && img.naturalWidth > 0
+        ? { width: img.naturalWidth, height: img.naturalHeight }
+        : null;
+    const fit = element.objectFit === 'contain' ? 'contain' : 'cover';
+
+    let raf: number | null = null;
+    let latest: MouseEvent | null = null;
+
+    const apply = () => {
+      raf = null;
+      if (!latest) return;
+      const next = panFromDrag(
+        startPan,
+        { x: (latest.clientX - startX) / zoom, y: (latest.clientY - startY) / zoom },
+        { width: element.width, height: element.height },
+        natural,
+        fit
+      );
+      updateElement(element.id, {
+        panX: Math.round(next.panX * 10) / 10,
+        panY: Math.round(next.panY * 10) / 10,
+      });
+    };
+
+    const onMove = (ev: MouseEvent) => {
+      latest = ev;
+      if (raf === null) raf = requestAnimationFrame(apply);
+    };
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      if (raf !== null) cancelAnimationFrame(raf);
+      apply();
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  };
+
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     // Only start marquee on left-click on background canvas
     if (e.button !== 0) return;
     if (e.target === canvasRef.current || (e.target as HTMLElement).classList.contains('canvas-bg')) {
       setEditingTextId(null);
+      setEditingPhotoId(null);
       const isAdditive = e.shiftKey || e.ctrlKey || e.metaKey;
       if (!isAdditive) {
         clearSelection();
@@ -760,6 +820,12 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
         const isSelected = selectedElementIds.includes(element.id);
         const isEditingThisText =
           element.type === 'text' && isSelected && isActivePage && !element.locked && editingTextId === element.id;
+        const isEditingThisPhoto =
+          element.type === 'image' &&
+          isSelected &&
+          isActivePage &&
+          !element.locked &&
+          editingPhotoId === element.id;
 
         return (
           <div
@@ -768,6 +834,8 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
             className={`absolute ${
               element.locked
                 ? 'cursor-not-allowed'
+                : isEditingThisPhoto
+                ? 'cursor-move'
                 : isEditingThisText
                 ? 'cursor-text'
                 : element.type === 'text' && isSelected && isActivePage
@@ -785,6 +853,19 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
               opacity: element.opacity !== undefined ? element.opacity : 1,
             }}
             onDoubleClick={(e) => {
+              if (
+                element.type === 'image' &&
+                !element.collageMeta &&
+                !element.locked &&
+                isActivePage &&
+                imageHasFrame(element)
+              ) {
+                e.stopPropagation();
+                setEditingTextId(null);
+                setEditingPhotoId(isEditingThisPhoto ? null : element.id);
+                selectElement(element.id, false);
+                return;
+              }
               if (element.collageMeta && !element.locked) {
                 e.stopPropagation();
                 const groupMembers = element.groupId
@@ -863,6 +944,11 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
               reader.readAsDataURL(file);
             }}
             onMouseDown={(e) => {
+              if (isEditingThisPhoto && e.button === 0) {
+                handlePhotoPanMouseDown(element as ImageElement, e);
+                return;
+              }
+              if (editingPhotoId) setEditingPhotoId(null);
               // If already selected text box or in text edit mode, allow native I-beam caret & text selection!
               if (
                 element.type === 'text' &&
@@ -889,6 +975,7 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
               element={element}
               isSelected={isSelected && isActivePage && !element.locked}
               isEditing={isEditingThisText}
+              isPhotoEditing={isEditingThisPhoto}
               isDropTarget={dragOverPlaceholderId === element.id}
               pageNumber={targetPageIndex + 1}
               totalPages={project.pages.length}
@@ -905,6 +992,21 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
                 }
               }}
             />
+
+            {/* Frame lifted: show where the crop will land */}
+            {isEditingThisPhoto && element.type === 'image' && (
+              <>
+                <div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{ clipPath: imageMaskClip(element) }}
+                >
+                  <div className="absolute inset-0 border-2 border-dashed border-[#6e56cf]/80 rounded-[inherit]" />
+                </div>
+                <div className="absolute left-1/2 -translate-x-1/2 -top-7 whitespace-nowrap pointer-events-none bg-[#6e56cf] text-white text-[9.5px] font-semibold px-2 py-0.5 rounded-full shadow-sm">
+                  Drag to move the photo · click outside to crop
+                </div>
+              </>
+            )}
 
             {/* Transform Controls & Handles when Selected */}
             {isSelected && isActivePage && !element.locked && (

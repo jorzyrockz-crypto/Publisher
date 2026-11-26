@@ -16,12 +16,15 @@ import { buildShapePatternDataUri } from '../../utils/patternGenerator';
 import { PATTERN_CATALOG } from '../../utils/patternGenerator';
 import { layoutText, verticalOffset } from '../../utils/textLayout';
 import { buildTextEffectPainter } from '../../utils/textEffects';
+import { imageMaskClip } from '../../utils/imageFrame';
 import { elementClipPath } from '../../utils/shapeClip';
 
 interface ElementRendererProps {
   element: PublisherElement;
   isSelected: boolean;
   isEditing?: boolean;
+  /** Image is being repositioned inside its frame: the crop is lifted. */
+  isPhotoEditing?: boolean;
   isDropTarget?: boolean;
   pageNumber?: number;
   totalPages?: number;
@@ -35,6 +38,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = React.memo(
     element,
     isSelected,
     isEditing = false,
+    isPhotoEditing = false,
     isDropTarget = false,
     pageNumber = 1,
     totalPages = 1,
@@ -61,6 +65,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = React.memo(
         return (
           <ImageRenderer
             element={element}
+            isPhotoEditing={isPhotoEditing}
             isDropTarget={isDropTarget}
             onImageReplace={onImageReplace}
           />
@@ -104,6 +109,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = React.memo(
     prev.element === next.element &&
     prev.isSelected === next.isSelected &&
     prev.isEditing === next.isEditing &&
+    prev.isPhotoEditing === next.isPhotoEditing &&
     prev.pageNumber === next.pageNumber &&
     prev.totalPages === next.totalPages
 );
@@ -1068,8 +1074,9 @@ const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
 const ImageRenderer: React.FC<{
   element: ImageElement;
   isDropTarget?: boolean;
+  isPhotoEditing?: boolean;
   onImageReplace?: (src: string, name?: string) => void;
-}> = ({ element, isDropTarget = false, onImageReplace }) => {
+}> = ({ element, isDropTarget = false, isPhotoEditing = false, onImageReplace }) => {
   const placeholderInputRef = useRef<HTMLInputElement>(null);
   const getFilterStyle = () => {
     const filters: string[] = [];
@@ -1122,30 +1129,19 @@ const ImageRenderer: React.FC<{
   };
 
   const getMaskRadius = () => {
+    if (isPhotoEditing) return undefined;
     if (element.maskShape === 'circle') return '50%';
     if (element.maskShape === 'rounded') return '24px';
     return element.borderRadius ? `${element.borderRadius}px` : undefined;
   };
 
+  // While the photo is being repositioned the frame is lifted, so the whole
+  // picture is visible and only re-crops when the user clicks away. Circle and
+  // rounded frames stay on border-radius (they must follow the box aspect).
   const getClipPath = () => {
-    if (element.clipPathD) {
-      const clip = elementClipPath(element);
-      return clip ? `path("${clip}")` : undefined;
-    }
-    switch (element.maskShape) {
-      case 'star':
-        return 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)';
-      case 'diamond':
-        return 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)';
-      case 'hexagon':
-        return 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)';
-      case 'triangle':
-        return 'polygon(50% 0%, 0% 100%, 100% 100%)';
-      case 'heart':
-        return 'polygon(50% 88%, 12% 52%, 4% 28%, 18% 10%, 38% 10%, 50% 24%, 62% 10%, 82% 10%, 96% 28%, 88% 52%)';
-      default:
-        return undefined;
-    }
+    if (isPhotoEditing) return undefined;
+    if (element.maskShape === 'circle' || element.maskShape === 'rounded') return undefined;
+    return imageMaskClip(element);
   };
 
   const imgScale = element.imageScale || 1;
@@ -1325,6 +1321,7 @@ const ImageRenderer: React.FC<{
       height: '100%',
       position: 'relative',
       overflow:
+        isPhotoEditing ||
         art === 'washi-tape' ||
         art === 'dotted-double' ||
         art === 'doodle-box' ||

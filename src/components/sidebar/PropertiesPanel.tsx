@@ -4309,6 +4309,14 @@ export const PropertiesPanel: React.FC = () => {
                   </button>
                 ))}
               </div>
+              {((selectedElement as ImageElement).maskShape &&
+                (selectedElement as ImageElement).maskShape !== 'none') ||
+              (selectedElement as ImageElement).clipPathD ? (
+                <p className="text-[9.5px] text-slate-400 leading-tight mt-1.5 px-1">
+                  Double-click the image to slide the photo inside the frame; click outside to
+                  crop it back.
+                </p>
+              ) : null}
               {Boolean((selectedElement as ImageElement).clipPathD) && (
                 <div className="flex items-center justify-between mt-1.5 px-1">
                   <span className="text-[10px] font-semibold text-[#5c4bb8] flex items-center gap-1">
