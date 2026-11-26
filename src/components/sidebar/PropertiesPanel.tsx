@@ -1,5 +1,6 @@
 ﻿import React, { useRef, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
+import { ColorInput } from '../common/ColorInput';
 import {
   TextElement,
   ShapeElement,
@@ -381,25 +382,25 @@ export const PropertiesPanel: React.FC = () => {
                       <div className="space-y-2 pt-1">
                         <div className="grid grid-cols-2 gap-2">
                           <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
-                            <input
-                              type="color"
+                            <ColorInput
                               value={sampleImg.borderArtColor || '#ffffff'}
                               onChange={(e) =>
                                 applyToAllSelectedImages({ borderArtColor: e.target.value })
                               }
                               className="w-5 h-5 rounded-full border border-slate-200 cursor-pointer p-0"
-                            />
+                              target="fill"
+                              />
                             <span className="text-[10px] text-slate-600 font-semibold">Frame</span>
                           </div>
                           <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
-                            <input
-                              type="color"
+                            <ColorInput
                               value={sampleImg.borderArtColor2 || '#4f46e5'}
                               onChange={(e) =>
                                 applyToAllSelectedImages({ borderArtColor2: e.target.value })
                               }
                               className="w-5 h-5 rounded-full border border-slate-200 cursor-pointer p-0"
-                            />
+                              target="fill"
+                              />
                             <span className="text-[10px] text-slate-600 font-semibold">Accent</span>
                           </div>
                         </div>
@@ -907,12 +908,12 @@ export const PropertiesPanel: React.FC = () => {
                   Canvas Background
                 </label>
                 <div className="flex items-center gap-2">
-                  <input
-                    type="color"
+                  <ColorInput
                     value={activePage.backgroundColor}
                     onChange={(e) => setPageBackgroundColor(e.target.value)}
                     className="w-7 h-7 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0 shadow-2xs"
-                  />
+                    target="background"
+                    />
                   <span className="font-mono text-[11px] text-slate-600 font-semibold">
                     {activePage.backgroundColor.toUpperCase()}
                   </span>
@@ -1037,14 +1038,14 @@ export const PropertiesPanel: React.FC = () => {
                   return (
                     <div className="space-y-2 pt-1">
                       <div className="flex items-center gap-2">
-                        <input
-                          type="color"
+                        <ColorInput
                           value={pat.color}
                           onChange={(e) =>
                             setPageBackgroundPattern({ ...pat, color: e.target.value })
                           }
                           className="w-6 h-6 rounded-full border border-slate-200 cursor-pointer p-0"
-                        />
+                          target="text"
+                          />
                         <span className="font-mono text-[10px] text-slate-600 font-semibold">
                           {pat.color.toUpperCase()}
                         </span>
@@ -1469,14 +1470,14 @@ export const PropertiesPanel: React.FC = () => {
                         Fill Color
                       </label>
                       <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
-                        <input
-                          type="color"
+                        <ColorInput
                           className="w-6 h-6 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0"
                           value={textEl.color}
                           onChange={(e) =>
                             updateElement(textEl.id, { color: e.target.value })
                           }
-                        />
+                          target="text"
+                          />
                         <span className="font-mono text-[10px] text-slate-600 font-semibold truncate">
                           {textEl.color}
                         </span>
@@ -1487,8 +1488,7 @@ export const PropertiesPanel: React.FC = () => {
                         Outline ({textEl.textStrokeWidth ?? 0}px)
                       </label>
                       <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
-                        <input
-                          type="color"
+                        <ColorInput
                           className="w-6 h-6 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0"
                           value={textEl.textStrokeColor || '#000000'}
                           onChange={(e) =>
@@ -1497,7 +1497,8 @@ export const PropertiesPanel: React.FC = () => {
                               textStrokeWidth: textEl.textStrokeWidth || 1,
                             })
                           }
-                        />
+                          target="fill"
+                          />
                         <input
                           type="number"
                           min={0}
@@ -1743,14 +1744,14 @@ export const PropertiesPanel: React.FC = () => {
                     {textEl.shadow && (
                       <div className="grid grid-cols-2 gap-2">
                         <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
-                          <input
-                            type="color"
+                          <ColorInput
                             className="w-5 h-5 rounded-full border border-slate-200 cursor-pointer p-0"
                             value={textEl.shadowColor || '#000000'}
                             onChange={(e) =>
                               updateElement(textEl.id, { shadowColor: e.target.value })
                             }
-                          />
+                            target="fill"
+                            />
                           <span className="text-[10px] text-slate-600 font-semibold">Shadow</span>
                         </div>
                         <div>
@@ -1801,8 +1802,7 @@ export const PropertiesPanel: React.FC = () => {
                           Frame Fill
                         </label>
                         <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200">
-                          <input
-                            type="color"
+                          <ColorInput
                             className="w-5 h-5 rounded-full border border-slate-200 cursor-pointer p-0"
                             value={
                               textEl.backgroundColor && textEl.backgroundColor !== 'transparent'
@@ -1812,7 +1812,8 @@ export const PropertiesPanel: React.FC = () => {
                             onChange={(e) =>
                               updateElement(textEl.id, { backgroundColor: e.target.value })
                             }
-                          />
+                            target="background"
+                            />
                           <button
                             onClick={() =>
                               updateElement(textEl.id, { backgroundColor: 'transparent' })
@@ -1829,8 +1830,7 @@ export const PropertiesPanel: React.FC = () => {
                           Border ({textEl.borderWidth ?? 0}px)
                         </label>
                         <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200">
-                          <input
-                            type="color"
+                          <ColorInput
                             className="w-5 h-5 rounded-full border border-slate-200 cursor-pointer p-0"
                             value={textEl.borderColor || '#cbd5e1'}
                             onChange={(e) =>
@@ -1839,7 +1839,8 @@ export const PropertiesPanel: React.FC = () => {
                                 borderWidth: textEl.borderWidth || 1,
                               })
                             }
-                          />
+                            target="stroke"
+                            />
                           <input
                             type="number"
                             min={0}
@@ -2267,8 +2268,7 @@ export const PropertiesPanel: React.FC = () => {
 
                       <div className="grid grid-cols-2 gap-2">
                         <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1.5 rounded-xl border border-slate-200/80">
-                          <input
-                            type="color"
+                          <ColorInput
                             value={patColor}
                             onChange={(e) =>
                               updateElement(selectedElement.id, {
@@ -2276,15 +2276,15 @@ export const PropertiesPanel: React.FC = () => {
                               })
                             }
                             className="w-5 h-5 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0"
-                          />
+                            target="fill"
+                            />
                           <span className="text-[10px] font-semibold text-slate-600">
                             Ink
                           </span>
                         </div>
                         {patBgType === 'gradient' ? (
                           <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1.5 rounded-xl border border-slate-200/80">
-                            <input
-                              type="color"
+                            <ColorInput
                               value={patBg === 'transparent' ? '#fdf2f8' : patBg}
                               onChange={(e) =>
                                 updateElement(selectedElement.id, {
@@ -2293,9 +2293,9 @@ export const PropertiesPanel: React.FC = () => {
                               }
                               className="w-5 h-5 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0"
                               title="Gradient Start"
-                            />
-                            <input
-                              type="color"
+                              target="fill"
+                              />
+                            <ColorInput
                               value={patBg2}
                               onChange={(e) =>
                                 updateElement(selectedElement.id, {
@@ -2304,15 +2304,15 @@ export const PropertiesPanel: React.FC = () => {
                               }
                               className="w-5 h-5 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0"
                               title="Gradient End"
-                            />
+                              target="fill"
+                              />
                             <span className="text-[9.5px] font-semibold text-slate-600">
                               Grad
                             </span>
                           </div>
                         ) : (
                           <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1.5 rounded-xl border border-slate-200/80">
-                            <input
-                              type="color"
+                            <ColorInput
                               value={patBg === 'transparent' ? '#ffffff' : patBg}
                               onChange={(e) =>
                                 updateElement(selectedElement.id, {
@@ -2320,7 +2320,8 @@ export const PropertiesPanel: React.FC = () => {
                                 })
                               }
                               className="w-5 h-5 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0"
-                            />
+                              target="fill"
+                              />
                             <span className="text-[10px] font-semibold text-slate-600">
                               Bg
                             </span>
@@ -2421,28 +2422,28 @@ export const PropertiesPanel: React.FC = () => {
             ) : (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <input
-                  type="color"
+                <ColorInput
                   value={(selectedElement as ShapeElement).fillColor}
                   onChange={(e) =>
                     updateElement(selectedElement.id, { fillColor: e.target.value })
                   }
                   className="w-7 h-7 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0 shadow-2xs"
-                />
+                  target="fill"
+                  />
                 <span className="font-mono text-[11px] text-slate-600 font-semibold">
                   {(selectedElement as ShapeElement).fillColor}
                 </span>
                 {(selectedElement as ShapeElement).fillType === 'linear-gradient' ? (
                   <div className="ml-auto flex items-center gap-1.5">
                     <span className="text-[10px] text-slate-400">End:</span>
-                    <input
-                      type="color"
+                    <ColorInput
                       value={(selectedElement as ShapeElement).gradientColor2 || '#38bdf8'}
                       onChange={(e) =>
                         updateElement(selectedElement.id, { gradientColor2: e.target.value })
                       }
                       className="w-6 h-6 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0 shadow-2xs"
-                    />
+                      target="fill"
+                      />
                   </div>
                 ) : (
                   <button
@@ -2544,14 +2545,14 @@ export const PropertiesPanel: React.FC = () => {
                 <label className="block text-[10px] font-semibold text-slate-500 mb-1">
                   Outline
                 </label>
-                <input
-                  type="color"
+                <ColorInput
                   value={(selectedElement as ShapeElement).strokeColor}
                   onChange={(e) =>
                     updateElement(selectedElement.id, { strokeColor: e.target.value })
                   }
                   className="w-7 h-7 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0 shadow-2xs"
-                />
+                  target="stroke"
+                  />
               </div>
               <div>
                 <label className="block text-[10px] font-semibold text-slate-500 mb-1">
@@ -2638,14 +2639,14 @@ export const PropertiesPanel: React.FC = () => {
 
               {(selectedElement as ShapeElement).glow && (
                 <div className="flex items-center gap-2 pl-1">
-                  <input
-                    type="color"
+                  <ColorInput
                     value={(selectedElement as ShapeElement).glowColor || '#38bdf8'}
                     onChange={(e) =>
                       updateElement(selectedElement.id, { glowColor: e.target.value })
                     }
                     className="w-6 h-6 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0"
-                  />
+                    target="fill"
+                    />
                   <input
                     type="range"
                     min={4}
@@ -2794,15 +2795,15 @@ export const PropertiesPanel: React.FC = () => {
                           />
                         )
                       )}
-                      <input
-                        type="color"
+                      <ColorInput
                         value={outlineC}
                         onChange={(e) =>
                           updateElement(stk.id, { stickerOutlineColor: e.target.value })
                         }
                         className="w-5 h-5 rounded cursor-pointer border-0 bg-transparent"
                         title="Custom Contour Color"
-                      />
+                        target="fill"
+                        />
                     </div>
                   </div>
                 </div>
@@ -2824,14 +2825,14 @@ export const PropertiesPanel: React.FC = () => {
                       <span>Double Contour Ring</span>
                     </label>
                     {outlineW2 > 0 && (
-                      <input
-                        type="color"
+                      <ColorInput
                         value={outlineC2}
                         onChange={(e) =>
                           updateElement(stk.id, { stickerOutlineColor2: e.target.value })
                         }
                         className="w-5 h-5 rounded cursor-pointer border-0 bg-transparent"
-                      />
+                        target="fill"
+                        />
                     )}
                   </div>
                   {outlineW2 > 0 && (
@@ -2879,14 +2880,14 @@ export const PropertiesPanel: React.FC = () => {
                   {finish === 'neon' && (
                     <div className="flex items-center justify-between pt-1">
                       <span className="text-[10px] font-semibold text-slate-500">Neon Glow</span>
-                      <input
-                        type="color"
+                      <ColorInput
                         value={stk.stickerGlowColor || '#38bdf8'}
                         onChange={(e) =>
                           updateElement(stk.id, { stickerGlowColor: e.target.value })
                         }
                         className="w-6 h-5 rounded cursor-pointer border-0 bg-transparent"
-                      />
+                        target="fill"
+                        />
                     </div>
                   )}
                 </div>
@@ -2974,8 +2975,7 @@ export const PropertiesPanel: React.FC = () => {
                               className="block w-5 h-5 rounded-full border border-slate-300 shadow-2xs"
                               style={{ backgroundColor: col }}
                             />
-                            <input
-                              type="color"
+                            <ColorInput
                               value={col}
                               onChange={(e) => {
                                 const nextSrc = recolorSvgDataUri(stk.src, { [col]: e.target.value });
@@ -2985,7 +2985,8 @@ export const PropertiesPanel: React.FC = () => {
                                 });
                               }}
                               className="sr-only"
-                            />
+                              target="fill"
+                              />
                           </label>
                         ))}
                       </div>
@@ -3188,8 +3189,7 @@ export const PropertiesPanel: React.FC = () => {
                             className="block w-5 h-5 rounded-full border border-slate-300 shadow-2xs"
                             style={{ backgroundColor: col }}
                           />
-                          <input
-                            type="color"
+                          <ColorInput
                             value={col}
                             onChange={(e) => {
                               const nextSrc = recolorSvgDataUri(imgEl.src, { [col]: e.target.value });
@@ -3199,7 +3199,8 @@ export const PropertiesPanel: React.FC = () => {
                               });
                             }}
                             className="sr-only"
-                          />
+                            target="fill"
+                            />
                         </label>
                       ))}
                     </div>
@@ -3401,25 +3402,25 @@ export const PropertiesPanel: React.FC = () => {
                     <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
                       <div className="grid grid-cols-2 gap-2">
                         <div className="flex items-center gap-1.5 bg-white p-1 rounded-lg border border-slate-200">
-                          <input
-                            type="color"
+                          <ColorInput
                             value={imgEl.borderArtColor || '#ffffff'}
                             onChange={(e) =>
                               updateElement(imgEl.id, { borderArtColor: e.target.value })
                             }
                             className="w-5 h-5 rounded-full border border-slate-200 cursor-pointer p-0"
-                          />
+                            target="fill"
+                            />
                           <span className="text-[10px] text-slate-600 font-semibold">Frame</span>
                         </div>
                         <div className="flex items-center gap-1.5 bg-white p-1 rounded-lg border border-slate-200">
-                          <input
-                            type="color"
+                          <ColorInput
                             value={imgEl.borderArtColor2 || '#4f46e5'}
                             onChange={(e) =>
                               updateElement(imgEl.id, { borderArtColor2: e.target.value })
                             }
                             className="w-5 h-5 rounded-full border border-slate-200 cursor-pointer p-0"
-                          />
+                            target="fill"
+                            />
                           <span className="text-[10px] text-slate-600 font-semibold">Accent</span>
                         </div>
                       </div>
@@ -3860,27 +3861,27 @@ export const PropertiesPanel: React.FC = () => {
                 <label className="block text-[10px] font-semibold text-slate-500 mb-1">
                   Header Fill
                 </label>
-                <input
-                  type="color"
+                <ColorInput
                   value={(selectedElement as TableElement).headerBg}
                   onChange={(e) =>
                     updateElement(selectedElement.id, { headerBg: e.target.value })
                   }
                   className="w-7 h-7 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0 shadow-2xs"
-                />
+                  target="background"
+                  />
               </div>
               <div>
                 <label className="block text-[10px] font-semibold text-slate-500 mb-1">
                   Alt Row Fill
                 </label>
-                <input
-                  type="color"
+                <ColorInput
                   value={(selectedElement as TableElement).altRowBg || '#f1f5f9'}
                   onChange={(e) =>
                     updateElement(selectedElement.id, { altRowBg: e.target.value })
                   }
                   className="w-7 h-7 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0 shadow-2xs"
-                />
+                  target="background"
+                  />
               </div>
             </div>
 
@@ -3889,14 +3890,14 @@ export const PropertiesPanel: React.FC = () => {
                 Table Border
               </label>
               <div className="flex items-center gap-2">
-                <input
-                  type="color"
+                <ColorInput
                   value={(selectedElement as TableElement).borderColor}
                   onChange={(e) =>
                     updateElement(selectedElement.id, { borderColor: e.target.value })
                   }
                   className="w-7 h-7 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0 shadow-2xs"
-                />
+                  target="stroke"
+                  />
                 <input
                   type="number"
                   min={0}
@@ -3978,27 +3979,27 @@ export const PropertiesPanel: React.FC = () => {
                   <label className="block text-[11px] font-semibold text-slate-500 mb-1.5">
                     Foreground
                   </label>
-                  <input
-                    type="color"
+                  <ColorInput
                     value={qrEl.fgColor}
                     onChange={(e) =>
                       updateElement(qrEl.id, { fgColor: e.target.value })
                     }
                     className="w-7 h-7 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0 shadow-2xs"
-                  />
+                    target="fill"
+                    />
                 </div>
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-500 mb-1.5">
                     Background
                   </label>
-                  <input
-                    type="color"
+                  <ColorInput
                     value={qrEl.bgColor}
                     onChange={(e) =>
                       updateElement(qrEl.id, { bgColor: e.target.value })
                     }
                     className="w-7 h-7 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0 shadow-2xs"
-                  />
+                    target="fill"
+                    />
                 </div>
               </div>
             </InspectorCard>

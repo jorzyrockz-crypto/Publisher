@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
+import { ColorInput } from '../common/ColorInput';
 import {
   COLLAGE_LAYOUTS,
   DYNAMIC_MODE_LABELS,
@@ -1811,21 +1812,21 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
 
               <div className="grid grid-cols-2 gap-1.5">
                 <label className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-xl border border-[#e5e9ee] cursor-pointer">
-                  <input
-                    type="color"
+                  <ColorInput
                     value={activeStyleForInspector.frameColor}
                     onChange={(e) => updateInspectorStyle({ frameColor: e.target.value })}
                     className="w-4 h-4 rounded border-0 p-0 cursor-pointer"
-                  />
+                    target="fill"
+                    />
                   <span className="text-[10px] font-semibold text-slate-600">Frame</span>
                 </label>
                 <label className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-xl border border-[#e5e9ee] cursor-pointer">
-                  <input
-                    type="color"
+                  <ColorInput
                     value={activeStyleForInspector.accentColor}
                     onChange={(e) => updateInspectorStyle({ accentColor: e.target.value })}
                     className="w-4 h-4 rounded border-0 p-0 cursor-pointer"
-                  />
+                    target="fill"
+                    />
                   <span className="text-[10px] font-semibold text-slate-600">Accent</span>
                 </label>
               </div>
@@ -2145,8 +2146,7 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                   <option value="dot-grid">Dot Grid</option>
                 </select>
                 {meta.backdrop.type !== 'none' && (
-                  <input
-                    type="color"
+                  <ColorInput
                     value={meta.backdrop.color}
                     onChange={(e) =>
                       commitMeta((prev) => ({
@@ -2155,7 +2155,8 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                       }))
                     }
                     className="w-7 h-7 rounded-lg border border-[#e5e9ee] p-0 cursor-pointer"
-                  />
+                    target="text"
+                    />
                 )}
               </div>
               {meta.backdrop.type === 'pastel-gradient' && (
@@ -2223,8 +2224,7 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                       ))}
                     </select>
                     {meta.backdrop.patternType && meta.backdrop.patternType !== 'none' && (
-                      <input
-                        type="color"
+                      <ColorInput
                         value={meta.backdrop.patternColor || '#4f46e5'}
                         onChange={(e) =>
                           commitMeta((prev) => ({
@@ -2234,7 +2234,8 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
                         }
                         className="w-6 h-6 rounded-lg border border-[#e5e9ee] p-0 cursor-pointer"
                         title="Pattern Ink Color"
-                      />
+                        target="fill"
+                        />
                     )}
                   </div>
                   <div>

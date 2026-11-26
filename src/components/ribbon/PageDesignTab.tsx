@@ -1,5 +1,6 @@
-import React, { useRef, useState } from 'react';
+﻿import React, { useRef, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
+import { ColorInput } from '../common/ColorInput';
 import { PAGE_SIZES } from '../../constants/pageSizes';
 import { COLOR_SCHEMES } from '../../constants/colorSchemes';
 import { FloatingDropdown } from '../common/FloatingDropdown';
@@ -261,13 +262,13 @@ export const PageDesignTab: React.FC = () => {
       {/* 4. Canvas Background */}
       <div className="flex flex-col justify-between h-full py-1 px-2 border-r border-[#e5e9ee] flex-shrink-0">
         <div className="flex items-center gap-2 my-auto">
-          <input
-            type="color"
+          <ColorInput
             value={activePage.backgroundColor}
             onChange={(e) => setPageBackgroundColor(e.target.value)}
             className="w-7 h-7 rounded-[8px] border border-[#e5e9ee] cursor-pointer overflow-hidden p-0"
             title="Change Canvas Background Color"
-          />
+            target="background"
+            />
           <button
             onClick={() => setPageBackgroundColor('#ffffff')}
             className="text-[11px] font-medium px-2.5 py-1 rounded-[8px] border border-[#e5e9ee] bg-[#f8fafb] hover:bg-[#f4f2ff] hover:text-[#5c4bb8] transition cursor-pointer"

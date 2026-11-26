@@ -1,5 +1,6 @@
-import React, { useRef, useState } from 'react';
+﻿import React, { useRef, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
+import { ColorInput } from '../common/ColorInput';
 import { TextElement, ShapeType } from '../../types/publisher';
 import { FloatingDropdown } from '../common/FloatingDropdown';
 import { FontSelector } from '../common/FontSelector';
@@ -162,12 +163,12 @@ export const HomeTab: React.FC = () => {
             {/* Modern color swatch */}
             <div className="flex items-center gap-1.5" title="Font Color">
               <div className="relative flex items-center justify-center">
-                <input
-                  type="color"
+                <ColorInput
                   className="w-6 h-6 rounded-[6px] border border-[#e5e9ee] cursor-pointer overflow-hidden p-0"
                   value={selectedTextElement?.color || '#161a22'}
                   onChange={(e) => updateSelectedElements({ color: e.target.value })}
-                />
+                  target="text"
+                  />
               </div>
             </div>
 

@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+﻿import React, { useEffect, useRef, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
+import { ColorInput } from '../common/ColorInput';
 import { BrandKit } from '../../types/publisher';
 import { extractBrandColorsFromImage } from '../../utils/brandRebrand';
 import { FontSelector } from '../common/FontSelector';
@@ -398,12 +399,12 @@ export const BrandKitModal: React.FC = () => {
                     key={swatch.key}
                     className="flex flex-col items-center gap-1 p-2 rounded-xl border border-[#e5e9ee] bg-slate-50"
                   >
-                    <input
-                      type="color"
+                    <ColorInput
                       value={draft.colors[swatch.key]}
                       onChange={(e) => updateColor(swatch.key, e.target.value)}
                       className="w-8 h-8 rounded-full border border-[#e5e9ee] cursor-pointer p-0 shadow-2xs"
-                    />
+                      target="text"
+                      />
                     <span className="text-[10px] font-semibold text-slate-700">
                       {swatch.label}
                     </span>

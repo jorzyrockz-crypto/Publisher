@@ -1,5 +1,6 @@
-import React, { useRef, useState } from 'react';
+﻿import React, { useRef, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
+import { ColorInput } from '../common/ColorInput';
 import {
   AIArtStyle,
   AICloudModel,
@@ -628,14 +629,14 @@ export const AIImageModal: React.FC = () => {
                           ] as const
                         ).map((item) => (
                           <div key={item.key} className="flex flex-col items-center gap-0.5">
-                            <input
-                              type="color"
+                            <ColorInput
                               value={customPalette[item.key]}
                               onChange={(e) =>
                                 setCustomPalette((p) => ({ ...p, [item.key]: e.target.value }))
                               }
                               className="w-6 h-6 rounded-full border border-[#e5e9ee] cursor-pointer p-0"
-                            />
+                              target="fill"
+                              />
                             <span className="text-[9px] text-slate-500 font-semibold">{item.label}</span>
                           </div>
                         ))}

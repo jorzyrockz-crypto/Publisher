@@ -76,7 +76,16 @@ An authentic, modern, desktop-grade clone of **Microsoft Publisher** built with 
 - **Collapsible inspector**: every inspector section is a fold-out card with a clickable header, and the sticky header shows the current selection type.
 - **Consistent zoom**: one 20–300% range everywhere, with a click-to-type zoom percentage in the status bar.
 
-### 7. Performance & Static Hosting
+### 7. Smart, Document-Aware Colour Picker
+Every colour swatch in the app (37 of them — fill, stroke, text, table, page background, collage, brand kits) now opens a **smart palette** derived from the document you are editing:
+- **Mined colours** — every fill, stroke, text and table colour in the project, weighted by page and by element area, so the palette reflects the artwork rather than a generic rainbow.
+- **Harmonies** — complementary, split-complementary, analogous and triadic sets generated from the dominant hue, plus tints/shades and neutrals tuned to the page background.
+- **Role-aware filtering** — text swatches are auto-adjusted until they clear **WCAG AA (4.5:1)** against the surface they land on, fills are rejected if they vanish into the background, and background swatches are only offered when the document's text stays readable on them.
+- Hollow dot markers flag swatches that were lightened/darkened to pass contrast; tooltips show the hex and the measured contrast ratio.
+
+Logic lives in `src/utils/documentPalette.ts`; the UI is `src/components/common/ColorInput.tsx`, a drop-in replacement for `<input type="color">`.
+
+### 8. Performance & Static Hosting
 - **Code-split bundle**: the editor shell loads first; every modal (`Backstage`, `AI Image`, `Collage`, `Mail Merge`, `Brand Board/Kits`, `Shortcuts`) and the export stack (jsPDF, html2canvas, JSZip) are lazy chunks. Initial JS dropped from ~1.9 MB to ~0.9 MB (−52%).
 - **Auto-fit on load**: the artboard measures the real viewport on first paint and zooms to frame Page 1 exactly — no clipped pages on 1280×800 laptops.
 - **Works on GitHub Pages**: Cloud AI (Pollinations), Iconify and Wikimedia are called directly from production builds (all CORS-enabled); Clipart.Free can use an optional CORS proxy. See [docs/static-hosting.md](docs/static-hosting.md) and [`workers/clipart-proxy.js`](workers/clipart-proxy.js).
