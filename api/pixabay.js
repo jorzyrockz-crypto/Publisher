@@ -78,6 +78,48 @@ export default async function handler(req, res) {
     return;
   }
 
+  // JSON diagnostics for the image path: reports what Pixabay answers our
+  // server for a given URL under a few header sets, without relaying bytes.
+  if (mode === 'probe') {
+    const target = requestUrl.searchParams.get('url') || '';
+    let parsed;
+    try {
+      parsed = new URL(target);
+    } catch {
+      sendJson(res, 400, { error: 'url parameter must be an absolute URL' });
+      return;
+    }
+    if (parsed.protocol !== 'https:' || !IMAGE_HOSTS.has(parsed.hostname)) {
+      sendJson(res, 400, { error: 'only https://pixabay.com image URLs can be probed' });
+      return;
+    }
+    const variants = [
+      { name: 'as-authored', headers: { 'User-Agent': USER_AGENT, Accept: 'image/*,*/*;q=0.8', Referer: 'https://pixabay.com/' } },
+      { name: 'browser-ua', headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36', Accept: 'image/avif,image/webp,image/jpeg,image/*,*/*;q=0.8', Referer: 'https://pixabay.com/' } },
+      { name: 'no-referer', headers: { 'User-Agent': USER_AGENT, Accept: 'image/*,*/*;q=0.8' } },
+    ];
+    const results = [];
+    for (const variant of variants) {
+      try {
+        const upstream = await fetch(parsed.toString(), { headers: variant.headers, redirect: 'follow' });
+        const buf = Buffer.from(await upstream.arrayBuffer());
+        results.push({
+          name: variant.name,
+          status: upstream.status,
+          ok: upstream.ok,
+          contentType: upstream.headers.get('content-type'),
+          bytes: buf.length,
+          finalUrl: upstream.url ? upstream.url.slice(0, 120) : null,
+          bodyHead: upstream.ok ? null : buf.toString('utf8').slice(0, 160),
+        });
+      } catch (error) {
+        results.push({ name: variant.name, error: String(error) });
+      }
+    }
+    sendJson(res, 200, { host: parsed.hostname, results });
+    return;
+  }
+
   if (mode === 'image') {
     const target = requestUrl.searchParams.get('url') || '';
     let parsed;
