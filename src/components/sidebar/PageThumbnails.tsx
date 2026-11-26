@@ -37,6 +37,7 @@ import { ElementRenderer } from '../canvas/ElementRenderer';
 import { buildPatternBackgroundStyle } from '../../utils/patternGenerator';
 import { MASTER_PAGE_PRESETS } from '../../constants/masterPresets';
 import { buildBookletSheets } from '../../utils/printUtils';
+import { useResizablePanel, useWindowWidth } from '../../hooks/useResizablePanel';
 
 export const PageThumbnails: React.FC = () => {
   const {
@@ -168,6 +169,21 @@ export const PageThumbnails: React.FC = () => {
     }
   };
 
+  const windowWidth = useWindowWidth();
+  const isNarrowViewport = windowWidth < 1024;
+  const {
+    width: panelWidth,
+    isDragging: isResizing,
+    onMouseDown: handleResizeStart,
+    resetWidth,
+  } = useResizablePanel({
+    storageKey: 'studiopress_left_panel_width',
+    defaultWidth: 224,
+    minWidth: 180,
+    maxWidth: 360,
+    edge: 'right',
+  });
+
   if (!isLeftPanelOpen) {
     return (
       <div className="w-9 bg-white border-r border-slate-200 flex flex-col items-center py-2.5 gap-3 h-full select-none flex-shrink-0 z-20 shadow-2xs">
@@ -190,7 +206,21 @@ export const PageThumbnails: React.FC = () => {
   }
 
   return (
-    <div className="w-56 bg-white border-r border-slate-200 flex flex-col h-full select-none flex-shrink-0 z-20 shadow-2xs transition-all">
+    <div
+      style={{ width: panelWidth }}
+      className={`bg-white border-r border-slate-200 flex flex-col h-full select-none flex-shrink-0 ${
+        isNarrowViewport ? 'absolute left-0 top-0 bottom-0 z-30 shadow-2xl' : 'relative z-20 shadow-2xs'
+      } ${isResizing ? '' : 'transition-[width] duration-150'}`}
+    >
+      {/* Drag-to-resize handle on right edge */}
+      <div
+        onMouseDown={handleResizeStart}
+        onDoubleClick={resetWidth}
+        title="Drag to resize • Double-click to reset"
+        className={`absolute top-0 right-0 bottom-0 w-1.5 cursor-col-resize z-30 transition-colors ${
+          isResizing ? 'bg-indigo-500' : 'hover:bg-indigo-400/70'
+        }`}
+      />
       {/* Segmented Header Tabs: Pages | Layers */}
       <div className="p-2 border-b border-slate-200/80 bg-slate-50/70 flex items-center gap-1">
         <div className="flex-1 grid grid-cols-2 bg-slate-200/70 p-0.5 rounded-xl">

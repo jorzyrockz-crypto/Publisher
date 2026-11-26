@@ -41,6 +41,7 @@ import {
   recolorSvgDataUri,
 } from '../../utils/svgRecolor';
 import { DesignIdeasPanel } from './DesignIdeasPanel';
+import { useResizablePanel, useWindowWidth } from '../../hooks/useResizablePanel';
 import {
   Type,
   Square,
@@ -174,6 +175,21 @@ export const PropertiesPanel: React.FC = () => {
       ? elementsPool.find((el) => el.id === selectedElementIds[0])
       : null;
 
+  const windowWidth = useWindowWidth();
+  const isNarrowViewport = windowWidth < 1024;
+  const {
+    width: panelWidth,
+    isDragging: isResizing,
+    onMouseDown: handleResizeStart,
+    resetWidth,
+  } = useResizablePanel({
+    storageKey: 'studiopress_right_panel_width',
+    defaultWidth: 288,
+    minWidth: 256,
+    maxWidth: 440,
+    edge: 'left',
+  });
+
   if (!isRightPanelOpen) {
     return (
       <div className="w-9 bg-white border-l border-slate-200 flex flex-col items-center py-2.5 gap-3 h-full select-none flex-shrink-0 z-20 shadow-2xs">
@@ -196,7 +212,21 @@ export const PropertiesPanel: React.FC = () => {
   }
 
   return (
-    <div className="w-72 bg-white border-l border-slate-200 flex flex-col h-full select-none flex-shrink-0 z-20 text-xs text-slate-700 overflow-y-auto shadow-2xs transition-all">
+    <div
+      style={{ width: panelWidth }}
+      className={`bg-white border-l border-slate-200 flex flex-col h-full select-none flex-shrink-0 text-xs text-slate-700 overflow-y-auto ${
+        isNarrowViewport ? 'absolute right-0 top-0 bottom-0 z-30 shadow-2xl' : 'relative z-20 shadow-2xs'
+      } ${isResizing ? '' : 'transition-[width] duration-150'}`}
+    >
+      {/* Drag-to-resize handle on left edge */}
+      <div
+        onMouseDown={handleResizeStart}
+        onDoubleClick={resetWidth}
+        title="Drag to resize • Double-click to reset"
+        className={`absolute top-0 left-0 bottom-0 w-1.5 cursor-col-resize z-30 transition-colors ${
+          isResizing ? 'bg-indigo-500' : 'hover:bg-indigo-400/70'
+        }`}
+      />
       {/* Header with Inspector | Design Ideas Tabs */}
       <div className="p-2 flex items-center gap-1.5 font-bold text-xs text-slate-700 border-b border-slate-200/80 bg-slate-50/70 sticky top-0 z-10">
         <div className="flex-1 grid grid-cols-2 bg-slate-200/70 p-0.5 rounded-xl">

@@ -1,5 +1,6 @@
-import React from 'react';
-import { PublisherProvider } from './context/PublisherContext';
+import React, { useEffect, useRef } from 'react';
+import { PublisherProvider, usePublisher } from './context/PublisherContext';
+import { useWindowWidth } from './hooks/useResizablePanel';
 import { Ribbon } from './components/ribbon/Ribbon';
 import { DocumentTabsBar } from './components/workspace/DocumentTabsBar';
 import { PageThumbnails } from './components/sidebar/PageThumbnails';
@@ -16,6 +17,31 @@ import { BrandBoardModal } from './components/modals/BrandBoardModal';
 import { BrandKitModal } from './components/modals/BrandKitModal';
 
 export const AppContent: React.FC = () => {
+  const {
+    isStockArtPanelOpen,
+    setIsLeftPanelOpen,
+    setIsRightPanelOpen,
+  } = usePublisher();
+  const windowWidth = useWindowWidth();
+  const prevWidthRef = useRef(windowWidth);
+
+  // Auto-collapse sidebars when resizing into a narrow/tablet viewport so the canvas stays usable
+  useEffect(() => {
+    const prev = prevWidthRef.current;
+    prevWidthRef.current = windowWidth;
+    if (windowWidth < 1024 && prev >= 1024) {
+      setIsLeftPanelOpen(false);
+      setIsRightPanelOpen(false);
+    }
+  }, [windowWidth, setIsLeftPanelOpen, setIsRightPanelOpen]);
+
+  // On medium screens (< 1280px), yield the Inspector when Stock Art opens so both don't crowd the canvas
+  useEffect(() => {
+    if (isStockArtPanelOpen && windowWidth < 1280) {
+      setIsRightPanelOpen(false);
+    }
+  }, [isStockArtPanelOpen, windowWidth, setIsRightPanelOpen]);
+
   return (
     <div className="flex flex-col w-screen h-screen overflow-hidden bg-slate-100 font-sans">
       {/* 1. Office Ribbon Header & Quick Access Toolbar */}

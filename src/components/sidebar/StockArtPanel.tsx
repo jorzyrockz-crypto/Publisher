@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
 import { SAMPLE_GRAPHICS } from '../../constants/sampleGraphics';
+import { useResizablePanel, useWindowWidth } from '../../hooks/useResizablePanel';
 import {
   ClipartFreeItem,
   fetchClipartAsDataUrl,
@@ -222,14 +223,20 @@ export const StockArtPanel: React.FC = () => {
       });
   };
 
-  // Auto-run initial unified search when the panel first opens
+  // Auto-run initial unified search when the panel first opens, and reactively debounce live typing
   useEffect(() => {
-    if (isStockArtPanelOpen && !hasAutoSearchedRef.current) {
+    if (!isStockArtPanelOpen) return;
+    if (!hasAutoSearchedRef.current) {
       hasAutoSearchedRef.current = true;
       runUnifiedSearch(query);
+      return;
     }
+    const timer = window.setTimeout(() => {
+      runUnifiedSearch(query);
+    }, 350);
+    return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isStockArtPanelOpen]);
+  }, [isStockArtPanelOpen, query]);
 
   // Interleave results when viewing "All Sources" so users see diverse results from every source right away
   const combinedResults = useMemo(() => {
@@ -310,13 +317,42 @@ export const StockArtPanel: React.FC = () => {
     }
   };
 
+  const windowWidth = useWindowWidth();
+  const isNarrowViewport = windowWidth < 1024;
+  const {
+    width: panelWidth,
+    isDragging: isResizing,
+    onMouseDown: handleResizeStart,
+    resetWidth,
+  } = useResizablePanel({
+    storageKey: 'studiopress_stock_panel_width',
+    defaultWidth: 320,
+    minWidth: 260,
+    maxWidth: 520,
+    edge: 'left',
+  });
+
   if (!isStockArtPanelOpen) return null;
 
   const totalAllCount =
     builtinItems.length + cfItems.length + iconifyItems.length + wikiItems.length;
 
   return (
-    <aside className="w-80 bg-white border-l border-slate-200 flex flex-col h-full shadow-xs flex-shrink-0 z-20 select-none">
+    <aside
+      style={{ width: panelWidth }}
+      className={`bg-white border-l border-slate-200 flex flex-col h-full flex-shrink-0 select-none ${
+        isNarrowViewport ? 'absolute right-0 top-0 bottom-0 z-30 shadow-2xl' : 'relative z-20 shadow-xs'
+      } ${isResizing ? '' : 'transition-[width] duration-150'}`}
+    >
+      {/* Drag-to-resize handle on left edge */}
+      <div
+        onMouseDown={handleResizeStart}
+        onDoubleClick={resetWidth}
+        title="Drag to resize • Double-click to reset"
+        className={`absolute top-0 left-0 bottom-0 w-1.5 cursor-col-resize z-30 transition-colors ${
+          isResizing ? 'bg-indigo-500' : 'hover:bg-indigo-400/70'
+        }`}
+      />
       {/* Inspector-style Header */}
       <div className="px-3.5 py-2.5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -515,7 +551,11 @@ export const StockArtPanel: React.FC = () => {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-2">
+          <div
+            className={`grid gap-2 ${
+              panelWidth >= 380 ? 'grid-cols-3' : 'grid-cols-2'
+            }`}
+          >
             {combinedResults.map((item) => {
               const isInserting = insertingUid === item.uid;
               return (
