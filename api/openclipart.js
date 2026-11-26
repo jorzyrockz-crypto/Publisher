@@ -117,18 +117,28 @@ export function parseSearchPage(html, page, perPage) {
     if (items.length >= perPage) break;
   }
 
-  // Total lives in the header ("6,219 clipart for …"), page count in the pager.
+  // Total and page count live in the header ("6,219 clipart for … (Page 1 of 75)").
+  // Their markup wraps pieces of that sentence in tags and entities, so matching
+  // the raw HTML misses it — flatten to text first.
+  const text = html
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&quot;/g, '"')
+    .replace(/\s+/g, ' ');
   let total = items.length;
-  const totalMatch = html.match(/([\d,]+)\s*clipart/i);
+  const totalMatch = text.match(/([\d,]+)\s*clipart/i);
   if (totalMatch) {
     const parsed = Number(totalMatch[1].replace(/,/g, ''));
     if (Number.isFinite(parsed) && parsed > 0) total = parsed;
   }
   let pageCount = 0;
-  const pageMatch = html.match(/Page\s+\d+\s+of\s+([\d,]+)/i);
-  if (pageMatch) pageCount = Number(pageMatch[1].replace(/,/g, '')) || 0;
+  const pageMatch = text.match(/Page\s+(\d+)\s+of\s+([\d,]+)/i);
+  if (pageMatch) pageCount = Number(pageMatch[2].replace(/,/g, '')) || 0;
 
-  const hasMore = pageCount ? page < pageCount : items.length >= perPage;
+  // The page count is authoritative when present; otherwise fall back to "did we
+  // already walk the whole result set", since their page sizes vary by result.
+  const fetchedSoFar = page * Math.max(1, items.length);
+  const hasMore = pageCount > 0 ? page < pageCount : total > fetchedSoFar;
   return { items, total, hasMore, pageCount };
 }
 
