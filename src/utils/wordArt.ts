@@ -96,6 +96,8 @@ export interface WordArtPaint {
   bloom?: { blur: number; color: string }[];
   /** One long cast shadow, painted after the extrusion. */
   castShadow?: WordArtShadow;
+  /** A pass of sparkles over the finished letters. */
+  glints?: boolean;
 }
 
 const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
@@ -271,11 +273,12 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     stroke: { width: 4, color: '#ffffff' },
     shadows: [{ dx: 4, dy: 4, blur: 0, color: '#1e293b' }],
   },
-  // Horizon-break metal: gold sky, a hard snap into indigo, cyan bounce under
-  // it, a six-step ember block and a violet bloom — the "AI render" look.
+  // Horizon-break metal: gold sky, a hard snap into indigo water, cyan bounce
+  // under it, a six-step ember block and a violet bloom — the "AI render" look.
   'synth-chrome': {
     weight: '900',
     italic: true,
+    glints: true,
     gradient: {
       angle: 180,
       stops: [
@@ -290,12 +293,13 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     },
     stroke: { width: 2, color: '#fef08a' },
     extrusion: { steps: 6, dx: 0.8, dy: 1.3, startColor: '#ff7b00', endColor: '#9a1c00' },
-    bloom: [{ blur: 14, color: 'rgba(168,85,247,0.55)' }],
-    castShadow: { dx: 0, dy: 10, blur: 16, color: 'rgba(0,0,0,0.65)' },
+    bloom: [{ blur: 14, color: 'rgba(168, 85, 247, 0.55)' }],
+    castShadow: { dx: 0, dy: 10, blur: 16, color: 'rgba(0, 0, 0, 0.65)' },
     shadows: [],
   },
   'liquid-glass': {
     weight: '900',
+    glints: true,
     gradient: {
       angle: 175,
       stops: [
@@ -310,43 +314,47 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     },
     stroke: { width: 1.5, color: '#ffffff' },
     extrusion: { steps: 4, dx: 0, dy: 1.2, startColor: '#64748b', endColor: '#0f172a' },
-    bloom: [{ blur: 12, color: 'rgba(125,211,252,0.45)' }],
-    castShadow: { dx: 0, dy: 8, blur: 14, color: 'rgba(15,23,42,0.45)' },
+    bloom: [{ blur: 12, color: 'rgba(125, 211, 252, 0.45)' }],
+    castShadow: { dx: 0, dy: 8, blur: 14, color: 'rgba(15, 23, 42, 0.45)' },
     shadows: [],
   },
   'rose-gold': {
     weight: '900',
+    glints: true,
     gradient: {
-      angle: 168,
+      angle: 165,
       stops: [
-        { offset: 0, color: '#fff3e4' },
-        { offset: 0.25, color: '#f0c39b' },
-        { offset: 0.43, color: '#fde4cf' },
-        { offset: 0.45, color: '#8f5344' },
-        { offset: 0.62, color: '#c9805f' },
-        { offset: 0.82, color: '#f3c9ac' },
-        { offset: 1, color: '#fff8f0' },
+        { offset: 0, color: '#fff7ed' },
+        { offset: 0.25, color: '#fed7aa' },
+        { offset: 0.44, color: '#f472b6' },
+        { offset: 0.48, color: '#831843' },
+        { offset: 0.65, color: '#fb7185' },
+        { offset: 0.85, color: '#fda4af' },
+        { offset: 1, color: '#fff1f2' },
       ],
     },
-    stroke: { width: 2, color: '#fff1e0' },
-    extrusion: { steps: 5, dx: 0.6, dy: 1.4, startColor: '#8a4a34', endColor: '#4a1d16' },
-    bloom: [{ blur: 10, color: 'rgba(255,196,150,0.4)' }],
-    castShadow: { dx: 0, dy: 9, blur: 18, color: 'rgba(60,20,10,0.5)' },
+    stroke: { width: 2, color: '#ffedd5' },
+    extrusion: { steps: 5, dx: 0.6, dy: 1.2, startColor: '#be185d', endColor: '#4c0519' },
+    bloom: [{ blur: 12, color: 'rgba(251, 113, 133, 0.4)' }],
+    castShadow: { dx: 0, dy: 8, blur: 14, color: 'rgba(0, 0, 0, 0.45)' },
     shadows: [],
   },
   'cyber-acid': {
     weight: '900',
+    italic: true,
     gradient: {
       angle: 135,
       stops: [
-        { offset: 0, color: '#ccff00' },
-        { offset: 0.55, color: '#22d3ee' },
-        { offset: 1, color: '#a78bfa' },
+        { offset: 0, color: '#ecfccb' },
+        { offset: 0.35, color: '#a3e635' },
+        { offset: 0.7, color: '#22d3ee' },
+        { offset: 1, color: '#06b6d4' },
       ],
     },
-    stroke: { width: 3, color: '#0a0a0a' },
-    extrusion: { steps: 4, dx: 2.4, dy: 2.4, startColor: '#ff2bd6', endColor: '#a600a6' },
-    bloom: [{ blur: 18, color: 'rgba(163,230,53,0.5)' }],
+    stroke: { width: 3, color: '#09090b' },
+    extrusion: { steps: 5, dx: 1.2, dy: 1.2, startColor: '#ec4899', endColor: '#831843' },
+    bloom: [{ blur: 14, color: 'rgba(163, 230, 53, 0.5)' }],
+    castShadow: { dx: 0, dy: 8, blur: 12, color: 'rgba(0, 0, 0, 0.6)' },
     shadows: [],
   },
   // Self-contained on light or dark: a glossy charcoal face with a hard
@@ -354,18 +362,19 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   'obsidian-gold': {
     weight: '900',
     gradient: {
-      angle: 150,
+      angle: 155,
       stops: [
-        { offset: 0, color: '#34343e' },
-        { offset: 0.32, color: '#6a6a78' },
-        { offset: 0.5, color: '#f8fafc' },
-        { offset: 0.56, color: '#26262e' },
-        { offset: 0.78, color: '#565663' },
-        { offset: 1, color: '#2c2c34' },
+        { offset: 0, color: '#52525b' },
+        { offset: 0.35, color: '#18181b' },
+        { offset: 0.47, color: '#f4f4f5' },
+        { offset: 0.51, color: '#09090b' },
+        { offset: 0.85, color: '#27272a' },
+        { offset: 1, color: '#71717a' },
       ],
     },
     stroke: { width: 3, color: '#f59e0b' },
-    castShadow: { dx: 0, dy: 4, blur: 10, color: 'rgba(0,0,0,0.55)' },
+    extrusion: { steps: 4, dx: 0.5, dy: 1.1, startColor: '#b45309', endColor: '#451a03' },
+    castShadow: { dx: 0, dy: 6, blur: 12, color: 'rgba(0, 0, 0, 0.5)' },
     shadows: [],
   },
   'candy-gloss': {
@@ -373,17 +382,16 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     gradient: {
       angle: 180,
       stops: [
-        { offset: 0, color: '#fff0f5' },
-        { offset: 0.12, color: '#ffb3c7' },
-        { offset: 0.5, color: '#ff5c8a' },
-        { offset: 0.8, color: '#e11d48' },
-        { offset: 1, color: '#be123c' },
+        { offset: 0, color: '#ffffff' },
+        { offset: 0.14, color: '#fda4af' },
+        { offset: 0.5, color: '#f43f5e' },
+        { offset: 0.85, color: '#e11d48' },
+        { offset: 1, color: '#9f1239' },
       ],
     },
     stroke: { width: 4, color: '#ffffff' },
-    extrusion: { steps: 5, dx: 1.2, dy: 1.6, startColor: '#be123c', endColor: '#7f1d1d' },
-    bloom: [{ blur: 10, color: 'rgba(255,92,138,0.35)' }],
-    castShadow: { dx: 0, dy: 8, blur: 16, color: 'rgba(127,29,29,0.45)' },
+    extrusion: { steps: 5, dx: 0, dy: 1.4, startColor: '#881337', endColor: '#4c0519' },
+    castShadow: { dx: 0, dy: 8, blur: 12, color: 'rgba(76, 5, 25, 0.4)' },
     shadows: [],
   },
 };
@@ -395,6 +403,124 @@ export function wordArtPaint(style?: WordArtStyle): WordArtPaint | undefined {
 }
 
 /** The weight a style forces on the type (layout must measure with it too). */
+/**
+ * The `.wordart-*` rule for a style, generated from the paint spec. The
+ * stylesheet in src/index.css is written by this function (see
+ * `scripts/wordart-css.ts`), so a gallery preview and the canvas painter can
+ * never disagree about a stop, an outline or a drop shadow.
+ */
+export function buildWordArtCssRule(style: WordArtStyle, className = `wordart-${style}`): string {
+  const paint = wordArtPaint(style);
+  if (!paint) return '';
+  const lines: string[] = [`  font-weight: ${paint.weight};`];
+  if (paint.italic) lines.push('  font-style: italic;');
+  if (paint.gradient) {
+    const stops = [...paint.gradient.stops]
+      .sort((a, b) => a.offset - b.offset)
+      .map((s) => `${s.color} ${Math.round(s.offset * 100)}%`)
+      .join(', ');
+    lines.push(
+      `  background: linear-gradient(${paint.gradient.angle}deg, ${stops});`,
+      '  -webkit-background-clip: text;',
+      '  -webkit-text-fill-color: transparent;'
+    );
+  } else if (paint.fill) {
+    lines.push(`  color: ${paint.fill};`);
+  }
+  if (paint.stroke) {
+    lines.push(`  -webkit-text-stroke: ${paint.stroke.width}px ${paint.stroke.color};`);
+    // Canvas paints the outline behind the fill; without this the DOM paints it
+    // on top and the two renderers disagree about how thick the letters look.
+    lines.push('  paint-order: stroke fill;');
+  }
+  const chain = wordArtShadowChain(paint);
+  if (chain.length) {
+    lines.push('  filter:');
+    const shadows = chain.map((s) => `    drop-shadow(${shadowCss(s)})`);
+    lines[lines.length - 1] = `  filter:\n${shadows.join('\n')};`;
+  }
+  return `.${className} {\n${lines.join('\n')}\n}`;
+}
+
+/** Every rule, in catalogue order — the body of the WordArt block in index.css. */
+export function buildWordArtStylesheet(): string {
+  return WORD_ART_STYLES.map((style) => buildWordArtCssRule(style.id, style.className)).join('\n\n');
+}
+
+export interface WordArtGlint {
+  /** Centre, in element-local pixels. */
+  x: number;
+  y: number;
+  /** Outer radius of the four-point star. */
+  radius: number;
+  /** Rotation in radians. */
+  rotation: number;
+  opacity: number;
+}
+
+/** Where the sparkles land, as fractions of the text box. */
+const GLINT_ANCHORS: { fx: number; fy: number; scale: number; opacity: number }[] = [
+  { fx: 0.055, fy: 0.24, scale: 0.9, opacity: 0.9 },
+  { fx: 0.45, fy: 0.06, scale: 0.5, opacity: 0.62 },
+  { fx: 0.88, fy: 0.28, scale: 1, opacity: 0.85 },
+  { fx: 0.3, fy: 0.6, scale: 0.42, opacity: 0.5 },
+  { fx: 0.68, fy: 0.54, scale: 0.64, opacity: 0.6 },
+];
+
+/** Too small to read, too large to sit on the letters. */
+const GLINT_MIN = 4;
+const GLINT_MAX = 12;
+
+const fract = (value: number) => value - Math.floor(value);
+
+/**
+ * Sparkle pass for the styles that ask for one. Deterministic from the style
+ * and the box, so the DOM overlay and the canvas paint the same stars.
+ */
+export function wordArtGlints(
+  style: WordArtStyle | undefined,
+  width: number,
+  height: number
+): WordArtGlint[] {
+  const paint = wordArtPaint(style);
+  if (!paint?.glints || width <= 0 || height <= 0) return [];
+  const seed = [...String(style)].reduce((acc, char) => acc + char.charCodeAt(0), 0) * 0.6180339;
+  const base = Math.max(GLINT_MIN, Math.min(GLINT_MAX, height * 0.1));
+  return GLINT_ANCHORS.map((anchor, index) => {
+    const jx = fract(Math.sin((index + 1) * 12.9898 + seed) * 43758.5453);
+    const jy = fract(Math.sin((index + 1) * 78.233 + seed) * 43758.5453);
+    const jr = fract(Math.sin((index + 1) * 37.719 + seed) * 43758.5453);
+    return {
+      x: Math.min(width - 2, Math.max(2, (anchor.fx + (jx - 0.5) * 0.05) * width)),
+      y: Math.min(height - 2, Math.max(2, (anchor.fy + (jy - 0.5) * 0.06) * height)),
+      radius: base * anchor.scale,
+      rotation: jr * Math.PI * 0.5,
+      opacity: anchor.opacity,
+    };
+  });
+}
+
+/** The star as an eight-point polygon — shared by the canvas and the DOM. */
+export function glintStarPoints(glint: WordArtGlint): { x: number; y: number }[] {
+  const points: { x: number; y: number }[] = [];
+  for (let i = 0; i < 8; i += 1) {
+    const angle = glint.rotation + (i * Math.PI) / 4;
+    const radius = i % 2 === 0 ? glint.radius : glint.radius * 0.32;
+    points.push({
+      x: glint.x + Math.cos(angle) * radius,
+      y: glint.y + Math.sin(angle) * radius,
+    });
+  }
+  return points;
+}
+
+/** SVG path for the same star, for the DOM overlay. */
+export function glintStarPath(glint: WordArtGlint): string {
+  return glintStarPoints(glint)
+    .map((point, index) => `${index === 0 ? 'M' : 'L'}${point.x.toFixed(2)} ${point.y.toFixed(2)}`)
+    .join(' ') + ' Z';
+}
+
 export function wordArtWeight(style?: WordArtStyle): '800' | '900' | undefined {
   return wordArtPaint(style)?.weight;
 }
@@ -467,6 +593,8 @@ export interface WordArtCss {
   filter?: string;
   /** 'italic' when the style slant is part of the look. */
   fontStyle?: 'italic';
+  /** Canvas paints the outline behind the fill; so must the DOM. */
+  paintOrder?: 'stroke fill';
 }
 
 export function wordArtCss(style?: WordArtStyle): WordArtCss {
@@ -483,7 +611,10 @@ export function wordArtCss(style?: WordArtStyle): WordArtCss {
     css.backgroundImage = `linear-gradient(${paint.gradient.angle}deg, ${stops})`;
     css.textFillTransparent = true;
   }
-  if (paint.stroke) css.webkitTextStroke = `${paint.stroke.width}px ${paint.stroke.color}`;
+  if (paint.stroke) {
+    css.webkitTextStroke = `${paint.stroke.width}px ${paint.stroke.color}`;
+    css.paintOrder = 'stroke fill';
+  }
   // `text-shadow` bleeds through a background-clipped fill and muddies the
   // metal; a drop-shadow filter paints behind the clipped glyphs instead.
   const chain = wordArtShadowChain(paint);

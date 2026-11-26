@@ -17,7 +17,7 @@ import { PATTERN_CATALOG } from '../../utils/patternGenerator';
 import { layoutText, verticalOffset } from '../../utils/textLayout';
 import { buildTextEffectPainter } from '../../utils/textEffects';
 import { imageContentRect, imageFit, imageMaskClip } from '../../utils/imageFrame';
-import { wordArtCss } from '../../utils/wordArt';
+import { glintStarPath, wordArtCss, wordArtGlints } from '../../utils/wordArt';
 import { useImageAspect } from '../../hooks/useImageAspect';
 import { elementClipPath } from '../../utils/shapeClip';
 
@@ -210,7 +210,7 @@ const TextRenderer: React.FC<{
   // the clipped gradient fill and turn the metal muddy.
   const waFilter = waCss.filter;
   const waStroke = waCss.webkitTextStroke
-    ? { WebkitTextStroke: waCss.webkitTextStroke }
+    ? { WebkitTextStroke: waCss.webkitTextStroke, paintOrder: waCss.paintOrder }
     : {};
 
   const hasBoxPaint =
@@ -309,7 +309,7 @@ const TextRenderer: React.FC<{
       : undefined);
 
   const strokeStyle: React.CSSProperties = waCss.webkitTextStroke
-    ? { WebkitTextStroke: waCss.webkitTextStroke }
+    ? { WebkitTextStroke: waCss.webkitTextStroke, paintOrder: waCss.paintOrder }
     : paint.strokeWidth
       ? { WebkitTextStroke: `${paint.strokeWidth}px ${paint.strokeColor}` }
       : {};
@@ -319,6 +319,10 @@ const TextRenderer: React.FC<{
   const glyphShadow = paint.cssShadow || undefined;
 
   const baseColor = waCss.color ?? (paint.fillTransparent ? 'transparent' : element.color);
+  // Sparkles are shared geometry: the exporter draws the same list.
+  const glints = element.isWordArt
+    ? wordArtGlints(element.wordArtStyle, element.width, element.height)
+    : [];
 
   const gradientStyle = (x: number, y: number): React.CSSProperties =>
     gradientCss
@@ -453,6 +457,36 @@ const TextRenderer: React.FC<{
           {renderGlyphs(baseColor, 'base', true)}
         </div>
       </div>
+
+      {/* Sparkle pass — same anchors and star geometry as the exporter. */}
+      {glints.length > 0 && (
+        <svg
+          aria-hidden="true"
+          viewBox={`0 0 ${element.width} ${element.height}`}
+          width={element.width}
+          height={element.height}
+          style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'visible' }}
+        >
+          {glints.map((glint, index) => (
+            <g key={`glint-${index}`} opacity={glint.opacity}>
+              <circle
+                cx={glint.x}
+                cy={glint.y}
+                r={glint.radius * 2}
+                fill="url(#wordart-glint-halo)"
+              />
+              <path d={glintStarPath(glint)} fill="#ffffff" />
+            </g>
+          ))}
+          <defs>
+            <radialGradient id="wordart-glint-halo">
+              <stop offset="0%" stopColor="#ffffff" stopOpacity={0.85} />
+              <stop offset="45%" stopColor="#ffffff" stopOpacity={0.22} />
+              <stop offset="100%" stopColor="#ffffff" stopOpacity={0} />
+            </radialGradient>
+          </defs>
+        </svg>
+      )}
 
       {/* Splice / glitch slices: clipped copies offset in colour. */}
       {paint.slices.map((slice, sliceIndex) => (

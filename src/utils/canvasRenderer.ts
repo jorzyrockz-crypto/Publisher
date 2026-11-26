@@ -18,7 +18,7 @@ import type { TextLayoutResult } from './textLayout';
 import { buildTextEffectPainter } from './textEffects';
 import { elementClipPath } from './shapeClip';
 import { imageContentRect, imageFit } from './imageFrame';
-import { wordArtPaint, wordArtShadowChain } from './wordArt';
+import { glintStarPoints, wordArtGlints, wordArtPaint, wordArtShadowChain } from './wordArt';
 
 function loadImage(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
@@ -238,7 +238,10 @@ function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
     for (const unit of units) {
       ctx.save();
       if (blur > 0 && 'filter' in ctx) {
-        ctx.filter = `blur(${blur}px)`;
+        // Canvas `blur(r)` means σ = r; every CSS shadow (drop-shadow and
+        // text-shadow) means σ = r/2. Halve it so the DOM and the export are
+        // equally soft.
+        ctx.filter = `blur(${blur / 2}px)`;
       }
       ctx.translate(unit.x + offsetX, unit.y + offsetY);
       if (unit.angle) ctx.rotate(unit.angle);
@@ -390,7 +393,8 @@ function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
     ctx.textBaseline = 'top';
     ctx.textAlign = 'left';
     for (const shadow of paint.shadows) {
-      if ('filter' in ctx && shadow.blur > 0) ctx.filter = `blur(${shadow.blur}px)`;
+      // same σ convention as drawUnits: CSS blur radius is twice the σ
+      if ('filter' in ctx && shadow.blur > 0) ctx.filter = `blur(${shadow.blur / 2}px)`;
       ctx.fillStyle = shadow.color;
       paintRun(ctx, cap.char, cap.x + shadow.dx, top + cap.y + shadow.dy, capFont, 0, 0);
       if ('filter' in ctx) ctx.filter = 'none';
@@ -404,6 +408,29 @@ function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
       ctx.lineWidth = paint.strokeWidth;
       strokeRun(ctx, cap.char, cap.x, top + cap.y, capFont, 0, 0);
     }
+    ctx.restore();
+  }
+
+  // 6. Sparkles — the last thing on top, inside the element clip.
+  for (const glint of wordArtGlints(wa ? el.wordArtStyle : undefined, width, height)) {
+    ctx.save();
+    ctx.globalAlpha = glint.opacity;
+    const halo = ctx.createRadialGradient(glint.x, glint.y, 0, glint.x, glint.y, glint.radius * 2);
+    halo.addColorStop(0, 'rgba(255,255,255,0.85)');
+    halo.addColorStop(0.45, 'rgba(255,255,255,0.22)');
+    halo.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = halo;
+    ctx.beginPath();
+    ctx.arc(glint.x, glint.y, glint.radius * 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    glintStarPoints(glint).forEach((point, index) => {
+      if (index === 0) ctx.moveTo(point.x, point.y);
+      else ctx.lineTo(point.x, point.y);
+    });
+    ctx.closePath();
+    ctx.fill();
     ctx.restore();
   }
 
