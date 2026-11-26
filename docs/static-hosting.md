@@ -14,6 +14,7 @@ on GitHub Pages.
 | Wikimedia Commons | Vite proxy | ✔ direct `upload.wikimedia.org` (CORS-enabled) |
 | Clipart.Free | Vite proxy | ⚠ needs a proxy — see below |
 | Pixabay (stock photos) | same function as production (`api/pixabay.js`) | ⚠ needs the serverless relay — see below |
+| Unsplash (stock photos) | same function as production (`api/unsplash.js`) | ⚠ needs the serverless relay for search only — see below |
 
 Every resolver returns an ordered candidate list, so a failed request silently
 falls through to the next strategy instead of breaking the search.
@@ -83,6 +84,40 @@ Behaviour worth remembering:
 
 On a host that cannot run the function (plain GitHub Pages, S3), Pixabay simply
 stays unavailable — the panel degrades rather than breaking.
+
+## Unsplash photos on a static host
+
+Unsplash's API guidelines pull in a different direction from Pixabay's:
+**hotlink the photos, do not re-host them**, and credit the photographer with
+UTM-tagged links. `images.unsplash.com` sends `Access-Control-Allow-Origin: *`,
+so the browser can both display a photo and fetch its bytes at insert time
+(converting to a data URL inside the user's own document — our server never
+stores an Unsplash file).
+
+Only the two calls that need the access key go through `api/unsplash.js`:
+
+```
+GET /api/unsplash?mode=search&query=cat&page=1&orientation=landscape&order_by=relevant
+GET /api/unsplash?mode=track&url=https%3A%2F%2Fapi.unsplash.com%2Fphotos%2F…%2Fdownload
+GET /api/unsplash?mode=diag
+```
+
+Set it once — **Vercel → Settings → Environment Variables →
+`UNSPLASH_ACCESS_KEY`** (type *sensitive*, Production + Preview), then redeploy.
+The key is on your Unsplash app page (Access Key, not the Secret Key).
+
+- **`mode=track`** is the "download event" Unsplash requires when a user uses a
+  photo; the panel fires it on insert and treats a failure as advisory.
+- **Rate limits**: a demo app gets 50 requests/hour, a production app 5,000.
+  Search responses are edge-cached for an hour (`s-maxage=3600`) to stay well
+  inside that; `mode=diag` reports `x-ratelimit-remaining`.
+- **Attribution** is mandatory: results show the photographer's name, the photo
+  page, the profile and the Unsplash home page all carry
+  `utm_source=studiopress&utm_medium=referral&utm_campaign=api-credit`.
+- **No key configured** → `503 {code:"not_configured"}`, and the panel shows a
+  quiet notice; the other six sources keep working.
+- Never put "Unsplash" in your app's name or icon (their guideline), which is why
+  the app is StudioPress and the tab is just `Uns`.
 
 ### 2. Other static hosts (GitHub Pages, S3…)
 
