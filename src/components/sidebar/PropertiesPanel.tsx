@@ -45,6 +45,7 @@ import {
   type SmartRecolorMode,
 } from '../../utils/svgRecolor';
 import { getBackdropColorUnder } from '../../utils/brandRebrand';
+import { countWords, layoutText } from '../../utils/textLayout';
 import { DesignIdeasPanel } from './DesignIdeasPanel';
 import { InspectorCard } from './InspectorCard';
 import { useResizablePanel, useWindowWidth } from '../../hooks/useResizablePanel';
@@ -1190,6 +1191,103 @@ export const PropertiesPanel: React.FC = () => {
 
               {typoTab === 'character' && (
                 <div className="space-y-3">
+                  {/* Quick Styles — headings/body bound to the brand kit */}
+                  {(() => {
+                    const kit = activeBrandKit;
+                    const styles = [
+                      { id: 'title', label: 'Title', font: kit.headingFont, size: 40, weight: '800' as const, color: kit.colors.dark, italic: false },
+                      { id: 'h1', label: 'Heading 1', font: kit.headingFont, size: 28, weight: 'bold' as const, color: kit.colors.dark, italic: false },
+                      { id: 'h2', label: 'Heading 2', font: kit.headingFont, size: 20, weight: '600' as const, color: kit.colors.primary, italic: false },
+                      { id: 'h3', label: 'Heading 3', font: kit.headingFont, size: 15, weight: '600' as const, color: kit.colors.dark, italic: false },
+                      { id: 'body', label: 'Body', font: kit.bodyFont, size: 12, weight: 'normal' as const, color: kit.colors.dark, italic: false },
+                      { id: 'caption', label: 'Caption', font: kit.bodyFont, size: 9.5, weight: '500' as const, color: '#64748b', italic: false },
+                      { id: 'quote', label: 'Quote', font: kit.bodyFont, size: 14, weight: 'normal' as const, color: kit.colors.primary, italic: true },
+                    ];
+                    const siblings = elementsPool.filter(
+                      (el) => el.type === 'text' && el.textStyleId === (textEl.textStyleId || '')
+                    );
+                    return (
+                      <div className="space-y-1.5 pb-1">
+                        <label className="block text-[11px] font-semibold text-slate-500">
+                          Quick Styles · {kit.name}
+                        </label>
+                        <div className="grid grid-cols-4 gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60">
+                          {styles.map((st) => (
+                            <button
+                              key={st.id}
+                              type="button"
+                              title={`${st.label} · ${st.font} ${st.size}px`}
+                              onClick={() =>
+                                updateElement(textEl.id, {
+                                  textStyleId: st.id,
+                                  fontFamily: st.font,
+                                  fontSize: st.size,
+                                  fontWeight: st.weight,
+                                  fontStyle: st.italic ? 'italic' : 'normal',
+                                  color: st.color,
+                                })
+                              }
+                              className={`py-1 rounded-lg text-[9.5px] font-bold transition ${
+                                textEl.textStyleId === st.id
+                                  ? 'bg-white shadow-xs text-[#5c4bb8]'
+                                  : 'text-slate-600 hover:bg-white/60'
+                              }`}
+                            >
+                              {st.label}
+                            </button>
+                          ))}
+                          <button
+                            type="button"
+                            title="Clear formatting: back to plain body text"
+                            onClick={() =>
+                              updateElement(textEl.id, {
+                                textStyleId: undefined,
+                                fontWeight: 'normal',
+                                fontStyle: 'normal',
+                                textDecoration: 'none',
+                                textTransform: 'none',
+                                fontVariant: 'normal',
+                                letterSpacing: 0,
+                                wordSpacing: 0,
+                                baselineShift: 0,
+                                textStrokeWidth: 0,
+                                shadow: false,
+                                color: '#0f172a',
+                              })
+                            }
+                            className="py-1 rounded-lg text-[9.5px] font-bold text-rose-600 hover:bg-white/70"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                        {siblings.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateElementsBatch(
+                                Object.fromEntries(
+                                  siblings.map((el) => [
+                                    el.id,
+                                    {
+                                      fontFamily: textEl.fontFamily,
+                                      fontSize: textEl.fontSize,
+                                      fontWeight: textEl.fontWeight,
+                                      fontStyle: textEl.fontStyle,
+                                      color: textEl.color,
+                                    },
+                                  ])
+                                )
+                              )
+                            }
+                            className="text-[9.5px] font-semibold text-[#5c4bb8] hover:underline"
+                          >
+                            Apply this look to all {siblings.length} “{textEl.textStyleId}” blocks
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })()}
+
                   {/* Font Family */}
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-500 mb-1">
@@ -1467,6 +1565,149 @@ export const PropertiesPanel: React.FC = () => {
                     </div>
                   </div>
 
+                  {/* Script Position, Highlight, Text Fill */}
+                  <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
+                    <div>
+                      <label className="block text-[10.5px] font-semibold text-slate-500 mb-1">
+                        Position
+                      </label>
+                      <div className="grid grid-cols-3 gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60">
+                        {([
+                          { id: 'normal', label: 'Aa', title: 'Normal baseline' },
+                          { id: 'super', label: 'x²', title: 'Superscript (raised, smaller)' },
+                          { id: 'sub', label: 'x₂', title: 'Subscript (lowered, smaller)' },
+                        ] as const).map((opt) => (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            title={opt.title}
+                            onClick={() =>
+                              updateElement(textEl.id, {
+                                script: opt.id === (textEl.script || 'normal') ? 'normal' : opt.id,
+                              })
+                            }
+                            className={`py-1 rounded-lg text-[10.5px] font-bold transition ${
+                              (textEl.script || 'normal') === opt.id
+                                ? 'bg-white shadow-xs text-[#5c4bb8]'
+                                : 'text-slate-600 hover:bg-white/60'
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[10.5px] font-semibold text-slate-500 mb-1">
+                        Highlight
+                      </label>
+                      <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
+                        <ColorInput
+                          className="w-6 h-6 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0"
+                          value={textEl.highlightColor || '#fde68a'}
+                          onChange={(e) => updateElement(textEl.id, { highlightColor: e.target.value })}
+                          target="background"
+                        />
+                        <span className="font-mono text-[10px] text-slate-600 truncate flex-1">
+                          {textEl.highlightColor || 'none'}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => updateElement(textEl.id, { highlightColor: undefined })}
+                          className="text-[10px] font-semibold text-slate-500 hover:text-slate-800 px-1"
+                        >
+                          None
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Text fill: solid or two-stop gradient */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[10.5px] font-semibold text-slate-500">
+                        Text Fill
+                      </label>
+                      <div className="flex gap-1">
+                        {(['solid', 'gradient'] as const).map((mode) => (
+                          <button
+                            key={mode}
+                            type="button"
+                            onClick={() =>
+                              updateElement(textEl.id, {
+                                textFillType: mode,
+                                textGradientColor2:
+                                  textEl.textGradientColor2 ||
+                                  activeBrandKit.colors.secondary,
+                              })
+                            }
+                            className={`px-2 py-0.5 rounded-md text-[9.5px] font-bold capitalize transition ${
+                              (textEl.textFillType || 'solid') === mode
+                                ? 'bg-white shadow-xs text-[#5c4bb8] border border-[#d3c9f9]'
+                                : 'text-slate-600 hover:bg-white/70'
+                            }`}
+                          >
+                            {mode}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    {textEl.textFillType === 'gradient' && (
+                      <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
+                        <ColorInput
+                          className="w-6 h-6 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0"
+                          value={textEl.textGradientColor2 || activeBrandKit.colors.secondary}
+                          onChange={(e) =>
+                            updateElement(textEl.id, { textGradientColor2: e.target.value })
+                          }
+                          target="fill"
+                        />
+                        <input
+                          type="range"
+                          min={0}
+                          max={360}
+                          step={5}
+                          value={textEl.textGradientAngle ?? 90}
+                          onChange={(e) =>
+                            updateElement(textEl.id, { textGradientAngle: Number(e.target.value) })
+                          }
+                          className="flex-1 accent-[#6e56cf] cursor-pointer"
+                          title="Gradient angle"
+                        />
+                        <span className="font-mono text-[10px] text-slate-500 w-8 text-right">
+                          {textEl.textGradientAngle ?? 90}°
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* OpenType toggles + counter */}
+                  <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-100">
+                    <div className="flex items-center gap-2">
+                      <label className="flex items-center gap-1 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={textEl.kerning !== false}
+                          onChange={(e) => updateElement(textEl.id, { kerning: e.target.checked })}
+                          className="accent-[#6e56cf]"
+                        />
+                        Kerning
+                      </label>
+                      <label className="flex items-center gap-1 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(textEl.ligatures)}
+                          onChange={(e) => updateElement(textEl.id, { ligatures: e.target.checked })}
+                          className="accent-[#6e56cf]"
+                        />
+                        Ligatures
+                      </label>
+                    </div>
+                    <span className="font-mono">
+                      {countWords(textEl.text)}w · {textEl.text.length}c
+                    </span>
+                  </div>
+
                   {/* Fill Color & Text Stroke */}
                   <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
                     <div>
@@ -1628,6 +1869,169 @@ export const PropertiesPanel: React.FC = () => {
                         />
                       </div>
                     )}
+                  </div>
+
+                  {/* Lists */}
+                  <div className="pt-1 border-t border-slate-100 space-y-2">
+                    <label className="block text-[11px] font-semibold text-slate-500">
+                      Lists & Indents
+                    </label>
+                    <div className="grid grid-cols-3 gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60">
+                      {([
+                        { id: 'none', label: 'None' },
+                        { id: 'bullet', label: '• Bullets' },
+                        { id: 'number', label: '1. Numbers' },
+                      ] as const).map((opt) => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() =>
+                            updateElement(textEl.id, {
+                              listStyle: opt.id,
+                              hangingIndent:
+                                opt.id === 'none' ? 0 : textEl.hangingIndent ?? 22,
+                            })
+                          }
+                          className={`py-1 rounded-lg text-[10px] font-semibold transition ${
+                            (textEl.listStyle || 'none') === opt.id
+                              ? 'bg-white text-[#5c4bb8] shadow-xs'
+                              : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                    {(textEl.listStyle || 'none') !== 'none' && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <div className="flex justify-between text-[10px] text-slate-500 font-medium mb-0.5">
+                            <span>Marker gutter</span>
+                            <span className="font-mono">{textEl.hangingIndent ?? 22}px</span>
+                          </div>
+                          <input
+                            type="range"
+                            min={12}
+                            max={48}
+                            value={textEl.hangingIndent ?? 22}
+                            onChange={(e) =>
+                              updateElement(textEl.id, { hangingIndent: Number(e.target.value) })
+                            }
+                            className="w-full accent-[#6e56cf] cursor-pointer"
+                          />
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-[10px] text-slate-500 font-medium mb-0.5">
+                            <span>List indent</span>
+                            <span className="font-mono">{textEl.listIndent ?? 0}px</span>
+                          </div>
+                          <input
+                            type="range"
+                            min={0}
+                            max={72}
+                            step={2}
+                            value={textEl.listIndent ?? 0}
+                            onChange={(e) =>
+                              updateElement(textEl.id, { listIndent: Number(e.target.value) })
+                            }
+                            className="w-full accent-[#6e56cf] cursor-pointer"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Tab stops with leaders */}
+                  <div className="pt-1 border-t border-slate-100 space-y-1.5">
+                    <label className="block text-[11px] font-semibold text-slate-500">
+                      Tab Leader
+                    </label>
+                    <div className="grid grid-cols-4 gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60">
+                      {([
+                        { id: 'none', label: 'None' },
+                        { id: 'dot', label: '···' },
+                        { id: 'dash', label: '---' },
+                        { id: 'line', label: '───' },
+                      ] as const).map((opt) => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => updateElement(textEl.id, { tabLeader: opt.id })}
+                          className={`py-1 rounded-lg text-[10px] font-semibold transition ${
+                            (textEl.tabLeader || 'none') === opt.id
+                              ? 'bg-white text-[#5c4bb8] shadow-xs'
+                              : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] text-slate-500 font-medium">Stop</span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={1200}
+                        value={textEl.tabStops?.[0] ?? 0}
+                        onChange={(e) => {
+                          const next = Math.max(0, Number(e.target.value) || 0);
+                          updateElement(textEl.id, { tabStops: next > 0 ? [next] : [] });
+                        }}
+                        className="w-16 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-[11px] font-mono text-center outline-none focus:bg-white"
+                      />
+                      <span className="text-[9.5px] text-slate-400 leading-tight">
+                        px from the left edge · 0 = right margin. Type a tab between label and value.
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Fitting: shrink to fit, fit box, hyphenation */}
+                  <div className="pt-1 border-t border-slate-100 space-y-1.5">
+                    <label className="block text-[11px] font-semibold text-slate-500">
+                      Fitting
+                    </label>
+                    <div className="grid grid-cols-2 gap-1">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateElement(textEl.id, {
+                            autoFit: textEl.autoFit === 'shrink' ? 'none' : 'shrink',
+                          })
+                        }
+                        className={`py-1 rounded-lg text-[10px] font-semibold border transition ${
+                          textEl.autoFit === 'shrink'
+                            ? 'bg-[#efeafd] border-[#d3c9f9] text-[#5c4bb8]'
+                            : 'bg-slate-50 border-slate-200 text-slate-600'
+                        }`}
+                      >
+                        Shrink to fit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const measured = layoutText({ ...textEl, autoFit: 'none' });
+                          updateElement(textEl.id, {
+                            height: Math.max(24, Math.ceil(measured.contentHeight + textEl.padding * 2)),
+                            autoFit: 'none',
+                          });
+                        }}
+                        className="py-1 rounded-lg text-[10px] font-semibold bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100"
+                      >
+                        Fit box to text
+                      </button>
+                    </div>
+                    <label className="flex items-center justify-between pt-1 cursor-pointer">
+                      <span className="text-[10.5px] text-slate-600 font-medium">
+                        Hyphenate long words
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={Boolean(textEl.hyphenate)}
+                        onChange={(e) => updateElement(textEl.id, { hyphenate: e.target.checked })}
+                        className="accent-[#6e56cf]"
+                      />
+                    </label>
                   </div>
 
                   {/* Drop Cap Toggle */}

@@ -887,6 +887,7 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
             <ElementRenderer
               element={element}
               isSelected={isSelected && isActivePage && !element.locked}
+              isEditing={isEditingThisText}
               isDropTarget={dragOverPlaceholderId === element.id}
               pageNumber={targetPageIndex + 1}
               totalPages={project.pages.length}

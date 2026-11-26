@@ -121,6 +121,28 @@ export interface TextElement extends BaseElement {
   wordArtStyle?: WordArtStyle;
   dropCap?: boolean;
   linkedNextId?: string | null;
+  /** Paragraph-level list rendering. */
+  listStyle?: 'none' | 'bullet' | 'number';
+  listIndent?: number;
+  hangingIndent?: number;
+  /** Tab stops measured from the column's left edge. */
+  tabStops?: number[];
+  tabLeader?: 'none' | 'dot' | 'dash' | 'line';
+  /** Marker colour applied behind the glyphs. */
+  highlightColor?: string;
+  /** Shrink type until the block fits instead of clipping silently. */
+  autoFit?: 'none' | 'shrink';
+  hyphenate?: boolean;
+  /** Kerning + optional ligatures. */
+  kerning?: boolean;
+  ligatures?: boolean;
+  /** Whole-box script treatment (a raised `st`/`th`), since runs are not styled. */
+  script?: 'normal' | 'super' | 'sub';
+  textFillType?: 'solid' | 'gradient';
+  textGradientColor2?: string;
+  textGradientAngle?: number;
+  /** Quick style tag, used by "restyle all with this style". */
+  textStyleId?: string;
 }
 
 export interface ShapeElement extends BaseElement {

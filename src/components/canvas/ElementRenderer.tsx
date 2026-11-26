@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import {
   PublisherElement,
@@ -14,10 +14,12 @@ import { Scissors, Quote, Award, QrCode, ImagePlus, Upload } from 'lucide-react'
 import { buildWavyRectPath } from '../../utils/shapePaths';
 import { buildShapePatternDataUri } from '../../utils/patternGenerator';
 import { PATTERN_CATALOG } from '../../utils/patternGenerator';
+import { layoutText, verticalOffset } from '../../utils/textLayout';
 
 interface ElementRendererProps {
   element: PublisherElement;
   isSelected: boolean;
+  isEditing?: boolean;
   isDropTarget?: boolean;
   pageNumber?: number;
   totalPages?: number;
@@ -30,6 +32,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = React.memo(
   ({
     element,
     isSelected,
+    isEditing = false,
     isDropTarget = false,
     pageNumber = 1,
     totalPages = 1,
@@ -44,6 +47,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = React.memo(
           <TextRenderer
             element={element}
             isSelected={isSelected}
+            isEditing={isEditing}
             pageNumber={pageNumber}
             totalPages={totalPages}
             onTextChange={onTextChange}
@@ -104,156 +108,227 @@ export const ElementRenderer: React.FC<ElementRendererProps> = React.memo(
 const TextRenderer: React.FC<{
   element: TextElement;
   isSelected: boolean;
+  isEditing: boolean;
   pageNumber: number;
   totalPages: number;
   onTextChange?: (t: string) => void;
-}> = ({ element, isSelected, pageNumber, totalPages, onTextChange }) => {
+}> = ({ element, isEditing, pageNumber, totalPages, onTextChange }) => {
   const editorRef = useRef<HTMLDivElement>(null);
 
-  // Sync element.text into the contentEditable DOM only when entering edit mode or when not focused
+  const resolvedText = useMemo(() => {
+    if (isEditing) return element.text;
+    return element.text
+      .replace(/{{PageNumber}}/gi, String(pageNumber))
+      .replace(/{{TotalPages}}/gi, String(totalPages));
+  }, [element.text, isEditing, pageNumber, totalPages]);
+
+  const layoutElement = useMemo(
+    () => (resolvedText === element.text ? element : { ...element, text: resolvedText }),
+    [element, resolvedText]
+  );
+
+  const layout = useMemo(() => layoutText(layoutElement), [layoutElement]);
+  const offset = useMemo(() => verticalOffset(layout, layoutElement), [layout, layoutElement]);
+
+  // Sync element.text into the contentEditable DOM only when entering edit mode
+  // or while it is not focused, so typing is never interrupted.
   useEffect(() => {
-    if (isSelected && editorRef.current) {
+    if (isEditing && editorRef.current) {
       if (document.activeElement !== editorRef.current) {
         editorRef.current.innerText = element.text;
       }
     }
-  }, [isSelected, element.id, element.text]);
+  }, [isEditing, element.id, element.text]);
 
-  const getWordArtClass = () => {
-    if (!element.isWordArt) return '';
-    switch (element.wordArtStyle) {
-      case 'rainbow':
-        return 'wordart-rainbow';
-      case 'gold3d':
-        return 'wordart-gold3d';
-      case 'outline':
-        return 'wordart-outline';
-      case 'retro':
-        return 'wordart-retro';
-      case 'neon-glow':
-        return 'wordart-neon-glow';
-      case 'chrome':
-        return 'wordart-chrome';
-      case 'fire':
-        return 'wordart-fire';
-      case 'comic-pop':
-        return 'wordart-comic-pop';
-      case 'emerald-3d':
-        return 'wordart-indigo-3d';
-      case 'sunset-gradient':
-        return 'wordart-sunset-gradient';
-      default:
-        return '';
-    }
-  };
-
-  // Render drop cap if requested and text starts with a letter
-  const renderTextContent = () => {
-    const resolvedText = isSelected
-      ? element.text
-      : element.text
-          .replace(/{{PageNumber}}/gi, String(pageNumber))
-          .replace(/{{TotalPages}}/gi, String(totalPages));
-
-    if (element.dropCap && resolvedText && resolvedText.length > 0) {
-      const firstLetter = resolvedText[0];
-      const rest = resolvedText.slice(1);
-      return (
-        <span>
-          <span
-            style={{
-              float: 'left',
-              fontSize: `${element.fontSize * 2.8}px`,
-              lineHeight: 0.8,
-              paddingRight: '6px',
-              paddingTop: '4px',
-              fontFamily: 'Georgia, serif',
-              fontWeight: 'bold',
-              color: element.color,
-            }}
-          >
-            {firstLetter}
-          </span>
-          {rest}
-        </span>
-      );
-    }
-    return resolvedText;
-  };
-
-  const sharedStyle: React.CSSProperties = {
-    width: '100%',
-    height: '100%',
+  const boxStyle: React.CSSProperties = {
     backgroundColor: element.backgroundColor || 'transparent',
     border: element.borderWidth
       ? `${element.borderWidth}px ${element.borderStyle || 'solid'} ${element.borderColor || '#000'}`
       : 'none',
     borderRadius: element.borderRadius ? `${element.borderRadius}px` : undefined,
-    padding: `${element.padding}px`,
-    color: element.color,
-    fontFamily: element.fontFamily,
-    fontSize: `${element.fontSize}px`,
-    fontWeight: element.fontWeight,
-    fontStyle: element.fontStyle,
-    textDecoration: element.textDecoration,
-    textTransform: element.textTransform || 'none',
-    fontVariant: element.fontVariant || 'normal',
-    letterSpacing: element.letterSpacing ? `${element.letterSpacing}px` : undefined,
-    wordSpacing: element.wordSpacing ? `${element.wordSpacing}px` : undefined,
-    textIndent: element.textIndent ? `${element.textIndent}px` : undefined,
-    WebkitTextStroke: element.textStrokeWidth
-      ? `${element.textStrokeWidth}px ${element.textStrokeColor || '#000000'}`
-      : undefined,
-    textShadow: element.shadow
-      ? `2px 3px ${element.shadowBlur ?? 6}px ${element.shadowColor || 'rgba(0,0,0,0.35)'}`
-      : undefined,
-    transform: element.baselineShift ? `translateY(${-element.baselineShift}px)` : undefined,
-    textAlign: element.textAlign,
-    lineHeight: element.lineHeight,
-    columnCount: element.columns,
-    columnGap: `${element.columnGap}px`,
-    columnRule: element.columns > 1 ? '1px solid #e2e8f0' : 'none',
-    overflow: 'hidden',
-    whiteSpace: 'pre-wrap',
-    wordBreak: 'break-word',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent:
-      element.verticalAlign === 'middle'
-        ? 'center'
-        : element.verticalAlign === 'bottom'
-        ? 'flex-end'
-        : 'flex-start',
-    userSelect: isSelected ? 'text' : 'none',
-    WebkitUserSelect: isSelected ? 'text' : 'none',
-    cursor: isSelected ? 'text' : 'inherit',
     outline: 'none',
   };
 
-  if (isSelected) {
+  const wordArtClass = element.isWordArt ? wordArtClassName(element.wordArtStyle) : '';
+
+  if (isEditing) {
     return (
       <div
         ref={editorRef}
-        style={sharedStyle}
-        className={getWordArtClass()}
+        style={{
+          ...boxStyle,
+          width: '100%',
+          height: '100%',
+          padding: `${element.padding}px`,
+          color: element.color,
+          fontFamily: element.fontFamily,
+          fontSize: `${element.fontSize}px`,
+          fontWeight: element.fontWeight,
+          fontStyle: element.fontStyle,
+          textDecoration: element.textDecoration,
+          textTransform: element.textTransform || 'none',
+          fontVariant: element.fontVariant || 'normal',
+          letterSpacing: element.letterSpacing ? `${element.letterSpacing}px` : undefined,
+          wordSpacing: element.wordSpacing ? `${element.wordSpacing}px` : undefined,
+          textIndent: element.textIndent ? `${element.textIndent}px` : undefined,
+          textAlign: element.textAlign,
+          lineHeight: element.lineHeight,
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+          overflow: 'hidden',
+          cursor: 'text',
+        }}
+        className={wordArtClass}
         contentEditable
         suppressContentEditableWarning
+        spellCheck={element.hyphenate !== false}
         onBlur={(e) => {
           const next = e.currentTarget.innerText;
-          if (onTextChange && next !== element.text) {
-            onTextChange(next);
-          }
+          if (onTextChange && next !== element.text) onTextChange(next);
         }}
       />
     );
   }
 
+  const gradientCss =
+    element.textFillType === 'gradient'
+      ? `linear-gradient(${element.textGradientAngle ?? 90}deg, ${
+          element.color || '#0f172a'
+        }, ${element.textGradientColor2 || '#6e56cf'})`
+      : undefined;
+
   return (
-    <div style={sharedStyle} className={getWordArtClass()}>
-      {renderTextContent()}
+    <div
+      style={{
+        ...boxStyle,
+        width: '100%',
+        height: '100%',
+        position: 'relative',
+        overflow: 'hidden',
+        fontFamily: element.fontFamily,
+        fontWeight: element.fontWeight,
+        fontStyle: element.fontStyle,
+        fontKerning: element.kerning === false ? 'none' : 'normal',
+        fontVariantLigatures: element.ligatures ? 'common-ligatures' : 'none',
+        userSelect: isEditing ? 'text' : 'none',
+      }}
+      className={wordArtClass}
+    >
+      {layout.dropCap && (
+        <span
+          style={{
+            position: 'absolute',
+            left: layout.dropCap.x,
+            top: offset + layout.dropCap.y,
+            fontSize: `${layout.dropCap.size}px`,
+            lineHeight: 1,
+            fontWeight: 'bold',
+            fontFamily: element.fontFamily,
+            color: element.color,
+            whiteSpace: 'pre',
+          }}
+        >
+          {layout.dropCap.char}
+        </span>
+      )}
+
+      {layout.lines.map((line, lineIndex) =>
+        line.runs.map((run, runIndex) => {
+          if (!run.text) return null;
+          const isSpace = run.kind === 'space';
+          const highlight =
+            element.highlightColor && run.kind !== 'marker' ? element.highlightColor : undefined;
+          return (
+            <span
+              key={`${lineIndex}-${runIndex}`}
+              style={{
+                position: 'absolute',
+                left: run.x,
+                top: offset + line.textTop + run.baselineShift,
+                height: line.height,
+                display: 'inline-flex',
+                alignItems: 'center',
+                fontSize: `${run.fontSize}px`,
+                lineHeight: 1,
+                letterSpacing: element.letterSpacing ? `${element.letterSpacing}px` : undefined,
+                color: gradientCss ? 'transparent' : element.color,
+                backgroundImage: gradientCss,
+                backgroundSize: gradientCss ? `${element.width}px ${Math.max(1, layout.contentHeight)}px` : undefined,
+                backgroundPosition: gradientCss
+                  ? `${-run.x}px ${-(offset + line.y)}px`
+                  : undefined,
+                WebkitBackgroundClip: gradientCss ? 'text' : undefined,
+                backgroundClip: gradientCss ? 'text' : undefined,
+                backgroundColor: highlight,
+                textDecoration: element.textDecoration,
+                textTransform: 'none',
+                WebkitTextStroke: element.textStrokeWidth
+                  ? `${element.textStrokeWidth}px ${element.textStrokeColor || '#000000'}`
+                  : undefined,
+                textShadow: element.shadow
+                  ? `2px 3px ${element.shadowBlur ?? 6}px ${element.shadowColor || 'rgba(0,0,0,0.35)'}`
+                  : undefined,
+                width: isSpace ? run.width : undefined,
+                overflow: 'hidden',
+                whiteSpace: 'pre',
+              }}
+            >
+              {run.kind === 'leader' ? leaderDom(run, element) : run.text}
+            </span>
+          );
+        })
+      )}
     </div>
   );
 };
+
+function wordArtClassName(style?: TextElement['wordArtStyle']): string {
+  switch (style) {
+    case 'rainbow':
+      return 'wordart-rainbow';
+    case 'gold3d':
+      return 'wordart-gold3d';
+    case 'outline':
+      return 'wordart-outline';
+    case 'retro':
+      return 'wordart-retro';
+    case 'neon-glow':
+      return 'wordart-neon-glow';
+    case 'chrome':
+      return 'wordart-chrome';
+    case 'fire':
+      return 'wordart-fire';
+    case 'comic-pop':
+      return 'wordart-comic-pop';
+    case 'emerald-3d':
+      return 'wordart-indigo-3d';
+    case 'sunset-gradient':
+      return 'wordart-sunset-gradient';
+    default:
+      return '';
+  }
+}
+
+function leaderDom(
+  run: { text: string; width: number },
+  element: TextElement
+): React.ReactNode {
+  if (run.text === '─') {
+    return (
+      <span
+        style={{
+          display: 'block',
+          width: run.width,
+          borderTop: `1px solid ${element.color}`,
+          height: 1,
+        }}
+      />
+    );
+  }
+  const unit = run.text === '-' ? '- ' : '. ';
+  const count = Math.max(0, Math.floor(run.width / 8));
+  return <span style={{ whiteSpace: 'pre' }}>{unit.repeat(count)}</span>;
+}
 
 const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
   const { width, height, shapeType, fillColor, strokeColor, strokeWidth, strokeDash, cornerRadius } =

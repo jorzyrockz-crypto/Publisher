@@ -13,6 +13,7 @@ import {
 } from '../types/publisher';
 import { buildPatternSvg, buildShapePatternDataUri } from './patternGenerator';
 import { buildWavyRectPath, getShapeSvgPath } from './shapePaths';
+import { buildFontString, layoutText, measureTextWidth, verticalOffset } from './textLayout';
 
 function loadImage(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
@@ -100,31 +101,6 @@ function drawPolygonMask(ctx: CanvasRenderingContext2D, mask: string | undefined
   }
 }
 
-function wrapTextLines(
-  ctx: CanvasRenderingContext2D,
-  text: string,
-  maxWidth: number
-): string[] {
-  const safeW = Math.max(20, maxWidth);
-  const lines: string[] = [];
-  for (const para of (text || '').split('\n')) {
-    const words = para.split(/\s+/);
-    let current = '';
-    for (const w of words) {
-      if (!w && !current) continue;
-      const test = current ? `${current} ${w}` : w;
-      if (ctx.measureText(test).width > safeW && current) {
-        lines.push(current);
-        current = w;
-      } else {
-        current = test;
-      }
-    }
-    lines.push(current);
-  }
-  return lines;
-}
-
 function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
   const { width, height } = el;
   if (el.backgroundColor && el.backgroundColor !== 'transparent') {
@@ -149,76 +125,163 @@ function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
     }
   }
 
-  let content = el.text || '';
-  if (el.textTransform === 'uppercase') content = content.toUpperCase();
-  else if (el.textTransform === 'lowercase') content = content.toLowerCase();
-  else if (el.textTransform === 'capitalize') {
-    content = content.replace(/\b\w/g, (c) => c.toUpperCase());
-  }
-
-  const pad = el.padding || 0;
-  const innerW = Math.max(20, width - pad * 2);
-  const innerH = Math.max(20, height - pad * 2);
-  const weight = el.fontWeight === 'bold' ? '700' : el.fontWeight || '400';
-  const style = el.fontStyle === 'italic' ? 'italic' : 'normal';
-  ctx.font = `${style} ${weight} ${el.fontSize}px ${el.fontFamily || 'sans-serif'}`;
-  ctx.textBaseline = 'top';
-
-  const lines = wrapTextLines(ctx, content, innerW);
-  const lh = el.fontSize * (el.lineHeight || 1.3);
-  const totalTextH = lines.length * lh;
-
-  let startY = pad;
-  if (el.verticalAlign === 'middle') startY = pad + Math.max(0, (innerH - totalTextH) / 2);
-  else if (el.verticalAlign === 'bottom') startY = pad + Math.max(0, innerH - totalTextH);
+  const layout = layoutText(el);
+  const top = verticalOffset(layout, el);
 
   ctx.save();
   ctx.beginPath();
-  ctx.rect(0, 0, width, height);
+  if (el.borderRadius) ctx.roundRect(0, 0, width, height, el.borderRadius);
+  else ctx.rect(0, 0, width, height);
   ctx.clip();
 
+  // Marker highlight sits behind the glyphs, matching the DOM render.
+  if (el.highlightColor && el.highlightColor !== 'transparent') {
+    ctx.fillStyle = el.highlightColor;
+    for (const line of layout.lines) {
+      for (const run of line.runs) {
+        if (run.kind === 'marker') continue;
+        ctx.fillRect(run.x, top + line.y, run.width, line.height);
+      }
+    }
+  }
+
   if (el.shadow || el.wordArtStyle === 'neon-glow') {
-    ctx.shadowColor = el.wordArtStyle === 'neon-glow' ? '#22d3ee' : el.shadowColor || 'rgba(0,0,0,0.35)';
+    ctx.shadowColor =
+      el.wordArtStyle === 'neon-glow' ? '#22d3ee' : el.shadowColor || 'rgba(0,0,0,0.35)';
     ctx.shadowBlur = el.wordArtStyle === 'neon-glow' ? 14 : el.shadowBlur ?? 6;
     ctx.shadowOffsetX = el.wordArtStyle === 'neon-glow' ? 0 : 2;
     ctx.shadowOffsetY = el.wordArtStyle === 'neon-glow' ? 0 : 3;
   }
 
-  if (el.wordArtStyle === 'rainbow') {
-    const g = ctx.createLinearGradient(0, 0, width, 0);
-    g.addColorStop(0, '#ec4899');
-    g.addColorStop(0.5, '#f59e0b');
-    g.addColorStop(1, '#06b6d4');
-    ctx.fillStyle = g;
-  } else if (el.wordArtStyle === 'gold3d') {
-    const g = ctx.createLinearGradient(0, startY, 0, startY + totalTextH);
-    g.addColorStop(0, '#fef08a');
-    g.addColorStop(0.5, '#eab308');
-    g.addColorStop(1, '#a16207');
-    ctx.fillStyle = g;
-  } else if (el.wordArtStyle === 'sunset-gradient') {
-    const g = ctx.createLinearGradient(0, 0, width, 0);
-    g.addColorStop(0, '#f43f5e');
-    g.addColorStop(1, '#f59e0b');
-    ctx.fillStyle = g;
-  } else {
-    ctx.fillStyle = el.color || '#0f172a';
+  const font = buildFontString(el, layout.fontSize);
+  ctx.font = font;
+  ctx.textBaseline = 'top';
+  ctx.textAlign = 'left';
+  if (el.kerning === false && 'fontKerning' in ctx) {
+    (ctx as CanvasRenderingContext2D & { fontKerning: string }).fontKerning = 'none';
   }
 
-  lines.forEach((line, idx) => {
-    const y = startY + idx * lh;
-    let x = pad;
-    const mWidth = ctx.measureText(line).width;
-    if (el.textAlign === 'center') x = pad + (innerW - mWidth) / 2;
-    else if (el.textAlign === 'right') x = pad + innerW - mWidth;
+  const fillFor = (): string | CanvasGradient => {
+    if (el.wordArtStyle === 'rainbow') {
+      const g = ctx.createLinearGradient(0, 0, width, 0);
+      g.addColorStop(0, '#ec4899');
+      g.addColorStop(0.5, '#f59e0b');
+      g.addColorStop(1, '#06b6d4');
+      return g;
+    }
+    if (el.wordArtStyle === 'sunset-gradient') {
+      const g = ctx.createLinearGradient(0, 0, width, 0);
+      g.addColorStop(0, '#f43f5e');
+      g.addColorStop(1, '#f59e0b');
+      return g;
+    }
+    if (el.wordArtStyle === 'gold3d') {
+      const g = ctx.createLinearGradient(0, top, 0, top + Math.max(1, layout.contentHeight));
+      g.addColorStop(0, '#fef08a');
+      g.addColorStop(0.5, '#eab308');
+      g.addColorStop(1, '#a16207');
+      return g;
+    }
+    if (el.textFillType === 'gradient') {
+      return createLinearGrad(
+        ctx,
+        width,
+        height,
+        el.textGradientAngle ?? 90,
+        el.color || '#0f172a',
+        el.textGradientColor2 || '#6e56cf'
+      );
+    }
+    return el.color || '#0f172a';
+  };
 
+  ctx.fillStyle = fillFor();
+
+  const paintRun = (text: string, x: number, y: number, advance?: number) => {
+    if (!text) return;
+    const tracking = el.letterSpacing || 0;
+    const wordSpacing = el.wordSpacing || 0;
+
+    if (text === ' ' && advance !== undefined) {
+      // Justification-generated space run: the width is authoritative.
+      if (el.textStrokeWidth && el.textStrokeWidth > 0) return;
+      return;
+    }
+
+    if (!tracking && !wordSpacing) {
+      if (el.textStrokeWidth && el.textStrokeWidth > 0) {
+        ctx.strokeStyle = el.textStrokeColor || '#000000';
+        ctx.lineWidth = el.textStrokeWidth;
+        ctx.strokeText(text, x, y);
+      }
+      ctx.fillText(text, x, y);
+      return;
+    }
+
+    // Manual advance so tracking survives export in every browser.
+    let cursor = x;
+    ctx.save();
     if (el.textStrokeWidth && el.textStrokeWidth > 0) {
       ctx.strokeStyle = el.textStrokeColor || '#000000';
       ctx.lineWidth = el.textStrokeWidth;
-      ctx.strokeText(line, x, y);
     }
-    ctx.fillText(line, x, y);
-  });
+    for (const ch of text) {
+      if (el.textStrokeWidth && el.textStrokeWidth > 0) ctx.strokeText(ch, cursor, y);
+      ctx.fillText(ch, cursor, y);
+      cursor += measureTextWidth(ch, font) + tracking + (ch === ' ' ? wordSpacing : 0);
+    }
+    ctx.restore();
+  };
+
+  const leaderRun = (run: { text: string; x: number; width: number }, y: number) => {
+    if (run.text === '─') {
+      ctx.save();
+      ctx.strokeStyle = el.color || '#0f172a';
+      ctx.lineWidth = Math.max(1, layout.fontSize * 0.06);
+      ctx.beginPath();
+      ctx.moveTo(run.x, y + layout.fontSize * 0.72);
+      ctx.lineTo(run.x + run.width, y + layout.fontSize * 0.72);
+      ctx.stroke();
+      ctx.restore();
+      return;
+    }
+    const dash = run.text === '-' ? '-' : '.';
+    const dashWidth = Math.max(1, measureTextWidth(dash, font));
+    const step = el.tabLeader === 'dash' ? dashWidth * 1.6 : dashWidth * 2.2;
+    let cursor = run.x;
+    while (cursor + dashWidth <= run.x + run.width) {
+      ctx.fillText(dash, cursor, y);
+      cursor += step;
+    }
+  };
+
+  for (const line of layout.lines) {
+    for (const run of line.runs) {
+      const y = top + line.textTop;
+      if (run.kind === 'leader') {
+        leaderRun(run, y);
+        continue;
+      }
+      if (run.kind === 'marker' || run.fontSize !== layout.fontSize) {
+        ctx.font = buildFontString(el, run.fontSize);
+        paintRun(run.text, run.x, y + run.baselineShift);
+        ctx.font = font;
+        continue;
+      }
+      paintRun(run.text, run.x, y + run.baselineShift, run.width);
+    }
+  }
+
+  if (layout.dropCap) {
+    const cap = layout.dropCap;
+    ctx.font = buildFontString(el, cap.size);
+    if (el.textStrokeWidth && el.textStrokeWidth > 0) {
+      ctx.strokeStyle = el.textStrokeColor || '#000000';
+      ctx.lineWidth = el.textStrokeWidth;
+      ctx.strokeText(cap.char, cap.x, top + cap.y);
+    }
+    ctx.fillText(cap.char, cap.x, top + cap.y);
+  }
 
   ctx.restore();
 }
@@ -774,7 +837,19 @@ function drawAccentElement(ctx: CanvasRenderingContext2D, el: AccentElement) {
     ctx.fillStyle = '#0f172a';
     ctx.font = 'italic 600 15px Georgia, serif';
     const text = el.text || el.title || '';
-    const lines = wrapTextLines(ctx, text, width - 32);
+    const maxW = width - 32;
+    const lines: string[] = [];
+    let currentLine = '';
+    for (const word of text.split(/\s+/)) {
+      const probe = currentLine ? `${currentLine} ${word}` : word;
+      if (ctx.measureText(probe).width > maxW && currentLine) {
+        lines.push(currentLine);
+        currentLine = word;
+      } else {
+        currentLine = probe;
+      }
+    }
+    if (currentLine) lines.push(currentLine);
     lines.forEach((line, idx) => {
       ctx.fillText(line, 16, 22 + idx * 20);
     });
