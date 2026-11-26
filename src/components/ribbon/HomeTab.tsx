@@ -58,17 +58,17 @@ export const HomeTab: React.FC = () => {
       : null;
 
   return (
-    <div className="flex items-center h-[84px] px-2 py-1.5 gap-2 text-xs text-[#202833] overflow-x-auto select-none">
+    <div className="flex items-center h-[84px] px-2 py-1.5 gap-2 text-xs text-[#161a22] overflow-x-auto select-none">
       {/* 1. Clipboard Group */}
       <div className="flex flex-col items-center justify-between h-full py-1 pr-2 border-r border-[#e5e9ee] flex-shrink-0">
         <div className="flex items-center gap-1 my-auto">
           <button
             onClick={duplicateSelectedElements}
             disabled={selectedElementIds.length === 0}
-            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] disabled:opacity-40 text-xs font-medium text-[#202833] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#f4f2ff] hover:text-[#5c4bb8] active:scale-95 rounded-[8px] disabled:opacity-40 text-xs font-medium text-[#161a22] transition-all cursor-pointer"
             title="Duplicate Selected (Ctrl+D)"
           >
-            <Copy size={15} className="text-[#087f83]" />
+            <Copy size={15} className="text-[#6e56cf]" />
             <span>Duplicate</span>
           </button>
 
@@ -82,7 +82,7 @@ export const HomeTab: React.FC = () => {
             <span>Delete</span>
           </button>
         </div>
-        <span className="text-[10px] text-[#9aa4ae] font-bold uppercase tracking-[0.09em]">Clipboard</span>
+        <span className="text-[10px] text-[#6a7682] font-bold uppercase tracking-[0.09em]">Clipboard</span>
       </div>
 
       {/* 2. Font Group */}
@@ -100,7 +100,7 @@ export const HomeTab: React.FC = () => {
               type="number"
               min={8}
               max={120}
-              className="bg-[#f8fafb] hover:bg-[#f3f5f7] border border-[#e5e9ee] rounded-[8px] px-2 py-1 text-xs outline-none w-14 focus:bg-white focus:border-[#73b9b7] font-medium transition text-center tabular-nums"
+              className="bg-[#f8fafb] hover:bg-[#f3f5f7] border border-[#e5e9ee] rounded-[8px] px-2 py-1 text-xs outline-none w-14 focus:bg-white focus:border-[#b3a4f2] font-medium transition text-center tabular-nums"
               value={selectedTextElement?.fontSize || 16}
               onChange={(e) => updateSelectedElements({ fontSize: Number(e.target.value) })}
             />
@@ -117,8 +117,8 @@ export const HomeTab: React.FC = () => {
                 }
                 className={`p-1 rounded-[6px] transition-all cursor-pointer ${
                   selectedTextElement?.fontWeight === 'bold'
-                    ? 'bg-[#e5f4f3] text-[#087477] font-bold'
-                    : 'text-[#52606c] hover:text-[#202833] hover:bg-white/60'
+                    ? 'bg-[#efeafd] text-[#5c4bb8] font-bold'
+                    : 'text-[#4a5661] hover:text-[#161a22] hover:bg-white/60'
                 }`}
                 title="Bold"
               >
@@ -132,8 +132,8 @@ export const HomeTab: React.FC = () => {
                 }
                 className={`p-1 rounded-[6px] transition-all cursor-pointer ${
                   selectedTextElement?.fontStyle === 'italic'
-                    ? 'bg-[#e5f4f3] text-[#087477]'
-                    : 'text-[#52606c] hover:text-[#202833] hover:bg-white/60'
+                    ? 'bg-[#efeafd] text-[#5c4bb8]'
+                    : 'text-[#4a5661] hover:text-[#161a22] hover:bg-white/60'
                 }`}
                 title="Italic"
               >
@@ -148,8 +148,8 @@ export const HomeTab: React.FC = () => {
                 }
                 className={`p-1 rounded-[6px] transition-all cursor-pointer ${
                   selectedTextElement?.textDecoration === 'underline'
-                    ? 'bg-[#e5f4f3] text-[#087477]'
-                    : 'text-[#52606c] hover:text-[#202833] hover:bg-white/60'
+                    ? 'bg-[#efeafd] text-[#5c4bb8]'
+                    : 'text-[#4a5661] hover:text-[#161a22] hover:bg-white/60'
                 }`}
                 title="Underline"
               >
@@ -165,7 +165,7 @@ export const HomeTab: React.FC = () => {
                 <input
                   type="color"
                   className="w-6 h-6 rounded-[6px] border border-[#e5e9ee] cursor-pointer overflow-hidden p-0"
-                  value={selectedTextElement?.color || '#202833'}
+                  value={selectedTextElement?.color || '#161a22'}
                   onChange={(e) => updateSelectedElements({ color: e.target.value })}
                 />
               </div>
@@ -181,16 +181,16 @@ export const HomeTab: React.FC = () => {
               }
               className={`p-1.5 rounded-[8px] transition-all flex items-center gap-1 ml-1 cursor-pointer ${
                 selectedTextElement?.isWordArt
-                  ? 'bg-[#e5f4f3] text-[#087477] border border-[#b7dddd]'
-                  : 'hover:bg-[#eef5f5] text-[#52606c]'
+                  ? 'bg-[#efeafd] text-[#5c4bb8] border border-[#d3c9f9]'
+                  : 'hover:bg-[#f4f2ff] text-[#4a5661]'
               }`}
               title="WordArt Styles"
             >
-              <Sparkles size={14} className="text-[#087f83]" />
+              <Sparkles size={14} className="text-[#6e56cf]" />
             </button>
           </div>
         </div>
-        <span className="text-[10px] text-[#9aa4ae] font-bold uppercase tracking-[0.09em] text-center">Font</span>
+        <span className="text-[10px] text-[#6a7682] font-bold uppercase tracking-[0.09em] text-center">Font</span>
       </div>
 
       {/* 3. Paragraph Group */}
@@ -204,8 +204,8 @@ export const HomeTab: React.FC = () => {
                 onClick={() => updateSelectedElements({ textAlign: align })}
                 className={`p-1 rounded-[6px] transition-all cursor-pointer ${
                   selectedTextElement?.textAlign === align
-                    ? 'bg-[#e5f4f3] text-[#087477]'
-                    : 'text-[#52606c] hover:text-[#202833] hover:bg-white/60'
+                    ? 'bg-[#efeafd] text-[#5c4bb8]'
+                    : 'text-[#4a5661] hover:text-[#161a22] hover:bg-white/60'
                 }`}
                 title={`Align ${align}`}
               >
@@ -225,10 +225,10 @@ export const HomeTab: React.FC = () => {
                   columns: (((selectedTextElement?.columns || 1) % 3) + 1) as 1 | 2 | 3,
                 })
               }
-              className="flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-[8px] border border-[#e5e9ee] bg-[#f8fafb] hover:bg-[#eef5f5] hover:text-[#087477] transition cursor-pointer tabular-nums"
+              className="flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-[8px] border border-[#e5e9ee] bg-[#f8fafb] hover:bg-[#f4f2ff] hover:text-[#5c4bb8] transition cursor-pointer tabular-nums"
               title="Toggle Multi-Columns"
             >
-              <Columns size={12} className="text-[#087f83]" />
+              <Columns size={12} className="text-[#6e56cf]" />
               <span>{selectedTextElement?.columns || 1} Col</span>
             </button>
             <button
@@ -237,8 +237,8 @@ export const HomeTab: React.FC = () => {
               }
               className={`text-[11px] font-medium px-2 py-0.5 rounded-[8px] border transition cursor-pointer ${
                 selectedTextElement?.dropCap
-                  ? 'bg-[#e5f4f3] border-[#b7dddd] text-[#087477] font-semibold'
-                  : 'bg-[#f8fafb] border-[#e5e9ee] hover:bg-[#eef5f5] text-[#52606c]'
+                  ? 'bg-[#efeafd] border-[#d3c9f9] text-[#5c4bb8] font-semibold'
+                  : 'bg-[#f8fafb] border-[#e5e9ee] hover:bg-[#f4f2ff] text-[#4a5661]'
               }`}
               title="Toggle Large Initial Drop Cap"
             >
@@ -246,7 +246,7 @@ export const HomeTab: React.FC = () => {
             </button>
           </div>
         </div>
-        <span className="text-[10px] text-[#9aa4ae] font-bold uppercase tracking-[0.09em] text-center">Paragraph</span>
+        <span className="text-[10px] text-[#6a7682] font-bold uppercase tracking-[0.09em] text-center">Paragraph</span>
       </div>
 
       {/* 4. Objects Group */}
@@ -255,10 +255,10 @@ export const HomeTab: React.FC = () => {
           {/* Draw Text Box */}
           <button
             onClick={() => addTextBox()}
-            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#f4f2ff] hover:text-[#5c4bb8] active:scale-95 rounded-[8px] text-xs font-medium text-[#161a22] transition-all cursor-pointer"
             title="Draw Text Box"
           >
-            <Type size={15} className="text-[#087f83]" />
+            <Type size={15} className="text-[#6e56cf]" />
             <span>Text Box</span>
           </button>
 
@@ -267,12 +267,12 @@ export const HomeTab: React.FC = () => {
             <button
               ref={shapesBtnRef}
               onClick={() => setIsShapesOpen(!isShapesOpen)}
-              className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#f4f2ff] hover:text-[#5c4bb8] active:scale-95 rounded-[8px] text-xs font-medium text-[#161a22] transition-all cursor-pointer"
               title="Insert Shapes"
             >
-              <Shapes size={15} className="text-[#087f83]" />
+              <Shapes size={15} className="text-[#6e56cf]" />
               <span>Shapes</span>
-              <ChevronDown size={10} className="text-[#9aa4ae]" />
+              <ChevronDown size={10} className="text-[#6a7682]" />
             </button>
 
             <FloatingDropdown
@@ -288,7 +288,7 @@ export const HomeTab: React.FC = () => {
                     addShape(item.type);
                     setIsShapesOpen(false);
                   }}
-                  className="p-2 hover:bg-[#eef5f5] hover:text-[#087477] rounded-[8px] text-center text-[10px] font-medium text-[#202833] flex flex-col items-center gap-1 transition cursor-pointer"
+                  className="p-2 hover:bg-[#f4f2ff] hover:text-[#5c4bb8] rounded-[8px] text-center text-[10px] font-medium text-[#161a22] flex flex-col items-center gap-1 transition cursor-pointer"
                 >
                   <ShapePreviewIcon shapeType={item.type} size={24} />
                   <span className="truncate w-full">{item.label}</span>
@@ -316,23 +316,23 @@ export const HomeTab: React.FC = () => {
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#f4f2ff] hover:text-[#5c4bb8] active:scale-95 rounded-[8px] text-xs font-medium text-[#161a22] transition-all cursor-pointer"
             title="Insert Picture"
           >
-            <ImageIcon size={15} className="text-[#087f83]" />
+            <ImageIcon size={15} className="text-[#6e56cf]" />
             <span>Picture</span>
           </button>
 
           <button
             onClick={() => addPicturePlaceholder()}
-            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] active:scale-95 rounded-[8px] text-xs font-medium text-[#202833] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 hover:bg-[#f4f2ff] hover:text-[#5c4bb8] active:scale-95 rounded-[8px] text-xs font-medium text-[#161a22] transition-all cursor-pointer"
             title="Insert Picture Placeholder"
           >
-            <ImagePlus size={15} className="text-[#087f83]" />
+            <ImagePlus size={15} className="text-[#6e56cf]" />
             <span>Placeholder</span>
           </button>
         </div>
-        <span className="text-[10px] text-[#9aa4ae] font-bold uppercase tracking-[0.09em] text-center">Objects</span>
+        <span className="text-[10px] text-[#6a7682] font-bold uppercase tracking-[0.09em] text-center">Objects</span>
       </div>
 
       {/* 5. Arrange Group */}
@@ -342,19 +342,19 @@ export const HomeTab: React.FC = () => {
             <button
               onClick={bringToFront}
               disabled={selectedElementIds.length === 0}
-              className="flex items-center gap-1 px-2 py-1 rounded-[8px] border border-[#e5e9ee] bg-[#f8fafb] hover:bg-[#eef5f5] hover:text-[#087477] text-[11px] font-medium disabled:opacity-40 transition cursor-pointer"
+              className="flex items-center gap-1 px-2 py-1 rounded-[8px] border border-[#e5e9ee] bg-[#f8fafb] hover:bg-[#f4f2ff] hover:text-[#5c4bb8] text-[11px] font-medium disabled:opacity-40 transition cursor-pointer"
               title="Bring to Front"
             >
-              <BringToFront size={13} className="text-[#087f83]" />
+              <BringToFront size={13} className="text-[#6e56cf]" />
               <span>Forward</span>
             </button>
             <button
               onClick={sendToBack}
               disabled={selectedElementIds.length === 0}
-              className="flex items-center gap-1 px-2 py-1 rounded-[8px] border border-[#e5e9ee] bg-[#f8fafb] hover:bg-[#eef5f5] hover:text-[#087477] text-[11px] font-medium disabled:opacity-40 transition cursor-pointer"
+              className="flex items-center gap-1 px-2 py-1 rounded-[8px] border border-[#e5e9ee] bg-[#f8fafb] hover:bg-[#f4f2ff] hover:text-[#5c4bb8] text-[11px] font-medium disabled:opacity-40 transition cursor-pointer"
               title="Send to Back"
             >
-              <SendToBack size={13} className="text-[#52606c]" />
+              <SendToBack size={13} className="text-[#4a5661]" />
               <span>Backward</span>
             </button>
           </div>
@@ -364,17 +364,17 @@ export const HomeTab: React.FC = () => {
               ref={alignBtnRef}
               onClick={() => setIsAlignOpen(!isAlignOpen)}
               disabled={selectedElementIds.length === 0}
-              className="flex items-center justify-between w-full px-2.5 py-1 rounded-[8px] border border-[#e5e9ee] bg-[#f8fafb] hover:bg-[#eef5f5] hover:text-[#087477] text-[11px] font-medium disabled:opacity-40 transition cursor-pointer"
+              className="flex items-center justify-between w-full px-2.5 py-1 rounded-[8px] border border-[#e5e9ee] bg-[#f8fafb] hover:bg-[#f4f2ff] hover:text-[#5c4bb8] text-[11px] font-medium disabled:opacity-40 transition cursor-pointer"
             >
               <span>Align</span>
-              <ChevronDown size={11} className="text-[#9aa4ae]" />
+              <ChevronDown size={11} className="text-[#6a7682]" />
             </button>
 
             <FloatingDropdown
               isOpen={isAlignOpen}
               onClose={() => setIsAlignOpen(false)}
               anchorRef={alignBtnRef}
-              className="p-1.5 w-44 space-y-0.5 text-xs text-[#202833]"
+              className="p-1.5 w-44 space-y-0.5 text-xs text-[#161a22]"
             >
               {(['left', 'center', 'right', 'top', 'middle', 'bottom'] as const).map(
                 (alignment) => (
@@ -384,7 +384,7 @@ export const HomeTab: React.FC = () => {
                       alignSelected(alignment);
                       setIsAlignOpen(false);
                     }}
-                    className="w-full text-left px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] rounded-[8px] text-xs capitalize transition cursor-pointer"
+                    className="w-full text-left px-2 py-1 hover:bg-[#f4f2ff] hover:text-[#5c4bb8] rounded-[8px] text-xs capitalize transition cursor-pointer"
                   >
                     Align {alignment}
                   </button>
@@ -396,7 +396,7 @@ export const HomeTab: React.FC = () => {
                   distributeSelected('horizontal');
                   setIsAlignOpen(false);
                 }}
-                className="w-full text-left px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] rounded-[8px] text-xs transition cursor-pointer"
+                className="w-full text-left px-2 py-1 hover:bg-[#f4f2ff] hover:text-[#5c4bb8] rounded-[8px] text-xs transition cursor-pointer"
               >
                 Distribute Horizontally
               </button>
@@ -405,14 +405,14 @@ export const HomeTab: React.FC = () => {
                   distributeSelected('vertical');
                   setIsAlignOpen(false);
                 }}
-                className="w-full text-left px-2 py-1 hover:bg-[#eef5f5] hover:text-[#087477] rounded-[8px] text-xs transition cursor-pointer"
+                className="w-full text-left px-2 py-1 hover:bg-[#f4f2ff] hover:text-[#5c4bb8] rounded-[8px] text-xs transition cursor-pointer"
               >
                 Distribute Vertically
               </button>
             </FloatingDropdown>
           </div>
         </div>
-        <span className="text-[10px] text-[#9aa4ae] font-bold uppercase tracking-[0.09em] text-center">Arrange</span>
+        <span className="text-[10px] text-[#6a7682] font-bold uppercase tracking-[0.09em] text-center">Arrange</span>
       </div>
 
       {/* Design Ideas Group */}
@@ -424,14 +424,14 @@ export const HomeTab: React.FC = () => {
               setIsRightPanelOpen(true);
               setRightPanelTab('design-ideas');
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#e5f4f3] hover:bg-[#d5ecea] text-[#087477] border border-[#b7dddd] active:scale-95 rounded-[8px] text-xs font-semibold transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#efeafd] hover:bg-[#d5ecea] text-[#5c4bb8] border border-[#d3c9f9] active:scale-95 rounded-[8px] text-xs font-semibold transition-all cursor-pointer"
             title="Open Design Recommendations Panel"
           >
             <Sparkles size={15} />
             <span>Design Ideas</span>
           </button>
         </div>
-        <span className="text-[10px] text-[#9aa4ae] font-bold uppercase tracking-[0.09em] text-center">Designer</span>
+        <span className="text-[10px] text-[#6a7682] font-bold uppercase tracking-[0.09em] text-center">Designer</span>
       </div>
     </div>
   );

@@ -69,7 +69,14 @@ An authentic, modern, desktop-grade clone of **Microsoft Publisher** built with 
 - **Project File**: Save and reload `.pub` files directly to disk.
 - **Print**: Direct browser print integration formatted for exact page sizes.
 
-### 6. Performance & Static Hosting
+### 6. UI Shell & Design System
+- **"Iris" accent palette**: a Radix-Violet design token set (`#6e56cf`) defined in `src/index.css` — deliberately distinct from Microsoft Publisher's green, with an ink ramp that meets WCAG AA (≥4.5:1) at 10–11px label sizes.
+- **Compact chrome**: 46px quick-access bar, ribbon that folds itself on <820px-tall laptops (`Ctrl+F1`, chevron, or click the active tab), and a triaged status bar that drops non-essential metadata on narrow viewports.
+- **Contextual selection toolbar**: align / distribute / z-order / group / duplicate / lock / delete float at the bottom of the canvas, so common object work never requires the inspector.
+- **Collapsible inspector**: every inspector section is a fold-out card with a clickable header, and the sticky header shows the current selection type.
+- **Consistent zoom**: one 20–300% range everywhere, with a click-to-type zoom percentage in the status bar.
+
+### 7. Performance & Static Hosting
 - **Code-split bundle**: the editor shell loads first; every modal (`Backstage`, `AI Image`, `Collage`, `Mail Merge`, `Brand Board/Kits`, `Shortcuts`) and the export stack (jsPDF, html2canvas, JSZip) are lazy chunks. Initial JS dropped from ~1.9 MB to ~0.9 MB (−52%).
 - **Auto-fit on load**: the artboard measures the real viewport on first paint and zooms to frame Page 1 exactly — no clipped pages on 1280×800 laptops.
 - **Works on GitHub Pages**: Cloud AI (Pollinations), Iconify and Wikimedia are called directly from production builds (all CORS-enabled); Clipart.Free can use an optional CORS proxy. See [docs/static-hosting.md](docs/static-hosting.md) and [`workers/clipart-proxy.js`](workers/clipart-proxy.js).

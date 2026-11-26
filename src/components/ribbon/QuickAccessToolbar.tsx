@@ -11,7 +11,6 @@ import {
   FileDown,
   LayoutGrid,
   Search,
-  CheckCircle2,
   Keyboard,
 } from 'lucide-react';
 
@@ -79,34 +78,29 @@ export const QuickAccessToolbar: React.FC = () => {
   );
 
   return (
-    <div className="h-[58px] bg-white text-[#202833] flex items-center justify-between px-4 select-none text-xs border-b border-[#e5e9ee] relative z-40">
+    <div className="h-[46px] bg-white text-[#161a22] flex items-center justify-between px-3 select-none text-xs border-b border-[#e5e9ee] relative z-40">
       {/* Left: Brand Emblem, Title, Document Name & Ghost Quick Actions */}
       <div className="flex items-center gap-2 min-w-0">
         {/* Brand Emblem + Publisher Studio (opens Backstage / File) */}
         <button
           onClick={() => setIsBackstageOpen(true)}
-          className="flex items-center gap-2.5 px-1.5 py-1 -ml-1.5 rounded-[8px] hover:bg-[#eef5f5] transition-colors group cursor-pointer"
+          className="flex items-center gap-2.5 px-1.5 py-1 -ml-1.5 rounded-[8px] hover:bg-[#f4f2ff] transition-colors group cursor-pointer"
           title="Open File & Templates (Backstage)"
         >
-          <div className="w-[29px] h-[29px] rounded-[9px] bg-gradient-to-br from-[#0c9c9c] to-[#075f77] text-white flex items-center justify-center shadow-2xs flex-shrink-0">
-            <LayoutGrid size={14} />
+          <div className="w-[26px] h-[26px] rounded-[8px] bg-gradient-to-br from-[#8a6ff0] to-[#5a44c9] text-white flex items-center justify-center shadow-2xs flex-shrink-0">
+            <LayoutGrid size={13} />
           </div>
-          <span className="font-semibold text-[13px] tracking-[-0.01em] text-[#202833] group-hover:text-[#087477] whitespace-nowrap">
+          <span className="font-semibold text-[12.5px] tracking-[-0.01em] text-[#161a22] group-hover:text-[#5c4bb8] whitespace-nowrap">
             Publisher Studio
           </span>
         </button>
 
         <div className="w-[1px] h-4 bg-[#e5e9ee] mx-0.5 flex-shrink-0" />
 
-        {/* Document Title & Saved Locally */}
+        {/* Document Title (save state now lives in the status bar) */}
         <div className="hidden md:flex items-center gap-1.5 min-w-0">
-          <span className="truncate max-w-[160px] font-medium text-[#46515e]">
+          <span className="truncate max-w-[220px] font-medium text-[#3d4854]">
             {project.name}
-          </span>
-          <span className="hidden lg:inline-flex items-center gap-1 text-[11px] text-[#87919b] whitespace-nowrap">
-            <span>•</span>
-            <CheckCircle2 size={11} className="text-[#087f83]" />
-            <span>Saved locally</span>
           </span>
         </div>
 
@@ -115,7 +109,7 @@ export const QuickAccessToolbar: React.FC = () => {
         {/* Save */}
         <button
           onClick={() => saveProjectToFile(project)}
-          className="p-1.5 hover:bg-[#eef5f5] text-[#52606c] hover:text-[#087477] active:scale-95 rounded-[8px] transition-all cursor-pointer"
+          className="p-1.5 hover:bg-[#f4f2ff] text-[#4a5661] hover:text-[#5c4bb8] active:scale-95 rounded-[8px] transition-all cursor-pointer"
           title="Save Publication (.pub)"
         >
           <Save size={15} />
@@ -127,8 +121,8 @@ export const QuickAccessToolbar: React.FC = () => {
           disabled={!canUndo}
           className={`p-1.5 rounded-[8px] transition-all ${
             canUndo
-              ? 'hover:bg-[#eef5f5] text-[#52606c] hover:text-[#087477] active:scale-95 cursor-pointer'
-              : 'text-[#9aa4ae]/50 cursor-not-allowed'
+              ? 'hover:bg-[#f4f2ff] text-[#4a5661] hover:text-[#5c4bb8] active:scale-95 cursor-pointer'
+              : 'text-[#6a7682]/50 cursor-not-allowed'
           }`}
           title="Undo (Ctrl+Z)"
         >
@@ -141,8 +135,8 @@ export const QuickAccessToolbar: React.FC = () => {
           disabled={!canRedo}
           className={`p-1.5 rounded-[8px] transition-all ${
             canRedo
-              ? 'hover:bg-[#eef5f5] text-[#52606c] hover:text-[#087477] active:scale-95 cursor-pointer'
-              : 'text-[#9aa4ae]/50 cursor-not-allowed'
+              ? 'hover:bg-[#f4f2ff] text-[#4a5661] hover:text-[#5c4bb8] active:scale-95 cursor-pointer'
+              : 'text-[#6a7682]/50 cursor-not-allowed'
           }`}
           title="Redo (Ctrl+Y)"
         >
@@ -155,7 +149,7 @@ export const QuickAccessToolbar: React.FC = () => {
         <div className="relative">
           <Search
             size={13}
-            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#9aa4ae] pointer-events-none"
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#6a7682] pointer-events-none"
           />
           <input
             ref={searchInputRef}
@@ -168,17 +162,17 @@ export const QuickAccessToolbar: React.FC = () => {
               setSearchQuery(e.target.value);
               setIsSearchOpen(true);
             }}
-            className="w-full bg-[#f8fafb] hover:bg-[#f3f5f7] focus:bg-white text-[#202833] placeholder-[#9aa4ae] pl-8 pr-12 py-1.5 rounded-[8px] text-[11.5px] outline-none border border-[#e5e9ee] focus:border-[#73b9b7] transition-all"
+            className="w-full bg-[#f8fafb] hover:bg-[#f3f5f7] focus:bg-white text-[#161a22] placeholder-[#6a7682] pl-8 pr-12 py-1 rounded-[8px] text-[11.5px] outline-none border border-[#e5e9ee] focus:border-[#b3a4f2] transition-all"
           />
-          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 text-[9.5px] bg-[#f3f5f7] border border-[#e5e9ee] text-[#778391] px-1.5 py-0.5 rounded-[6px] font-mono pointer-events-none">
+          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 text-[9.5px] bg-[#f3f5f7] border border-[#e5e9ee] text-[#5b6673] px-1.5 py-0.5 rounded-[6px] font-mono pointer-events-none">
             <span>Ctrl+K</span>
           </div>
         </div>
 
         {/* Search Results Dropdown */}
         {isSearchOpen && (
-          <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-[#e5e9ee] rounded-[12px] shadow-[0_8px_28px_rgba(28,44,58,0.12)] p-1.5 z-50 text-[#202833] animate-in fade-in duration-100">
-            <div className="text-[10px] font-bold text-[#9aa4ae] px-2 py-1 uppercase tracking-[0.09em]">
+          <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-[#e5e9ee] rounded-[12px] shadow-[0_8px_28px_rgba(28,44,58,0.12)] p-1.5 z-50 text-[#161a22] animate-in fade-in duration-100">
+            <div className="text-[10px] font-bold text-[#6a7682] px-2 py-1 uppercase tracking-[0.09em]">
               Quick Commands
             </div>
             {filteredActions.map((item, idx) => (
@@ -189,9 +183,9 @@ export const QuickAccessToolbar: React.FC = () => {
                   setIsSearchOpen(false);
                   setSearchQuery('');
                 }}
-                className="w-full text-left px-2.5 py-1.5 hover:bg-[#eef5f5] hover:text-[#087477] rounded-[8px] text-xs flex items-center gap-2 transition cursor-pointer"
+                className="w-full text-left px-2.5 py-1.5 hover:bg-[#f4f2ff] hover:text-[#5c4bb8] rounded-[8px] text-xs flex items-center gap-2 transition cursor-pointer"
               >
-                <span className="w-5 h-5 rounded-[6px] bg-[#f3f5f7] flex items-center justify-center font-bold text-[#52606c] text-[11px]">
+                <span className="w-5 h-5 rounded-[6px] bg-[#f3f5f7] flex items-center justify-center font-bold text-[#4a5661] text-[11px]">
                   {item.icon}
                 </span>
                 <span className="font-medium">{item.label}</span>
@@ -205,7 +199,7 @@ export const QuickAccessToolbar: React.FC = () => {
       <div className="flex items-center gap-2">
         <button
           onClick={openShortcutsModal}
-          className="p-1.5 hover:bg-[#eef5f5] text-[#52606c] hover:text-[#087477] active:scale-95 rounded-[8px] transition-all cursor-pointer"
+          className="p-1.5 hover:bg-[#f4f2ff] text-[#4a5661] hover:text-[#5c4bb8] active:scale-95 rounded-[8px] transition-all cursor-pointer"
           title="Keyboard shortcuts (?)"
           aria-label="Keyboard shortcuts"
         >
@@ -214,7 +208,7 @@ export const QuickAccessToolbar: React.FC = () => {
 
         <button
           onClick={triggerPrint}
-          className="p-1.5 hover:bg-[#eef5f5] text-[#52606c] hover:text-[#087477] active:scale-95 rounded-[8px] transition-all cursor-pointer"
+          className="p-1.5 hover:bg-[#f4f2ff] text-[#4a5661] hover:text-[#5c4bb8] active:scale-95 rounded-[8px] transition-all cursor-pointer"
           title="Print Document"
         >
           <Printer size={16} />
@@ -222,7 +216,7 @@ export const QuickAccessToolbar: React.FC = () => {
 
         <button
           onClick={() => exportToPdf(project)}
-          className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#087f83] hover:bg-[#06696c] active:scale-95 text-white rounded-[8px] font-semibold text-xs transition shadow-2xs cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#6e56cf] hover:bg-[#5c4bb8] active:scale-95 text-white rounded-[8px] font-semibold text-xs transition shadow-2xs cursor-pointer"
           title="Export to PDF"
         >
           <FileDown size={14} />

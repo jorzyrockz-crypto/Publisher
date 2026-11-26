@@ -49,6 +49,7 @@ const GROUPS: ShortcutGroup[] = [
       { keys: ['H'], label: 'Hand / pan tool' },
       { keys: ['V'], label: 'Select tool' },
       { keys: ['Ctrl', 'Wheel'], label: 'Zoom in / out' },
+      { keys: ['Ctrl', 'F1'], label: 'Fold / unfold the ribbon' },
       { keys: ['+'], label: 'Zoom in' },
       { keys: ['-'], label: 'Zoom out' },
     ],
@@ -129,18 +130,18 @@ export const ShortcutsModal: React.FC = () => {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 px-5 py-4 border-b border-[#e5e9ee]">
-          <div className="w-9 h-9 rounded-xl bg-[#e5f4f3] text-[#087477] flex items-center justify-center">
+          <div className="w-9 h-9 rounded-xl bg-[#efeafd] text-[#5c4bb8] flex items-center justify-center">
             <Keyboard size={18} />
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="text-sm font-bold text-[#202833] leading-tight">Keyboard Shortcuts</h2>
-            <p className="text-[11px] text-[#778391]">
+            <h2 className="text-sm font-bold text-[#161a22] leading-tight">Keyboard Shortcuts</h2>
+            <p className="text-[11px] text-[#5b6673]">
               Press <span className="font-semibold">?</span> anytime to reopen this cheatsheet
             </p>
           </div>
           <button
             onClick={() => setIsOpen(false)}
-            className="p-1.5 rounded-[8px] text-[#778391] hover:text-[#202833] hover:bg-[#f3f5f7] transition cursor-pointer"
+            className="p-1.5 rounded-[8px] text-[#5b6673] hover:text-[#161a22] hover:bg-[#f3f5f7] transition cursor-pointer"
             title="Close (Esc)"
           >
             <X size={16} />
@@ -151,14 +152,14 @@ export const ShortcutsModal: React.FC = () => {
           <div className="relative">
             <Search
               size={13}
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#9aa4ae] pointer-events-none"
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#6a7682] pointer-events-none"
             />
             <input
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Filter shortcuts..."
-              className="w-full bg-white text-[#202833] placeholder-[#9aa4ae] pl-8 pr-3 py-1.5 rounded-[8px] text-[11.5px] outline-none border border-[#e5e9ee] focus:border-[#73b9b7]"
+              className="w-full bg-white text-[#161a22] placeholder-[#6a7682] pl-8 pr-3 py-1.5 rounded-[8px] text-[11.5px] outline-none border border-[#e5e9ee] focus:border-[#b3a4f2]"
             />
           </div>
         </div>
@@ -166,7 +167,7 @@ export const ShortcutsModal: React.FC = () => {
         <div className="overflow-y-auto p-5 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
           {filtered.map((group) => (
             <div key={group.title}>
-              <h3 className="text-[10px] font-bold uppercase tracking-[0.09em] text-[#9aa4ae] mb-2">
+              <h3 className="text-[10px] font-bold uppercase tracking-[0.09em] text-[#6a7682] mb-2">
                 {group.title}
               </h3>
               <ul className="space-y-1.5">
@@ -175,11 +176,11 @@ export const ShortcutsModal: React.FC = () => {
                     key={`${group.title}-${row.label}`}
                     className="flex items-center justify-between gap-3 py-0.5"
                   >
-                    <span className="text-[11.5px] text-[#46515e]">{row.label}</span>
+                    <span className="text-[11.5px] text-[#3d4854]">{row.label}</span>
                     <span className="flex items-center gap-1 flex-shrink-0">
                       {row.keys.map((k, i) => (
                         <React.Fragment key={`${row.label}-${k}-${i}`}>
-                          {i > 0 && <span className="text-[9px] text-[#b6bfc8]">+</span>}
+                          {i > 0 && <span className="text-[9px] text-[#8d99a5]">+</span>}
                           <KeyCap>{k}</KeyCap>
                         </React.Fragment>
                       ))}
@@ -190,7 +191,7 @@ export const ShortcutsModal: React.FC = () => {
             </div>
           ))}
           {filtered.length === 0 && (
-            <p className="text-xs text-[#9aa4ae] col-span-full text-center py-6">
+            <p className="text-xs text-[#6a7682] col-span-full text-center py-6">
               No shortcuts match “{query}”.
             </p>
           )}

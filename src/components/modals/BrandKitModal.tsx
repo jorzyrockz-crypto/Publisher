@@ -130,13 +130,13 @@ export const BrandKitModal: React.FC = () => {
         {/* Header */}
         <div className="px-6 py-4 border-b border-[#e5e9ee] flex items-center justify-between bg-slate-50">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-[#0c9c9c] to-[#075f77] text-white flex items-center justify-center shadow-sm">
+            <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-[#8a6ff0] to-[#5a44c9] text-white flex items-center justify-center shadow-sm">
               <Palette size={18} />
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
                 <span>Brand Kit Studio</span>
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#e5f4f3] text-[#087477]">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#efeafd] text-[#5c4bb8]">
                   Smart Rebrand
                 </span>
               </h2>
@@ -164,7 +164,7 @@ export const BrandKitModal: React.FC = () => {
               <button
                 type="button"
                 onClick={handleCreateNew}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#087f83] hover:bg-[#06696c] text-white text-[11px] font-bold transition cursor-pointer"
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#6e56cf] hover:bg-[#5c4bb8] text-white text-[11px] font-bold transition cursor-pointer"
               >
                 <Plus size={12} />
                 <span>New Kit</span>
@@ -180,8 +180,8 @@ export const BrandKitModal: React.FC = () => {
                     onClick={() => setDraft(kit)}
                     className={`group p-2.5 rounded-xl border cursor-pointer transition flex items-center justify-between gap-2 ${
                       isSelected
-                        ? 'border-indigo-600 bg-white ring-1 ring-[#087f83]/30 shadow-xs'
-                        : 'border-[#e5e9ee] bg-white/80 hover:border-[#b7dddd]'
+                        ? 'border-indigo-600 bg-white ring-1 ring-[#6e56cf]/30 shadow-xs'
+                        : 'border-[#e5e9ee] bg-white/80 hover:border-[#d3c9f9]'
                     }`}
                   >
                     <div className="min-w-0 flex-1">
@@ -190,7 +190,7 @@ export const BrandKitModal: React.FC = () => {
                           {kit.name}
                         </span>
                         {kit.isCustom && (
-                          <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-[#e5f4f3] text-[#087477] font-bold">
+                          <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-[#efeafd] text-[#5c4bb8] font-bold">
                             Custom
                           </span>
                         )}
@@ -248,7 +248,7 @@ export const BrandKitModal: React.FC = () => {
                     type="text"
                     value={draft.name}
                     onChange={(e) => updateDraftField({ name: e.target.value })}
-                    className="w-full rounded-xl border border-[#e5e9ee] bg-slate-50 focus:bg-white px-3 py-1.5 text-xs font-semibold outline-none focus:ring-2 focus:ring-[#087f83]/20 focus:border-[#73b9b7]"
+                    className="w-full rounded-xl border border-[#e5e9ee] bg-slate-50 focus:bg-white px-3 py-1.5 text-xs font-semibold outline-none focus:ring-2 focus:ring-[#6e56cf]/20 focus:border-[#b3a4f2]"
                   />
                 </div>
 
@@ -323,7 +323,7 @@ export const BrandKitModal: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => logoInputRef.current?.click()}
-                      className="flex flex-col items-center gap-1 text-slate-400 hover:text-[#087477] transition cursor-pointer"
+                      className="flex flex-col items-center gap-1 text-slate-400 hover:text-[#5c4bb8] transition cursor-pointer"
                     >
                       <Upload size={18} />
                       <span className="text-[11px] font-semibold">Upload PNG / SVG Logo</span>
@@ -336,7 +336,7 @@ export const BrandKitModal: React.FC = () => {
                     <button
                       type="button"
                       onClick={handleAutoPickFromLogo}
-                      className="flex-1 py-1 px-2 rounded-lg border border-[#b7dddd] bg-[#e5f4f3] hover:bg-[#e5f4f3] text-[#087477] text-[10.5px] font-bold flex items-center justify-center gap-1 transition cursor-pointer"
+                      className="flex-1 py-1 px-2 rounded-lg border border-[#d3c9f9] bg-[#efeafd] hover:bg-[#efeafd] text-[#5c4bb8] text-[10.5px] font-bold flex items-center justify-center gap-1 transition cursor-pointer"
                     >
                       <Wand2 size={11} />
                       <span>Auto-Pick Colors</span>
@@ -421,7 +421,7 @@ export const BrandKitModal: React.FC = () => {
                   type="checkbox"
                   checked={stampLogo}
                   onChange={(e) => setStampLogo(e.target.checked)}
-                  className="accent-[#087f83] rounded"
+                  className="accent-[#6e56cf] rounded"
                 />
                 <span>Auto-stamp Brand Logo onto rebranded artboards</span>
               </label>
@@ -438,7 +438,7 @@ export const BrandKitModal: React.FC = () => {
             <button
               type="button"
               onClick={() => handleApply('page')}
-              className="py-2 px-4 rounded-xl border border-[#b7dddd] bg-white hover:bg-[#e5f4f3] text-[#087477] text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+              className="py-2 px-4 rounded-xl border border-[#d3c9f9] bg-white hover:bg-[#efeafd] text-[#5c4bb8] text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
             >
               <FileCheck size={14} />
               <span>Rebrand Active Page</span>
@@ -446,7 +446,7 @@ export const BrandKitModal: React.FC = () => {
             <button
               type="button"
               onClick={() => handleApply('all')}
-              className="py-2 px-5 rounded-xl bg-[#087f83] hover:bg-[#06696c] text-white text-xs font-bold shadow-sm flex items-center gap-1.5 transition cursor-pointer"
+              className="py-2 px-5 rounded-xl bg-[#6e56cf] hover:bg-[#5c4bb8] text-white text-xs font-bold shadow-sm flex items-center gap-1.5 transition cursor-pointer"
             >
               <Sparkles size={14} />
               <Layers size={14} />
