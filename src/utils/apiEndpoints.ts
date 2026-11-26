@@ -144,13 +144,28 @@ export function resolveClipartSearchUrls(pathAndQuery: string): string[] {
   const direct = `https://clipart.free${pathAndQuery}`;
   const devProxy = `/api/clipart-free${pathAndQuery}`;
   const customProxy = proxyBase ? `${proxyBase}${pathAndQuery}` : '';
+  // Static hosts ship a serverless proxy that holds the API key server-side
+  // (`api/clipart.js`), so the browser needs neither CORS nor a key.
+  const serverless = IS_STATIC_HOST ? clipartServerlessSearchUrl(pathAndQuery) : '';
 
-  // A user-configured proxy wins; otherwise always try the browser's own
-  // request first and keep the same-origin proxy as a fallback. The dev-server
-  // proxy lives inside whatever sandbox the app runs in and cannot be assumed
-  // to have outbound internet access.
-  if (proxyBase) return unique([customProxy, direct, devProxy]);
-  return unique([direct, devProxy]);
+  // A user-configured proxy wins; otherwise try the browser's own request first
+  // (fast when clipart.free does send CORS) and keep the proxies as fallbacks.
+  if (proxyBase) return unique([customProxy, direct, serverless, devProxy]);
+  return unique([direct, serverless, devProxy]);
+}
+
+/**
+ * Maps a Clipart.Free REST path onto the same-origin serverless proxy
+ * (`/api/clipart?mode=search&…`). Any API key is stripped: the function injects
+ * its own from the environment.
+ */
+export function clipartServerlessSearchUrl(pathAndQuery: string): string {
+  const [path, query = ''] = pathAndQuery.split('?');
+  if (!/^\/api\/(v1\/clipart|clipart)\/search$|^\/api\/search$/.test(path)) return '';
+  const params = new URLSearchParams(query);
+  params.delete('key');
+  params.set('mode', 'search');
+  return `/api/clipart?${params.toString()}`;
 }
 
 /**
@@ -174,6 +189,9 @@ export function resolveClipartAssetUrls(rawUrl: string): string[] {
   const candidates: string[] = [];
   if (proxyBase && path) candidates.push(`${proxyBase}${path}`);
   candidates.push(absolute);
+  if (IS_STATIC_HOST && /^https:\/\/clipart\.free\//.test(absolute)) {
+    candidates.push(`/api/clipart?mode=asset&url=${encodeURIComponent(absolute)}`);
+  }
   if (!IS_STATIC_HOST && path) candidates.push(`/api/clipart-free${path}`);
 
   return unique(candidates);
