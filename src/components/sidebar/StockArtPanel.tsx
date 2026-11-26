@@ -25,6 +25,15 @@ import {
   searchOpenverse,
 } from '../../utils/openverseSearch';
 import {
+  PixabayItem,
+  PixabayImageType,
+  PixabayNotConfiguredError,
+  PixabayOrientation,
+  PIXABAY_PROXY_HINT,
+  fetchPixabayAsDataUrl,
+  searchPixabay,
+} from '../../utils/pixabaySearch';
+import {
   Images,
   Search,
   X,
@@ -35,11 +44,11 @@ import {
   Sticker,
 } from 'lucide-react';
 
-type StockSourceFilter = 'all' | 'builtin' | 'clipartfree' | 'iconify' | 'wikimedia' | 'openverse';
+type StockSourceFilter = 'all' | 'builtin' | 'clipartfree' | 'iconify' | 'wikimedia' | 'openverse' | 'pixabay';
 
 interface UnifiedStockItem {
   uid: string;
-  source: 'builtin' | 'clipartfree' | 'iconify' | 'wikimedia' | 'openverse';
+  source: 'builtin' | 'clipartfree' | 'iconify' | 'wikimedia' | 'openverse' | 'pixabay';
   sourceLabel: string;
   title: string;
   thumbUrl: string;
@@ -51,6 +60,9 @@ interface UnifiedStockItem {
   rawIconify?: IconifyItem;
   rawWikimedia?: WikimediaItem;
   rawOpenverse?: OpenverseItem;
+  rawPixabay?: PixabayItem;
+  /** Photographer credit — required wherever Pixabay results are shown. */
+  credit?: string;
 }
 
 const QUICK_SEARCH_CHIPS = [
@@ -85,12 +97,25 @@ export const StockArtPanel: React.FC = () => {
   const [iconifyItems, setIconifyItems] = useState<UnifiedStockItem[]>([]);
   const [wikiItems, setWikiItems] = useState<UnifiedStockItem[]>([]);
   const [ovItems, setOvItems] = useState<UnifiedStockItem[]>([]);
+  const [pbItems, setPbItems] = useState<UnifiedStockItem[]>([]);
+
+  // Pixabay's own filters and paging. The key lives on the server, so the only
+  // client-side state is what the user is browsing.
+  const [pbImageType, setPbImageType] = useState<PixabayImageType>('photo');
+  const [pbOrientation, setPbOrientation] = useState<PixabayOrientation>('all');
+  const [pbPage, setPbPage] = useState(1);
+  const [pbTotal, setPbTotal] = useState(0);
+  const [pbLoadingMore, setPbLoadingMore] = useState(false);
+  // Set when the deployment has no PIXABAY_API_KEY — shown as a quiet notice
+  // instead of a scary error, since the rest of the panel still works.
+  const [pixabayUnavailable, setPixabayUnavailable] = useState(false);
 
   const [loadingSources, setLoadingSources] = useState({
     clipartfree: false,
     iconify: false,
     wikimedia: false,
     openverse: false,
+    pixabay: false,
   });
   const [sourceErrors, setSourceErrors] = useState<string[]>([]);
   // Sources the user chose not to retry (persisted), e.g. because the host has
@@ -107,6 +132,7 @@ export const StockArtPanel: React.FC = () => {
   const [insertingUid, setInsertingUid] = useState<string | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
+  const pbAbortRef = useRef<AbortController | null>(null);
   const hasAutoSearchedRef = useRef(false);
 
   const setSourceDisabled = (source: string, disabled: boolean) => {
@@ -119,6 +145,79 @@ export const StockArtPanel: React.FC = () => {
       }
       return next;
     });
+  };
+
+  const pbEnabled = !disabledSources.includes('pixabay');
+
+  const mapPixabayItems = (items: PixabayItem[]): UnifiedStockItem[] =>
+    items.map((item) => ({
+      uid: `pb-${item.id}`,
+      source: 'pixabay' as const,
+      sourceLabel: 'Pixabay',
+      title: item.title,
+      thumbUrl: item.thumbUrl,
+      isSvg: item.type === 'vector',
+      width: item.width,
+      height: item.height,
+      rawPixabay: item,
+      credit: item.user,
+    }));
+
+  /** Runs only the Pixabay leg — used by its filter chips and pagination. */
+  const runPixabaySearch = (q: string, page = 1, keepItems = false, signal?: AbortSignal) => {
+    if (!pbEnabled || !q) {
+      setPbItems([]);
+      setPbTotal(0);
+      setLoadingSources((prev) => ({ ...prev, pixabay: false }));
+      return;
+    }
+    if (!signal) {
+      pbAbortRef.current?.abort();
+      const controller = new AbortController();
+      pbAbortRef.current = controller;
+      signal = controller.signal;
+    }
+    if (page === 1) setLoadingSources((s) => ({ ...s, pixabay: true }));
+    else setPbLoadingMore(true);
+
+    searchPixabay(q, {
+      page,
+      perPage: 18,
+      imageType: pbImageType,
+      orientation: pbOrientation,
+      signal,
+    })
+      .then((res) => {
+        if (signal?.aborted) return;
+        setPixabayUnavailable(false);
+        setPbTotal(res.total);
+        setPbPage(page);
+        setPbItems((prev) => {
+          const next = mapPixabayItems(res.items);
+          if (!keepItems || page === 1) return next;
+          const seen = new Set(prev.map((i) => i.uid));
+          return [...prev, ...next.filter((i) => !seen.has(i.uid))];
+        });
+      })
+      .catch((err) => {
+        if (signal?.aborted) return;
+        if (err instanceof PixabayNotConfiguredError) {
+          setPixabayUnavailable(true);
+          setPbItems([]);
+          setPbTotal(0);
+          return;
+        }
+        if (page === 1) setPbItems([]);
+        setSourceErrors((prev) => [
+          ...prev,
+          `Pixabay: ${err instanceof Error ? err.message : 'Error'}`,
+        ]);
+      })
+      .finally(() => {
+        if (signal?.aborted) return;
+        setLoadingSources((s) => ({ ...s, pixabay: false }));
+        setPbLoadingMore(false);
+      });
   };
 
   const runUnifiedSearch = (overrideQuery?: string) => {
@@ -152,6 +251,7 @@ export const StockArtPanel: React.FC = () => {
       iconify: true,
       wikimedia: true,
       openverse: true,
+      pixabay: pbEnabled,
     });
 
     // 1. Built-in (instant local filter)
@@ -300,6 +400,11 @@ export const StockArtPanel: React.FC = () => {
           setLoadingSources((s) => ({ ...s, wikimedia: false }));
         }
       });
+
+    // 6. Pixabay — free stock photos/illustrations/vectors via the serverless
+    // relay (the key must never reach the browser). Degrades quietly when the
+    // deployment has no key configured.
+    runPixabaySearch(q, 1, false);
   };
 
   // Auto-run initial unified search when the panel first opens, and reactively debounce live typing
@@ -321,7 +426,7 @@ export const StockArtPanel: React.FC = () => {
   const combinedResults = useMemo(() => {
     let list: UnifiedStockItem[] = [];
     if (sourceFilter === 'all') {
-      const buckets = [builtinItems, cfItems, iconifyItems, wikiItems, ovItems];
+      const buckets = [builtinItems, cfItems, iconifyItems, wikiItems, ovItems, pbItems];
       const maxLen = Math.max(...buckets.map((b) => b.length), 0);
       for (let i = 0; i < maxLen; i++) {
         for (const bucket of buckets) {
@@ -336,6 +441,8 @@ export const StockArtPanel: React.FC = () => {
       list = iconifyItems;
     } else if (sourceFilter === 'openverse') {
       list = ovItems;
+    } else if (sourceFilter === 'pixabay') {
+      list = pbItems;
     } else {
       list = wikiItems;
     }
@@ -344,13 +451,14 @@ export const StockArtPanel: React.FC = () => {
       list = list.filter((item) => item.isSvg);
     }
     return list;
-  }, [sourceFilter, svgOnly, builtinItems, cfItems, iconifyItems, wikiItems, ovItems]);
+  }, [sourceFilter, svgOnly, builtinItems, cfItems, iconifyItems, wikiItems, ovItems, pbItems]);
 
   const isAnyLoading =
     loadingSources.clipartfree ||
     loadingSources.iconify ||
     loadingSources.wikimedia ||
-    loadingSources.openverse;
+    loadingSources.openverse ||
+    loadingSources.pixabay;
 
   const handleInsertItem = async (item: UnifiedStockItem, asSticker = false) => {
     setInsertingUid(item.uid);
@@ -366,11 +474,15 @@ export const StockArtPanel: React.FC = () => {
         dataUrl = await fetchWikimediaAsDataUrl(item.rawWikimedia);
       } else if (item.source === 'openverse' && item.rawOpenverse) {
         dataUrl = await fetchOpenverseAsDataUrl(item.rawOpenverse);
+      } else if (item.source === 'pixabay' && item.rawPixabay) {
+        // Copied into the project as a data URL: Pixabay forbids permanent
+        // hotlinking, and a remote URL would taint the export canvas.
+        dataUrl = await fetchPixabayAsDataUrl(item.rawPixabay);
       }
 
       if (!dataUrl) return;
 
-      const maxDim = asSticker ? 180 : 220;
+      const maxDim = asSticker ? 180 : item.source === 'pixabay' ? 280 : 220;
       const ratio = item.width && item.height ? item.width / item.height : 1;
       const width = Math.max(48, ratio >= 1 ? maxDim : Math.round(maxDim * ratio));
       const height = Math.max(48, ratio >= 1 ? Math.round(maxDim / ratio) : maxDim);
@@ -423,7 +535,12 @@ export const StockArtPanel: React.FC = () => {
   if (!isStockArtPanelOpen) return null;
 
   const totalAllCount =
-    builtinItems.length + cfItems.length + iconifyItems.length + wikiItems.length;
+    builtinItems.length +
+    cfItems.length +
+    iconifyItems.length +
+    wikiItems.length +
+    ovItems.length +
+    pbItems.length;
 
   return (
     <aside
@@ -452,7 +569,7 @@ export const StockArtPanel: React.FC = () => {
               Stock Art & Clipart
             </h3>
             <p className="text-[10px] text-[#5b6673] leading-tight">
-              Unified search across 5 sources
+              Unified search across 6 sources
             </p>
           </div>
         </div>
@@ -620,6 +737,12 @@ export const StockArtPanel: React.FC = () => {
               { id: 'iconify', label: `Iconify (${iconifyItems.length})` },
               { id: 'wikimedia', label: `Wiki (${wikiItems.length})` },
               { id: 'openverse', label: `Open (${ovItems.length})` },
+              {
+                id: 'pixabay',
+                label: disabledSources.includes('pixabay')
+                  ? 'Pix (off)'
+                  : `Pix (${pbItems.length})`,
+              },
             ] as const
           ).map((tab) => (
             <button
@@ -649,6 +772,77 @@ export const StockArtPanel: React.FC = () => {
             <span>SVG Only</span>
           </button>
         </div>
+
+        {/* Pixabay's own filters — the rest of the sources have none. */}
+        {sourceFilter === 'pixabay' && (
+          <div className="space-y-1.5 pt-0.5">
+            <div className="flex items-center gap-1 flex-wrap">
+              <span className="text-[9px] font-bold uppercase tracking-[0.08em] text-[#6a7682] mr-0.5">
+                Type
+              </span>
+              {(
+                [
+                  { id: 'photo', label: 'Photos' },
+                  { id: 'illustration', label: 'Illos' },
+                  { id: 'vector', label: 'Vectors' },
+                  { id: 'all', label: 'Any' },
+                ] as const
+              ).map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => {
+                    setPbImageType(opt.id);
+                    runPixabaySearch(query, 1);
+                  }}
+                  className={`px-1.5 py-0.5 rounded-[6px] text-[10px] font-semibold transition cursor-pointer ${
+                    pbImageType === opt.id
+                      ? 'bg-[#efeafd] text-[#5c4bb8]'
+                      : 'bg-[#f3f5f7] text-[#4a5661] hover:bg-[#f4f2ff] hover:text-[#5c4bb8]'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-1 flex-wrap">
+              <span className="text-[9px] font-bold uppercase tracking-[0.08em] text-[#6a7682] mr-0.5">
+                Shape
+              </span>
+              {(
+                [
+                  { id: 'all', label: 'Any' },
+                  { id: 'horizontal', label: 'Landscape' },
+                  { id: 'vertical', label: 'Portrait' },
+                ] as const
+              ).map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => {
+                    setPbOrientation(opt.id);
+                    runPixabaySearch(query, 1);
+                  }}
+                  className={`px-1.5 py-0.5 rounded-[6px] text-[10px] font-semibold transition cursor-pointer ${
+                    pbOrientation === opt.id
+                      ? 'bg-[#efeafd] text-[#5c4bb8]'
+                      : 'bg-[#f3f5f7] text-[#4a5661] hover:bg-[#f4f2ff] hover:text-[#5c4bb8]'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+              <a
+                href="https://pixabay.com/"
+                target="_blank"
+                rel="noreferrer noopener"
+                className="ml-auto text-[9.5px] font-semibold text-[#5c4bb8] hover:underline"
+              >
+                Powered by Pixabay
+              </a>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Results Area */}
@@ -701,6 +895,34 @@ export const StockArtPanel: React.FC = () => {
           </div>
         )}
 
+        {pixabayUnavailable && (sourceFilter === 'pixabay' || sourceFilter === 'all') && (
+          <div className="p-1.5 rounded-[8px] bg-[#f8fafb] border border-[#e5e9ee] text-[10px] text-[#4a5661] flex items-start gap-1.5">
+            <AlertCircle size={12} className="flex-shrink-0 mt-0.5 text-[#8a8fa3]" />
+            <div className="flex-1 min-w-0 space-y-1">
+              <span className="block leading-snug">{PIXABAY_PROXY_HINT}</span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => runPixabaySearch(query, 1)}
+                  className="px-1.5 py-0.5 rounded-[5px] bg-white border border-[#e5e9ee] font-semibold hover:bg-[#f4f2ff] transition cursor-pointer"
+                >
+                  Retry
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSourceDisabled('pixabay', true);
+                    setPixabayUnavailable(false);
+                  }}
+                  className="px-1.5 py-0.5 rounded-[5px] bg-white border border-[#e5e9ee] font-semibold hover:bg-[#f4f2ff] transition cursor-pointer"
+                >
+                  Hide
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {disabledSources.includes('clipartfree') && (
           <div className="flex items-center gap-1.5 px-1.5 py-1 rounded-[8px] bg-[#f8fafb] border border-[#e5e9ee] text-[10px] text-[#5b6673]">
             <span>Clipart.Free is turned off for this browser.</span>
@@ -726,6 +948,7 @@ export const StockArtPanel: React.FC = () => {
                 loadingSources.clipartfree && 'Clipart.Free',
                 loadingSources.iconify && 'Iconify',
                 loadingSources.wikimedia && 'Wikimedia',
+                loadingSources.pixabay && 'Pixabay',
               ]
                 .filter(Boolean)
                 .join(', ')}
@@ -744,6 +967,7 @@ export const StockArtPanel: React.FC = () => {
             </p>
           </div>
         ) : (
+          <>
           <div
             className={`grid gap-2 ${
               panelWidth >= 380 ? 'grid-cols-3' : 'grid-cols-2'
@@ -780,6 +1004,8 @@ export const StockArtPanel: React.FC = () => {
                             ? 'bg-emerald-100 text-emerald-800'
                             : item.source === 'iconify'
                             ? 'bg-sky-100 text-sky-800'
+                            : item.source === 'pixabay'
+                            ? 'bg-rose-100 text-rose-800'
                             : 'bg-amber-100 text-amber-800'
                         }`}
                       >
@@ -787,6 +1013,8 @@ export const StockArtPanel: React.FC = () => {
                           ? 'CF'
                           : item.source === 'wikimedia'
                           ? 'Wiki'
+                          : item.source === 'pixabay'
+                          ? 'Pix'
                           : item.sourceLabel}
                       </span>
                       {item.isSvg && (
@@ -798,6 +1026,11 @@ export const StockArtPanel: React.FC = () => {
                     <span className="mt-1.5 text-[10px] font-semibold text-slate-700 truncate w-full text-center">
                       {isInserting ? 'Inserting...' : item.title}
                     </span>
+                    {item.credit && (
+                      <span className="text-[9px] text-slate-400 truncate w-full text-center leading-tight">
+                        {item.credit}
+                      </span>
+                    )}
                   </button>
 
                   {/* Hover Quick Sticker Action */}
@@ -819,6 +1052,41 @@ export const StockArtPanel: React.FC = () => {
               );
             })}
           </div>
+
+          {/* Pixabay paging + the attribution its licence asks for. */}
+          {sourceFilter === 'pixabay' && pbItems.length > 0 && (
+            <div className="space-y-1.5 pt-0.5">
+              {pbPage * 18 < Math.min(pbTotal, 500) && (
+                <button
+                  type="button"
+                  disabled={pbLoadingMore}
+                  onClick={() => runPixabaySearch(query, pbPage + 1, true)}
+                  className="w-full py-1 rounded-[8px] border border-[#d3c9f9] bg-white hover:bg-[#f4f2ff] text-[#5c4bb8] text-[10px] font-bold transition cursor-pointer disabled:opacity-60 flex items-center justify-center gap-1"
+                >
+                  {pbLoadingMore ? (
+                    <>
+                      <Loader2 size={11} className="animate-spin" /> Loading…
+                    </>
+                  ) : (
+                    `Load more (${Math.min(pbTotal, 500)} available)`
+                  )}
+                </button>
+              )}
+              <p className="text-[9.5px] leading-snug text-[#6a7682] text-center">
+                Images from{' '}
+                <a
+                  href="https://pixabay.com/"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="font-semibold text-[#5c4bb8] hover:underline"
+                >
+                  Pixabay
+                </a>
+                , used under the Pixabay Content License. Search results are cached for 24 hours.
+              </p>
+            </div>
+          )}
+          </>
         )}
       </div>
 

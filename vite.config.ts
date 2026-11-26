@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import pixabayHandler from './api/pixabay.js'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -8,6 +9,20 @@ export default defineConfig({
   plugins: [
     tailwindcss(),
     react(),
+    {
+      // Serve the real Vercel function in dev, so `npm run dev` and the deployed
+      // site use identical routing and the same PIXABAY_API_KEY env var.
+      name: 'pixabay-dev-function',
+      configureServer(server) {
+        server.middlewares.use('/api/pixabay', (req, res, _next) => {
+          pixabayHandler(req, res).catch((error: unknown) => {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: String(error) }));
+          });
+        });
+      },
+    },
   ],
   build: {
     chunkSizeWarningLimit: 900,
