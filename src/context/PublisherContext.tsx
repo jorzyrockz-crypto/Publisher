@@ -88,6 +88,7 @@ interface PublisherContextType {
   // Element actions
   addElement: (element: PublisherElement) => void;
   updateElement: (id: string, updates: Partial<PublisherElement>) => void;
+  updateElementsBatch: (updatesById: Record<string, Partial<PublisherElement>>) => void;
   updateSelectedElements: (updates: Partial<PublisherElement>) => void;
   deleteSelectedElements: () => void;
   duplicateSelectedElements: () => void;
@@ -108,6 +109,7 @@ interface PublisherContextType {
   ungroupSelected: () => void;
   mergeSelectedShapes: (op: 'union' | 'combine' | 'subtract' | 'intersect') => void;
   autoConnectSelectedShapes: (style?: 'straight' | 'elbow' | 'curved') => void;
+  disconnectSelectedShapes: () => void;
   addConnectedDiagramStep: (style?: 'straight' | 'elbow' | 'curved') => void;
 
   // Quick factory helpers
@@ -570,6 +572,39 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
               ...pg,
               elements: pg.elements.map((el) =>
                 el.id === id ? ({ ...el, ...updates } as PublisherElement) : el
+              ),
+            }
+          : pg
+      );
+      commitProject({ ...project, pages: newPages, activePageIndex: targetPageIdx });
+    },
+    [isEditingMaster, currentElements, commitCurrentElements, project, commitProject]
+  );
+
+  const updateElementsBatch = useCallback(
+    (updatesById: Record<string, Partial<PublisherElement>>) => {
+      const ids = Object.keys(updatesById);
+      if (ids.length === 0) return;
+
+      if (isEditingMaster) {
+        const updated = currentElements.map((el) =>
+          updatesById[el.id] ? ({ ...el, ...updatesById[el.id] } as PublisherElement) : el
+        );
+        commitCurrentElements(updated);
+        return;
+      }
+
+      const targetPageIdx = project.pages.findIndex((pg) =>
+        pg.elements.some((el) => Boolean(updatesById[el.id]))
+      );
+      if (targetPageIdx === -1) return;
+
+      const newPages = project.pages.map((pg, idx) =>
+        idx === targetPageIdx
+          ? {
+              ...pg,
+              elements: pg.elements.map((el) =>
+                updatesById[el.id] ? ({ ...el, ...updatesById[el.id] } as PublisherElement) : el
               ),
             }
           : pg
@@ -1131,11 +1166,11 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     [currentElements, selectedElementIds, commitCurrentElements]
   );
 
-  // Auto-connect 2+ selected elements with smart diagram connectors
+  // Auto-connect 2+ selected elements (or update existing connector style without duplicating)
   const autoConnectSelectedShapes = useCallback(
     (style: 'straight' | 'elbow' | 'curved' = 'elbow') => {
-      const selected = currentElements.filter((el) =>
-        selectedElementIds.includes(el.id) && el.type !== 'connector'
+      const selected = currentElements.filter(
+        (el) => selectedElementIds.includes(el.id) && el.type !== 'connector'
       );
       if (selected.length < 2) return;
 
@@ -1144,36 +1179,65 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         Math.abs(a.x - b.x) > 40 ? a.x - b.x : a.y - b.y
       );
 
-      const maxZ = currentElements.reduce((acc, el) => Math.max(acc, el.zIndex), 0);
-      const connectors: ConnectorElement[] = [];
+      let nextElements = [...currentElements];
+      let maxZ = nextElements.reduce((acc, el) => Math.max(acc, el.zIndex), 0);
+      const newConnectors: ConnectorElement[] = [];
 
       for (let i = 0; i < ordered.length - 1; i++) {
         const fromEl = ordered[i];
         const toEl = ordered[i + 1];
-        connectors.push({
-          id: `conn-${Date.now()}-${i}`,
-          type: 'connector',
-          name: `Connector ${i + 1}`,
-          fromId: fromEl.id,
-          toId: toEl.id,
-          connectorStyle: style,
-          x: 0,
-          y: 0,
-          width: 10,
-          height: 10,
-          rotation: 0,
-          zIndex: maxZ + 1 + i,
-          strokeColor: activeScheme.primary,
-          strokeWidth: 2.5,
-          strokeDash: 'solid',
-          arrowEnd: true,
-        });
+
+        const existingIdx = nextElements.findIndex(
+          (el) =>
+            el.type === 'connector' &&
+            ((el.fromId === fromEl.id && el.toId === toEl.id) ||
+              (el.fromId === toEl.id && el.toId === fromEl.id))
+        );
+
+        if (existingIdx !== -1) {
+          const existing = nextElements[existingIdx] as ConnectorElement;
+          nextElements[existingIdx] = {
+            ...existing,
+            connectorStyle: style,
+          };
+        } else {
+          maxZ += 1;
+          newConnectors.push({
+            id: `conn-${Date.now()}-${i}`,
+            type: 'connector',
+            name: `Connector ${i + 1}`,
+            fromId: fromEl.id,
+            toId: toEl.id,
+            connectorStyle: style,
+            x: 0,
+            y: 0,
+            width: 10,
+            height: 10,
+            rotation: 0,
+            zIndex: maxZ,
+            strokeColor: activeScheme.primary,
+            strokeWidth: 2.5,
+            strokeDash: 'solid',
+            arrowEnd: true,
+          });
+        }
       }
 
-      commitCurrentElements([...currentElements, ...connectors]);
+      commitCurrentElements([...nextElements, ...newConnectors]);
     },
     [currentElements, selectedElementIds, activeScheme, commitCurrentElements]
   );
+
+  const disconnectSelectedShapes = useCallback(() => {
+    if (selectedElementIds.length < 2) return;
+    const idSet = new Set(selectedElementIds);
+    const updated = currentElements.filter(
+      (el) => !(el.type === 'connector' && idSet.has(el.fromId) && idSet.has(el.toId))
+    );
+    if (updated.length !== currentElements.length) {
+      commitCurrentElements(updated);
+    }
+  }, [currentElements, selectedElementIds, commitCurrentElements]);
 
   // Spawn a connected next-step diagram node from the currently selected element
   const addConnectedDiagramStep = useCallback(
@@ -1321,6 +1385,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
         addElement,
         updateElement,
+        updateElementsBatch,
         updateSelectedElements,
         deleteSelectedElements,
         duplicateSelectedElements,
@@ -1341,6 +1406,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         ungroupSelected,
         mergeSelectedShapes,
         autoConnectSelectedShapes,
+        disconnectSelectedShapes,
         addConnectedDiagramStep,
 
         addTextBox,

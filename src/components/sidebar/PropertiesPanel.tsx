@@ -6,6 +6,7 @@ import {
   ImageElement,
   TableElement,
   QRElement,
+  ConnectorElement,
   WordArtStyle,
   BorderArtStyle,
   ShapeType,
@@ -77,6 +78,7 @@ export const PropertiesPanel: React.FC = () => {
     sendToBack,
     mergeSelectedShapes,
     autoConnectSelectedShapes,
+    disconnectSelectedShapes,
     addConnectedDiagramStep,
     setPageSize,
     setPageOrientation,
@@ -362,35 +364,64 @@ export const PropertiesPanel: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3 shadow-2xs">
-              <div className="font-bold text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-100">
-                <Workflow size={14} className="text-emerald-700" />
-                <span>Diagram Auto-Connect</span>
-              </div>
-              <p className="text-[10.5px] text-slate-500">
-                Connect selected objects with smart arrows that auto-follow when moved:
-              </p>
-              <div className="grid grid-cols-3 gap-1.5">
-                <button
-                  onClick={() => autoConnectSelectedShapes('straight')}
-                  className="py-1.5 px-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-800 text-[11px] font-semibold transition"
-                >
-                  Straight
-                </button>
-                <button
-                  onClick={() => autoConnectSelectedShapes('elbow')}
-                  className="py-1.5 px-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-800 text-[11px] font-semibold transition"
-                >
-                  Elbow
-                </button>
-                <button
-                  onClick={() => autoConnectSelectedShapes('curved')}
-                  className="py-1.5 px-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-800 text-[11px] font-semibold transition"
-                >
-                  Curved
-                </button>
-              </div>
-            </div>
+            {(() => {
+              const idSet = new Set(selectedElementIds);
+              const existingConnectors = elementsPool.filter(
+                (el): el is ConnectorElement =>
+                  el.type === 'connector' && idSet.has(el.fromId) && idSet.has(el.toId)
+              );
+              const activeConnectorStyle = existingConnectors[0]?.connectorStyle;
+
+              return (
+                <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3 shadow-2xs">
+                  <div className="font-bold text-slate-800 flex items-center justify-between pb-2 border-b border-slate-100">
+                    <div className="flex items-center gap-1.5">
+                      <Workflow size={14} className="text-emerald-700" />
+                      <span>Diagram Auto-Connect</span>
+                    </div>
+                    {existingConnectors.length > 0 && (
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                        Connected
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10.5px] text-slate-500">
+                    {existingConnectors.length > 0
+                      ? 'Switch connector style between selected objects (no duplicates):'
+                      : 'Connect selected objects with smart arrows that auto-follow when moved:'}
+                  </p>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {(
+                      [
+                        { id: 'straight', label: 'Straight' },
+                        { id: 'elbow', label: 'Elbow' },
+                        { id: 'curved', label: 'Curved' },
+                      ] as const
+                    ).map((style) => (
+                      <button
+                        key={style.id}
+                        onClick={() => autoConnectSelectedShapes(style.id)}
+                        className={`py-1.5 px-2 rounded-xl border text-[11px] font-semibold transition ${
+                          activeConnectorStyle === style.id
+                            ? 'border-emerald-500 bg-emerald-50 text-emerald-800 shadow-2xs'
+                            : 'border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-800 text-slate-700'
+                        }`}
+                      >
+                        {style.label}
+                      </button>
+                    ))}
+                  </div>
+                  {existingConnectors.length > 0 && (
+                    <button
+                      onClick={disconnectSelectedShapes}
+                      className="w-full py-1.5 px-2.5 rounded-xl border border-rose-200 bg-rose-50/70 hover:bg-rose-100 text-rose-700 text-[11px] font-semibold transition"
+                    >
+                      Disconnect Arrow
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         )}
 

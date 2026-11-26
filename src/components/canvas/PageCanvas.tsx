@@ -46,6 +46,7 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
     selectElement,
     clearSelection,
     updateElement,
+    updateElementsBatch,
     deleteSelectedElements,
     duplicateSelectedElements,
     copySelectedElements,
@@ -269,12 +270,14 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
       const effectiveDeltaX = snap.x - primary.startX;
       const effectiveDeltaY = snap.y - primary.startY;
 
+      const updatesById: Record<string, { x: number; y: number }> = {};
       initialElementsPos.forEach((item) => {
-        updateElement(item.id, {
+        updatesById[item.id] = {
           x: Math.round(item.startX + effectiveDeltaX),
           y: Math.round(item.startY + effectiveDeltaY),
-        });
+        };
       });
+      updateElementsBatch(updatesById);
     };
 
     const handleWindowMouseUp = () => {
