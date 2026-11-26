@@ -332,41 +332,108 @@ async function drawImageElement(ctx: CanvasRenderingContext2D, el: ImageElement)
   const artWidth = el.borderArtWidth ?? (art !== 'none' ? 4 : 0);
   const artPad =
     el.borderArtPadding ??
-    (art === 'polaroid' ? 10 : art !== 'none' && art !== 'dots-and-dashes' ? 6 : 0);
+    (art === 'polaroid'
+      ? 10
+      : art === 'stitched-scrapbook' || art === 'stamp-postage'
+      ? 12
+      : art !== 'none' && art !== 'dots-and-dashes'
+      ? 6
+      : 0);
   const effect = el.effectPreset || 'none';
 
-  ctx.save();
-  if (el.shadow || effect === 'sticker' || art === 'polaroid') {
-    ctx.shadowColor = 'rgba(15,23,42,0.24)';
-    ctx.shadowBlur = 14;
-    ctx.shadowOffsetY = 6;
+  const cardRadius =
+    effect === 'sticker'
+      ? 18
+      : effect === 'clay' || art === 'puffy-clay'
+      ? 24
+      : art === 'pastel-rainbow'
+      ? 20
+      : art === 'candy-stripe'
+      ? 18
+      : art === 'stitched-scrapbook' || art === 'dotted-double'
+      ? 16
+      : art === 'doodle-box'
+      ? 18
+      : el.borderRadius;
+
+  // Offset solid shadows (doodle-box / puffy-clay) before drawing card body
+  if (art === 'puffy-clay') {
+    ctx.save();
+    ctx.fillStyle = artColor2;
+    drawPolygonMask(ctx, el.maskShape, width, height, cardRadius);
+    ctx.translate(0, 8);
+    ctx.fill();
+    ctx.restore();
+  } else if (art === 'doodle-box') {
+    ctx.save();
+    ctx.fillStyle = artColor2;
+    drawPolygonMask(ctx, el.maskShape, width, height, cardRadius);
+    ctx.translate(6, 6);
+    ctx.fill();
+    ctx.restore();
   }
 
-  // Outer card background for matte/polaroid/sticker frames
-  if (
+  ctx.save();
+  if (el.shadow || effect === 'sticker' || art === 'polaroid' || art === 'puffy-clay') {
+    ctx.shadowColor = art === 'puffy-clay' ? 'rgba(0,131,143,0.18)' : 'rgba(15,23,42,0.24)';
+    ctx.shadowBlur = art === 'puffy-clay' ? 20 : 14;
+    ctx.shadowOffsetY = art === 'puffy-clay' ? 10 : 6;
+  }
+
+  // Outer card background
+  if (art === 'candy-stripe') {
+    ctx.save();
+    drawPolygonMask(ctx, el.maskShape, width, height, cardRadius);
+    ctx.clip();
+    ctx.fillStyle = artColor2;
+    ctx.fillRect(0, 0, width, height);
+    ctx.strokeStyle = artColor;
+    ctx.lineWidth = 10;
+    for (let i = -height; i < width + height; i += 20) {
+      ctx.beginPath();
+      ctx.moveTo(i, height);
+      ctx.lineTo(i + height, 0);
+      ctx.stroke();
+    }
+    ctx.restore();
+  } else if (art === 'pastel-rainbow') {
+    const grad = ctx.createLinearGradient(0, 0, width, height);
+    grad.addColorStop(0, artColor);
+    grad.addColorStop(0.33, '#fad0c4');
+    grad.addColorStop(0.66, artColor2);
+    grad.addColorStop(1, '#c2e9fb');
+    ctx.fillStyle = grad;
+    drawPolygonMask(ctx, el.maskShape, width, height, cardRadius);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.save();
+    const bw = Math.max(3, artWidth);
+    ctx.translate(bw, bw);
+    drawPolygonMask(ctx, el.maskShape, Math.max(4, width - bw * 2), Math.max(4, height - bw * 2), Math.max(4, (cardRadius || 20) - bw));
+    ctx.fill();
+    ctx.restore();
+  } else if (
     art === 'polaroid' ||
     art === 'classic-frame' ||
     art === 'stamp-postage' ||
     art === 'filmstrip' ||
+    art === 'stitched-scrapbook' ||
+    art === 'puffy-clay' ||
+    art === 'doodle-box' ||
+    art === 'dotted-double' ||
     effect === 'sticker'
   ) {
     ctx.fillStyle = effect === 'sticker' ? '#ffffff' : artColor;
-    drawPolygonMask(
-      ctx,
-      el.maskShape,
-      width,
-      height,
-      effect === 'sticker' ? 18 : effect === 'clay' ? 24 : el.borderRadius
-    );
+    drawPolygonMask(ctx, el.maskShape, width, height, cardRadius);
     ctx.fill();
   }
   ctx.restore();
 
   // Inner image rectangle
-  const padL = artPad;
-  const padT = artPad;
-  const padR = artPad;
-  const padB = art === 'polaroid' ? Math.max(26, artPad * 2.8) : artPad;
+  const padL = artPad + (art === 'candy-stripe' ? 4 : 0);
+  const padT = artPad + (art === 'candy-stripe' ? 4 : 0);
+  const padR = artPad + (art === 'candy-stripe' ? 4 : 0);
+  const padB = art === 'polaroid' ? Math.max(26, artPad * 2.8) : artPad + (art === 'candy-stripe' ? 4 : 0);
   const innerW = Math.max(10, width - padL - padR);
   const innerH = Math.max(10, height - padT - padB);
 
@@ -378,7 +445,15 @@ async function drawImageElement(ctx: CanvasRenderingContext2D, el: ImageElement)
     el.maskShape,
     innerW,
     innerH,
-    effect === 'clay' ? 20 : effect === 'sticker' ? 14 : el.borderRadius
+    art === 'candy-stripe'
+      ? 10
+      : effect === 'clay' || art === 'puffy-clay'
+      ? 18
+      : effect === 'sticker'
+      ? 14
+      : art === 'stitched-scrapbook' || art === 'pastel-rainbow' || art === 'doodle-box' || art === 'dotted-double'
+      ? 10
+      : el.borderRadius
   );
   ctx.clip();
 
@@ -433,27 +508,80 @@ async function drawImageElement(ctx: CanvasRenderingContext2D, el: ImageElement)
   }
   ctx.restore();
 
-  // Frame Stroke
-  if (effect === 'cartoon' || (art !== 'none' && artWidth > 0) || (el.borderWidth && el.borderWidth > 0)) {
+  // Specialized Decorative Frame Strokes
+  if (art === 'stitched-scrapbook') {
     ctx.save();
-    ctx.lineWidth = effect === 'cartoon' ? 3 : art !== 'none' ? artWidth : el.borderWidth || 1;
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = artColor2;
+    ctx.setLineDash([6, 4]);
+    ctx.translate(8, 8);
+    drawPolygonMask(ctx, el.maskShape, Math.max(4, width - 16), Math.max(4, height - 16), 10);
+    ctx.stroke();
+    ctx.restore();
+  } else if (art === 'dotted-double') {
+    ctx.save();
+    ctx.lineWidth = Math.max(2, artWidth);
+    ctx.strokeStyle = artColor2;
+    drawPolygonMask(ctx, el.maskShape, width, height, cardRadius);
+    ctx.stroke();
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#d8b4fe';
+    ctx.lineCap = 'round';
+    ctx.setLineDash([1, 8]);
+    ctx.translate(-6, -6);
+    drawPolygonMask(ctx, el.maskShape, width + 12, height + 12, 20);
+    ctx.stroke();
+    ctx.restore();
+  } else if (art === 'stamp-postage') {
+    ctx.save();
+    ctx.strokeStyle = artColor2;
+    ctx.lineWidth = 2;
+    drawPolygonMask(ctx, el.maskShape, width, height, 0);
+    ctx.stroke();
+    // Punch scalloped notches along perimeter
+    ctx.fillStyle = '#ffffff';
+    const step = 20;
+    for (let x = 10; x < width; x += step) {
+      ctx.beginPath();
+      ctx.arc(x, 0, 6, 0, Math.PI * 2);
+      ctx.arc(x, height, 6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    for (let y = 10; y < height; y += step) {
+      ctx.beginPath();
+      ctx.arc(0, y, 6, 0, Math.PI * 2);
+      ctx.arc(width, y, 6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  } else if (
+    effect === 'cartoon' ||
+    (art !== 'none' && art !== 'candy-stripe' && art !== 'pastel-rainbow' && artWidth > 0) ||
+    (el.borderWidth && el.borderWidth > 0)
+  ) {
+    ctx.save();
+    ctx.lineWidth =
+      effect === 'cartoon'
+        ? 3
+        : art === 'puffy-clay'
+        ? Math.max(2, artWidth)
+        : art === 'doodle-box'
+        ? Math.max(2, artWidth)
+        : art !== 'none'
+        ? artWidth
+        : el.borderWidth || 1;
     ctx.strokeStyle =
       effect === 'cartoon'
         ? '#0f172a'
-        : art === 'stamp-postage'
-        ? artColor2
+        : art === 'puffy-clay'
+        ? '#ffffff'
+        : art === 'doodle-box'
+        ? '#3d348b'
         : art !== 'none'
         ? artColor
         : el.borderColor || '#cbd5e1';
     if (art === 'dots-and-dashes') ctx.setLineDash([8, 4]);
-    if (art === 'stamp-postage') ctx.setLineDash([2, 4]);
-    drawPolygonMask(
-      ctx,
-      el.maskShape,
-      width,
-      height,
-      effect === 'clay' ? 24 : el.borderRadius
-    );
+    drawPolygonMask(ctx, el.maskShape, width, height, cardRadius);
     ctx.stroke();
     ctx.restore();
   }

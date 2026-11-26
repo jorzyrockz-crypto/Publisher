@@ -159,6 +159,14 @@
   transform: translateX(16px);
 }
 
+/* Subtle hover bounce for tactile BorderArt frames */
+.border-art-interactive {
+  transition: transform 0.2s ease;
+}
+.border-art-interactive:hover {
+  transform: translateY(-3px);
+}
+
 @media print {
   @page {
     margin: 8mm;

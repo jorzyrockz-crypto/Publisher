@@ -776,15 +776,19 @@ const ImageRenderer: React.FC<{ element: ImageElement }> = ({ element }) => {
   };
 
   const getBorderArtClasses = () => {
+    const hoverLift =
+      art === 'puffy-clay' || art === 'doodle-box' || art === 'candy-stripe' || art === 'stitched-scrapbook'
+        ? 'border-art-interactive '
+        : '';
     switch (element.borderArt) {
       case 'double-gold':
-        return 'border-4 border-amber-500 ring-2 ring-amber-300 ring-offset-2';
+        return `${hoverLift}border-4 border-amber-500 ring-2 ring-amber-300 ring-offset-2`;
       case 'art-deco':
-        return 'border-4 border-slate-800 shadow-[0_0_0_3px_#fff,0_0_0_6px_#334155]';
+        return `${hoverLift}border-4 border-slate-800 shadow-[0_0_0_3px_#fff,0_0_0_6px_#334155]`;
       case 'dots-and-dashes':
-        return 'border-4 border-dashed border-indigo-600';
+        return `${hoverLift}border-4 border-dashed border-indigo-600`;
       default:
-        return '';
+        return hoverLift.trim();
     }
   };
 
@@ -821,7 +825,13 @@ const ImageRenderer: React.FC<{ element: ImageElement }> = ({ element }) => {
   const artWidth = element.borderArtWidth ?? (art !== 'none' ? 4 : 0);
   const artPad =
     element.borderArtPadding ??
-    (art === 'polaroid' ? 10 : art !== 'none' && art !== 'dots-and-dashes' ? 6 : 0);
+    (art === 'polaroid'
+      ? 10
+      : art === 'stitched-scrapbook' || art === 'stamp-postage'
+      ? 12
+      : art !== 'none' && art !== 'dots-and-dashes'
+      ? 6
+      : 0);
   const effect = element.effectPreset || 'none';
 
   const getOuterEffectStyle = (): React.CSSProperties => {
@@ -849,6 +859,10 @@ const ImageRenderer: React.FC<{ element: ImageElement }> = ({ element }) => {
       shadows.push(`0 0 0 3px ${artColor2}`, `0 0 0 6px ${artColor}`);
     } else if (art === 'polaroid') {
       shadows.push('0 8px 20px rgba(15,23,42,0.22)');
+    } else if (art === 'puffy-clay') {
+      shadows.push(`0 8px 0 ${artColor2}`, '0 12px 20px rgba(0, 131, 143, 0.15)');
+    } else if (art === 'doodle-box') {
+      shadows.push(`6px 6px 0 ${artColor2}`);
     }
 
     let outerBorder = element.borderWidth
@@ -859,27 +873,92 @@ const ImageRenderer: React.FC<{ element: ImageElement }> = ({ element }) => {
     } else if (art === 'dots-and-dashes') {
       outerBorder = `${artWidth}px dashed ${artColor}`;
     } else if (art === 'stamp-postage') {
-      outerBorder = `${artWidth}px dotted ${artColor2}`;
+      outerBorder = `2px solid ${artColor2}`;
     } else if (art === 'filmstrip') {
       outerBorder = `${artWidth}px solid ${artColor}`;
+    } else if (art === 'stitched-scrapbook') {
+      outerBorder = `${Math.max(4, artWidth)}px solid ${artColor}`;
+    } else if (art === 'candy-stripe') {
+      outerBorder = undefined;
+    } else if (art === 'puffy-clay') {
+      outerBorder = `${Math.max(2, artWidth)}px solid #ffffff`;
+    } else if (art === 'pastel-rainbow') {
+      outerBorder = `${Math.max(3, artWidth)}px solid transparent`;
+    } else if (art === 'doodle-box') {
+      outerBorder = `${Math.max(2, artWidth)}px solid #3d348b`;
+    } else if (art === 'dotted-double') {
+      outerBorder = `${Math.max(2, artWidth)}px solid ${artColor2}`;
     } else if (art !== 'none') {
       outerBorder = `${artWidth}px solid ${artColor}`;
     }
+
+    const borderRadiusStyle =
+      effect === 'clay'
+        ? '26px'
+        : effect === 'sticker'
+        ? '18px'
+        : art === 'stitched-scrapbook' || art === 'dotted-double'
+        ? '16px'
+        : art === 'candy-stripe'
+        ? '18px'
+        : art === 'puffy-clay'
+        ? '24px'
+        : art === 'pastel-rainbow'
+        ? '20px'
+        : art === 'doodle-box'
+        ? '16px 22px 18px 24px'
+        : getMaskRadius();
+
+    let backgroundImage: string | undefined;
+    if (art === 'candy-stripe') {
+      backgroundImage = `repeating-linear-gradient(45deg, ${artColor}, ${artColor} 10px, ${artColor2} 10px, ${artColor2} 20px)`;
+    } else if (art === 'pastel-rainbow') {
+      backgroundImage = `linear-gradient(#ffffff, #ffffff), linear-gradient(135deg, ${artColor}, #fad0c4, ${artColor2}, #c2e9fb)`;
+    }
+
+    const stampMask =
+      art === 'stamp-postage'
+        ? 'radial-gradient(8px at 8px 8px, #0000 98%, #000) -8px -8px / 20px 20px'
+        : undefined;
 
     return {
       width: '100%',
       height: '100%',
       position: 'relative',
-      overflow: art === 'washi-tape' || effect === 'sticker' ? 'visible' : 'hidden',
-      borderRadius:
-        effect === 'clay' ? '26px' : effect === 'sticker' ? '18px' : getMaskRadius(),
+      overflow:
+        art === 'washi-tape' ||
+        art === 'dotted-double' ||
+        art === 'doodle-box' ||
+        art === 'puffy-clay' ||
+        effect === 'sticker'
+          ? 'visible'
+          : 'hidden',
+      borderRadius: borderRadiusStyle,
       clipPath: getClipPath(),
       backgroundColor:
-        art === 'polaroid' || art === 'classic-frame' || art === 'stamp-postage'
-          ? artColor
-          : art === 'filmstrip'
+        art === 'polaroid' ||
+        art === 'classic-frame' ||
+        art === 'stamp-postage' ||
+        art === 'filmstrip' ||
+        art === 'stitched-scrapbook' ||
+        art === 'puffy-clay' ||
+        art === 'doodle-box' ||
+        art === 'dotted-double'
           ? artColor
           : undefined,
+      backgroundImage,
+      backgroundOrigin: art === 'pastel-rainbow' ? 'padding-box, border-box' : undefined,
+      backgroundClip: art === 'pastel-rainbow' ? 'padding-box, border-box' : undefined,
+      outline:
+        art === 'stitched-scrapbook'
+          ? `2px dashed ${artColor2}`
+          : art === 'dotted-double'
+          ? '4px dotted #d8b4fe'
+          : undefined,
+      outlineOffset:
+        art === 'stitched-scrapbook' ? '-8px' : art === 'dotted-double' ? '4px' : undefined,
+      mask: stampMask,
+      WebkitMask: stampMask,
       padding:
         art === 'polaroid'
           ? `${artPad}px ${artPad}px ${Math.max(26, artPad * 2.8)}px ${artPad}px`
@@ -966,8 +1045,21 @@ const ImageRenderer: React.FC<{ element: ImageElement }> = ({ element }) => {
           width: '100%',
           height: '100%',
           overflow: 'hidden',
+          backgroundColor: art === 'candy-stripe' ? artColor2 : undefined,
+          padding: art === 'candy-stripe' ? '4px' : undefined,
           borderRadius:
-            art === 'polaroid' ? '4px' : effect === 'clay' ? '20px' : undefined,
+            art === 'polaroid'
+              ? '4px'
+              : art === 'candy-stripe'
+              ? '10px'
+              : effect === 'clay' || art === 'puffy-clay'
+              ? '18px'
+              : art === 'stitched-scrapbook' ||
+                art === 'pastel-rainbow' ||
+                art === 'doodle-box' ||
+                art === 'dotted-double'
+              ? '10px'
+              : undefined,
           position: 'relative',
         }}
       >

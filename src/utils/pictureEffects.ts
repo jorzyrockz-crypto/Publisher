@@ -98,7 +98,7 @@ export const BORDER_ART_OPTIONS: {
   { id: 'polaroid', label: 'Polaroid Frame', defaultColor: '#ffffff', defaultColor2: '#e2e8f0', defaultPadding: 10 },
   { id: 'washi-tape', label: 'Washi Tape Scrapbook', defaultColor: '#f59e0b', defaultColor2: '#fda4af', defaultPadding: 6 },
   { id: 'filmstrip', label: 'Cinema Filmstrip', defaultColor: '#0f172a', defaultColor2: '#f8fafc', defaultPadding: 8 },
-  { id: 'stamp-postage', label: 'Postage Stamp', defaultColor: '#ffffff', defaultColor2: '#4f46e5', defaultPadding: 10 },
+  { id: 'stamp-postage', label: 'Postage Stamp Edge', defaultColor: '#fff8e7', defaultColor2: '#f4a261', defaultPadding: 14 },
   { id: 'classic-frame', label: 'Classic Mat Frame', defaultColor: '#ffffff', defaultColor2: '#1e293b', defaultPadding: 10 },
   { id: 'double-gold', label: 'Double Gold Leaf', defaultColor: '#f59e0b', defaultColor2: '#fde047', defaultPadding: 6 },
   { id: 'art-deco', label: 'Art Deco Geometric', defaultColor: '#1e293b', defaultColor2: '#ffffff', defaultPadding: 6 },
@@ -106,6 +106,12 @@ export const BORDER_ART_OPTIONS: {
   { id: 'stars', label: 'Star Sparkle Corner', defaultColor: '#f59e0b', defaultColor2: '#4f46e5', defaultPadding: 6 },
   { id: 'certificate-leaf', label: 'Botanical Laurel', defaultColor: '#059669', defaultColor2: '#d97706', defaultPadding: 8 },
   { id: 'neon-frame', label: 'Neon Glow Edge', defaultColor: '#22d3ee', defaultColor2: '#ec4899', defaultPadding: 4 },
+  { id: 'stitched-scrapbook', label: 'Stitched Scrapbook', defaultColor: '#fff0f5', defaultColor2: '#ff8fab', defaultPadding: 12 },
+  { id: 'candy-stripe', label: 'Candy-Stripe Frame', defaultColor: '#ffb3c6', defaultColor2: '#ffffff', defaultPadding: 10 },
+  { id: 'puffy-clay', label: 'Puffy Clay / Kawaii 3D', defaultColor: '#e0f7fa', defaultColor2: '#80deea', defaultPadding: 10 },
+  { id: 'pastel-rainbow', label: 'Pastel Rainbow Gradient', defaultColor: '#ff9a9e', defaultColor2: '#a1c4fd', defaultPadding: 10 },
+  { id: 'doodle-box', label: 'Offset Doodle / Sticker', defaultColor: '#fffdf5', defaultColor2: '#ffd166', defaultPadding: 10 },
+  { id: 'dotted-double', label: 'Dotted Double Frame', defaultColor: '#f3e8ff', defaultColor2: '#a855f7', defaultPadding: 10 },
 ];
 
 export type EffectStylePreset = ImageEffectPreset;

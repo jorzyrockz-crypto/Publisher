@@ -47,7 +47,13 @@ export type BorderArtStyle =
   | 'art-deco'
   | 'dots-and-dashes'
   | 'certificate-leaf'
-  | 'neon-frame';
+  | 'neon-frame'
+  | 'stitched-scrapbook'
+  | 'candy-stripe'
+  | 'puffy-clay'
+  | 'pastel-rainbow'
+  | 'doodle-box'
+  | 'dotted-double';
 
 export type ImageEffectPreset =
   | 'none'
