@@ -936,31 +936,171 @@ export const BackstageModal: React.FC = () => {
         )}
 
         {/* SECTION: INFO */}
-        {activeSection === 'info' && (
-          <div className="max-w-2xl mx-auto space-y-6">
-            <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Document Details</h1>
-            <div className="bg-white p-8 rounded-2xl border border-slate-200/80 shadow-sm space-y-4 text-xs font-medium">
-              <div className="flex justify-between py-2 border-b border-slate-100">
-                <span className="text-slate-500">Publication Title:</span>
-                <span className="font-bold text-slate-800">{project.name}</span>
+        {activeSection === 'info' && (() => {
+          const allElements = project.pages.flatMap((pg) => pg.elements);
+          const textCount = allElements.filter((e) => e.type === 'text').length;
+          const shapeCount = allElements.filter((e) => e.type === 'shape').length;
+          const imageCount = allElements.filter((e) => e.type === 'image').length;
+          const qrCount = allElements.filter((e) => e.type === 'qr').length;
+          const connectorCount = allElements.filter((e) => e.type === 'connector').length;
+
+          const usedFonts = Array.from(
+            new Set(
+              allElements
+                .filter((e) => e.type === 'text')
+                .map((e) => (e as { fontFamily: string }).fontFamily)
+                .filter(Boolean)
+            )
+          );
+
+          const emptyImages = allElements.filter(
+            (e) => e.type === 'image' && !(e as { src: string }).src
+          ).length;
+          const defaultQrCount = allElements.filter(
+            (e) => e.type === 'qr' && (e as { value: string }).value === 'https://example.com'
+          ).length;
+          const approxKb = Math.max(1, Math.round(JSON.stringify(project).length / 1024));
+
+          return (
+            <div className="max-w-4xl mx-auto space-y-6">
+              <div className="flex items-end justify-between flex-wrap gap-3">
+                <div>
+                  <h1 className="text-3xl font-bold text-slate-800 tracking-tight">
+                    Publication Info &amp; Preflight
+                  </h1>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Inspect document properties, fonts, element counts, and print readiness.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => saveProjectToFile(project)}
+                    className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
+                  >
+                    <Save size={14} />
+                    <span>Save .pub</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveSection('print')}
+                    className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+                  >
+                    <Printer size={14} />
+                    <span>Print Preview</span>
+                  </button>
+                </div>
               </div>
-              <div className="flex justify-between py-2 border-b border-slate-100">
-                <span className="text-slate-500">Page Count:</span>
-                <span className="font-bold text-slate-800">{project.pages.length}</span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-slate-100">
-                <span className="text-slate-500">Canvas Dimensions:</span>
-                <span className="font-mono font-bold text-slate-800">
-                  {activePage.width} × {activePage.height} px
-                </span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-slate-100">
-                <span className="text-slate-500">Active Theme:</span>
-                <span className="font-bold text-slate-800 capitalize">{project.colorScheme}</span>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {/* Document Properties Card */}
+                <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4 text-xs">
+                  <h2 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2">
+                    Document Properties
+                  </h2>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-slate-400">
+                      Publication Title (Editable)
+                    </label>
+                    <input
+                      type="text"
+                      value={project.name}
+                      onChange={(e) =>
+                        setProject({ ...project, name: e.target.value || 'Untitled.pub' })
+                      }
+                      className="w-full px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white font-bold text-slate-800 outline-none focus:border-indigo-600"
+                    />
+                  </div>
+
+                  <div className="flex justify-between py-1.5 border-b border-slate-100">
+                    <span className="text-slate-500">Artboards / Pages:</span>
+                    <span className="font-bold text-slate-800">{project.pages.length}</span>
+                  </div>
+                  <div className="flex justify-between py-1.5 border-b border-slate-100">
+                    <span className="text-slate-500">Active Page Size:</span>
+                    <span className="font-mono font-bold text-slate-800">
+                      {activePage.width} × {activePage.height} px ({activePage.orientation})
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-1.5 border-b border-slate-100">
+                    <span className="text-slate-500">Estimated Project Size:</span>
+                    <span className="font-mono font-bold text-slate-800">{approxKb} KB</span>
+                  </div>
+                  <div className="flex justify-between py-1.5">
+                    <span className="text-slate-500">Active Theme:</span>
+                    <span className="font-bold text-slate-800 capitalize">{project.colorScheme}</span>
+                  </div>
+                </div>
+
+                {/* Elements & Preflight Card */}
+                <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4 text-xs">
+                  <h2 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2">
+                    Content &amp; Preflight Check
+                  </h2>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { label: 'Text Boxes', count: textCount },
+                      { label: 'Shapes', count: shapeCount },
+                      { label: 'Images', count: imageCount },
+                      { label: 'QR Codes', count: qrCount },
+                      { label: 'Connectors', count: connectorCount },
+                      { label: 'Total Items', count: allElements.length },
+                    ].map((stat) => (
+                      <div
+                        key={stat.label}
+                        className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/70 text-center"
+                      >
+                        <div className="text-base font-extrabold text-indigo-700">{stat.count}</div>
+                        <div className="text-[10px] font-semibold text-slate-500">{stat.label}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Used Fonts */}
+                  <div className="space-y-1.5 pt-1">
+                    <span className="block text-[11px] font-semibold text-slate-400">
+                      Fonts Used ({usedFonts.length})
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {usedFonts.length > 0 ? (
+                        usedFonts.map((f) => (
+                          <span
+                            key={f}
+                            className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-800 border border-indigo-200/60 text-[10.5px] font-semibold"
+                          >
+                            {f}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-slate-400 text-[11px]">No text elements yet</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Preflight Status */}
+                  <div className="pt-2 border-t border-slate-100 space-y-1.5">
+                    {emptyImages === 0 && defaultQrCount === 0 ? (
+                      <div className="px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 font-semibold text-[11px]">
+                        ✓ Preflight Passed — No empty photo placeholders or default QR links.
+                      </div>
+                    ) : (
+                      <div className="px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[11px] space-y-0.5">
+                        {emptyImages > 0 && (
+                          <div>• {emptyImages} empty photo placeholder(s) need an image.</div>
+                        )}
+                        {defaultQrCount > 0 && (
+                          <div>• {defaultQrCount} QR code(s) still point to https://example.com.</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
 
       {/* Full Template Preview Lightbox */}
