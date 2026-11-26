@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import pixabayHandler from './api/pixabay.js'
 import unsplashHandler from './api/unsplash.js'
+import aiHandler from './api/ai.js'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -26,6 +27,7 @@ export default defineConfig({
         };
         mount('/api/pixabay', pixabayHandler);
         mount('/api/unsplash', unsplashHandler);
+        mount('/api/ai', aiHandler);
       },
     },
   ],
