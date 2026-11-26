@@ -10,7 +10,6 @@ import {
   ConnectorElement,
   PageBackgroundPattern,
   BackgroundPatternType,
-  WordArtStyle,
   BorderArtStyle,
   ShapeType,
 } from '../../types/publisher';
@@ -21,6 +20,7 @@ import { FloatingDropdown } from '../common/FloatingDropdown';
 import { ShapePreviewIcon } from '../common/ShapePreviewIcon';
 import { SHAPE_CATALOG } from '../../utils/shapePaths';
 import { imageFit, panRoom } from '../../utils/imageFrame';
+import { wordArtPaint, wordArtPickerOptions } from '../../utils/wordArt';
 import { useImageAspect } from '../../hooks/useImageAspect';
 import {
   PATTERN_CATALOG,
@@ -217,19 +217,12 @@ export const PropertiesPanel: React.FC = () => {
   const [isWordArtPickerOpen, setIsWordArtPickerOpen] = useState(false);
   const [typoTab, setTypoTab] = useState<'character' | 'paragraph' | 'effects'>('character');
 
-  const wordArtOptions: { id: WordArtStyle; label: string; cssClass: string; dark?: boolean }[] = [
-    { id: 'none', label: 'Standard Text', cssClass: 'text-slate-700' },
-    { id: 'gold3d', label: 'Gold 3D Extrusion', cssClass: 'wordart-gold3d' },
-    { id: 'rainbow', label: 'Rainbow Gradient', cssClass: 'wordart-rainbow' },
-    { id: 'outline', label: 'Cyan Bold Outline', cssClass: 'wordart-outline' },
-    { id: 'retro', label: 'Retro Pop 3D', cssClass: 'wordart-retro' },
-    { id: 'neon-glow', label: 'Neon Cyber Glow', cssClass: 'wordart-neon-glow', dark: true },
-    { id: 'chrome', label: 'Chrome Metallic', cssClass: 'wordart-chrome' },
-    { id: 'fire', label: 'Blazing Fire', cssClass: 'wordart-fire' },
-    { id: 'comic-pop', label: 'Comic Pop Art', cssClass: 'wordart-comic-pop' },
-    { id: 'emerald-3d', label: 'Emerald 3D Block', cssClass: 'wordart-emerald-3d' },
-    { id: 'sunset-gradient', label: 'Sunset Vibe', cssClass: 'wordart-sunset-gradient' },
-  ];
+  const wordArtOptions = wordArtPickerOptions().map((opt) => ({
+    id: opt.id,
+    label: opt.label,
+    cssClass: opt.className,
+    dark: opt.dark,
+  }));
 
   const elementsPool = isEditingMaster
     ? project.masterPage?.elements || []
@@ -2374,6 +2367,20 @@ export const PropertiesPanel: React.FC = () => {
                             </div>
                             <ChevronDown size={13} className="text-slate-400 flex-shrink-0" />
                           </button>
+
+                          {(() => {
+                            const paint = wordArtPaint(activeStyleId);
+                            if (!paint) return null;
+                            const ownColours = Boolean(paint.fill || paint.gradient);
+                            return (
+                              <p className="text-[9.5px] text-slate-400 leading-tight mt-1 px-0.5">
+                                {ownColours
+                                  ? 'This style paints its own colours, so the text colour is ignored — switch to Standard Text to use it.'
+                                  : 'The style keeps your text colour.'}
+                                {' '}It exports to PNG/PDF exactly as it looks here.
+                              </p>
+                            );
+                          })()}
 
                           <FloatingDropdown
                             isOpen={isWordArtPickerOpen}

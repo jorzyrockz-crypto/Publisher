@@ -17,6 +17,7 @@ import { buildFontString, layoutText, measureTextWidth, verticalOffset } from '.
 import { buildTextEffectPainter } from './textEffects';
 import { elementClipPath } from './shapeClip';
 import { imageContentRect, imageFit } from './imageFrame';
+import { wordArtPaint } from './wordArt';
 
 function loadImage(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
@@ -130,6 +131,9 @@ function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
 
   const layout = layoutText(el);
   const paint = buildTextEffectPainter(el);
+  // WordArt styles carry their own fill, stroke, shadow stack and weight, so
+  // the exported text looks like the canvas instead of falling back to el.color.
+  const wa = el.isWordArt ? wordArtPaint(el.wordArtStyle) : undefined;
   const top = verticalOffset(layout, el);
   const letterSpacing = el.letterSpacing || 0;
   const wordSpacing = el.wordSpacing || 0;
@@ -242,8 +246,10 @@ function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
     }
   };
 
-  // 1. Shadow / glow layers behind the glyphs.
-  for (const shadow of paint.shadows) {
+  // 1. Shadow / glow layers behind the glyphs (WordArt stacks sit underneath).
+  // CSS lists the nearest shadow first; canvas paints last-first, so the
+  // WordArt stack is reversed to keep the crisp offsets on top of the glow.
+  for (const shadow of [...(wa?.shadows ?? [])].reverse().concat(paint.shadows)) {
     drawUnits({
       color: shadow.color,
       offsetX: shadow.dx,
@@ -252,9 +258,19 @@ function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
     });
   }
 
+  // CSS paints -webkit-text-stroke behind the fill, so the WordArt outline goes
+  // down before the glyphs do.
+  if (wa?.stroke) {
+    drawUnits({ fill: false, strokeColor: wa.stroke.color, strokeWidth: wa.stroke.width });
+  }
+
   // 2. Fill (gradient or flat), unless the effect is hollow.
   let fillStyle: string | CanvasGradient = el.color || '#0f172a';
-  if (paint.gradient) {
+  if (wa?.gradient) {
+    fillStyle = gradientFromStops(ctx, width, height, wa.gradient.angle, wa.gradient.stops);
+  } else if (wa?.fill) {
+    fillStyle = wa.fill;
+  } else if (paint.gradient) {
     fillStyle = gradientForBox(
       ctx,
       width,
@@ -273,12 +289,12 @@ function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
       el.textGradientColor2 || '#6e56cf'
     );
   }
-  if (!paint.fillTransparent) {
+  if (!paint.fillTransparent || wa) {
     drawUnits({ color: fillStyle });
   }
 
-  // 3. Stroke.
-  if (paint.strokeWidth > 0) {
+  // 3. Stroke (a WordArt outline has already been drawn underneath).
+  if (!wa?.stroke && paint.strokeWidth > 0) {
     drawUnits({ fill: false, strokeColor: paint.strokeColor, strokeWidth: paint.strokeWidth });
   }
 
@@ -431,6 +447,32 @@ function gradientForBox(
   );
   g.addColorStop(0, from);
   g.addColorStop(1, to);
+  return g;
+}
+
+/** Multi-stop version of `gradientForBox`, for WordArt palettes. */
+function gradientFromStops(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  angleDeg: number,
+  stops: { offset: number; color: string }[]
+): CanvasGradient {
+  const rad = (angleDeg * Math.PI) / 180;
+  const dx = Math.sin(rad);
+  const dy = -Math.cos(rad);
+  const length = Math.abs(width * dx) + Math.abs(height * dy);
+  const cx = width / 2;
+  const cy = height / 2;
+  const g = ctx.createLinearGradient(
+    cx - (dx * length) / 2,
+    cy - (dy * length) / 2,
+    cx + (dx * length) / 2,
+    cy + (dy * length) / 2
+  );
+  for (const stop of [...stops].sort((a, b) => a.offset - b.offset)) {
+    g.addColorStop(Math.max(0, Math.min(1, stop.offset)), stop.color);
+  }
   return g;
 }
 

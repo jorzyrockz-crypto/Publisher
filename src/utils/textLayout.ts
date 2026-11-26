@@ -1,4 +1,5 @@
 import type { TextElement } from '../types/publisher';
+import { wordArtWeight } from './wordArt';
 
 /**
  * One layout engine for both the DOM renderer and the canvas exporter.
@@ -104,11 +105,18 @@ export function measureTextWidth(text: string, font: string): number {
 }
 
 export function buildFontString(
-  el: Pick<TextElement, 'fontFamily' | 'fontWeight' | 'fontStyle'>,
+  el: Pick<TextElement, 'fontFamily' | 'fontWeight' | 'fontStyle'> & {
+    isWordArt?: boolean;
+    wordArtStyle?: TextElement['wordArtStyle'];
+  },
   size: number
 ): string {
   const style = el.fontStyle === 'italic' ? 'italic ' : '';
-  const weight = el.fontWeight === 'bold' ? '700' : el.fontWeight || '400';
+  // A WordArt style forces a heavier weight, so measurement has to use it too
+  // or the wrap and the glyphs disagree.
+  const weight =
+    (el.isWordArt ? wordArtWeight(el.wordArtStyle) : undefined) ??
+    (el.fontWeight === 'bold' ? '700' : el.fontWeight || '400');
   return `${style}${weight} ${Math.max(1, size)}px ${el.fontFamily || 'sans-serif'}`;
 }
 

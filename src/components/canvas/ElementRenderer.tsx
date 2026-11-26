@@ -17,6 +17,7 @@ import { PATTERN_CATALOG } from '../../utils/patternGenerator';
 import { layoutText, verticalOffset } from '../../utils/textLayout';
 import { buildTextEffectPainter } from '../../utils/textEffects';
 import { imageContentRect, imageFit, imageMaskClip } from '../../utils/imageFrame';
+import { wordArtCss } from '../../utils/wordArt';
 import { useImageAspect } from '../../hooks/useImageAspect';
 import { elementClipPath } from '../../utils/shapeClip';
 
@@ -202,7 +203,13 @@ const TextRenderer: React.FC<{
     outline: 'none',
   };
 
-  const wordArtClass = element.isWordArt ? wordArtClassName(element.wordArtStyle) : '';
+  // WordArt is painted from the same spec the exporter uses; the CSS classes
+  // are only for the gallery previews.
+  const waCss = wordArtCss(element.isWordArt ? element.wordArtStyle : undefined);
+  const waShadow = waCss.textShadow;
+  const waStroke = waCss.webkitTextStroke
+    ? { WebkitTextStroke: waCss.webkitTextStroke }
+    : {};
 
   if (isEditing) {
     return (
@@ -214,11 +221,21 @@ const TextRenderer: React.FC<{
           width: '100%',
           height: '100%',
           padding: `${element.padding}px`,
-          color: element.color,
+          color: waCss.color ?? element.color,
           fontFamily: element.fontFamily,
           // Paint at the fitted size so typing inside a shrunk box does not jump.
           fontSize: `${layout.fontSize}px`,
-          fontWeight: element.fontWeight,
+          fontWeight: (waCss.fontWeight ?? element.fontWeight) as React.CSSProperties['fontWeight'],
+          ...(waCss.backgroundImage
+            ? {
+                backgroundImage: waCss.backgroundImage,
+                WebkitBackgroundClip: 'text' as const,
+                backgroundClip: 'text' as const,
+                WebkitTextFillColor: 'transparent',
+              }
+            : {}),
+          ...waStroke,
+          textShadow: waShadow,
           fontStyle: element.fontStyle,
           textDecoration: element.textDecoration,
           textTransform: element.textTransform || 'none',
@@ -241,7 +258,6 @@ const TextRenderer: React.FC<{
               ? 'flex-end'
               : 'flex-start',
         }}
-        className={wordArtClass}
         contentEditable
         suppressContentEditableWarning
         spellCheck
@@ -275,19 +291,26 @@ const TextRenderer: React.FC<{
   const paint = buildTextEffectPainter(element);
 
   const gradientCss =
-    paint.gradient || element.textFillType === 'gradient'
+    waCss.backgroundImage ||
+    (paint.gradient || element.textFillType === 'gradient'
       ? `linear-gradient(${
           paint.gradient?.angle ?? element.textGradientAngle ?? 90
         }deg, ${paint.gradient?.from ?? element.color}, ${
           paint.gradient?.to ?? element.textGradientColor2 ?? '#6e56cf'
         })`
-      : undefined;
+      : undefined);
 
-  const strokeStyle = paint.strokeWidth
-    ? { WebkitTextStroke: `${paint.strokeWidth}px ${paint.strokeColor}` as const }
-    : {};
+  const strokeStyle: React.CSSProperties = waCss.webkitTextStroke
+    ? { WebkitTextStroke: waCss.webkitTextStroke }
+    : paint.strokeWidth
+      ? { WebkitTextStroke: `${paint.strokeWidth}px ${paint.strokeColor}` }
+      : {};
 
-  const baseColor = paint.fillTransparent ? 'transparent' : element.color;
+  // First entry in a text-shadow list sits on top — effects were painted above
+  // the WordArt stack in the exporter, so they come first here too.
+  const glyphShadow = [paint.cssShadow, waShadow].filter(Boolean).join(', ') || undefined;
+
+  const baseColor = waCss.color ?? (paint.fillTransparent ? 'transparent' : element.color);
 
   const gradientStyle = (x: number, y: number): React.CSSProperties =>
     gradientCss
@@ -318,7 +341,7 @@ const TextRenderer: React.FC<{
               color,
               ...(withEffects ? gradientStyle(char.x, offset + char.y) : {}),
               ...(withEffects ? strokeStyle : {}),
-              textShadow: withEffects && paint.cssShadow ? paint.cssShadow : undefined,
+              textShadow: withEffects ? glyphShadow : undefined,
             }}
           >
             {char.text}
@@ -353,7 +376,7 @@ const TextRenderer: React.FC<{
                 ? gradientStyle(run.x, offset + line.y)
                 : {}),
               ...(withEffects ? strokeStyle : {}),
-              textShadow: withEffects && paint.cssShadow ? paint.cssShadow : undefined,
+              textShadow: withEffects ? glyphShadow : undefined,
               backgroundColor: highlight,
               textDecoration: element.textDecoration,
               width: isSpace ? run.width : undefined,
@@ -379,13 +402,12 @@ const TextRenderer: React.FC<{
         position: 'relative',
         overflow: 'hidden',
         fontFamily: element.fontFamily,
-        fontWeight: element.fontWeight,
+        fontWeight: (waCss.fontWeight ?? element.fontWeight) as React.CSSProperties['fontWeight'],
         fontStyle: element.fontStyle,
         fontKerning: element.kerning === false ? 'none' : 'normal',
         fontVariantLigatures: element.ligatures ? 'common-ligatures' : 'none',
         userSelect: 'none',
       }}
-      className={wordArtClass}
     >
       {layout.dropCap && (
         <span
@@ -441,33 +463,6 @@ const TextRenderer: React.FC<{
     </div>
   );
 };
-
-function wordArtClassName(style?: TextElement['wordArtStyle']): string {
-  switch (style) {
-    case 'rainbow':
-      return 'wordart-rainbow';
-    case 'gold3d':
-      return 'wordart-gold3d';
-    case 'outline':
-      return 'wordart-outline';
-    case 'retro':
-      return 'wordart-retro';
-    case 'neon-glow':
-      return 'wordart-neon-glow';
-    case 'chrome':
-      return 'wordart-chrome';
-    case 'fire':
-      return 'wordart-fire';
-    case 'comic-pop':
-      return 'wordart-comic-pop';
-    case 'emerald-3d':
-      return 'wordart-indigo-3d';
-    case 'sunset-gradient':
-      return 'wordart-sunset-gradient';
-    default:
-      return '';
-  }
-}
 
 function leaderDom(
   run: { text: string; width: number },

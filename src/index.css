@@ -163,6 +163,14 @@
   text-shadow: 1px 1px 0 #065f46, 2px 2px 0 #064e3b, 3px 3px 0 #022c22, 4px 5px 8px rgba(0, 0, 0, 0.35);
 }
 
+.wordart-gradient-blue {
+  background: linear-gradient(180deg, #93c5fd 0%, #3b82f6 48%, #1d4ed8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 900;
+  filter: drop-shadow(0 2px 4px rgba(29, 78, 216, 0.35));
+}
+
 .wordart-sunset-gradient {
   background: linear-gradient(135deg, #ec4899 0%, #f97316 55%, #facc15 100%);
   -webkit-background-clip: text;
