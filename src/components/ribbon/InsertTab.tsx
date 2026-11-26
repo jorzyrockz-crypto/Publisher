@@ -17,6 +17,7 @@ import {
   Hash,
   Images,
   Wand2,
+  LayoutGrid,
 } from 'lucide-react';
 
 export const InsertTab: React.FC = () => {
@@ -32,6 +33,7 @@ export const InsertTab: React.FC = () => {
     addPageNumberToken,
     setIsWordArtModalOpen,
     setIsAIImageModalOpen,
+    setIsCollageModalOpen,
   } = usePublisher();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -174,6 +176,18 @@ export const InsertTab: React.FC = () => {
               <Wand2 size={16} />
             </div>
             <span className="text-[10px] font-semibold mt-1 text-indigo-800">AI Image</span>
+          </button>
+
+          {/* Photo Collage Builder */}
+          <button
+            onClick={() => setIsCollageModalOpen(true)}
+            className="flex flex-col items-center p-1.5 hover:bg-slate-100 active:scale-95 rounded-xl transition-all group"
+            title="Create Multi-Photo Collage Grid"
+          >
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-xs">
+              <LayoutGrid size={16} />
+            </div>
+            <span className="text-[10px] font-medium mt-1 text-slate-600">Collage</span>
           </button>
 
           {/* Stock Graphics Picker */}

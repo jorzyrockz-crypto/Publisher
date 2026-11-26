@@ -33,6 +33,7 @@ interface PublisherContextType {
   isWordArtModalOpen: boolean;
   isBuildingBlocksModalOpen: boolean;
   isAIImageModalOpen: boolean;
+  isCollageModalOpen: boolean;
   rulerVisible: boolean;
   guidesVisible: boolean;
   gridVisible: boolean;
@@ -60,6 +61,7 @@ interface PublisherContextType {
   setIsWordArtModalOpen: (open: boolean) => void;
   setIsBuildingBlocksModalOpen: (open: boolean) => void;
   setIsAIImageModalOpen: (open: boolean) => void;
+  setIsCollageModalOpen: (open: boolean) => void;
   setRulerVisible: (visible: boolean) => void;
   setGuidesVisible: (visible: boolean) => void;
   setGridVisible: (visible: boolean) => void;
@@ -91,6 +93,7 @@ interface PublisherContextType {
 
   // Element actions
   addElement: (element: PublisherElement) => void;
+  addElementsBatch: (elements: PublisherElement[]) => void;
   updateElement: (id: string, updates: Partial<PublisherElement>) => void;
   updateElementsBatch: (updatesById: Record<string, Partial<PublisherElement>>) => void;
   updateSelectedElements: (updates: Partial<PublisherElement>) => void;
@@ -202,6 +205,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [isWordArtModalOpen, setIsWordArtModalOpen] = useState(false);
   const [isBuildingBlocksModalOpen, setIsBuildingBlocksModalOpen] = useState(false);
   const [isAIImageModalOpen, setIsAIImageModalOpen] = useState(false);
+  const [isCollageModalOpen, setIsCollageModalOpen] = useState(false);
 
   const [rulerVisible, setRulerVisible] = useState(true);
   const [guidesVisible, setGuidesVisible] = useState(true);
@@ -580,6 +584,20 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       const withZ = { ...element, zIndex: maxZ + 1 };
       commitCurrentElements([...currentElements, withZ]);
       setSelectedElementIds([element.id]);
+    },
+    [currentElements, commitCurrentElements]
+  );
+
+  const addElementsBatch = useCallback(
+    (elements: PublisherElement[]) => {
+      if (elements.length === 0) return;
+      let maxZ = currentElements.reduce((acc, el) => Math.max(acc, el.zIndex), 0);
+      const withZ = elements.map((el) => {
+        maxZ += 1;
+        return { ...el, zIndex: maxZ };
+      });
+      commitCurrentElements([...currentElements, ...withZ]);
+      setSelectedElementIds(withZ.map((el) => el.id));
     },
     [currentElements, commitCurrentElements]
   );
@@ -1367,6 +1385,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         isWordArtModalOpen,
         isBuildingBlocksModalOpen,
         isAIImageModalOpen,
+        isCollageModalOpen,
         rulerVisible,
         guidesVisible,
         gridVisible,
@@ -1393,6 +1412,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setIsWordArtModalOpen,
         setIsBuildingBlocksModalOpen,
         setIsAIImageModalOpen,
+        setIsCollageModalOpen,
         setRulerVisible,
         setGuidesVisible,
         setGridVisible,
@@ -1420,6 +1440,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         removeGuide,
 
         addElement,
+        addElementsBatch,
         updateElement,
         updateElementsBatch,
         updateSelectedElements,
