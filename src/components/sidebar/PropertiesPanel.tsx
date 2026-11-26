@@ -20,7 +20,7 @@ import { FloatingDropdown } from '../common/FloatingDropdown';
 import { ShapePreviewIcon } from '../common/ShapePreviewIcon';
 import { SHAPE_CATALOG } from '../../utils/shapePaths';
 import { imageFit, panRoom } from '../../utils/imageFrame';
-import { wordArtPickerOptions } from '../../utils/wordArt';
+import { wordArtPaint, wordArtPickerOptions } from '../../utils/wordArt';
 import { useImageAspect } from '../../hooks/useImageAspect';
 import {
   PATTERN_CATALOG,
@@ -2367,6 +2367,20 @@ export const PropertiesPanel: React.FC = () => {
                             </div>
                             <ChevronDown size={13} className="text-slate-400 flex-shrink-0" />
                           </button>
+
+                          {(() => {
+                            const paint = wordArtPaint(activeStyleId);
+                            if (!paint) return null;
+                            const ownColours = Boolean(paint.fill || paint.gradient);
+                            return (
+                              <p className="text-[9.5px] text-slate-400 leading-tight mt-1 px-0.5">
+                                {ownColours
+                                  ? 'This style paints its own colours, so the text colour is ignored — switch to Standard Text to use it.'
+                                  : 'The style keeps your text colour.'}
+                                {' '}It exports to PNG/PDF exactly as it looks here.
+                              </p>
+                            );
+                          })()}
 
                           <FloatingDropdown
                             isOpen={isWordArtPickerOpen}
