@@ -96,8 +96,24 @@ export const PropertiesPanel: React.FC = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const shapePickerBtnRef = useRef<HTMLButtonElement>(null);
+  const wordArtPickerBtnRef = useRef<HTMLButtonElement>(null);
   const [isShapePickerOpen, setIsShapePickerOpen] = useState(false);
+  const [isWordArtPickerOpen, setIsWordArtPickerOpen] = useState(false);
   const [typoTab, setTypoTab] = useState<'character' | 'paragraph' | 'effects'>('character');
+
+  const wordArtOptions: { id: WordArtStyle; label: string; cssClass: string; dark?: boolean }[] = [
+    { id: 'none', label: 'Standard Text', cssClass: 'text-slate-700' },
+    { id: 'gold3d', label: 'Gold 3D Extrusion', cssClass: 'wordart-gold3d' },
+    { id: 'rainbow', label: 'Rainbow Gradient', cssClass: 'wordart-rainbow' },
+    { id: 'outline', label: 'Cyan Bold Outline', cssClass: 'wordart-outline' },
+    { id: 'retro', label: 'Retro Pop 3D', cssClass: 'wordart-retro' },
+    { id: 'neon-glow', label: 'Neon Cyber Glow', cssClass: 'wordart-neon-glow', dark: true },
+    { id: 'chrome', label: 'Chrome Metallic', cssClass: 'wordart-chrome' },
+    { id: 'fire', label: 'Blazing Fire', cssClass: 'wordart-fire' },
+    { id: 'comic-pop', label: 'Comic Pop Art', cssClass: 'wordart-comic-pop' },
+    { id: 'emerald-3d', label: 'Emerald 3D Block', cssClass: 'wordart-emerald-3d' },
+    { id: 'sunset-gradient', label: 'Sunset Vibe', cssClass: 'wordart-sunset-gradient' },
+  ];
 
   const elementsPool = isEditingMaster
     ? project.masterPage?.elements || []
@@ -1231,35 +1247,85 @@ export const PropertiesPanel: React.FC = () => {
 
               {typoTab === 'effects' && (
                 <div className="space-y-3">
-                  {/* WordArt Style */}
+                  {/* WordArt Style (Visual Preview Picker) */}
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-500 mb-1.5 flex items-center gap-1">
                       <Sparkles size={13} className="text-amber-500" />
                       <span>WordArt Styling</span>
                     </label>
-                    <select
-                      className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium transition cursor-pointer"
-                      value={textEl.wordArtStyle || 'none'}
-                      onChange={(e) => {
-                        const style = e.target.value as WordArtStyle;
-                        updateElement(textEl.id, {
-                          isWordArt: style !== 'none',
-                          wordArtStyle: style,
-                        });
-                      }}
-                    >
-                      <option value="none">Standard Text</option>
-                      <option value="gold3d">Gold 3D Extrusion</option>
-                      <option value="rainbow">Rainbow Gradient</option>
-                      <option value="outline">Cyan Bold Outline</option>
-                      <option value="retro">Retro Pop 3D</option>
-                      <option value="neon-glow">Neon Cyber Glow</option>
-                      <option value="chrome">Chrome Metallic</option>
-                      <option value="fire">Blazing Fire</option>
-                      <option value="comic-pop">Comic Pop Art</option>
-                      <option value="indigo-3d">Emerald 3D Block</option>
-                      <option value="sunset-gradient">Sunset Vibe</option>
-                    </select>
+                    {(() => {
+                      const activeStyleId = textEl.wordArtStyle || 'none';
+                      const activeOpt =
+                        wordArtOptions.find((o) => o.id === activeStyleId) || wordArtOptions[0];
+
+                      return (
+                        <>
+                          <button
+                            ref={wordArtPickerBtnRef}
+                            type="button"
+                            onClick={() => setIsWordArtPickerOpen(!isWordArtPickerOpen)}
+                            className="w-full flex items-center justify-between bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium transition cursor-pointer"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span
+                                className={`px-1.5 py-0.5 rounded-md text-xs font-black leading-none flex-shrink-0 ${
+                                  activeOpt.dark ? 'bg-slate-900' : 'bg-white border border-slate-200/80'
+                                }`}
+                              >
+                                <span className={activeOpt.cssClass}>Aa</span>
+                              </span>
+                              <span className="truncate">{activeOpt.label}</span>
+                            </div>
+                            <ChevronDown size={13} className="text-slate-400 flex-shrink-0" />
+                          </button>
+
+                          <FloatingDropdown
+                            isOpen={isWordArtPickerOpen}
+                            onClose={() => setIsWordArtPickerOpen(false)}
+                            anchorRef={wordArtPickerBtnRef}
+                            className="p-2.5 w-72"
+                          >
+                            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1 mb-2">
+                              WordArt Styles ({wordArtOptions.length})
+                            </div>
+                            <div className="grid grid-cols-2 gap-1.5 max-h-72 overflow-y-auto pr-0.5">
+                              {wordArtOptions.map((opt) => {
+                                const isCurrent = activeStyleId === opt.id;
+                                return (
+                                  <button
+                                    key={opt.id}
+                                    type="button"
+                                    onClick={() => {
+                                      updateElement(textEl.id, {
+                                        isWordArt: opt.id !== 'none',
+                                        wordArtStyle: opt.id,
+                                      });
+                                      setIsWordArtPickerOpen(false);
+                                    }}
+                                    className={`flex flex-col items-center gap-1 p-2 rounded-xl border transition text-center ${
+                                      isCurrent
+                                        ? 'border-indigo-500 bg-indigo-50/70 ring-1 ring-indigo-500/30'
+                                        : 'border-slate-200/80 bg-white hover:border-indigo-400 hover:bg-slate-50'
+                                    }`}
+                                  >
+                                    <div
+                                      className={`w-full h-9 rounded-lg flex items-center justify-center font-black text-lg leading-none ${
+                                        opt.dark ? 'bg-slate-900' : 'bg-slate-50 border border-slate-100'
+                                      }`}
+                                    >
+                                      <span className={opt.cssClass}>Aa</span>
+                                    </div>
+                                    <span className="text-[10px] font-semibold text-slate-700 leading-tight truncate w-full">
+                                      {opt.label}
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </FloatingDropdown>
+                        </>
+                      );
+                    })()}
                   </div>
 
                   {/* Text Drop Shadow */}
