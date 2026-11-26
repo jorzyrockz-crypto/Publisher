@@ -38,6 +38,33 @@ export default async function handler(req, res) {
   const requestUrl = getBaseUrl(req);
   const mode = requestUrl.searchParams.get('mode') || 'search';
 
+  // `/api/clipart?mode=diag` reports what this deployment can see, without ever
+  // echoing the key itself. It probes clipart.free once and returns the status.
+  if (mode === 'diag') {
+    const raw = process.env.CLIPART_FREE_API_KEY || '';
+    const out = {
+      configured: Boolean(key),
+      keyPrefix: key ? key.slice(0, 3) : null,
+      keyLength: key.length,
+      hasSurroundingWhitespace: raw !== key,
+      vercelEnv: process.env.VERCEL_ENV || null,
+    };
+    if (key) {
+      try {
+        const probe = await fetch(
+          `${ORIGIN}/api/clipart/search?q=cat&page=1&key=${encodeURIComponent(key)}`,
+          { headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' } }
+        );
+        out.upstreamStatus = probe.status;
+        out.upstreamBodyHead = (await probe.text()).slice(0, 180);
+      } catch (error) {
+        out.upstreamError = String(error);
+      }
+    }
+    sendJson(res, 200, out);
+    return;
+  }
+
   if (mode === 'asset') {
     const target = requestUrl.searchParams.get('url') || '';
     let parsed;
