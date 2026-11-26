@@ -134,8 +134,8 @@ export const BackstageModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 bg-white z-50 flex select-none text-slate-800 animate-in fade-in duration-150">
-      {/* Left Backstage Green Navigation Bar */}
-      <div className="w-60 bg-gradient-to-b from-[#064e3b] via-[#047857] to-[#065f46] text-white flex flex-col justify-between p-5 flex-shrink-0 shadow-lg">
+      {/* Left Backstage Indigo Navigation Bar */}
+      <div className="w-60 bg-gradient-to-b from-[#312e81] via-[#4338ca] to-[#4f46e5] text-white flex flex-col justify-between p-5 flex-shrink-0 shadow-lg">
         <div className="space-y-6">
           {/* Back button */}
           <button

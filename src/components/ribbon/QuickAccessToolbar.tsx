@@ -53,7 +53,7 @@ export const QuickAccessToolbar: React.FC = () => {
   );
 
   return (
-    <div className="h-10 bg-gradient-to-r from-[#064e3b] via-[#047857] to-[#065f46] text-white flex items-center justify-between px-3 select-none text-xs border-b border-indigo-900/40 shadow-sm relative z-40">
+    <div className="h-10 bg-gradient-to-r from-[#312e81] via-[#4338ca] to-[#4f46e5] text-white flex items-center justify-between px-3 select-none text-xs border-b border-indigo-900/40 shadow-sm relative z-40">
       {/* Left: File & Quick Action Icons */}
       <div className="flex items-center gap-1.5">
         {/* Backstage File Button */}
