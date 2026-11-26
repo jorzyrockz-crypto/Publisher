@@ -81,6 +81,7 @@ Every colour swatch in the app (37 of them — fill, stroke, text, table, page b
 - **Mined colours** — every fill, stroke, text and table colour in the project, weighted by page and by element area, so the palette reflects the artwork rather than a generic rainbow.
 - **Harmonies** — complementary, split-complementary, analogous and triadic sets generated from the dominant hue, plus tints/shades and neutrals tuned to the page background.
 - **Role-aware filtering** — text swatches are auto-adjusted until they clear **WCAG AA (4.5:1)** against the surface they land on, fills are rejected if they vanish into the background, and background swatches are only offered when the document's text stays readable on them.
+- **Click the swatch itself** to open the palette (no extra badge crowding the control); a hex field and a **Custom colour…** button keep the system colour wheel one click away.
 - Hollow dot markers flag swatches that were lightened/darkened to pass contrast; tooltips show the hex and the measured contrast ratio.
 
 Logic lives in `src/utils/documentPalette.ts`; the UI is `src/components/common/ColorInput.tsx`, a drop-in replacement for `<input type="color">`.

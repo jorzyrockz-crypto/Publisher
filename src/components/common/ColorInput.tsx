@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Sparkles, X, Check } from 'lucide-react';
+import { Sparkles, X, Check, Pipette, ChevronDown } from 'lucide-react';
 import { usePublisher } from '../../context/PublisherContext';
 import {
   ColorTarget,
@@ -9,6 +9,7 @@ import {
   buildSmartPalettes,
   contrastRatio,
   formatRatio,
+  normalizeHex,
 } from '../../utils/documentPalette';
 
 interface ColorInputProps
@@ -19,21 +20,21 @@ interface ColorInputProps
   target?: ColorTarget;
   /** Surface the colour lands on. Defaults to the active page background. */
   surface?: string;
-  /** Hide the smart-palette affordance (for dense inline swatch rows). */
+  /** Set false to render a plain native colour input (no smart palette). */
   smart?: boolean;
 }
 
+const HEX_RE = /^#([0-9a-f]{6}|[0-9a-f]{3})$/i;
+
 /**
- * Drop-in replacement for `<input type="color">` that adds a document-aware
- * smart palette:
+ * Document-aware colour control.
  *
- *  - colours already used in the document (weighted by area, page first)
- *  - complementary / split / analogous / triadic harmonies of the dominant hue
- *  - tints, shades and neutrals tuned to the page
- *
- * Swatches are filtered for the role they will play, so text picks always clear
- * WCAG AA against their surface, fills never vanish into the background, and
- * background picks keep the document's text readable.
+ * Renders a single, compact swatch (same size/classes the designer passed in)
+ * that opens the smart palette: colours mined from the current document,
+ * harmonies of its dominant hue, and role-aware contrast filtering. The OS
+ * colour wheel is still available from inside the popover ("Custom colour…"),
+ * so nothing is lost — but the default action is now the intelligent one and
+ * there is no second badge crowding the swatch.
  */
 export const ColorInput: React.FC<ColorInputProps> = ({
   value,
@@ -49,15 +50,14 @@ export const ColorInput: React.FC<ColorInputProps> = ({
   const { project, activePage } = usePublisher();
   const [isOpen, setIsOpen] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
+  const [hexDraft, setHexDraft] = useState('');
   const triggerRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
+  const nativeInputRef = useRef<HTMLInputElement>(null);
 
-  const normalizedValue = /^#([0-9a-f]{6}|[0-9a-f]{3})$/i.test(value || '') ? value : '#ffffff';
+  const normalizedValue = HEX_RE.test(value || '') ? value : '#ffffff';
 
-  const palette = useMemo(
-    () => analyzeDocument(project, activePage),
-    [project, activePage]
-  );
+  const palette = useMemo(() => analyzeDocument(project, activePage), [project, activePage]);
 
   const resolvedSurface = surface || palette.background;
 
@@ -75,15 +75,13 @@ export const ColorInput: React.FC<ColorInputProps> = ({
     if (!trigger) return;
     const rect = trigger.getBoundingClientRect();
     const width = 268;
-    const estimatedHeight = 300;
+    const estimatedHeight = 330;
     const left = Math.min(
       Math.max(8, rect.left - width + rect.width),
       window.innerWidth - width - 8
     );
     const openUpwards = rect.bottom + estimatedHeight > window.innerHeight - 8;
-    const top = openUpwards
-      ? Math.max(8, rect.top - estimatedHeight - 6)
-      : rect.bottom + 6;
+    const top = openUpwards ? Math.max(8, rect.top - estimatedHeight - 6) : rect.bottom + 6;
     setCoords({ top, left });
   }, []);
 
@@ -95,8 +93,8 @@ export const ColorInput: React.FC<ColorInputProps> = ({
     if (!isOpen) return;
 
     const onPointerDown = (e: MouseEvent) => {
-      const targetNode = e.target as Node;
-      if (popoverRef.current?.contains(targetNode) || triggerRef.current?.contains(targetNode)) return;
+      const node = e.target as Node;
+      if (popoverRef.current?.contains(node) || triggerRef.current?.contains(node)) return;
       setIsOpen(false);
     };
     const onKeyDown = (e: KeyboardEvent) => {
@@ -105,8 +103,6 @@ export const ColorInput: React.FC<ColorInputProps> = ({
         setIsOpen(false);
       }
     };
-    // Close on scroll/resize: the panel is a scroll container and a fixed popover
-    // would otherwise drift away from its trigger.
     const onScroll = (e: Event) => {
       if (popoverRef.current?.contains(e.target as Node)) return;
       setIsOpen(false);
@@ -124,48 +120,95 @@ export const ColorInput: React.FC<ColorInputProps> = ({
     };
   }, [isOpen]);
 
-  const applySwatch = (hex: string) => {
+  const emitChange = (hex: string) => {
     const synthetic = { target: { value: hex } } as unknown as React.ChangeEvent<HTMLInputElement>;
     onChange(synthetic);
+  };
+
+  const applySwatch = (hex: string) => {
+    emitChange(hex);
     setIsOpen(false);
   };
 
+  const commitHexDraft = () => {
+    const hex = normalizeHex(hexDraft.startsWith('#') ? hexDraft : `#${hexDraft}`);
+    if (hex) {
+      emitChange(hex);
+      setHexDraft(hex.toUpperCase());
+    } else {
+      setHexDraft(normalizedValue.toUpperCase());
+    }
+  };
+
+  const openNativePicker = () => {
+    setIsOpen(false);
+    // Defer so the popover unmounts before the OS picker steals focus
+    window.setTimeout(() => nativeInputRef.current?.click(), 0);
+  };
+
+  /* ---------------------------------------------------------------- */
+  /* Plain native input (smart palette disabled)                       */
+  /* ---------------------------------------------------------------- */
+  if (!smart) {
+    return (
+      <input
+        {...rest}
+        type="color"
+        value={normalizedValue}
+        onChange={onChange}
+        title={title}
+        disabled={disabled}
+        className={className}
+      />
+    );
+  }
+
   return (
     <>
-      <span className="relative inline-flex flex-shrink-0">
-        <input
-          {...rest}
-          type="color"
-          value={normalizedValue}
-          onChange={onChange}
-          title={title || 'Pick a colour'}
-          disabled={disabled}
-          className={className}
-        />
-        {smart && (
-          <button
-            ref={triggerRef}
-            type="button"
-            disabled={disabled}
-            onMouseDown={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setIsOpen((v) => !v);
-            }}
-            title="Smart colours from this document"
-            aria-label="Smart colours from this document"
-            aria-haspopup="dialog"
-            aria-expanded={isOpen}
-            className="absolute -bottom-1 -right-1 w-[13px] h-[13px] rounded-full bg-[#6e56cf] ring-[1.5px] ring-white shadow-2xs flex items-center justify-center text-white hover:bg-[#5c4bb8] hover:scale-110 transition-transform cursor-pointer disabled:opacity-40"
-          >
-            <Sparkles size={7} strokeWidth={3} />
-          </button>
-        )}
-      </span>
+      <button
+        ref={triggerRef}
+        type="button"
+        disabled={disabled}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          // Seed the hex field from the current value each time it opens
+          if (!isOpen) setHexDraft(normalizedValue.toUpperCase());
+          setIsOpen((v) => !v);
+        }}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        title={`${title || 'Colour'} — pick from this document's palette`}
+        aria-label={`${title || 'Colour'}: ${normalizedValue.toUpperCase()}. Opens smart palette`}
+        aria-haspopup="dialog"
+        aria-expanded={isOpen}
+        style={{ backgroundColor: normalizedValue }}
+        className={`${className || ''} group/color relative disabled:opacity-50 disabled:cursor-not-allowed`}
+      >
+        <span className="pointer-events-none absolute inset-0 rounded-[inherit] ring-1 ring-inset ring-black/10" />
+        <span className="pointer-events-none absolute inset-0 rounded-[inherit] flex items-end justify-end p-[1px]">
+          <ChevronDown
+            size={8}
+            strokeWidth={3}
+            className="text-white opacity-0 group-hover/color:opacity-90 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)] transition-opacity"
+          />
+        </span>
+      </button>
+
+      {/* Hidden native input: only used by the "Custom colour…" action */}
+      <input
+        {...rest}
+        ref={nativeInputRef}
+        type="color"
+        value={normalizedValue}
+        onChange={onChange}
+        tabIndex={-1}
+        aria-hidden="true"
+        disabled={disabled}
+        className="absolute w-px h-px opacity-0 pointer-events-none"
+      />
 
       {isOpen &&
         createPortal(
@@ -184,7 +227,7 @@ export const ColorInput: React.FC<ColorInputProps> = ({
                 </div>
                 <div className="flex items-center gap-1 mt-0.5 text-[9.5px] text-[#5b6673]">
                   <span
-                    className="inline-block w-2 h-2 rounded-full border border-black/10"
+                    className="inline-block w-2 h-2 rounded-full border border-black/10 flex-shrink-0"
                     style={{ backgroundColor: palette.anchor }}
                   />
                   <span className="truncate">
@@ -207,7 +250,7 @@ export const ColorInput: React.FC<ColorInputProps> = ({
               </button>
             </div>
 
-            <div className="max-h-[268px] overflow-y-auto space-y-2 pr-0.5">
+            <div className="max-h-[236px] overflow-y-auto space-y-2 pr-0.5">
               {groups.map((group) => (
                 <div key={group.id}>
                   <div className="flex items-baseline justify-between gap-2">
@@ -231,17 +274,49 @@ export const ColorInput: React.FC<ColorInputProps> = ({
                   </div>
                 </div>
               ))}
+            </div>
 
+            {/* Current value + native wheel escape hatch */}
+            <div className="mt-2 pt-2 border-t border-[#e5e9ee] space-y-1.5">
+              <div className="flex items-center gap-1.5">
+                <span
+                  className="w-5 h-5 rounded-[5px] border border-black/10 flex-shrink-0"
+                  style={{ backgroundColor: normalizedValue }}
+                />
+                <input
+                  value={hexDraft}
+                  onChange={(e) => setHexDraft(e.target.value)}
+                  onBlur={commitHexDraft}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      commitHexDraft();
+                    }
+                    if (e.key === 'Escape') {
+                      e.stopPropagation();
+                      setIsOpen(false);
+                    }
+                  }}
+                  spellCheck={false}
+                  aria-label="Hex colour value"
+                  className="flex-1 min-w-0 bg-white border border-[#e5e9ee] rounded-[6px] px-1.5 py-1 font-mono text-[10.5px] text-[#3d4854] outline-none focus:border-[#b3a4f2]"
+                />
+                <button
+                  type="button"
+                  onClick={openNativePicker}
+                  title="Open the system colour wheel"
+                  className="flex items-center gap-1 px-1.5 py-1 rounded-[6px] border border-[#e5e9ee] bg-[#f8fafb] hover:bg-[#f4f2ff] hover:text-[#5c4bb8] text-[10px] font-semibold text-[#4a5661] transition cursor-pointer whitespace-nowrap"
+                >
+                  <Pipette size={10} />
+                  Custom
+                </button>
+              </div>
               {target !== 'background' && (
-                <div className="pt-1 mt-1 border-t border-[#e5e9ee] text-[9.5px] text-[#5b6673]">
-                  Page background{' '}
-                  <span className="font-mono font-semibold text-[#3d4854]">
-                    {palette.background.toUpperCase()}
-                  </span>{' '}
-                  · contrast{' '}
-                  <span className="font-semibold">
-                    {formatRatio(contrastRatio(normalizedValue, resolvedSurface))}
-                  </span>
+                <div className="text-[9px] text-[#5b6673]">
+                  Contrast with page: <span className="font-semibold">{formatRatio(contrastRatio(normalizedValue, resolvedSurface))}</span>
+                  {target === 'text' && contrastRatio(normalizedValue, resolvedSurface) < 4.5 && (
+                    <span className="text-[#b4364a] font-semibold"> · below AA</span>
+                  )}
                 </div>
               )}
             </div>
