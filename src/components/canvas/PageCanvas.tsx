@@ -473,10 +473,10 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
                 key={`mk-${conn.id}`}
                 id={`arrow-${conn.id}`}
                 viewBox="0 0 10 10"
-                refX="8"
+                refX="9"
                 refY="5"
-                markerWidth="6"
-                markerHeight="6"
+                markerWidth="5"
+                markerHeight="5"
                 orient="auto-start-reverse"
               >
                 <path d="M 0 1 L 10 5 L 0 9 z" fill={conn.strokeColor} />
@@ -497,23 +497,61 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
             const dx = toCx - fromCx;
             const dy = toCy - fromCy;
 
-            // Choose nearest edge ports (left/right vs top/bottom)
+            // Compute actual edge-to-edge gaps so overlapping axes never force awkward side ports
+            const horizGap =
+              dx >= 0
+                ? toEl.x - (fromEl.x + fromEl.width)
+                : fromEl.x - (toEl.x + toEl.width);
+            const vertGap =
+              dy >= 0
+                ? toEl.y - (fromEl.y + fromEl.height)
+                : fromEl.y - (toEl.y + toEl.height);
+
+            const useHorizontal =
+              horizGap > 12 && vertGap <= 12
+                ? true
+                : vertGap > 12 && horizGap <= 12
+                ? false
+                : Math.abs(dx) >= Math.abs(dy);
+
             let x1 = fromCx;
             let y1 = fromCy;
             let x2 = toCx;
             let y2 = toCy;
+            let outDirX = 0;
+            let outDirY = 0;
+            let inDirX = 0;
+            let inDirY = 0;
 
-            if (Math.abs(dx) >= Math.abs(dy)) {
-              x1 = dx >= 0 ? fromEl.x + fromEl.width : fromEl.x;
-              x2 = dx >= 0 ? toEl.x : toEl.x + toEl.width;
+            if (useHorizontal) {
+              if (dx >= 0) {
+                x1 = fromEl.x + fromEl.width;
+                x2 = toEl.x;
+                outDirX = 1;
+                inDirX = -1;
+              } else {
+                x1 = fromEl.x;
+                x2 = toEl.x + toEl.width;
+                outDirX = -1;
+                inDirX = 1;
+              }
             } else {
-              y1 = dy >= 0 ? fromEl.y + fromEl.height : fromEl.y;
-              y2 = dy >= 0 ? toEl.y : toEl.y + toEl.height;
+              if (dy >= 0) {
+                y1 = fromEl.y + fromEl.height;
+                y2 = toEl.y;
+                outDirY = 1;
+                inDirY = -1;
+              } else {
+                y1 = fromEl.y;
+                y2 = toEl.y + toEl.height;
+                outDirY = -1;
+                inDirY = 1;
+              }
             }
 
             let d = `M ${x1} ${y1} L ${x2} ${y2}`;
             if (conn.connectorStyle === 'elbow') {
-              if (Math.abs(dx) >= Math.abs(dy)) {
+              if (useHorizontal) {
                 const midX = (x1 + x2) / 2;
                 d = `M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`;
               } else {
@@ -521,13 +559,14 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
                 d = `M ${x1} ${y1} L ${x1} ${midY} L ${x2} ${midY} L ${x2} ${y2}`;
               }
             } else if (conn.connectorStyle === 'curved') {
-              if (Math.abs(dx) >= Math.abs(dy)) {
-                const midX = (x1 + x2) / 2;
-                d = `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`;
-              } else {
-                const midY = (y1 + y2) / 2;
-                d = `M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`;
-              }
+              const handle = useHorizontal
+                ? Math.max(36, Math.abs(x2 - x1) * 0.5)
+                : Math.max(36, Math.abs(y2 - y1) * 0.5);
+              const c1x = x1 + outDirX * handle;
+              const c1y = y1 + outDirY * handle;
+              const c2x = x2 + inDirX * handle;
+              const c2y = y2 + inDirY * handle;
+              d = `M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}`;
             }
 
             const isConnSelected = selectedElementIds.includes(conn.id);
