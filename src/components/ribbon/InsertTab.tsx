@@ -6,10 +6,17 @@ import {
   CLIPART_FREE_CATEGORIES,
   ClipartFreeItem,
   fetchClipartAsDataUrl,
+  fetchIconifyAsDataUrl,
+  fetchWikimediaAsDataUrl,
   getSavedClipartFreeKey,
+  IconifyItem,
   saveClipartFreeKey,
   searchClipartFree,
+  searchIconify,
+  searchWikimedia,
   toProxiedClipartUrl,
+  toProxiedWikimediaUrl,
+  WikimediaItem,
 } from '../../utils/clipartSearch';
 import { ImageElement } from '../../types/publisher';
 import { FloatingDropdown } from '../common/FloatingDropdown';
@@ -75,7 +82,7 @@ export const InsertTab: React.FC = () => {
   const [wifiPass, setWifiPass] = useState('');
   const [stockCategory, setStockCategory] = useState<'All' | StockCategory>('All');
   const [stockSearch, setStockSearch] = useState('');
-  const [stockTab, setStockTab] = useState<'builtin' | 'online'>('builtin');
+  const [stockTab, setStockTab] = useState<'builtin' | 'online' | 'iconify' | 'wikimedia'>('builtin');
   const [clipartApiKey, setClipartApiKey] = useState<string>(
     () => getSavedClipartFreeKey() || 'cf_12a1b9727cf3c4f4e3d3fafc0e01e0ddd2eb714f'
   );
@@ -87,7 +94,104 @@ export const InsertTab: React.FC = () => {
   const [isSearchingOnline, setIsSearchingOnline] = useState(false);
   const [onlineError, setOnlineError] = useState<string | null>(null);
   const [insertingSlug, setInsertingSlug] = useState<string | null>(null);
+
+  // Iconify state
+  const [iconifyQuery, setIconifyQuery] = useState('graduation');
+  const [iconifyFilter, setIconifyFilter] = useState<'all' | 'color' | 'mono'>('all');
+  const [iconifyResults, setIconifyResults] = useState<IconifyItem[]>([]);
+  const [iconifyTotal, setIconifyTotal] = useState<number | null>(null);
+  const [isSearchingIconify, setIsSearchingIconify] = useState(false);
+  const [iconifyError, setIconifyError] = useState<string | null>(null);
+
+  // Wikimedia Commons state
+  const [wikimediaQuery, setWikimediaQuery] = useState('trophy');
+  const [wikimediaFilter, setWikimediaFilter] = useState<'all' | 'svg' | 'photo'>('svg');
+  const [wikimediaResults, setWikimediaResults] = useState<WikimediaItem[]>([]);
+  const [isSearchingWikimedia, setIsSearchingWikimedia] = useState(false);
+  const [wikimediaError, setWikimediaError] = useState<string | null>(null);
+
   const [stickerSearch, setStickerSearch] = useState('');
+
+  const handleSearchIconify = async (
+    overrideQuery?: string,
+    overrideFilter?: 'all' | 'color' | 'mono'
+  ) => {
+    const q = (overrideQuery ?? iconifyQuery).trim();
+    const flt = overrideFilter ?? iconifyFilter;
+    if (!q) return;
+    setIsSearchingIconify(true);
+    setIconifyError(null);
+    try {
+      const data = await searchIconify(q, { filter: flt });
+      setIconifyResults(data.items);
+      setIconifyTotal(data.total);
+    } catch (err) {
+      setIconifyError(err instanceof Error ? err.message : 'Failed to search Iconify');
+    } finally {
+      setIsSearchingIconify(false);
+    }
+  };
+
+  const handleInsertIconify = async (item: IconifyItem) => {
+    setInsertingSlug(item.id);
+    setIconifyError(null);
+    try {
+      const dataUrl = await fetchIconifyAsDataUrl(item);
+      addImage(dataUrl, {
+        name: item.name.replace(/-/g, ' '),
+        width: 140,
+        height: 140,
+        objectFit: 'contain',
+      });
+      setIsStockOpen(false);
+    } catch (err) {
+      setIconifyError(err instanceof Error ? err.message : 'Failed to insert icon');
+    } finally {
+      setInsertingSlug(null);
+    }
+  };
+
+  const handleSearchWikimedia = async (
+    overrideQuery?: string,
+    overrideFilter?: 'all' | 'svg' | 'photo'
+  ) => {
+    const q = (overrideQuery ?? wikimediaQuery).trim();
+    const flt = overrideFilter ?? wikimediaFilter;
+    if (!q) return;
+    setIsSearchingWikimedia(true);
+    setWikimediaError(null);
+    try {
+      const items = await searchWikimedia(q, { filter: flt });
+      setWikimediaResults(items);
+    } catch (err) {
+      setWikimediaError(err instanceof Error ? err.message : 'Failed to search Wikimedia');
+    } finally {
+      setIsSearchingWikimedia(false);
+    }
+  };
+
+  const handleInsertWikimedia = async (item: WikimediaItem) => {
+    setInsertingSlug(String(item.pageid));
+    setWikimediaError(null);
+    try {
+      const dataUrl = await fetchWikimediaAsDataUrl(item);
+      const maxDim = 240;
+      const ratio = item.width && item.height ? item.width / item.height : 1;
+      const width = ratio >= 1 ? maxDim : Math.round(maxDim * ratio);
+      const height = ratio >= 1 ? Math.round(maxDim / ratio) : maxDim;
+      addImage(dataUrl, {
+        name: item.cleanTitle.slice(0, 32),
+        width: Math.max(48, width),
+        height: Math.max(48, height),
+        objectFit: item.mime === 'image/svg+xml' ? 'contain' : 'cover',
+      });
+      setIsStockOpen(false);
+    } catch (err) {
+      setWikimediaError(err instanceof Error ? err.message : 'Failed to insert Wikimedia file');
+    } finally {
+      setInsertingSlug(null);
+    }
+  };
 
   const handleSearchOnlineClipart = async (overrideQuery?: string, overrideCat?: string) => {
     const q = (overrideQuery ?? onlineQuery).trim();
@@ -438,15 +542,15 @@ export const InsertTab: React.FC = () => {
               isOpen={isStockOpen}
               onClose={() => setIsStockOpen(false)}
               anchorRef={stockBtnRef}
-              className="p-3 w-96"
+              className="p-3 w-[430px]"
             >
-              {/* Tab Switcher: Built-in vs Online Clipart.Free */}
-              <div className="flex items-center justify-between gap-2 mb-2.5">
-                <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-xl flex-1">
+              {/* Tab Switcher: Built-in, Clipart.Free, Iconify, Wikimedia */}
+              <div className="flex items-center justify-between gap-1.5 mb-2.5">
+                <div className="grid grid-cols-4 gap-0.5 bg-slate-100 p-0.5 rounded-xl flex-1">
                   <button
                     type="button"
                     onClick={() => setStockTab('builtin')}
-                    className={`flex-1 py-1 px-2 rounded-lg text-[10.5px] font-bold transition ${
+                    className={`py-1 px-1.5 rounded-lg text-[10px] font-bold transition ${
                       stockTab === 'builtin'
                         ? 'bg-white text-indigo-700 shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
@@ -462,14 +566,46 @@ export const InsertTab: React.FC = () => {
                         handleSearchOnlineClipart();
                       }
                     }}
-                    className={`flex-1 py-1 px-2 rounded-lg text-[10.5px] font-bold transition flex items-center justify-center gap-1 ${
+                    className={`py-1 px-1.5 rounded-lg text-[10px] font-bold transition flex items-center justify-center gap-1 ${
                       stockTab === 'online'
                         ? 'bg-white text-indigo-700 shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    <Globe size={11} />
-                    <span>Clipart.Free (CC0)</span>
+                    <Globe size={10} />
+                    <span>Clipart.Free</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStockTab('iconify');
+                      if (iconifyResults.length === 0 && !isSearchingIconify) {
+                        handleSearchIconify();
+                      }
+                    }}
+                    className={`py-1 px-1.5 rounded-lg text-[10px] font-bold transition ${
+                      stockTab === 'iconify'
+                        ? 'bg-white text-indigo-700 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Iconify
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStockTab('wikimedia');
+                      if (wikimediaResults.length === 0 && !isSearchingWikimedia) {
+                        handleSearchWikimedia();
+                      }
+                    }}
+                    className={`py-1 px-1.5 rounded-lg text-[10px] font-bold transition ${
+                      stockTab === 'wikimedia'
+                        ? 'bg-white text-indigo-700 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Wikimedia
                   </button>
                 </div>
                 {stockTab === 'online' && (
@@ -488,7 +624,7 @@ export const InsertTab: React.FC = () => {
                 )}
               </div>
 
-              {stockTab === 'builtin' ? (
+              {stockTab === 'builtin' && (
                 <>
                   <input
                     type="text"
@@ -552,7 +688,9 @@ export const InsertTab: React.FC = () => {
                     ))}
                   </div>
                 </>
-              ) : (
+              )}
+
+              {stockTab === 'online' && (
                 <>
                   {showClipartKeyBar && (
                     <div className="mb-2 flex items-center gap-1.5 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
@@ -672,6 +810,224 @@ export const InsertTab: React.FC = () => {
                             </div>
                             <span className="text-[9.5px] font-semibold text-slate-700 truncate w-full text-center">
                               {isInserting ? 'Inserting...' : item.title}
+                            </span>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </>
+              )}
+
+              {stockTab === 'iconify' && (
+                <>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleSearchIconify();
+                    }}
+                    className="flex items-center gap-1.5 mb-2"
+                  >
+                    <input
+                      type="text"
+                      placeholder="Search 200k+ SVG icons & color art..."
+                      value={iconifyQuery}
+                      onChange={(e) => setIconifyQuery(e.target.value)}
+                      className="flex-1 px-2.5 py-1 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-[11px] outline-none focus:border-indigo-500"
+                    />
+                    <button
+                      type="submit"
+                      disabled={isSearchingIconify}
+                      className="px-2.5 py-1 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-[11px] font-bold flex items-center gap-1 transition"
+                    >
+                      {isSearchingIconify ? (
+                        <Loader2 size={12} className="animate-spin" />
+                      ) : (
+                        <Search size={12} />
+                      )}
+                      <span>Find</span>
+                    </button>
+                  </form>
+
+                  <div className="flex items-center gap-1 mb-2 flex-wrap">
+                    {(
+                      [
+                        { id: 'all', label: 'All Packs' },
+                        { id: 'color', label: 'Color Illustrations' },
+                        { id: 'mono', label: 'Clean Line / Solid' },
+                      ] as const
+                    ).map((f) => (
+                      <button
+                        key={f.id}
+                        type="button"
+                        onClick={() => {
+                          setIconifyFilter(f.id);
+                          handleSearchIconify(iconifyQuery, f.id);
+                        }}
+                        className={`px-2 py-0.5 rounded-full text-[9.5px] font-semibold transition ${
+                          iconifyFilter === f.id
+                            ? 'bg-indigo-600 text-white'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                      >
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {iconifyError && (
+                    <div className="mb-2 px-2.5 py-1.5 rounded-lg bg-rose-50 border border-rose-200 text-[10.5px] text-rose-700">
+                      {iconifyError}
+                    </div>
+                  )}
+
+                  {iconifyTotal !== null && !iconifyError && (
+                    <div className="text-[10px] text-slate-400 font-medium mb-1.5 flex items-center justify-between">
+                      <span>{iconifyTotal.toLocaleString()} icons matched</span>
+                      <span>Free SVG • Recolorable</span>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-4 gap-2 max-h-64 overflow-y-auto pr-1">
+                    {isSearchingIconify ? (
+                      <div className="col-span-4 py-10 flex flex-col items-center justify-center text-slate-400 gap-2">
+                        <Loader2 size={20} className="animate-spin text-indigo-500" />
+                        <span className="text-[11px]">Searching Iconify...</span>
+                      </div>
+                    ) : iconifyResults.length === 0 ? (
+                      <div className="col-span-4 py-8 text-center text-[11px] text-slate-400">
+                        Search any icon or emoji (e.g. graduation, star, rocket, ribbon).
+                      </div>
+                    ) : (
+                      iconifyResults.map((item) => {
+                        const isInserting = insertingSlug === item.id;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            disabled={isInserting}
+                            onClick={() => handleInsertIconify(item)}
+                            title={item.id}
+                            className="flex flex-col items-center p-1.5 rounded-xl border border-slate-200/80 hover:border-indigo-500 hover:bg-indigo-50/40 transition disabled:opacity-60"
+                          >
+                            <div className="w-full h-11 flex items-center justify-center bg-slate-50 rounded-lg mb-1 p-1.5">
+                              <img
+                                src={item.previewUrl}
+                                alt={item.name}
+                                loading="lazy"
+                                className="max-w-full max-h-full object-contain"
+                              />
+                            </div>
+                            <span className="text-[9px] font-semibold text-slate-700 truncate w-full text-center">
+                              {isInserting ? 'Adding...' : item.name}
+                            </span>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </>
+              )}
+
+              {stockTab === 'wikimedia' && (
+                <>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleSearchWikimedia();
+                    }}
+                    className="flex items-center gap-1.5 mb-2"
+                  >
+                    <input
+                      type="text"
+                      placeholder="Search Wikimedia Commons SVGs & photos..."
+                      value={wikimediaQuery}
+                      onChange={(e) => setWikimediaQuery(e.target.value)}
+                      className="flex-1 px-2.5 py-1 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-[11px] outline-none focus:border-indigo-500"
+                    />
+                    <button
+                      type="submit"
+                      disabled={isSearchingWikimedia}
+                      className="px-2.5 py-1 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-[11px] font-bold flex items-center gap-1 transition"
+                    >
+                      {isSearchingWikimedia ? (
+                        <Loader2 size={12} className="animate-spin" />
+                      ) : (
+                        <Search size={12} />
+                      )}
+                      <span>Find</span>
+                    </button>
+                  </form>
+
+                  <div className="flex items-center gap-1 mb-2 flex-wrap">
+                    {(
+                      [
+                        { id: 'svg', label: 'Vector SVG / Clipart' },
+                        { id: 'photo', label: 'Photos' },
+                        { id: 'all', label: 'All Media' },
+                      ] as const
+                    ).map((f) => (
+                      <button
+                        key={f.id}
+                        type="button"
+                        onClick={() => {
+                          setWikimediaFilter(f.id);
+                          handleSearchWikimedia(wikimediaQuery, f.id);
+                        }}
+                        className={`px-2 py-0.5 rounded-full text-[9.5px] font-semibold transition ${
+                          wikimediaFilter === f.id
+                            ? 'bg-indigo-600 text-white'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                      >
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {wikimediaError && (
+                    <div className="mb-2 px-2.5 py-1.5 rounded-lg bg-rose-50 border border-rose-200 text-[10.5px] text-rose-700">
+                      {wikimediaError}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto pr-1">
+                    {isSearchingWikimedia ? (
+                      <div className="col-span-3 py-10 flex flex-col items-center justify-center text-slate-400 gap-2">
+                        <Loader2 size={20} className="animate-spin text-indigo-500" />
+                        <span className="text-[11px]">Searching Wikimedia Commons...</span>
+                      </div>
+                    ) : wikimediaResults.length === 0 ? (
+                      <div className="col-span-3 py-8 text-center text-[11px] text-slate-400">
+                        Search public-domain cliparts or photos (e.g. trophy, laurel, sunset).
+                      </div>
+                    ) : (
+                      wikimediaResults.map((item) => {
+                        const isInserting = insertingSlug === String(item.pageid);
+                        return (
+                          <button
+                            key={item.pageid}
+                            type="button"
+                            disabled={isInserting}
+                            onClick={() => handleInsertWikimedia(item)}
+                            title={item.cleanTitle}
+                            className="flex flex-col items-center p-1.5 rounded-xl border border-slate-200/80 hover:border-indigo-500 hover:bg-indigo-50/40 transition disabled:opacity-60"
+                          >
+                            <div className="w-full h-14 flex items-center justify-center bg-slate-50 rounded-lg mb-1 overflow-hidden p-1 relative">
+                              <img
+                                src={toProxiedWikimediaUrl(item.thumbUrl)}
+                                alt={item.cleanTitle}
+                                loading="lazy"
+                                className="max-w-full max-h-full object-contain"
+                              />
+                              {item.mime === 'image/svg+xml' && (
+                                <span className="absolute top-0.5 right-0.5 px-1 py-0.2 bg-indigo-600 text-white text-[8px] font-bold rounded">
+                                  SVG
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[9.5px] font-semibold text-slate-700 truncate w-full text-center">
+                              {isInserting ? 'Inserting...' : item.cleanTitle}
                             </span>
                           </button>
                         );

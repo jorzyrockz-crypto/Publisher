@@ -20,6 +20,22 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/clipart-free/, ''),
       },
+      '/api/wikimedia-upload': {
+        target: 'https://upload.wikimedia.org',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/wikimedia-upload/, ''),
+        headers: {
+          'User-Agent': 'StudioPress/1.0 (Desktop Publishing Studio)',
+        },
+      },
+      '/api/wikimedia-thumb': {
+        target: 'https://thumb.wikimedia.org',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/wikimedia-thumb/, ''),
+        headers: {
+          'User-Agent': 'StudioPress/1.0 (Desktop Publishing Studio)',
+        },
+      },
     },
   },
 })
