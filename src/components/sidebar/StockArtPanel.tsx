@@ -210,6 +210,31 @@ const PIXABAY_SHAPE_OPTIONS = [
   { id: 'vertical', label: 'Portrait' },
 ] as const;
 
+/**
+ * Searching is the expensive thing this panel does: one unified search fans out
+ * to nine sources at once, then decodes dozens of remote thumbnails. So it runs
+ * on intent (Enter, or a pause) rather than on every keystroke, and finished
+ * searches are remembered for a few minutes.
+ */
+const MIN_QUERY_LENGTH = 2;
+const TYPING_IDLE_MS = 700;
+const SEARCH_CACHE_TTL_MS = 5 * 60_000;
+const SEARCH_CACHE_MAX_ENTRIES = 40;
+
+interface SearchSnapshot {
+  at: number;
+  cf: UnifiedStockItem[];
+  iconify: UnifiedStockItem[];
+  wiki: UnifiedStockItem[];
+  ov: UnifiedStockItem[];
+  pb: UnifiedStockItem[];
+  un: UnifiedStockItem[];
+  oa: UnifiedStockItem[];
+  px: UnifiedStockItem[];
+  oc: UnifiedStockItem[];
+  totals: { pb: number; un: number; oa: number; px: number; oc: number };
+}
+
 const PEXELS_SHAPE_OPTIONS = [
   { id: 'all', label: 'Any' },
   { id: 'landscape', label: 'Landscape' },
@@ -345,6 +370,9 @@ export const StockArtPanel: React.FC = () => {
   const pxAbortRef = useRef<AbortController | null>(null);
   const ocAbortRef = useRef<AbortController | null>(null);
   const hasAutoSearchedRef = useRef(false);
+  /** The query the visible results belong to, so retyping it need not re-fetch. */
+  const lastSearchedRef = useRef('');
+  const searchCacheRef = useRef(new Map<string, SearchSnapshot>());
 
   const setSourceDisabled = (source: string, disabled: boolean) => {
     setDisabledSources((prev) => {
@@ -702,6 +730,41 @@ export const StockArtPanel: React.FC = () => {
       return;
     }
 
+    lastSearchedRef.current = q;
+
+    // A repeated search inside the TTL is served from memory: same results, no
+    // network, no thumbnails to decode again.
+    const cached = searchCacheRef.current.get(q);
+    if (cached && Date.now() - cached.at < SEARCH_CACHE_TTL_MS) {
+      setSourceErrors([]);
+      setCfItems(cached.cf);
+      setIconifyItems(cached.iconify);
+      setWikiItems(cached.wiki);
+      setOvItems(cached.ov);
+      setPbItems(cached.pb);
+      setUnItems(cached.un);
+      setOaItems(cached.oa);
+      setPxItems(cached.px);
+      setOcItems(cached.oc);
+      setPbTotal(cached.totals.pb);
+      setUnTotal(cached.totals.un);
+      setOaTotal(cached.totals.oa);
+      setPxTotal(cached.totals.px);
+      setOcTotal(cached.totals.oc);
+      setLoadingSources({
+        clipartfree: false,
+        iconify: false,
+        wikimedia: false,
+        openverse: false,
+        pixabay: false,
+        unsplash: false,
+        openart: false,
+        pexels: false,
+        oclipart: false,
+      });
+      return;
+    }
+
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -907,17 +970,24 @@ export const StockArtPanel: React.FC = () => {
     };
   }, []);
 
-  // Auto-run initial unified search when the panel first opens, and reactively debounce live typing
+  // Search on intent, not on typing. A pause triggers it, Enter triggers it
+  // immediately, and a query too short to narrow nine sources triggers nothing at
+  // all — one character used to fire ten requests.
   useEffect(() => {
     if (!isStockArtPanelOpen) return;
+    const trimmed = query.trim();
+
     if (!hasAutoSearchedRef.current) {
       hasAutoSearchedRef.current = true;
-      runUnifiedSearch(query);
+      if (trimmed.length >= MIN_QUERY_LENGTH) runUnifiedSearch(query);
       return;
     }
+    if (trimmed.length > 0 && trimmed.length < MIN_QUERY_LENGTH) return;
+    if (trimmed === lastSearchedRef.current) return;
+
     const timer = window.setTimeout(() => {
       runUnifiedSearch(query);
-    }, 350);
+    }, TYPING_IDLE_MS);
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isStockArtPanelOpen, query]);
@@ -995,6 +1065,48 @@ export const StockArtPanel: React.FC = () => {
     loadingSources.openart ||
     loadingSources.pexels ||
     loadingSources.oclipart;
+
+  // Once a search settles, keep its results so retyping the same word is instant.
+  useEffect(() => {
+    if (isAnyLoading) return;
+    const q = query.trim();
+    if (!q || q !== lastSearchedRef.current) return;
+    searchCacheRef.current.set(q, {
+      at: Date.now(),
+      cf: cfItems,
+      iconify: iconifyItems,
+      wiki: wikiItems,
+      ov: ovItems,
+      pb: pbItems,
+      un: unItems,
+      oa: oaItems,
+      px: pxItems,
+      oc: ocItems,
+      totals: { pb: pbTotal, un: unTotal, oa: oaTotal, px: pxTotal, oc: ocTotal },
+    });
+    if (searchCacheRef.current.size > SEARCH_CACHE_MAX_ENTRIES) {
+      const oldest = [...searchCacheRef.current.entries()].sort((a, b) => a[1].at - b[1].at)[0];
+      if (oldest) searchCacheRef.current.delete(oldest[0]);
+    }
+  }, [
+    isAnyLoading,
+    query,
+    cfItems,
+    iconifyItems,
+    wikiItems,
+    ovItems,
+    pbItems,
+    unItems,
+    oaItems,
+    pxItems,
+    ocItems,
+    pbTotal,
+    unTotal,
+    oaTotal,
+    pxTotal,
+    ocTotal,
+  ]);
+
 
   const handleInsertItem = async (item: UnifiedStockItem, asSticker = false) => {
     setInsertingUid(item.uid);
@@ -1641,7 +1753,7 @@ export const StockArtPanel: React.FC = () => {
               return (
                 <div
                   key={item.uid}
-                  className="group relative flex flex-col rounded-tile bg-white border border-line hover:border-accent-line hover:shadow-sm transition overflow-hidden"
+                  className="group relative flex flex-col rounded-tile bg-white border border-line hover:border-accent-line hover:shadow-sm transition overflow-hidden [content-visibility:auto] [contain-intrinsic-size:auto_150px]"
                 >
                   {/* Clickable Card Body */}
                   <button
@@ -1656,6 +1768,7 @@ export const StockArtPanel: React.FC = () => {
                         src={item.thumbUrl}
                         alt={item.title}
                         loading="lazy"
+                        decoding="async"
                         className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform"
                       />
                       {/* Source Badge */}
