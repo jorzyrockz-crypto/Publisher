@@ -1548,6 +1548,7 @@ const ImageRenderer: React.FC<{
             <img
               src={element.src}
               alt={element.alt || 'Publication image'}
+              decoding="async"
               style={{
                 // Known intrinsic size: place the picture exactly (this is what
                 // lets a zoomed picture be panned). Until it loads, fall back
@@ -1987,6 +1988,7 @@ const QRRenderer: React.FC<{ element: QRElement }> = ({ element }) => {
         <img
           src={dataUrl}
           alt="QR Code"
+          decoding="async"
           className="w-full h-full object-contain pointer-events-none"
         />
       ) : (

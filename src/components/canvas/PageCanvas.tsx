@@ -30,7 +30,7 @@ interface PageCanvasProps {
   onCursorMove?: (x: number, y: number) => void;
 }
 
-export const PageCanvas: React.FC<PageCanvasProps> = ({
+export const PageCanvas: React.FC<PageCanvasProps> = React.memo(({
   page,
   pageIndex,
   onCursorMove,
@@ -1234,4 +1234,4 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
     )}
     </div>
   );
-};
+});

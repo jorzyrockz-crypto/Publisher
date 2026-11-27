@@ -27,7 +27,7 @@ interface SelectionBoxProps {
   onInteractionEnd?: () => void;
 }
 
-export const SelectionBox: React.FC<SelectionBoxProps> = ({
+export const SelectionBox: React.FC<SelectionBoxProps> = React.memo(({
   element,
   zoom,
   onResize,
@@ -354,4 +354,4 @@ export const SelectionBox: React.FC<SelectionBoxProps> = ({
         })()}
     </div>
   );
-};
+});
