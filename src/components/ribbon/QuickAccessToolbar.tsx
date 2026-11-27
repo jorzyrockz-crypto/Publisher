@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
+import { DesignerFormatChip } from '../workspace/DesignerFormatChip';
 import { saveProjectToFile } from '../../utils/imageExport';
 import { exportToPdf } from '../../utils/pdfExport';
 import { openShortcutsModal } from '../../utils/uiEvents';
@@ -132,6 +133,9 @@ export const QuickAccessToolbar: React.FC = () => {
             {project.name}
           </span>
         </div>
+
+        {/* Artboard identity — design mode reads size at a glance and can resize in place */}
+        {workspaceMode === 'designer' && <DesignerFormatChip />}
 
         <div className="hidden md:block w-[1px] h-4 bg-[#e5e9ee] mx-0.5 flex-shrink-0" />
 

@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
 import { SHAPE_CATALOG } from '../../utils/shapePaths';
 import { ShapePreviewIcon } from '../common/ShapePreviewIcon';
+import { DesignerPhotoSection } from './DesignerPhotoSection';
 import { SAMPLE_GRAPHICS } from '../../constants/sampleGraphics';
 import type { ShapeType } from '../../types/publisher';
 import {
@@ -104,7 +105,7 @@ export const DesignerVisualsPanel: React.FC<{
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search everything"
+            placeholder="Search photos, graphics…"
             className="w-full h-8 pl-8 pr-7 rounded-[9px] bg-[#f3f5f7] border border-transparent focus:border-[#6e56cf] focus:bg-white text-xs text-[#161a22] placeholder-[#6a7682] outline-none transition"
           />
           {query && (
@@ -122,6 +123,15 @@ export const DesignerVisualsPanel: React.FC<{
 
       {/* Scrollable Sections */}
       <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-5">
+        {/* 0. Photos — the same keyless-first sources as the Publisher stock panel */}
+        <DesignerPhotoSection
+          query={query}
+          onInsert={(dataUrl) => {
+            addImage(dataUrl);
+            setToolMode('select');
+          }}
+        />
+
         {/* 1. Generate your own */}
         {!normalizedQuery && (
           <section className="space-y-2">
