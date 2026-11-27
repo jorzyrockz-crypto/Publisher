@@ -117,7 +117,7 @@ export const AppContent: React.FC = () => {
             aria-hidden="true"
           />
         )}
-        <StockArtPanel />
+        {workspaceMode !== 'designer' && <StockArtPanel />}
         <PropertiesPanel />
       </div>
 

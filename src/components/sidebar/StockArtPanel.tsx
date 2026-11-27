@@ -265,8 +265,9 @@ const QUICK_SEARCH_CHIPS = [
   'book',
 ];
 
-export const StockArtPanel: React.FC = () => {
+export const StockArtPanel: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const { isStockArtPanelOpen, setIsStockArtPanelOpen, addImage, activePage } = usePublisher();
+  const isActive = embedded || isStockArtPanelOpen;
 
   const [query, setQuery] = useState('graduation');
   const [sourceFilter, setSourceFilter] = useState<StockSourceFilter>('all');
@@ -974,7 +975,7 @@ export const StockArtPanel: React.FC = () => {
   // immediately, and a query too short to narrow nine sources triggers nothing at
   // all — one character used to fire ten requests.
   useEffect(() => {
-    if (!isStockArtPanelOpen) return;
+    if (!isActive) return;
     const trimmed = query.trim();
 
     if (!hasAutoSearchedRef.current) {
@@ -990,7 +991,7 @@ export const StockArtPanel: React.FC = () => {
     }, TYPING_IDLE_MS);
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isStockArtPanelOpen, query]);
+  }, [isActive, query]);
 
   // Interleave results when viewing "All Sources" so users see diverse results from every source right away
   const combinedResults = useMemo(() => {
@@ -1202,7 +1203,7 @@ export const StockArtPanel: React.FC = () => {
     edge: 'left',
   });
 
-  if (!isStockArtPanelOpen) return null;
+  if (!isActive) return null;
 
   const totalAllCount =
     builtinItems.length +
@@ -1216,24 +1217,32 @@ export const StockArtPanel: React.FC = () => {
     pxItems.length +
     ocItems.length;
 
+  const Wrapper = embedded ? 'div' : 'aside';
+
   return (
-    <aside
-      style={{ width: panelWidth }}
-      className={`bg-white border-l border-line flex flex-col h-full flex-shrink-0 select-none text-ink ${
-        isNarrowViewport ? 'absolute right-0 top-0 bottom-0 z-30 shadow-[0_8px_28px_rgba(28,44,58,0.12)]' : 'relative z-20'
-      } ${isResizing ? '' : 'transition-[width] duration-150'}`}
+    <Wrapper
+      style={embedded ? undefined : { width: panelWidth }}
+      className={
+        embedded
+          ? 'flex flex-col flex-1 min-h-0 bg-white select-none text-ink'
+          : `bg-white border-l border-line flex flex-col h-full flex-shrink-0 select-none text-ink ${
+              isNarrowViewport ? 'absolute right-0 top-0 bottom-0 z-30 shadow-[0_8px_28px_rgba(28,44,58,0.12)]' : 'relative z-20'
+            } ${isResizing ? '' : 'transition-[width] duration-150'}`
+      }
     >
       {/* Drag-to-resize handle on left edge */}
-      <div
-        onMouseDown={handleResizeStart}
-        onDoubleClick={resetWidth}
-        title="Drag to resize • Double-click to reset"
-        className={`absolute top-0 left-0 bottom-0 w-1.5 cursor-col-resize z-30 transition-colors ${
-          isResizing ? 'bg-accent' : 'hover:bg-accent/50'
-        }`}
-      />
+      {!embedded && (
+        <div
+          onMouseDown={handleResizeStart}
+          onDoubleClick={resetWidth}
+          title="Drag to resize • Double-click to reset"
+          className={`absolute top-0 left-0 bottom-0 w-1.5 cursor-col-resize z-30 transition-colors ${
+            isResizing ? 'bg-accent' : 'hover:bg-accent/50'
+          }`}
+        />
+      )}
       {/* Inspector-style Header */}
-      <div className="px-4 py-3 border-b border-line bg-surface flex items-center justify-between">
+      <div className={`${embedded ? 'px-3 py-2' : 'px-4 py-3'} border-b border-line bg-surface flex items-center justify-between`}>
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-tile bg-accent-soft text-accent-ink flex items-center justify-center">
             <Images size={14} />
@@ -1260,14 +1269,16 @@ export const StockArtPanel: React.FC = () => {
           >
             <KeyRound size={13} />
           </button>
-          <button
-            type="button"
-            onClick={() => setIsStockArtPanelOpen(false)}
-            title="Close Stock Art Panel"
-            className="p-1.5 rounded-tile text-ink-muted hover:text-ink hover:bg-accent-soft-hover transition cursor-pointer"
-          >
-            <X size={14} />
-          </button>
+          {!embedded && (
+            <button
+              type="button"
+              onClick={() => setIsStockArtPanelOpen(false)}
+              title="Close Stock Art Panel"
+              className="p-1.5 rounded-tile text-ink-muted hover:text-ink hover:bg-accent-soft-hover transition cursor-pointer"
+            >
+              <X size={14} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -1964,6 +1975,6 @@ export const StockArtPanel: React.FC = () => {
       <div className="px-3 py-2 border-t border-slate-200 bg-surface-sunken text-2xs text-slate-500 flex items-center justify-between">
         <span>Click to insert • SVG items can be recolored</span>
       </div>
-    </aside>
+    </Wrapper>
   );
 };
