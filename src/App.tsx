@@ -8,6 +8,7 @@ import { CanvasArea } from './components/canvas/CanvasArea';
 import { PropertiesPanel } from './components/sidebar/PropertiesPanel';
 import { StockArtPanel } from './components/sidebar/StockArtPanel';
 import { StatusBar } from './components/statusbar/StatusBar';
+import { CinematicSplashScreen } from './components/common/CinematicSplashScreen';
 // Heavy overlay dialogs are code-split so the initial bundle only ships the
 // editor shell (ribbon + canvas + sidebar). Each chunk loads on first open.
 const BackstageModal = React.lazy(() =>
@@ -63,6 +64,7 @@ export const AppContent: React.FC = () => {
 
   return (
     <div className="flex flex-col w-screen h-screen overflow-hidden bg-[#edf0f3] text-[#161a22] font-sans">
+      <CinematicSplashScreen />
       {/* 1. Office Ribbon Header & Quick Access Toolbar */}
       <Ribbon />
 

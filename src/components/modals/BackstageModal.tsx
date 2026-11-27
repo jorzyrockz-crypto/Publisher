@@ -3,6 +3,7 @@ import { usePublisher } from '../../context/PublisherContext';
 import { TEMPLATES, TemplateDefinition } from '../../constants/templates';
 import { ElementRenderer } from '../canvas/ElementRenderer';
 import { ConnectorElement, Page } from '../../types/publisher';
+import { StudioPressLogo } from '../common/StudioPressLogo';
 import {
   saveProjectToFile,
   loadProjectFromFile,
@@ -336,11 +337,11 @@ export const BackstageModal: React.FC = () => {
         </div>
 
         <div className="text-[11px] text-white/70 space-y-1">
-          <div className="flex items-center gap-1.5 font-bold text-white">
-            <Sparkles size={12} className="text-amber-300" />
+          <div className="flex items-center gap-2 font-bold text-white">
+            <StudioPressLogo size={22} />
             <span>StudioPress</span>
           </div>
-          <p className="text-[10px] text-indigo-200/80">Modern Web Studio</p>
+          <p className="text-[10px] text-indigo-200/80">Freedom to Paint Studio</p>
         </div>
       </div>
 

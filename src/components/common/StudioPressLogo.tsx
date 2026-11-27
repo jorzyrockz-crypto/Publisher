@@ -1,0 +1,81 @@
+import React from 'react';
+
+interface StudioPressLogoProps {
+  size?: number;
+  className?: string;
+}
+
+/**
+ * StudioPress Option 2 ("Freedom to Paint") brand emblem:
+ * Light editorial squircle with soaring violet dove, artist palette arc, and fountain pen nib.
+ */
+export const StudioPressLogo: React.FC<StudioPressLogoProps> = ({
+  size = 26,
+  className = '',
+}) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 64 64"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={`flex-shrink-0 ${className}`}
+    aria-hidden="true"
+  >
+    <defs>
+      <linearGradient id="sp-logo-violet" x1="12" y1="10" x2="54" y2="54" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#8a6ff0" />
+        <stop offset="100%" stopColor="#5a44c9" />
+      </linearGradient>
+      <linearGradient id="sp-logo-arc" x1="10" y1="22" x2="48" y2="56" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#c4b5fd" />
+        <stop offset="100%" stopColor="#6e56cf" />
+      </linearGradient>
+    </defs>
+
+    <rect x="2" y="2" width="60" height="60" rx="15" fill="#ffffff" stroke="#d3c9f9" strokeWidth="2.5" />
+
+    <path
+      d="M17 44.5C11.5 37.5 11.5 25.5 19.5 18.5C26 12.8 36 12.5 43.5 16.5"
+      stroke="url(#sp-logo-arc)"
+      strokeWidth="3"
+      strokeLinecap="round"
+      opacity="0.7"
+    />
+    <path
+      d="M22 49.5C29 53.5 39 52.5 46 46"
+      stroke="#d3c9f9"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+    />
+
+    <circle cx="15" cy="34" r="2.7" fill="#8a6ff0" />
+    <circle cx="17.5" cy="24.5" r="2.5" fill="#f472b6" />
+    <circle cx="24" cy="17.5" r="2.4" fill="#2dd4bf" />
+
+    <path
+      d="M22 39.5C24.5 34.5 26 29 24.5 22.5C29.5 24.5 33.5 28 35.5 31.5C38.5 27.5 43 24.5 48.5 23.5C47 26.5 45.5 28.5 43.5 30.2C46.5 31.2 49 33 51 35C46 36.2 42 36.5 38.5 38.2C35 40 31.5 42.8 26.5 43.8C24.2 44.2 21.5 42.5 22 39.5Z"
+      fill="url(#sp-logo-violet)"
+    />
+    <path
+      d="M26.5 26C30.5 21.5 36.5 18.5 42.5 18.5C39.5 22 36.5 25.5 34 29.5"
+      stroke="#6e56cf"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+
+    <g transform="translate(36, 35) rotate(-32)">
+      <path
+        d="M0 0L8 3.5L5.5 13L-5.5 13L-8 3.5L0 0Z"
+        fill="#ffffff"
+        stroke="#5a44c9"
+        strokeWidth="1.9"
+        strokeLinejoin="round"
+      />
+      <line x1="0" y1="0.8" x2="0" y2="6.5" stroke="#5a44c9" strokeWidth="1.4" strokeLinecap="round" />
+      <circle cx="0" cy="7.8" r="1.2" fill="#6e56cf" />
+      <rect x="-4.5" y="13" width="9" height="2.6" rx="1" fill="#6e56cf" />
+    </g>
+  </svg>
+);

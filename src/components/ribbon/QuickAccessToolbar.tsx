@@ -3,15 +3,16 @@ import { usePublisher } from '../../context/PublisherContext';
 import { saveProjectToFile } from '../../utils/imageExport';
 import { exportToPdf } from '../../utils/pdfExport';
 import { openShortcutsModal } from '../../utils/uiEvents';
+import { StudioPressLogo } from '../common/StudioPressLogo';
 import {
   Save,
   Undo2,
   Redo2,
   Printer,
   FileDown,
-  LayoutGrid,
   Search,
   Keyboard,
+  Download,
 } from 'lucide-react';
 
 export const QuickAccessToolbar: React.FC = () => {
@@ -36,7 +37,26 @@ export const QuickAccessToolbar: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [installPromptEvent, setInstallPromptEvent] = useState<
+    (Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> }) | null
+  >(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const onBeforeInstall = (e: Event) => {
+      e.preventDefault();
+      setInstallPromptEvent(
+        e as Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> }
+      );
+    };
+    const onAppInstalled = () => setInstallPromptEvent(null);
+    window.addEventListener('beforeinstallprompt', onBeforeInstall);
+    window.addEventListener('appinstalled', onAppInstalled);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', onBeforeInstall);
+      window.removeEventListener('appinstalled', onAppInstalled);
+    };
+  }, []);
 
   // Global app shortcuts that live in the shell: Ctrl+K command search,
   // Ctrl+S save (.pub) and Ctrl+P print — matching the cheatsheet.
@@ -90,9 +110,7 @@ export const QuickAccessToolbar: React.FC = () => {
           className="flex items-center gap-2.5 px-1.5 py-1 -ml-1.5 rounded-[8px] hover:bg-[#f4f2ff] transition-colors group cursor-pointer"
           title="Open File & Templates (Backstage)"
         >
-          <div className="w-[26px] h-[26px] rounded-[8px] bg-gradient-to-br from-[#8a6ff0] to-[#5a44c9] text-white flex items-center justify-center shadow-2xs flex-shrink-0">
-            <LayoutGrid size={13} />
-          </div>
+          <StudioPressLogo size={26} />
           <span className="font-semibold text-[12.5px] tracking-[-0.01em] text-[#161a22] group-hover:text-[#5c4bb8] whitespace-nowrap">
             Publisher Studio
           </span>
@@ -198,8 +216,23 @@ export const QuickAccessToolbar: React.FC = () => {
         )}
       </div>
 
-      {/* Right: Ghost Help + Print + Botanical Teal Export CTA */}
+      {/* Right: Install PWA + Ghost Help + Print + Export CTA */}
       <div className="flex items-center gap-2">
+        {installPromptEvent && (
+          <button
+            onClick={async () => {
+              await installPromptEvent.prompt();
+              await installPromptEvent.userChoice;
+              setInstallPromptEvent(null);
+            }}
+            className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-[8px] border border-[#d3c9f9] bg-[#f4f2ff] hover:bg-[#efeafd] text-[#5c4bb8] text-[11px] font-semibold transition cursor-pointer"
+            title="Install StudioPress as a desktop/mobile app"
+          >
+            <Download size={13} />
+            <span>Install App</span>
+          </button>
+        )}
+
         <button
           onClick={openShortcutsModal}
           className="p-1.5 hover:bg-[#f4f2ff] text-[#4a5661] hover:text-[#5c4bb8] active:scale-95 rounded-[8px] transition-all cursor-pointer"

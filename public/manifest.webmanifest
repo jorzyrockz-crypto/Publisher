@@ -1,0 +1,20 @@
+{
+  "name": "StudioPress — Desktop Publishing Studio",
+  "short_name": "StudioPress",
+  "description": "Calm, modern desktop publishing, logo, collage, and print studio.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#edf0f3",
+  "theme_color": "#6e56cf",
+  "categories": ["design", "productivity", "graphics"],
+  "icons": [
+    {
+      "src": "./favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

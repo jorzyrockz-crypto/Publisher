@@ -449,3 +449,53 @@
     page-break-after: always;
   }
 }
+
+/* Cinematic startup splash screen animations */
+@keyframes spSplashLogoIn {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.84);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes spSplashFadeUp {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spSplashBar {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+.sp-splash-logo {
+  animation: spSplashLogoIn 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.sp-splash-title {
+  opacity: 0;
+  animation: spSplashFadeUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.18s forwards;
+}
+
+.sp-splash-sub {
+  opacity: 0;
+  animation: spSplashFadeUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.32s forwards;
+}
+
+.sp-splash-bar {
+  animation: spSplashBar 1.35s cubic-bezier(0.4, 0, 0.2, 1) 0.15s forwards;
+}
