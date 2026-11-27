@@ -41,11 +41,11 @@ export const DesignerViewPanel: React.FC = () => {
   ] as const;
 
   return (
-    <div className="flex-1 overflow-y-auto p-3 space-y-4">
+    <div className="flex-1 overflow-y-auto p-3 space-y-4 touch-manipulation">
       {/* 1. Display Overlays */}
       <div className="space-y-2">
         <p className="text-[11px] font-semibold text-[#4a5661]">Display Overlays</p>
-        <div className="space-y-1.5 p-2.5 rounded-[10px] border border-[#e5e9ee] bg-[#f8fafb]">
+        <div className="space-y-1 p-2.5 rounded-[12px] border border-[#e5e9ee] bg-[#f8fafb]">
           {[
             { label: 'Rulers', active: rulerVisible, toggle: () => setRulerVisible(!rulerVisible) },
             { label: 'Guides', active: guidesVisible, toggle: () => setGuidesVisible(!guidesVisible) },
@@ -62,7 +62,7 @@ export const DesignerViewPanel: React.FC = () => {
               key={item.label}
               type="button"
               onClick={item.toggle}
-              className="w-full flex items-center justify-between py-1 text-[11px] font-medium text-[#161a22] cursor-pointer"
+              className="w-full min-h-[38px] flex items-center justify-between py-1.5 px-1 text-xs font-medium text-[#161a22] cursor-pointer touch-manipulation"
             >
               <span>{item.label}</span>
               <div className={`fluent-switch ${item.active ? 'active' : ''}`}>

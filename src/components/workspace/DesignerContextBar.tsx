@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
 import { ColorInput } from '../common/ColorInput';
-import type { ShapeElement, TextElement } from '../../types/publisher';
+import { removeImageBackground } from '../../utils/bgRemoval';
+import type { ImageElement, ShapeElement, TextElement } from '../../types/publisher';
 import {
   AlignLeft,
   AlignCenter,
@@ -23,6 +24,11 @@ import {
   Group,
   Ungroup,
   Combine,
+  Crop,
+  SlidersHorizontal,
+  Eraser,
+  ImagePlus,
+  Loader2,
 } from 'lucide-react';
 
 const QUICK_FONTS = [
@@ -56,6 +62,9 @@ export const DesignerContextBar: React.FC = () => {
     toggleElementLock,
   } = usePublisher();
 
+  const replaceInputRef = useRef<HTMLInputElement>(null);
+  const [removingBg, setRemovingBg] = useState(false);
+
   const selectedElements = activePage.elements.filter((el) =>
     selectedElementIds.includes(el.id)
   );
@@ -64,26 +73,68 @@ export const DesignerContextBar: React.FC = () => {
   const primary = selectedElements[0];
   const isSingleText = selectedElements.length === 1 && primary?.type === 'text';
   const isSingleShape = selectedElements.length === 1 && primary?.type === 'shape';
+  const isSingleImage = selectedElements.length === 1 && primary?.type === 'image';
   const hasMulti = selectedElements.length >= 2;
   const allShapes = hasMulti && selectedElements.every((el) => el.type === 'shape');
   const hasGroup = selectedElements.some((el) => Boolean(el.groupId));
   const anyLocked = selectedElements.some((el) => Boolean(el.locked));
 
   const iconBtn = (active = false) =>
-    `p-1.5 rounded-[7px] transition cursor-pointer active:scale-95 ${
+    `min-w-[36px] min-h-[36px] p-2 rounded-[10px] flex items-center justify-center transition cursor-pointer active:scale-95 touch-manipulation ${
       active
         ? 'bg-[#efeafd] text-[#5c4bb8]'
         : 'text-[#4a5661] hover:text-[#161a22] hover:bg-[#f4f2ff]'
     }`;
+
+  const labeledBtn = (active = false) =>
+    `min-h-[36px] px-3 py-1.5 rounded-[10px] flex items-center gap-1.5 text-xs font-medium transition cursor-pointer active:scale-95 whitespace-nowrap touch-manipulation ${
+      active
+        ? 'bg-[#efeafd] text-[#5c4bb8]'
+        : 'text-[#161a22] hover:bg-[#f4f2ff] hover:text-[#5c4bb8]'
+    }`;
+
+  const openInspector = () => {
+    setRightPanelTab('inspector');
+    setIsRightPanelOpen(true);
+  };
 
   const toggleEffectsInspector = () => {
     setRightPanelTab('inspector');
     setIsRightPanelOpen(!isRightPanelOpen);
   };
 
+  const handleReplaceImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !isSingleImage) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        updateElement(primary.id, { src: reader.result });
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleRemoveBg = async () => {
+    if (!isSingleImage || removingBg) return;
+    const imgEl = primary as ImageElement;
+    if (!imgEl.src) return;
+    setRemovingBg(true);
+    try {
+      const cleaned = await removeImageBackground(imgEl.src);
+      updateElement(primary.id, { src: cleaned });
+    } catch {
+      // fallback to inspector if removal fails
+      openInspector();
+    } finally {
+      setRemovingBg(false);
+    }
+  };
+
   return (
-    <div className="pointer-events-auto max-w-[94%] bg-white/95 backdrop-blur-md border border-[#e5e9ee] rounded-[14px] shadow-[0_6px_24px_rgba(22,26,34,0.08)] px-2.5 py-1 flex items-center gap-1.5 overflow-x-auto select-none">
-      {/* Single Text Formatting Controls (Microsoft Designer Pill Style) */}
+    <div className="pointer-events-auto max-w-[96%] min-h-[46px] bg-white/95 backdrop-blur-md border border-[#e5e9ee] rounded-2xl shadow-[0_8px_28px_rgba(22,26,34,0.10)] px-2.5 py-1 flex items-center gap-1 overflow-x-auto select-none touch-manipulation">
+      {/* Single Text Formatting Controls */}
       {isSingleText && (
         <>
           <ColorInput
@@ -91,7 +142,7 @@ export const DesignerContextBar: React.FC = () => {
             onChange={(e) =>
               updateElement(primary.id, { color: e.target.value })
             }
-            className="w-6 h-6 rounded-full border border-[#e5e9ee]"
+            className="w-8 h-8 rounded-full border border-[#e5e9ee] flex-shrink-0 touch-manipulation"
             title="Text Color"
           />
 
@@ -100,7 +151,7 @@ export const DesignerContextBar: React.FC = () => {
             onChange={(e) =>
               updateElement(primary.id, { fontFamily: e.target.value })
             }
-            className="h-7 max-w-[120px] px-2 rounded-[8px] border border-[#e5e9ee] bg-[#f8fafb] text-[11px] font-medium text-[#161a22] outline-none cursor-pointer"
+            className="h-9 max-w-[132px] px-2.5 rounded-[10px] border border-[#e5e9ee] bg-[#f8fafb] text-xs font-medium text-[#161a22] outline-none cursor-pointer touch-manipulation"
             title="Font Family"
           >
             {!QUICK_FONTS.includes((primary as TextElement).fontFamily) && (
@@ -115,7 +166,7 @@ export const DesignerContextBar: React.FC = () => {
             ))}
           </select>
 
-          <div className="flex items-center border border-[#e5e9ee] rounded-[8px] bg-[#f8fafb] h-7 px-1 gap-1">
+          <div className="flex items-center border border-[#e5e9ee] rounded-[10px] bg-[#f8fafb] h-9 px-1 gap-1">
             <button
               type="button"
               onClick={() =>
@@ -123,12 +174,12 @@ export const DesignerContextBar: React.FC = () => {
                   fontSize: Math.max(8, ((primary as TextElement).fontSize || 16) - 2),
                 })
               }
-              className="p-0.5 text-[#4a5661] hover:text-[#5c4bb8] cursor-pointer"
+              className="w-7 h-7 flex items-center justify-center rounded-[7px] text-[#4a5661] hover:text-[#5c4bb8] hover:bg-white cursor-pointer touch-manipulation"
               title="Decrease Font Size"
             >
-              <Minus size={11} />
+              <Minus size={13} />
             </button>
-            <span className="text-[11px] font-semibold min-w-[22px] text-center text-[#161a22]">
+            <span className="text-xs font-semibold min-w-[26px] text-center text-[#161a22]">
               {Math.round((primary as TextElement).fontSize || 16)}
             </span>
             <button
@@ -138,14 +189,14 @@ export const DesignerContextBar: React.FC = () => {
                   fontSize: Math.min(200, ((primary as TextElement).fontSize || 16) + 2),
                 })
               }
-              className="p-0.5 text-[#4a5661] hover:text-[#5c4bb8] cursor-pointer"
+              className="w-7 h-7 flex items-center justify-center rounded-[7px] text-[#4a5661] hover:text-[#5c4bb8] hover:bg-white cursor-pointer touch-manipulation"
               title="Increase Font Size"
             >
-              <Plus size={11} />
+              <Plus size={13} />
             </button>
           </div>
 
-          <div className="w-[1px] h-4 bg-[#e5e9ee]" />
+          <div className="w-[1px] h-5 bg-[#e5e9ee] mx-0.5" />
 
           <button
             type="button"
@@ -158,7 +209,7 @@ export const DesignerContextBar: React.FC = () => {
             className={iconBtn((primary as TextElement).fontWeight === 'bold')}
             title="Bold"
           >
-            <Bold size={13} />
+            <Bold size={15} />
           </button>
           <button
             type="button"
@@ -171,7 +222,7 @@ export const DesignerContextBar: React.FC = () => {
             className={iconBtn((primary as TextElement).fontStyle === 'italic')}
             title="Italic"
           >
-            <Italic size={13} />
+            <Italic size={15} />
           </button>
           <button
             type="button"
@@ -186,7 +237,7 @@ export const DesignerContextBar: React.FC = () => {
             className={iconBtn((primary as TextElement).textDecoration === 'underline')}
             title="Underline"
           >
-            <Underline size={13} />
+            <Underline size={15} />
           </button>
 
           <button
@@ -201,15 +252,65 @@ export const DesignerContextBar: React.FC = () => {
             title="Cycle Text Alignment"
           >
             {(primary as TextElement).textAlign === 'center' ? (
-              <AlignCenter size={13} />
+              <AlignCenter size={15} />
             ) : (primary as TextElement).textAlign === 'right' ? (
-              <AlignRight size={13} />
+              <AlignRight size={15} />
             ) : (
-              <AlignLeft size={13} />
+              <AlignLeft size={15} />
             )}
           </button>
 
-          <div className="w-[1px] h-4 bg-[#e5e9ee]" />
+          <div className="w-[1px] h-5 bg-[#e5e9ee] mx-0.5" />
+        </>
+      )}
+
+      {/* Single Image Controls (Microsoft Designer Image Pill Style) */}
+      {isSingleImage && (
+        <>
+          <button
+            type="button"
+            onClick={() => updateElement(primary.id, { rotation: ((primary.rotation || 0) + 90) % 360 })}
+            className={labeledBtn()}
+            title="Rotate 90° (or open Inspector for Crop)"
+          >
+            <Crop size={14} />
+            <span>Crop &amp; rotate</span>
+          </button>
+          <button
+            type="button"
+            onClick={openInspector}
+            className={labeledBtn(isRightPanelOpen)}
+            title="Image Adjustments & Filters"
+          >
+            <SlidersHorizontal size={14} />
+            <span>Adjustments</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleRemoveBg}
+            disabled={removingBg}
+            className={labeledBtn(false)}
+            title="Remove Image Background"
+          >
+            {removingBg ? <Loader2 size={14} className="animate-spin" /> : <Eraser size={14} />}
+            <span>{removingBg ? 'Removing…' : 'Remove BG'}</span>
+          </button>
+          <input
+            ref={replaceInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleReplaceImage}
+            className="hidden"
+          />
+          <button
+            type="button"
+            onClick={() => replaceInputRef.current?.click()}
+            className={iconBtn()}
+            title="Replace Image"
+          >
+            <ImagePlus size={15} />
+          </button>
+          <div className="w-[1px] h-5 bg-[#e5e9ee] mx-0.5" />
         </>
       )}
 
@@ -219,16 +320,16 @@ export const DesignerContextBar: React.FC = () => {
           <ColorInput
             value={(primary as ShapeElement).fillColor || '#6e56cf'}
             onChange={(e) => updateElement(primary.id, { fillColor: e.target.value })}
-            className="w-6 h-6 rounded-full border border-[#e5e9ee]"
+            className="w-8 h-8 rounded-full border border-[#e5e9ee] flex-shrink-0 touch-manipulation"
             title="Shape Fill"
           />
           <ColorInput
             value={(primary as ShapeElement).strokeColor || '#5c4bb8'}
             onChange={(e) => updateElement(primary.id, { strokeColor: e.target.value })}
-            className="w-6 h-6 rounded-full border border-[#e5e9ee]"
+            className="w-8 h-8 rounded-full border border-[#e5e9ee] flex-shrink-0 touch-manipulation"
             title="Shape Stroke"
           />
-          <div className="w-[1px] h-4 bg-[#e5e9ee]" />
+          <div className="w-[1px] h-5 bg-[#e5e9ee] mx-0.5" />
         </>
       )}
 
@@ -236,20 +337,20 @@ export const DesignerContextBar: React.FC = () => {
       {hasMulti && (
         <>
           <button type="button" onClick={() => alignSelected('left')} className={iconBtn()} title="Align Left">
-            <AlignLeft size={13} />
+            <AlignLeft size={15} />
           </button>
           <button type="button" onClick={() => alignSelected('center')} className={iconBtn()} title="Align Center">
-            <AlignCenter size={13} />
+            <AlignCenter size={15} />
           </button>
           <button type="button" onClick={() => alignSelected('right')} className={iconBtn()} title="Align Right">
-            <AlignRight size={13} />
+            <AlignRight size={15} />
           </button>
           <button type="button" onClick={groupSelected} className={iconBtn()} title="Group">
-            <Group size={13} />
+            <Group size={15} />
           </button>
           {hasGroup && (
             <button type="button" onClick={ungroupSelected} className={iconBtn()} title="Ungroup">
-              <Ungroup size={13} />
+              <Ungroup size={15} />
             </button>
           )}
           {allShapes && (
@@ -259,10 +360,10 @@ export const DesignerContextBar: React.FC = () => {
               className={iconBtn()}
               title="Union Shapes"
             >
-              <Combine size={13} />
+              <Combine size={15} />
             </button>
           )}
-          <div className="w-[1px] h-4 bg-[#e5e9ee]" />
+          <div className="w-[1px] h-5 bg-[#e5e9ee] mx-0.5" />
         </>
       )}
 
@@ -270,22 +371,22 @@ export const DesignerContextBar: React.FC = () => {
       <button
         type="button"
         onClick={toggleEffectsInspector}
-        className={`flex items-center gap-1 px-2.5 h-7 rounded-[8px] border text-[11px] font-semibold transition cursor-pointer whitespace-nowrap ${
+        className={`flex items-center gap-1.5 px-3 min-h-[36px] rounded-[10px] border text-xs font-semibold transition cursor-pointer whitespace-nowrap touch-manipulation ${
           isRightPanelOpen
             ? 'border-[#6e56cf] bg-[#efeafd] text-[#5c4bb8]'
             : 'border-[#6e56cf]/70 bg-white hover:bg-[#f4f2ff] text-[#5c4bb8]'
         }`}
         title="Toggle Effects & Full Inspector"
       >
-        <Sparkles size={12} />
+        <Sparkles size={14} />
         <span>Effects</span>
       </button>
 
       <button type="button" onClick={bringForward} className={iconBtn()} title="Bring Forward">
-        <ArrowUp size={13} />
+        <ArrowUp size={15} />
       </button>
       <button type="button" onClick={sendBackward} className={iconBtn()} title="Send Backward">
-        <ArrowDown size={13} />
+        <ArrowDown size={15} />
       </button>
 
       <button
@@ -294,7 +395,7 @@ export const DesignerContextBar: React.FC = () => {
         className={iconBtn()}
         title="Flip Horizontal"
       >
-        <FlipHorizontal2 size={13} />
+        <FlipHorizontal2 size={15} />
       </button>
       <button
         type="button"
@@ -302,7 +403,7 @@ export const DesignerContextBar: React.FC = () => {
         className={iconBtn()}
         title="Flip Vertical"
       >
-        <FlipVertical2 size={13} />
+        <FlipVertical2 size={15} />
       </button>
 
       <button
@@ -311,18 +412,18 @@ export const DesignerContextBar: React.FC = () => {
         className={iconBtn(anyLocked)}
         title={anyLocked ? 'Unlock' : 'Lock'}
       >
-        {anyLocked ? <Lock size={13} /> : <Unlock size={13} />}
+        {anyLocked ? <Lock size={15} /> : <Unlock size={15} />}
       </button>
       <button type="button" onClick={duplicateSelectedElements} className={iconBtn()} title="Duplicate">
-        <Copy size={13} />
+        <Copy size={15} />
       </button>
       <button
         type="button"
         onClick={deleteSelectedElements}
-        className="p-1.5 rounded-[7px] text-[#b42318] hover:bg-[#ffe4e7] active:scale-95 transition cursor-pointer"
+        className="min-w-[36px] min-h-[36px] p-2 rounded-[10px] flex items-center justify-center text-[#b42318] hover:bg-[#ffe4e7] active:scale-95 transition cursor-pointer touch-manipulation"
         title="Delete"
       >
-        <Trash2 size={13} />
+        <Trash2 size={15} />
       </button>
     </div>
   );

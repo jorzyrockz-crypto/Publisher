@@ -156,13 +156,13 @@ export const DesignerToolRail: React.FC = () => {
       : 'Settings';
 
   return (
-    <div className="flex h-full flex-shrink-0 z-30 relative select-none">
-      {/* 1. Labeled Vertical Icon Rail (64px — Microsoft Designer style) */}
+    <div className="flex h-full flex-shrink-0 z-30 relative select-none touch-manipulation">
+      {/* 1. Labeled Vertical Icon Rail (70px touch-friendly — Microsoft Designer style) */}
       <aside
-        className="w-[64px] h-full bg-white border-r border-[#e5e9ee] flex flex-col items-center justify-between py-2.5 flex-shrink-0"
+        className="w-[70px] h-full bg-white border-r border-[#e5e9ee] flex flex-col items-center justify-between py-2.5 flex-shrink-0"
         aria-label="Designer Studio Rail"
       >
-        <div className="flex flex-col items-center gap-1">
+        <div className="flex flex-col items-center gap-1.5">
           {mainRailItems.map((item) => {
             const isActive = drawerOpen && activeDrawer === item.id;
             return (
@@ -170,7 +170,7 @@ export const DesignerToolRail: React.FC = () => {
                 key={item.id}
                 type="button"
                 onClick={() => handleSelectRailTab(item.id)}
-                className={`w-[52px] py-2 rounded-[10px] flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
+                className={`w-[58px] min-h-[50px] py-2 rounded-[12px] flex flex-col items-center justify-center gap-1 transition-all cursor-pointer touch-manipulation active:scale-95 ${
                   isActive
                     ? 'bg-[#efeafd] text-[#5c4bb8] shadow-2xs'
                     : 'text-[#4a5661] hover:text-[#161a22] hover:bg-[#f4f2ff]'
@@ -178,7 +178,7 @@ export const DesignerToolRail: React.FC = () => {
                 title={item.label}
               >
                 {item.icon}
-                <span className="text-[10px] font-medium leading-none">{item.label}</span>
+                <span className="text-[10.5px] font-medium leading-none">{item.label}</span>
               </button>
             );
           })}
@@ -189,7 +189,7 @@ export const DesignerToolRail: React.FC = () => {
           <button
             type="button"
             onClick={() => handleSelectRailTab('settings')}
-            className={`w-[52px] py-2 rounded-[10px] flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
+            className={`w-[58px] min-h-[50px] py-2 rounded-[12px] flex flex-col items-center justify-center gap-1 transition-all cursor-pointer touch-manipulation active:scale-95 ${
               drawerOpen && activeDrawer === 'settings'
                 ? 'bg-[#efeafd] text-[#5c4bb8] shadow-2xs'
                 : 'text-[#4a5661] hover:text-[#161a22] hover:bg-[#f4f2ff]'
@@ -197,7 +197,7 @@ export const DesignerToolRail: React.FC = () => {
             title="Settings"
           >
             <Settings size={18} />
-            <span className="text-[10px] font-medium leading-none">Settings</span>
+            <span className="text-[10.5px] font-medium leading-none">Settings</span>
           </button>
         </div>
       </aside>
@@ -529,15 +529,15 @@ export const DesignerToolRail: React.FC = () => {
             </div>
           )}
 
-          {/* Collapse Handle Tab (<) on Drawer Edge */}
+          {/* Collapse Handle Tab (<) on Drawer Edge — touch-friendly */}
           <button
             type="button"
             onClick={() => setDrawerOpen(false)}
-            className="absolute -right-4 top-1/2 -translate-y-1/2 w-4 h-10 bg-white border border-l-0 border-[#e5e9ee] rounded-r-[8px] shadow-xs flex items-center justify-center text-[#6a7682] hover:text-[#5c4bb8] cursor-pointer z-40"
+            className="absolute -right-6 top-1/2 -translate-y-1/2 w-6 h-14 bg-white border border-l-0 border-[#e5e9ee] rounded-r-[10px] shadow-sm flex items-center justify-center text-[#6a7682] hover:text-[#5c4bb8] cursor-pointer z-40 touch-manipulation active:scale-95"
             title="Collapse Drawer"
             aria-label="Collapse Drawer"
           >
-            <ChevronLeft size={12} />
+            <ChevronLeft size={15} />
           </button>
         </div>
       )}
@@ -547,11 +547,11 @@ export const DesignerToolRail: React.FC = () => {
         <button
           type="button"
           onClick={() => setDrawerOpen(true)}
-          className="absolute left-[64px] top-1/2 -translate-y-1/2 w-4 h-10 bg-white border border-l-0 border-[#e5e9ee] rounded-r-[8px] shadow-xs flex items-center justify-center text-[#6a7682] hover:text-[#5c4bb8] cursor-pointer z-40"
+          className="absolute left-[70px] top-1/2 -translate-y-1/2 w-6 h-14 bg-white border border-l-0 border-[#e5e9ee] rounded-r-[10px] shadow-sm flex items-center justify-center text-[#6a7682] hover:text-[#5c4bb8] cursor-pointer z-40 touch-manipulation active:scale-95"
           title="Expand Drawer"
           aria-label="Expand Drawer"
         >
-          <ChevronRight size={12} />
+          <ChevronRight size={15} />
         </button>
       )}
     </div>

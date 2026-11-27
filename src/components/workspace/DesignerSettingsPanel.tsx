@@ -96,14 +96,14 @@ export const DesignerSettingsPanel: React.FC = () => {
   };
 
   const toggleBtn = (active: boolean) =>
-    `flex items-center justify-center gap-1 py-1.5 px-2 rounded-[8px] border text-[11px] font-medium transition cursor-pointer ${
+    `min-h-[38px] flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-[10px] border text-xs font-medium transition cursor-pointer touch-manipulation active:scale-95 ${
       active
         ? 'bg-[#efeafd] border-[#d3c9f9] text-[#5c4bb8]'
         : 'bg-[#f8fafb] border-[#e5e9ee] text-[#4a5661] hover:bg-[#f4f2ff]'
     }`;
 
   return (
-    <div className="flex-1 overflow-y-auto p-3 space-y-4">
+    <div className="flex-1 overflow-y-auto p-3 space-y-4 touch-manipulation">
       {savedNotice && (
         <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] bg-[#efeafd] text-[#5c4bb8] text-[11px] font-semibold">
           <Check size={12} />

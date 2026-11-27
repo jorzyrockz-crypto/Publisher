@@ -124,13 +124,13 @@ export const DesignerBrandPanel: React.FC = () => {
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      {/* Inline Sub-Tabs (Brand Kit | Multi-Size | Schemes) */}
-      <div className="px-3 pt-2.5 pb-2 border-b border-[#e5e9ee]">
-        <div className="grid grid-cols-3 gap-1 bg-[#f3f5f7] p-0.5 rounded-[9px] border border-[#e5e9ee]">
+            {/* Sub-Tabs */}
+      <div className="px-3 pt-2.5 pb-2 border-b border-[#e5e9ee] touch-manipulation">
+        <div className="grid grid-cols-3 gap-1 bg-[#f3f5f7] p-1 rounded-[10px] border border-[#e5e9ee]">
           <button
             type="button"
             onClick={() => setSubTab('kit')}
-            className={`py-1 rounded-[7px] text-[11px] font-semibold transition cursor-pointer ${
+            className={`min-h-[34px] py-1.5 rounded-[8px] text-[11px] font-semibold transition cursor-pointer touch-manipulation ${
               subTab === 'kit'
                 ? 'bg-white text-[#5c4bb8] shadow-2xs'
                 : 'text-[#4a5661] hover:text-[#161a22]'
@@ -141,7 +141,7 @@ export const DesignerBrandPanel: React.FC = () => {
           <button
             type="button"
             onClick={() => setSubTab('board')}
-            className={`py-1 rounded-[7px] text-[11px] font-semibold transition cursor-pointer ${
+            className={`min-h-[34px] py-1.5 rounded-[8px] text-[11px] font-semibold transition cursor-pointer touch-manipulation ${
               subTab === 'board'
                 ? 'bg-white text-[#5c4bb8] shadow-2xs'
                 : 'text-[#4a5661] hover:text-[#161a22]'
@@ -152,7 +152,7 @@ export const DesignerBrandPanel: React.FC = () => {
           <button
             type="button"
             onClick={() => setSubTab('schemes')}
-            className={`py-1 rounded-[7px] text-[11px] font-semibold transition cursor-pointer ${
+            className={`min-h-[34px] py-1.5 rounded-[8px] text-[11px] font-semibold transition cursor-pointer touch-manipulation ${
               subTab === 'schemes'
                 ? 'bg-white text-[#5c4bb8] shadow-2xs'
                 : 'text-[#4a5661] hover:text-[#161a22]'
