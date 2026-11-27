@@ -3,6 +3,9 @@ import { usePublisher } from '../../context/PublisherContext';
 import { SHAPE_CATALOG } from '../../utils/shapePaths';
 import { ShapePreviewIcon } from '../common/ShapePreviewIcon';
 import { COLOR_SCHEMES } from '../../constants/colorSchemes';
+import { PAGE_SIZES } from '../../constants/pageSizes';
+import { WORD_ART_STYLES } from '../../utils/wordArt';
+import { ColorInput } from '../common/ColorInput';
 import { PageThumbnails } from '../sidebar/PageThumbnails';
 import {
   Wand2,
@@ -19,52 +22,38 @@ import {
   Minus,
   Sparkles,
   LayoutGrid,
+  RotateCw,
+  LayoutDashboard,
+  File,
+  Files,
+  BookOpen,
+  Ruler,
+  Grid,
+  Magnet,
 } from 'lucide-react';
 
 type DesignerDrawerTab = 'edit' | 'text' | 'media' | 'visuals' | 'brand' | 'layers';
 
-const TEXT_STYLE_CARDS = [
-  {
-    label: 'Aa',
-    title: 'Editorial Serif',
-    text: 'Editorial Heading',
-    fontFamily: 'Playfair Display',
-    fontSize: 42,
-    fontWeight: 'bold' as const,
-    color: '#4c1d95',
-  },
-  {
-    label: 'Aa',
-    title: 'Bold Display',
-    text: 'BOLD STATEMENT',
-    fontFamily: 'Oswald',
-    fontSize: 44,
-    fontWeight: 'bold' as const,
-    color: '#0f172a',
-  },
-  {
-    label: 'Aa',
-    title: 'Modern Sans',
-    text: 'Clean Modern Title',
-    fontFamily: 'Montserrat',
-    fontSize: 34,
-    fontWeight: 'bold' as const,
-    color: '#5c4bb8',
-  },
-  {
-    label: 'Aa',
-    title: 'Warm Classic',
-    text: 'Classic Story',
-    fontFamily: 'Lora',
-    fontSize: 34,
-    fontWeight: 'normal' as const,
-    color: '#7c2d12',
-  },
-];
-
 export const DesignerToolRail: React.FC = () => {
   const {
+    project,
+    activePage,
+    selectedElementIds,
+    viewMode,
+    setViewMode,
+    rulerVisible,
+    setRulerVisible,
+    gridVisible,
+    setGridVisible,
+    snapToGuides,
+    setSnapToGuides,
+    snapToGrid,
+    setSnapToGrid,
+    setPageSize,
+    setPageOrientation,
+    setPageBackgroundColor,
     addTextBox,
+    updateElement,
     addShape,
     addLine,
     addPicturePlaceholder,
@@ -81,7 +70,6 @@ export const DesignerToolRail: React.FC = () => {
     setIsBrandBoardModalOpen,
     setIsRightPanelOpen,
     setRightPanelTab,
-    isLeftPanelOpen,
     setIsLeftPanelOpen,
     setToolMode,
   } = usePublisher();
@@ -119,6 +107,13 @@ export const DesignerToolRail: React.FC = () => {
     e.target.value = '';
   };
 
+  const selectedTextElement =
+    selectedElementIds.length === 1
+      ? activePage.elements.find(
+          (el) => el.id === selectedElementIds[0] && el.type === 'text'
+        )
+      : undefined;
+
   const railItems: Array<{
     id: DesignerDrawerTab;
     label: string;
@@ -131,6 +126,13 @@ export const DesignerToolRail: React.FC = () => {
     { id: 'brand', label: 'Brand', icon: <Palette size={18} /> },
     { id: 'layers', label: 'Layers', icon: <Layers size={18} /> },
   ];
+
+  const pillToggle = (active: boolean) =>
+    `flex items-center justify-center gap-1 px-2 py-1.5 rounded-[8px] border text-[11px] font-medium transition cursor-pointer ${
+      active
+        ? 'bg-[#efeafd] border-[#d3c9f9] text-[#5c4bb8]'
+        : 'bg-[#f8fafb] border-[#e5e9ee] text-[#4a5661] hover:bg-[#f4f2ff]'
+    }`;
 
   return (
     <div className="flex h-full flex-shrink-0 z-30 relative select-none">
@@ -168,11 +170,11 @@ export const DesignerToolRail: React.FC = () => {
               <PageThumbnails />
             </div>
           ) : (
-            <div className="w-[260px] h-full bg-white border-r border-[#e5e9ee] flex flex-col overflow-hidden">
+            <div className="w-[264px] h-full bg-white border-r border-[#e5e9ee] flex flex-col overflow-hidden">
               <div className="px-3.5 py-3 border-b border-[#e5e9ee] flex items-center justify-between">
-                <h2 className="text-xs font-semibold text-[#161a22] capitalize">
+                <h2 className="text-xs font-semibold text-[#161a22]">
                   {activeDrawer === 'edit'
-                    ? 'Design & Edit'
+                    ? 'Page & Design'
                     : activeDrawer === 'text'
                     ? 'Text editing'
                     : activeDrawer === 'media'
@@ -186,6 +188,120 @@ export const DesignerToolRail: React.FC = () => {
               <div className="flex-1 overflow-y-auto p-3 space-y-4">
                 {activeDrawer === 'edit' && (
                   <>
+                    {/* Document & Canvas Settings (moved from floating pill into sidebar) */}
+                    <div className="space-y-2">
+                      <p className="text-[11px] font-semibold text-[#4a5661]">Page &amp; Canvas</p>
+                      <div className="space-y-2 p-2.5 rounded-[10px] border border-[#e5e9ee] bg-[#f8fafb]">
+                        <div className="flex items-center gap-1.5">
+                          <select
+                            value={project.pageSizeName}
+                            onChange={(e) => setPageSize(e.target.value)}
+                            className="flex-1 min-w-0 h-7 px-2 rounded-[7px] border border-[#e5e9ee] bg-white text-[11px] font-medium text-[#161a22] outline-none cursor-pointer"
+                            title="Page Size"
+                          >
+                            {PAGE_SIZES.map((s) => (
+                              <option key={s.name} value={s.name}>
+                                {s.name}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setPageOrientation(
+                                activePage.orientation === 'portrait' ? 'landscape' : 'portrait'
+                              )
+                            }
+                            className="flex items-center gap-1 h-7 px-2 rounded-[7px] border border-[#e5e9ee] bg-white hover:bg-[#f4f2ff] text-[11px] font-medium text-[#4a5661] hover:text-[#5c4bb8] transition cursor-pointer"
+                            title="Toggle Orientation"
+                          >
+                            <RotateCw size={11} />
+                            <span>
+                              {activePage.orientation === 'portrait' ? 'Portrait' : 'Landscape'}
+                            </span>
+                          </button>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-0.5">
+                          <span className="text-[11px] text-[#4a5661]">Page Fill</span>
+                          <ColorInput
+                            value={activePage.backgroundColor || '#ffffff'}
+                            onChange={(e) => setPageBackgroundColor(e.target.value)}
+                            className="w-7 h-6 rounded border border-[#e5e9ee]"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-4 gap-1 pt-0.5">
+                          <button
+                            type="button"
+                            onClick={() => setViewMode('artboard')}
+                            className={pillToggle(viewMode === 'artboard')}
+                            title="Artboard View"
+                          >
+                            <LayoutDashboard size={12} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setViewMode('single')}
+                            className={pillToggle(viewMode === 'single')}
+                            title="Single Page View"
+                          >
+                            <File size={12} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setViewMode('continuous')}
+                            className={pillToggle(viewMode === 'continuous')}
+                            title="Continuous Scroll"
+                          >
+                            <Files size={12} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setViewMode('spread')}
+                            className={pillToggle(viewMode === 'spread')}
+                            title="2-Page Spread"
+                          >
+                            <BookOpen size={12} />
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-1 pt-0.5">
+                          <button
+                            type="button"
+                            onClick={() => setRulerVisible(!rulerVisible)}
+                            className={pillToggle(rulerVisible)}
+                            title="Toggle Rulers"
+                          >
+                            <Ruler size={11} />
+                            <span>Rulers</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setGridVisible(!gridVisible)}
+                            className={pillToggle(gridVisible)}
+                            title="Toggle Grid"
+                          >
+                            <Grid size={11} />
+                            <span>Grid</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const next = !(snapToGuides || snapToGrid);
+                              setSnapToGuides(next);
+                              setSnapToGrid(next);
+                            }}
+                            className={pillToggle(snapToGuides || snapToGrid)}
+                            title="Toggle Smart Snap"
+                          >
+                            <Magnet size={11} />
+                            <span>Snap</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="space-y-1.5">
                       <p className="text-[11px] font-semibold text-[#4a5661]">Studio Panels</p>
                       <button
@@ -211,8 +327,9 @@ export const DesignerToolRail: React.FC = () => {
                         <span>Open Full Inspector</span>
                       </button>
                     </div>
+
                     <div className="space-y-1.5">
-                      <p className="text-[11px] font-semibold text-[#4a5661]">Quick AI & Layouts</p>
+                      <p className="text-[11px] font-semibold text-[#4a5661]">Quick AI &amp; Layouts</p>
                       <button
                         type="button"
                         onClick={() => setIsAIImageModalOpen(true)}
@@ -279,46 +396,62 @@ export const DesignerToolRail: React.FC = () => {
                       </button>
                     </div>
 
+                    {/* Full WordArt Style Presets placed directly in the Text panel */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-semibold text-[#4a5661]">Text styles</span>
+                        <span className="text-[11px] font-semibold text-[#4a5661]">
+                          {selectedTextElement ? 'Apply Style Preset' : 'Text & WordArt Styles'}
+                        </span>
                         <button
                           type="button"
                           onClick={() => setIsWordArtModalOpen(true)}
                           className="text-[11px] font-semibold text-[#6e56cf] hover:underline cursor-pointer"
                         >
-                          WordArt →
+                          AI Ideas →
                         </button>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
-                        {TEXT_STYLE_CARDS.map((card) => (
+                        {WORD_ART_STYLES.map((style) => (
                           <button
-                            key={card.title}
+                            key={style.id}
                             type="button"
-                            onClick={() =>
-                              addTextBox({
-                                text: card.text,
-                                fontFamily: card.fontFamily,
-                                fontSize: card.fontSize,
-                                fontWeight: card.fontWeight,
-                                color: card.color,
-                                height: 74,
-                              })
-                            }
-                            className="h-20 rounded-[10px] border border-[#e5e9ee] bg-[#f8fafb] hover:bg-[#f4f2ff] hover:border-[#d3c9f9] flex flex-col items-center justify-center transition cursor-pointer"
-                            title={card.title}
+                            onClick={() => {
+                              if (selectedTextElement) {
+                                updateElement(selectedTextElement.id, {
+                                  isWordArt: true,
+                                  wordArtStyle: style.id,
+                                });
+                              } else {
+                                addTextBox({
+                                  text: 'HEADLINE',
+                                  fontSize: 38,
+                                  fontWeight: 'bold',
+                                  isWordArt: true,
+                                  wordArtStyle: style.id,
+                                  width: 360,
+                                  height: 84,
+                                });
+                              }
+                            }}
+                            className={`h-[72px] px-1.5 rounded-[10px] border border-[#e5e9ee] hover:border-[#6e56cf] flex flex-col items-center justify-center transition cursor-pointer overflow-hidden ${
+                              style.dark
+                                ? 'bg-[#111827] hover:bg-[#1e293b]'
+                                : 'bg-[#f8fafb] hover:bg-[#f4f2ff]'
+                            }`}
+                            title={style.label}
                           >
                             <span
-                              style={{
-                                fontFamily: card.fontFamily,
-                                fontWeight: card.fontWeight,
-                                color: card.color,
-                              }}
-                              className="text-2xl leading-none"
+                              className={`text-lg font-extrabold leading-tight ${style.className}`}
                             >
-                              {card.label}
+                              WordArt
                             </span>
-                            <span className="text-[9.5px] text-[#6a7682] mt-1">{card.title}</span>
+                            <span
+                              className={`text-[9px] mt-1 truncate max-w-full ${
+                                style.dark ? 'text-slate-300' : 'text-[#6a7682]'
+                              }`}
+                            >
+                              {style.label}
+                            </span>
                           </button>
                         ))}
                       </div>
