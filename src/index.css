@@ -499,3 +499,96 @@
 .sp-splash-bar {
   animation: spSplashBar 1.35s cubic-bezier(0.4, 0, 0.2, 1) 0.15s forwards;
 }
+
+/* ============================================================================
+   Dark Mode Theme (Calm Slate & Studio Violet)
+   Applies to app chrome while preserving true paper canvas colors.
+   ============================================================================ */
+html.dark body {
+  background-color: #11141b;
+  color: #e6ebf2;
+}
+
+html.dark .pasteboard-bg {
+  background-color: #131720;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #2f3747;
+}
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #455066;
+}
+
+/* Chrome surfaces */
+html.dark .bg-white:not([data-canvas-page-id] *):not(.paper-canvas),
+html.dark .bg-white\/95,
+html.dark .bg-white\/90 {
+  background-color: #1a1f2b !important;
+}
+
+html.dark .bg-\[\#edf0f3\] {
+  background-color: #131720 !important;
+}
+
+html.dark .bg-\[\#f8fafb\],
+html.dark .bg-\[\#f3f5f7\],
+html.dark .bg-slate-50,
+html.dark .bg-slate-100 {
+  background-color: #222836 !important;
+}
+
+html.dark .bg-\[\#efeafd\],
+html.dark .bg-\[\#f4f2ff\] {
+  background-color: #2c2447 !important;
+}
+
+html.dark .hover\:bg-\[\#f4f2ff\]:hover,
+html.dark .hover\:bg-\[\#efeafd\]:hover {
+  background-color: #2c2447 !important;
+}
+
+/* Hairline borders */
+html.dark .border-\[\#e5e9ee\],
+html.dark .border-slate-200,
+html.dark .border-slate-200\/80 {
+  border-color: #2a3140 !important;
+}
+
+html.dark .border-\[\#d3c9f9\] {
+  border-color: #4f3e8c !important;
+}
+
+/* Text colors */
+html.dark .text-\[\#161a22\],
+html.dark .text-\[\#202833\],
+html.dark .text-slate-800,
+html.dark .text-slate-700 {
+  color: #e6ebf2 !important;
+}
+
+html.dark .text-\[\#3d4854\],
+html.dark .text-\[\#4a5661\],
+html.dark .text-\[\#5b6673\],
+html.dark .text-slate-600 {
+  color: #a6b0bf !important;
+}
+
+html.dark .text-\[\#6a7682\],
+html.dark .text-\[\#8b94a0\],
+html.dark .text-slate-500,
+html.dark .text-slate-400 {
+  color: #7d8899 !important;
+}
+
+html.dark .text-\[\#5c4bb8\],
+html.dark .text-\[\#6e56cf\] {
+  color: #b7a4ff !important;
+}
+
+/* Inputs & selects in chrome */
+html.dark input:not([type='color']):not([type='range']),
+html.dark select,
+html.dark textarea {
+  color: #e6ebf2;
+}

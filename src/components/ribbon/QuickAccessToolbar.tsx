@@ -13,11 +13,15 @@ import {
   Search,
   Keyboard,
   Download,
+  Sun,
+  Moon,
 } from 'lucide-react';
 
 export const QuickAccessToolbar: React.FC = () => {
   const {
     project,
+    theme,
+    toggleTheme,
     canUndo,
     canRedo,
     undo,
@@ -232,6 +236,15 @@ export const QuickAccessToolbar: React.FC = () => {
             <span>Install App</span>
           </button>
         )}
+
+        <button
+          onClick={toggleTheme}
+          className="p-1.5 hover:bg-[#f4f2ff] text-[#4a5661] hover:text-[#5c4bb8] active:scale-95 rounded-[8px] transition-all cursor-pointer"
+          title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          aria-label={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        >
+          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+        </button>
 
         <button
           onClick={openShortcutsModal}

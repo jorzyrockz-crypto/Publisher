@@ -6,6 +6,7 @@ import { InsertTab } from './InsertTab';
 import { PageDesignTab } from './PageDesignTab';
 import { MailingsTab } from './MailingsTab';
 import { ViewTab } from './ViewTab';
+import { SettingsTab } from './SettingsTab';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 
 export const Ribbon: React.FC = () => {
@@ -33,6 +34,7 @@ export const Ribbon: React.FC = () => {
     { id: 'page-design', label: 'Page Design' },
     { id: 'mailings', label: 'Mailings' },
     { id: 'view', label: 'View' },
+    { id: 'settings', label: 'Settings' },
   ] as const;
 
   return (
@@ -94,6 +96,7 @@ export const Ribbon: React.FC = () => {
           {activeTab === 'page-design' && <PageDesignTab />}
           {activeTab === 'mailings' && <MailingsTab />}
           {activeTab === 'view' && <ViewTab />}
+          {activeTab === 'settings' && <SettingsTab />}
         </div>
       )}
     </div>

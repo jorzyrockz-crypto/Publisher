@@ -49,7 +49,8 @@ interface PublisherContextType {
   selectedElementIds: string[];
   zoom: number;
   pan: { x: number; y: number };
-  activeTab: 'home' | 'insert' | 'page-design' | 'mailings' | 'view';
+  activeTab: 'home' | 'insert' | 'page-design' | 'mailings' | 'view' | 'settings';
+  theme: 'light' | 'dark';
   isBackstageOpen: boolean;
   /** Active File (Backstage) section — shared so any button can deep-link. */
   backstageSection: BackstageSection;
@@ -110,7 +111,9 @@ interface PublisherContextType {
   renamePage: (pageId: string, name: string) => void;
   addBookletSpread: () => void;
   padToBookletMultiple: () => void;
-  setActiveTab: (tab: 'home' | 'insert' | 'page-design' | 'mailings' | 'view') => void;
+  setActiveTab: (tab: 'home' | 'insert' | 'page-design' | 'mailings' | 'view' | 'settings') => void;
+  setTheme: (theme: 'light' | 'dark') => void;
+  toggleTheme: () => void;
   setIsBackstageOpen: (open: boolean) => void;
   /** Opens the File view on a specific section (e.g. 'print'). */
   openBackstage: (section?: BackstageSection) => void;
@@ -468,7 +471,35 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [zoom, setZoomState] = useState<number>(0.8);
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
-  const [activeTab, setActiveTab] = useState<'home' | 'insert' | 'page-design' | 'mailings' | 'view'>('home');
+  const [activeTab, setActiveTab] = useState<
+    'home' | 'insert' | 'page-design' | 'mailings' | 'view' | 'settings'
+  >('home');
+  const [theme, setThemeState] = useState<'light' | 'dark'>(() => {
+    try {
+      const saved = localStorage.getItem('studiopress_theme');
+      if (saved === 'dark' || saved === 'light') return saved;
+    } catch {
+      // ignore
+    }
+    return 'light';
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle('dark', theme === 'dark');
+    root.dataset.theme = theme;
+    try {
+      localStorage.setItem('studiopress_theme', theme);
+    } catch {
+      // ignore
+    }
+  }, [theme]);
+
+  const setTheme = useCallback((next: 'light' | 'dark') => setThemeState(next), []);
+  const toggleTheme = useCallback(
+    () => setThemeState((prev) => (prev === 'light' ? 'dark' : 'light')),
+    []
+  );
   const [isBackstageOpen, setIsBackstageOpen] = useState(false);
   // The File view section lives here so the toolbar, ribbon and status bar can
   // deep-link straight to Print / Export / New without prop drilling.
@@ -2685,6 +2716,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         zoom,
         pan,
         activeTab,
+        theme,
         isBackstageOpen,
         backstageSection,
         setBackstageSection,
@@ -2750,6 +2782,8 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         addBookletSpread,
         padToBookletMultiple,
         setActiveTab,
+        setTheme,
+        toggleTheme,
         setIsBackstageOpen,
         openBackstage,
         setIsMailMergeOpen,
