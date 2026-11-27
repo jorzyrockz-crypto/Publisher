@@ -38,22 +38,40 @@ const ShortcutsModal = React.lazy(() =>
 
 export const AppContent: React.FC = () => {
   const {
+    isLeftPanelOpen,
+    isRightPanelOpen,
     isStockArtPanelOpen,
     setIsLeftPanelOpen,
     setIsRightPanelOpen,
+    setIsStockArtPanelOpen,
   } = usePublisher();
   const windowWidth = useWindowWidth();
   const prevWidthRef = useRef(windowWidth);
+  const didMountCollapseRef = useRef(false);
 
-  // Auto-collapse sidebars when resizing into a narrow/tablet viewport so the canvas stays usable
+  // On tablet/narrow initial mount (< 1024px), start with sidebars collapsed so the canvas is immediately visible
+  useEffect(() => {
+    if (didMountCollapseRef.current) return;
+    didMountCollapseRef.current = true;
+    if (window.innerWidth < 1024) {
+      setIsLeftPanelOpen(false);
+      setIsRightPanelOpen(false);
+    }
+  }, [setIsLeftPanelOpen, setIsRightPanelOpen]);
+
+  // Auto-collapse sidebars when resizing into a narrow/tablet viewport; restore on large screens
   useEffect(() => {
     const prev = prevWidthRef.current;
     prevWidthRef.current = windowWidth;
     if (windowWidth < 1024 && prev >= 1024) {
       setIsLeftPanelOpen(false);
       setIsRightPanelOpen(false);
+      setIsStockArtPanelOpen(false);
+    } else if (windowWidth >= 1280 && prev < 1024) {
+      setIsLeftPanelOpen(true);
+      setIsRightPanelOpen(true);
     }
-  }, [windowWidth, setIsLeftPanelOpen, setIsRightPanelOpen]);
+  }, [windowWidth, setIsLeftPanelOpen, setIsRightPanelOpen, setIsStockArtPanelOpen]);
 
   // On medium screens (< 1280px), yield the Inspector when Stock Art opens so both don't crowd the canvas
   useEffect(() => {
@@ -61,6 +79,9 @@ export const AppContent: React.FC = () => {
       setIsRightPanelOpen(false);
     }
   }, [isStockArtPanelOpen, windowWidth, setIsRightPanelOpen]);
+
+  const isNarrow = windowWidth < 1024;
+  const hasNarrowDrawerOpen = isNarrow && (isLeftPanelOpen || isRightPanelOpen || isStockArtPanelOpen);
 
   return (
     <div className="flex flex-col w-screen h-screen overflow-hidden bg-[#edf0f3] text-[#161a22] font-sans">
@@ -72,6 +93,17 @@ export const AppContent: React.FC = () => {
       <div className="flex flex-1 w-full min-h-0 overflow-hidden relative">
         <PageThumbnails />
         <CanvasArea />
+        {hasNarrowDrawerOpen && (
+          <div
+            onClick={() => {
+              setIsLeftPanelOpen(false);
+              setIsRightPanelOpen(false);
+              setIsStockArtPanelOpen(false);
+            }}
+            className="absolute inset-0 bg-[#15232d]/25 backdrop-blur-[1px] z-25 transition-opacity"
+            aria-hidden="true"
+          />
+        )}
         <StockArtPanel />
         <PropertiesPanel />
       </div>

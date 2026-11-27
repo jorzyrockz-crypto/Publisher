@@ -123,7 +123,7 @@ export const QuickAccessToolbar: React.FC = () => {
         <div className="w-[1px] h-4 bg-[#e5e9ee] mx-0.5 flex-shrink-0" />
 
         {/* Document Title (save state now lives in the status bar) */}
-        <div className="hidden md:flex items-center gap-1.5 min-w-0">
+        <div className="hidden lg:flex items-center gap-1.5 min-w-0">
           <span className="truncate max-w-[220px] font-medium text-[#3d4854]">
             {project.name}
           </span>
@@ -170,7 +170,7 @@ export const QuickAccessToolbar: React.FC = () => {
       </div>
 
       {/* Center: Calm Light Command Search Bar */}
-      <div className="relative max-w-xs md:max-w-sm w-full mx-4">
+      <div className="hidden sm:block relative flex-1 max-w-[170px] md:max-w-[260px] lg:max-w-sm mx-2 lg:mx-4">
         <div className="relative">
           <Search
             size={13}

@@ -35,6 +35,9 @@ export function useResizablePanel(options: {
     return defaultWidth;
   });
 
+  const windowWidth = useWindowWidth();
+  const effectiveWidth = Math.min(width, Math.max(220, windowWidth - 48));
+
   const [isDragging, setIsDragging] = useState(false);
 
   const onMouseDown = useCallback(
@@ -80,5 +83,5 @@ export function useResizablePanel(options: {
     }
   }, [defaultWidth, storageKey]);
 
-  return { width, isDragging, onMouseDown, resetWidth };
+  return { width: effectiveWidth, isDragging, onMouseDown, resetWidth };
 }

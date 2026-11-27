@@ -572,9 +572,7 @@ export const CanvasArea: React.FC = () => {
 
           {/* Modern Floating Viewport, Tool Mode, Page View & Zoom Pill */}
           <div
-            className={`fixed bottom-16 z-30 flex items-center gap-1 bg-white px-2.5 py-1.5 rounded-full border border-slate-200/90 shadow-lg text-xs text-slate-700 transition-all ${
-              isRightPanelOpen ? 'right-76' : 'right-14'
-            }`}
+            className="absolute bottom-3 right-3 z-20 max-w-[calc(100%-24px)] overflow-x-auto no-scrollbar flex items-center gap-1 bg-white/95 backdrop-blur-sm px-2.5 py-1.5 rounded-full border border-[#e5e9ee] shadow-[0_8px_28px_rgba(28,44,58,0.12)] text-xs text-[#202833] transition-all"
           >
             {/* Select vs Hand/Pan Tool Switcher */}
             <div className="flex items-center bg-slate-100 p-0.5 rounded-full mr-0.5">
