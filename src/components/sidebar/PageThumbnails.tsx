@@ -39,6 +39,48 @@ import { MASTER_PAGE_PRESETS } from '../../constants/masterPresets';
 import { buildBookletSheets } from '../../utils/printUtils';
 import { useResizablePanel, useWindowWidth } from '../../hooks/useResizablePanel';
 
+const MemoThumbnailElements = React.memo(
+  ({
+    masterEls,
+    pageElements,
+    pageNumber,
+    totalPages,
+  }: {
+    masterEls: PublisherElement[];
+    pageElements: PublisherElement[];
+    pageNumber: number;
+    totalPages: number;
+  }) => (
+    <>
+      {[...masterEls, ...pageElements]
+        .filter((el) => el.visible !== false)
+        .map((el) => (
+          <div
+            key={el.id}
+            style={{
+              position: 'absolute',
+              left: `${el.x}px`,
+              top: `${el.y}px`,
+              width: `${el.width}px`,
+              height: `${el.height}px`,
+              transform: `rotate(${el.rotation}deg)`,
+              transformOrigin: 'center center',
+              zIndex: el.zIndex,
+              opacity: el.opacity !== undefined ? el.opacity : 1,
+            }}
+          >
+            <ElementRenderer
+              element={el}
+              isSelected={false}
+              pageNumber={pageNumber}
+              totalPages={totalPages}
+            />
+          </div>
+        ))}
+    </>
+  )
+);
+
 export const PageThumbnails: React.FC = () => {
   const {
     project,
@@ -359,31 +401,12 @@ export const PageThumbnails: React.FC = () => {
                     position: 'relative',
                   }}
                 >
-                  {[...masterEls, ...page.elements]
-                    .filter((el) => el.visible !== false)
-                    .map((el) => (
-                      <div
-                        key={el.id}
-                        style={{
-                          position: 'absolute',
-                          left: `${el.x}px`,
-                          top: `${el.y}px`,
-                          width: `${el.width}px`,
-                          height: `${el.height}px`,
-                          transform: `rotate(${el.rotation}deg)`,
-                          transformOrigin: 'center center',
-                          zIndex: el.zIndex,
-                          opacity: el.opacity !== undefined ? el.opacity : 1,
-                        }}
-                      >
-                        <ElementRenderer
-                          element={el}
-                          isSelected={false}
-                          pageNumber={idx + 1}
-                          totalPages={project.pages.length}
-                        />
-                      </div>
-                    ))}
+                  <MemoThumbnailElements
+                    masterEls={masterEls}
+                    pageElements={page.elements}
+                    pageNumber={idx + 1}
+                    totalPages={project.pages.length}
+                  />
                 </div>
 
                 <div className="absolute top-1 left-1 flex items-center gap-0.5 pointer-events-none">

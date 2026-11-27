@@ -58,6 +58,8 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
     clearSelection,
     updateElement,
     updateElementsBatch,
+    beginInteraction,
+    endInteraction,
     deleteSelectedElements,
     duplicateSelectedElements,
     copySelectedElements,
@@ -415,8 +417,10 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
           y: Math.round(item.startY + effectiveDeltaY),
         };
       });
-      updateElementsBatch(updatesById);
+      updateElementsBatch(updatesById, { transient: true });
     };
+
+    beginInteraction();
 
     const handleWindowMouseMove = (moveEvent: MouseEvent) => {
       latestMoveEvent = moveEvent;
@@ -437,6 +441,7 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
         fillPlaceholderFromImageElement(element.id, activeDropTargetId);
         activeDropTargetId = null;
       }
+      endInteraction();
       window.removeEventListener('mousemove', handleWindowMouseMove);
       window.removeEventListener('mouseup', handleWindowMouseUp);
     };
@@ -1056,6 +1061,8 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
               <SelectionBox
                 element={element}
                 zoom={zoom}
+                onInteractionStart={beginInteraction}
+                onInteractionEnd={endInteraction}
                 onMoveMouseDown={(e) => {
                   setEditingTextId(null);
                   handleElementMouseDown(element, e);
@@ -1064,13 +1071,20 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
                   if (element.type === 'text') {
                     updateElement(
                       element.id,
-                      resizeTextBox(element, { x: nx, y: ny, width: nw, height: nh }, meta)
+                      resizeTextBox(element, { x: nx, y: ny, width: nw, height: nh }, meta),
+                      { transient: true }
                     );
                     return;
                   }
-                  updateElement(element.id, { x: nx, y: ny, width: nw, height: nh });
+                  updateElement(
+                    element.id,
+                    { x: nx, y: ny, width: nw, height: nh },
+                    { transient: true }
+                  );
                 }}
-                onRotate={(nrot) => updateElement(element.id, { rotation: nrot })}
+                onRotate={(nrot) =>
+                  updateElement(element.id, { rotation: nrot }, { transient: true })
+                }
                 onAdjustShape={(adjustValue) =>
                   updateElement(element.id, { adjustValue })
                 }

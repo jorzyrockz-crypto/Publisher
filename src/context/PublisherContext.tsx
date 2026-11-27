@@ -193,8 +193,17 @@ interface PublisherContextType {
   // Element actions
   addElement: (element: PublisherElement) => void;
   addElementsBatch: (elements: PublisherElement[]) => void;
-  updateElement: (id: string, updates: Partial<PublisherElement>) => void;
-  updateElementsBatch: (updatesById: Record<string, Partial<PublisherElement>>) => void;
+  updateElement: (
+    id: string,
+    updates: Partial<PublisherElement>,
+    options?: { transient?: boolean }
+  ) => void;
+  updateElementsBatch: (
+    updatesById: Record<string, Partial<PublisherElement>>,
+    options?: { transient?: boolean }
+  ) => void;
+  beginInteraction: () => void;
+  endInteraction: () => void;
   updateSelectedElements: (updates: Partial<PublisherElement>) => void;
   deleteSelectedElements: () => void;
   duplicateSelectedElements: () => void;
@@ -553,6 +562,23 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, [project.masterPage]);
 
   // Helper to commit a new project state with undo history
+  const projectRef = useRef(project);
+  projectRef.current = project;
+  const interactionSnapshotRef = useRef<DocumentProject | null>(null);
+
+  const beginInteraction = useCallback(() => {
+    interactionSnapshotRef.current = projectRef.current;
+  }, []);
+
+  const endInteraction = useCallback(() => {
+    const snap = interactionSnapshotRef.current;
+    interactionSnapshotRef.current = null;
+    if (snap && snap !== projectRef.current) {
+      setHistoryPast((past) => [...past.slice(-30), snap]);
+      setHistoryFuture([]);
+    }
+  }, []);
+
   const commitProject = useCallback(
     (newProject: DocumentProject) => {
       setHistoryPast((past) => [...past.slice(-30), project]);
@@ -1551,12 +1577,45 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   );
 
   const updateElement = useCallback(
-    (id: string, updates: Partial<PublisherElement>) => {
+    (id: string, updates: Partial<PublisherElement>, options?: { transient?: boolean }) => {
       if (isEditingMaster) {
+        if (options?.transient) {
+          setProjectState((prev) => ({
+            ...prev,
+            masterPage: {
+              ...(prev.masterPage || { showOnAllPages: true, elements: [] }),
+              elements: (prev.masterPage?.elements || []).map((el) =>
+                el.id === id ? ({ ...el, ...updates } as PublisherElement) : el
+              ),
+            },
+          }));
+          return;
+        }
         const updated = currentElements.map((el) =>
           el.id === id ? ({ ...el, ...updates } as PublisherElement) : el
         );
         commitCurrentElements(updated);
+        return;
+      }
+
+      if (options?.transient) {
+        setProjectState((prev) => {
+          const targetPageIdx = prev.pages.findIndex((pg) =>
+            pg.elements.some((el) => el.id === id)
+          );
+          if (targetPageIdx === -1) return prev;
+          const newPages = prev.pages.map((pg, idx) =>
+            idx === targetPageIdx
+              ? {
+                  ...pg,
+                  elements: pg.elements.map((el) =>
+                    el.id === id ? ({ ...el, ...updates } as PublisherElement) : el
+                  ),
+                }
+              : pg
+          );
+          return { ...prev, pages: newPages, activePageIndex: targetPageIdx };
+        });
         return;
       }
 
@@ -1581,15 +1640,53 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   );
 
   const updateElementsBatch = useCallback(
-    (updatesById: Record<string, Partial<PublisherElement>>) => {
+    (
+      updatesById: Record<string, Partial<PublisherElement>>,
+      options?: { transient?: boolean }
+    ) => {
       const ids = Object.keys(updatesById);
       if (ids.length === 0) return;
 
       if (isEditingMaster) {
+        if (options?.transient) {
+          setProjectState((prev) => ({
+            ...prev,
+            masterPage: {
+              ...(prev.masterPage || { showOnAllPages: true, elements: [] }),
+              elements: (prev.masterPage?.elements || []).map((el) =>
+                updatesById[el.id] ? ({ ...el, ...updatesById[el.id] } as PublisherElement) : el
+              ),
+            },
+          }));
+          return;
+        }
         const updated = currentElements.map((el) =>
           updatesById[el.id] ? ({ ...el, ...updatesById[el.id] } as PublisherElement) : el
         );
         commitCurrentElements(updated);
+        return;
+      }
+
+      if (options?.transient) {
+        setProjectState((prev) => {
+          const targetPageIdx = prev.pages.findIndex((pg) =>
+            pg.elements.some((el) => Boolean(updatesById[el.id]))
+          );
+          if (targetPageIdx === -1) return prev;
+          const newPages = prev.pages.map((pg, idx) =>
+            idx === targetPageIdx
+              ? {
+                  ...pg,
+                  elements: pg.elements.map((el) =>
+                    updatesById[el.id]
+                      ? ({ ...el, ...updatesById[el.id] } as PublisherElement)
+                      : el
+                  ),
+                }
+              : pg
+          );
+          return { ...prev, pages: newPages, activePageIndex: targetPageIdx };
+        });
         return;
       }
 
@@ -2711,6 +2808,8 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         addElementsBatch,
         updateElement,
         updateElementsBatch,
+        beginInteraction,
+        endInteraction,
         updateSelectedElements,
         deleteSelectedElements,
         duplicateSelectedElements,

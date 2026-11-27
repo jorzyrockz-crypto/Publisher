@@ -23,6 +23,8 @@ interface SelectionBoxProps {
   onRotate: (newRotation: number) => void;
   onMoveMouseDown?: (e: React.MouseEvent) => void;
   onAdjustShape?: (adjustValue: number) => void;
+  onInteractionStart?: () => void;
+  onInteractionEnd?: () => void;
 }
 
 export const SelectionBox: React.FC<SelectionBoxProps> = ({
@@ -32,6 +34,8 @@ export const SelectionBox: React.FC<SelectionBoxProps> = ({
   onRotate,
   onMoveMouseDown,
   onAdjustShape,
+  onInteractionStart,
+  onInteractionEnd,
 }) => {
   const [isRotating, setIsRotating] = useState(false);
   const [isAdjusting, setIsAdjusting] = useState(false);
@@ -44,6 +48,7 @@ export const SelectionBox: React.FC<SelectionBoxProps> = ({
   const handleResizeMouseDown = (handle: string, e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
+    onInteractionStart?.();
 
     const startMouseX = e.clientX;
     const startMouseY = e.clientY;
@@ -106,6 +111,7 @@ export const SelectionBox: React.FC<SelectionBoxProps> = ({
     };
 
     const handleMouseUp = () => {
+      onInteractionEnd?.();
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
@@ -117,6 +123,7 @@ export const SelectionBox: React.FC<SelectionBoxProps> = ({
   const handleRotateMouseDown = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
+    onInteractionStart?.();
     setIsRotating(true);
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
@@ -143,6 +150,7 @@ export const SelectionBox: React.FC<SelectionBoxProps> = ({
 
     const handleMouseUp = () => {
       setIsRotating(false);
+      onInteractionEnd?.();
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };

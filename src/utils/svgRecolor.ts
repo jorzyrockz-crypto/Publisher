@@ -42,8 +42,22 @@ function normalizeHex(hex: string): string {
 /**
  * Extracts up to 8 distinct hex colors from an SVG data URI in order of appearance.
  */
+const svgPaletteCache = new Map<string, string[]>();
+const svgColorRolesCache = new Map<string, SvgColorRole[]>();
+
+function cacheSet<T>(cache: Map<string, T>, key: string, value: T): T {
+  if (cache.size >= 64) {
+    const firstKey = cache.keys().next().value;
+    if (firstKey !== undefined) cache.delete(firstKey);
+  }
+  cache.set(key, value);
+  return value;
+}
+
 export function extractSvgPalette(src: string): string[] {
   if (!isSvgDataUri(src)) return [];
+  const cached = svgPaletteCache.get(src);
+  if (cached) return cached;
   const svg = decodeSvgDataUri(src);
   if (!svg) return [];
 
@@ -59,7 +73,7 @@ export function extractSvgPalette(src: string): string[] {
       if (result.length >= 8) break;
     }
   }
-  return result;
+  return cacheSet(svgPaletteCache, src, result);
 }
 
 /**
@@ -186,6 +200,8 @@ export function isRecolorableSvg(src?: string): boolean {
  */
 export function analyzeSvgColors(src: string): SvgColorRole[] {
   if (!isSvgDataUri(src)) return [];
+  const cached = svgColorRolesCache.get(src);
+  if (cached) return cached;
   const svg = decodeSvgDataUri(src);
   if (!svg) return [];
 
@@ -224,15 +240,19 @@ export function analyzeSvgColors(src: string): SvgColorRole[] {
   );
   const rankedChromatic = [...chromatic].sort((a, b) => b.count - a.count);
 
-  return entries.map((entry) => {
-    let role: SvgColorRole['role'] = 'compound';
-    if (isNearWhite(entry.color)) role = 'highlight';
-    else if (entry.color === inkEntry?.color) role = 'ink';
-    else if (rankedChromatic[0]?.color === entry.color) role = 'dominant';
-    else if (rankedChromatic[1]?.color === entry.color) role = 'secondary';
-    else if (rankedChromatic[2]?.color === entry.color) role = 'accent';
-    return { ...entry, role } as SvgColorRole;
-  });
+  return cacheSet(
+    svgColorRolesCache,
+    src,
+    entries.map((entry) => {
+      let role: SvgColorRole['role'] = 'compound';
+      if (isNearWhite(entry.color)) role = 'highlight';
+      else if (entry.color === inkEntry?.color) role = 'ink';
+      else if (rankedChromatic[0]?.color === entry.color) role = 'dominant';
+      else if (rankedChromatic[1]?.color === entry.color) role = 'secondary';
+      else if (rankedChromatic[2]?.color === entry.color) role = 'accent';
+      return { ...entry, role } as SvgColorRole;
+    })
+  );
 }
 
 interface SmartTargets {

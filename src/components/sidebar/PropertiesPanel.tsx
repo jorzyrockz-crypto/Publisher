@@ -37,6 +37,7 @@ import {
   BORDER_ART_OPTIONS,
 } from '../../utils/pictureEffects';
 import { removeImageBackground } from '../../utils/bgRemoval';
+import { exportSelectionToPng } from '../../utils/imageExport';
 import {
   analyzeSvgColors,
   extractSvgPalette,
@@ -67,6 +68,7 @@ import {
   Sparkles,
   Sliders,
   Upload,
+  Download,
   QrCode,
   Lock,
   Unlock,
@@ -370,6 +372,21 @@ export const PropertiesPanel: React.FC = () => {
         {/* Multi-Selection: Group, Align, Merge Shapes & Diagram Auto-Connect */}
         {selectedElementIds.length >= 2 && (
           <div className="space-y-4">
+            <button
+              type="button"
+              onClick={() =>
+                exportSelectionToPng(
+                  activePage,
+                  selectedElements,
+                  `${activePage.name || 'logo'}-selection`
+                )
+              }
+              className="w-full py-1.5 px-3 rounded-[8px] bg-[#087f83] hover:bg-[#06696c] text-white text-[11px] font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer shadow-2xs"
+              title="Export selected graphics as a tight high-res transparent PNG logo"
+            >
+              <Download size={12} />
+              <span>Export Selection (Transparent PNG)</span>
+            </button>
             {/* Group & Selection Actions */}
             {(() => {
               const selectedImages = selectedElements.filter(

@@ -171,3 +171,67 @@ export async function exportAllPagesToPngZip(
   link.remove();
   window.setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
+
+/**
+ * Exports only the selected elements (e.g. a 2-graphic logo) as a tight,
+ * high-resolution transparent PNG without the rest of the page.
+ */
+export async function exportSelectionToPng(
+  page: Page,
+  selectedElements: PublisherElement[],
+  filename = 'logo-selection',
+  scale = 3
+): Promise<void> {
+  if (selectedElements.length === 0) return;
+
+  const pad = 16;
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+
+  for (const el of selectedElements) {
+    minX = Math.min(minX, el.x);
+    minY = Math.min(minY, el.y);
+    maxX = Math.max(maxX, el.x + el.width);
+    maxY = Math.max(maxY, el.y + el.height);
+  }
+
+  const width = Math.max(32, Math.ceil(maxX - minX + pad * 2));
+  const height = Math.max(32, Math.ceil(maxY - minY + pad * 2));
+
+  const shiftedElements = selectedElements.map((el) => ({
+    ...el,
+    x: el.x - minX + pad,
+    y: el.y - minY + pad,
+  }));
+
+  const tempPage: Page = {
+    ...page,
+    width,
+    height,
+    backgroundColor: 'transparent',
+    backgroundGradient: undefined,
+    backgroundPattern: undefined,
+    elements: shiftedElements,
+  };
+
+  const canvas = await renderPageModelToCanvas(tempPage, scale, true, []);
+  const blob: Blob = await new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (b) => (b ? resolve(b) : reject(new Error('Canvas toBlob failed'))),
+      'image/png',
+      1
+    );
+  });
+
+  const url = URL.createObjectURL(blob);
+  const safeName = (filename || 'logo-selection').replace(/[^\w\-. ]+/g, '_');
+  const link = document.createElement('a');
+  link.download = `${safeName}.png`;
+  link.href = url;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
