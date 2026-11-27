@@ -15,11 +15,15 @@ import {
   Download,
   Sun,
   Moon,
+  PenTool,
+  LayoutGrid,
 } from 'lucide-react';
 
 export const QuickAccessToolbar: React.FC = () => {
   const {
     project,
+    workspaceMode,
+    setWorkspaceMode,
     theme,
     toggleTheme,
     canUndo,
@@ -236,6 +240,39 @@ export const QuickAccessToolbar: React.FC = () => {
             <span>Install App</span>
           </button>
         )}
+
+        <div
+          className="hidden sm:flex items-center bg-[#f3f5f7] p-0.5 rounded-[8px] border border-[#e5e9ee]"
+          role="group"
+          aria-label="Workspace mode"
+        >
+          <button
+            type="button"
+            onClick={() => setWorkspaceMode('publisher')}
+            className={`flex items-center gap-1 px-2 py-1 rounded-[6px] text-[11px] font-semibold transition cursor-pointer ${
+              workspaceMode === 'publisher'
+                ? 'bg-white text-[#5c4bb8] shadow-2xs'
+                : 'text-[#4a5661] hover:text-[#161a22]'
+            }`}
+            title="Publisher Workspace (Office Ribbon)"
+          >
+            <LayoutGrid size={12} />
+            <span>Publisher</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setWorkspaceMode('designer')}
+            className={`flex items-center gap-1 px-2 py-1 rounded-[6px] text-[11px] font-semibold transition cursor-pointer ${
+              workspaceMode === 'designer'
+                ? 'bg-white text-[#5c4bb8] shadow-2xs'
+                : 'text-[#4a5661] hover:text-[#161a22]'
+            }`}
+            title="Designer Workspace (Left Tool Rail + Contextual Bar)"
+          >
+            <PenTool size={12} />
+            <span>Designer</span>
+          </button>
+        </div>
 
         <button
           onClick={toggleTheme}

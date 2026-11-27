@@ -2,6 +2,9 @@ import React, { Suspense, useEffect, useRef } from 'react';
 import { PublisherProvider, usePublisher } from './context/PublisherContext';
 import { useWindowWidth } from './hooks/useResizablePanel';
 import { Ribbon } from './components/ribbon/Ribbon';
+import { QuickAccessToolbar } from './components/ribbon/QuickAccessToolbar';
+import { DesignerContextBar } from './components/workspace/DesignerContextBar';
+import { DesignerToolRail } from './components/workspace/DesignerToolRail';
 import { DocumentTabsBar } from './components/workspace/DocumentTabsBar';
 import { PageThumbnails } from './components/sidebar/PageThumbnails';
 import { CanvasArea } from './components/canvas/CanvasArea';
@@ -38,6 +41,7 @@ const ShortcutsModal = React.lazy(() =>
 
 export const AppContent: React.FC = () => {
   const {
+    workspaceMode,
     isLeftPanelOpen,
     isRightPanelOpen,
     isStockArtPanelOpen,
@@ -86,11 +90,19 @@ export const AppContent: React.FC = () => {
   return (
     <div className="flex flex-col w-screen h-screen overflow-hidden bg-[#edf0f3] text-[#161a22] font-sans">
       <CinematicSplashScreen />
-      {/* 1. Office Ribbon Header & Quick Access Toolbar */}
-      <Ribbon />
+      {/* 1. Office Ribbon (Publisher) or Top Bar + Context Strip (Designer) */}
+      {workspaceMode === 'designer' ? (
+        <header className="w-full flex flex-col flex-shrink-0 z-30">
+          <QuickAccessToolbar />
+          <DesignerContextBar />
+        </header>
+      ) : (
+        <Ribbon />
+      )}
 
-      {/* 2. Main Work Area: Thumbnails + Canvas Workspace + Properties Inspector */}
+      {/* 2. Main Work Area: Tool Rail (Designer) + Thumbnails/Layers + Canvas + Inspector */}
       <div className="flex flex-1 w-full min-h-0 overflow-hidden relative">
+        {workspaceMode === 'designer' && <DesignerToolRail />}
         <PageThumbnails />
         <CanvasArea />
         {hasNarrowDrawerOpen && (

@@ -24,6 +24,8 @@ import {
 
 export const SettingsTab: React.FC = () => {
   const {
+    workspaceMode,
+    setWorkspaceMode,
     theme,
     setTheme,
     rulerVisible,
@@ -96,36 +98,64 @@ export const SettingsTab: React.FC = () => {
 
   return (
     <div className="flex items-center h-[84px] px-2 py-1.5 gap-2 text-xs text-[#161a22] overflow-x-auto select-none">
-      {/* 1. Appearance (Light / Dark) */}
+      {/* 1. Appearance (Light / Dark) & Workspace */}
       <div className="flex flex-col justify-between h-full py-0.5 pr-2.5 border-r border-[#e5e9ee] flex-shrink-0">
-        <div className="flex items-center bg-[#f3f5f7] p-0.5 rounded-[8px] border border-[#e5e9ee] my-auto">
-          <button
-            type="button"
-            onClick={() => setTheme('light')}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-[6px] text-[11px] font-semibold transition cursor-pointer ${
-              theme === 'light'
-                ? 'bg-[#efeafd] text-[#5c4bb8]'
-                : 'text-[#4a5661] hover:text-[#161a22]'
-            }`}
-          >
-            <Sun size={12} />
-            <span>Light</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setTheme('dark')}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-[6px] text-[11px] font-semibold transition cursor-pointer ${
-              theme === 'dark'
-                ? 'bg-[#efeafd] text-[#5c4bb8]'
-                : 'text-[#4a5661] hover:text-[#161a22]'
-            }`}
-          >
-            <Moon size={12} />
-            <span>Dark</span>
-          </button>
+        <div className="flex items-center gap-1.5 my-auto">
+          <div className="flex items-center bg-[#f3f5f7] p-0.5 rounded-[8px] border border-[#e5e9ee]">
+            <button
+              type="button"
+              onClick={() => setTheme('light')}
+              className={`flex items-center gap-1 px-2 py-1 rounded-[6px] text-[11px] font-semibold transition cursor-pointer ${
+                theme === 'light'
+                  ? 'bg-[#efeafd] text-[#5c4bb8]'
+                  : 'text-[#4a5661] hover:text-[#161a22]'
+              }`}
+            >
+              <Sun size={12} />
+              <span>Light</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setTheme('dark')}
+              className={`flex items-center gap-1 px-2 py-1 rounded-[6px] text-[11px] font-semibold transition cursor-pointer ${
+                theme === 'dark'
+                  ? 'bg-[#efeafd] text-[#5c4bb8]'
+                  : 'text-[#4a5661] hover:text-[#161a22]'
+              }`}
+            >
+              <Moon size={12} />
+              <span>Dark</span>
+            </button>
+          </div>
+          <div className="flex items-center bg-[#f3f5f7] p-0.5 rounded-[8px] border border-[#e5e9ee]">
+            <button
+              type="button"
+              onClick={() => setWorkspaceMode('publisher')}
+              className={`px-2 py-1 rounded-[6px] text-[11px] font-semibold transition cursor-pointer ${
+                workspaceMode === 'publisher'
+                  ? 'bg-[#efeafd] text-[#5c4bb8]'
+                  : 'text-[#4a5661] hover:text-[#161a22]'
+              }`}
+              title="Office-style Ribbon workspace"
+            >
+              Publisher
+            </button>
+            <button
+              type="button"
+              onClick={() => setWorkspaceMode('designer')}
+              className={`px-2 py-1 rounded-[6px] text-[11px] font-semibold transition cursor-pointer ${
+                workspaceMode === 'designer'
+                  ? 'bg-[#efeafd] text-[#5c4bb8]'
+                  : 'text-[#4a5661] hover:text-[#161a22]'
+              }`}
+              title="Affinity/Figma-style Designer workspace"
+            >
+              Designer
+            </button>
+          </div>
         </div>
         <span className="text-[10px] text-[#6a7682] font-bold uppercase tracking-[0.09em] text-center">
-          Appearance
+          Appearance &amp; Mode
         </span>
       </div>
 

@@ -51,6 +51,7 @@ interface PublisherContextType {
   zoom: number;
   pan: { x: number; y: number };
   activeTab: 'home' | 'insert' | 'page-design' | 'mailings' | 'view' | 'settings';
+  workspaceMode: 'publisher' | 'designer';
   theme: 'light' | 'dark';
   isBackstageOpen: boolean;
   /** Active File (Backstage) section — shared so any button can deep-link. */
@@ -113,6 +114,8 @@ interface PublisherContextType {
   addBookletSpread: () => void;
   padToBookletMultiple: () => void;
   setActiveTab: (tab: 'home' | 'insert' | 'page-design' | 'mailings' | 'view' | 'settings') => void;
+  setWorkspaceMode: (mode: 'publisher' | 'designer') => void;
+  toggleWorkspaceMode: () => void;
   setTheme: (theme: 'light' | 'dark') => void;
   toggleTheme: () => void;
   setIsBackstageOpen: (open: boolean) => void;
@@ -526,6 +529,30 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [activeTab, setActiveTab] = useState<
     'home' | 'insert' | 'page-design' | 'mailings' | 'view' | 'settings'
   >('home');
+  const [workspaceMode, setWorkspaceModeState] = useState<'publisher' | 'designer'>(() => {
+    try {
+      const saved = localStorage.getItem('studiopress_workspace_mode');
+      if (saved === 'designer' || saved === 'publisher') return saved;
+    } catch {
+      // ignore
+    }
+    return 'publisher';
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('studiopress_workspace_mode', workspaceMode);
+    } catch {
+      // ignore
+    }
+  }, [workspaceMode]);
+
+  const setWorkspaceMode = useCallback((next: 'publisher' | 'designer') => {
+    setWorkspaceModeState(next);
+  }, []);
+  const toggleWorkspaceMode = useCallback(() => {
+    setWorkspaceModeState((prev) => (prev === 'publisher' ? 'designer' : 'publisher'));
+  }, []);
   const [theme, setThemeState] = useState<'light' | 'dark'>(() => {
     try {
       const saved = localStorage.getItem('studiopress_theme');
@@ -2781,6 +2808,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         zoom,
         pan,
         activeTab,
+        workspaceMode,
         theme,
         isBackstageOpen,
         backstageSection,
@@ -2847,6 +2875,8 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         addBookletSpread,
         padToBookletMultiple,
         setActiveTab,
+        setWorkspaceMode,
+        toggleWorkspaceMode,
         setTheme,
         toggleTheme,
         setIsBackstageOpen,

@@ -84,6 +84,7 @@ const MemoThumbnailElements = React.memo(
 export const PageThumbnails: React.FC = () => {
   const {
     project,
+    workspaceMode,
     activePage,
     selectedElementIds,
     isLeftPanelOpen,
@@ -126,7 +127,13 @@ export const PageThumbnails: React.FC = () => {
     deleteSelectedElements,
   } = usePublisher();
 
-  const [sidebarTab, setSidebarTab] = useState<'pages' | 'layers'>('pages');
+  const [sidebarTab, setSidebarTab] = useState<'pages' | 'layers'>(() =>
+    workspaceMode === 'designer' ? 'layers' : 'pages'
+  );
+
+  useEffect(() => {
+    setSidebarTab(workspaceMode === 'designer' ? 'layers' : 'pages');
+  }, [workspaceMode]);
   const [pagesViewMode, setPagesViewMode] = useState<'list' | 'spreads' | 'sheets'>('list');
   const [layerSearch, setLayerSearch] = useState('');
   const [layerFilter, setLayerFilter] = useState<'all' | 'text' | 'image' | 'shape' | 'groups'>('all');
