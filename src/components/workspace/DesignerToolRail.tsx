@@ -9,6 +9,11 @@ import { DesignerBrandPanel } from './DesignerBrandPanel';
 import { DesignerViewPanel } from './DesignerViewPanel';
 import { DesignerSettingsPanel } from './DesignerSettingsPanel';
 import { DesignerVisualsPanel } from './DesignerVisualsPanel';
+// The collage drawer carries the layout catalogue (~20 kB); load it on first open
+// rather than in the editor shell.
+const DesignerCollagePanel = React.lazy(() =>
+  import('./DesignerCollagePanel').then((m) => ({ default: m.DesignerCollagePanel }))
+);
 import {
   Wand2,
   Type,
@@ -38,6 +43,7 @@ type DesignerDrawerTab =
   | 'text'
   | 'media'
   | 'visuals'
+  | 'collage'
   | 'brand'
   | 'layers'
   | 'view'
@@ -67,7 +73,6 @@ export const DesignerToolRail: React.FC = () => {
     addImage,
     setIsWordArtModalOpen,
     setIsAIImageModalOpen,
-    setIsCollageModalOpen,
     setIsRightPanelOpen,
     setRightPanelTab,
     setIsLeftPanelOpen,
@@ -123,6 +128,7 @@ export const DesignerToolRail: React.FC = () => {
     { id: 'text', label: 'Text', icon: <Type size={18} /> },
     { id: 'media', label: 'My media', icon: <Upload size={18} /> },
     { id: 'visuals', label: 'Visuals', icon: <Shapes size={18} /> },
+    { id: 'collage', label: 'Collage', icon: <LayoutGrid size={18} /> },
     { id: 'brand', label: 'Brand', icon: <Palette size={18} /> },
     { id: 'layers', label: 'Layers', icon: <Layers size={18} /> },
     { id: 'view', label: 'View', icon: <Eye size={18} /> },
@@ -136,7 +142,10 @@ export const DesignerToolRail: React.FC = () => {
     }`;
 
   const drawerWidthClass =
-    activeDrawer === 'media' || activeDrawer === 'brand' || activeDrawer === 'visuals'
+    activeDrawer === 'media' ||
+    activeDrawer === 'brand' ||
+    activeDrawer === 'visuals' ||
+    activeDrawer === 'collage'
       ? 'w-[296px]'
       : 'w-[268px]';
 
@@ -149,6 +158,8 @@ export const DesignerToolRail: React.FC = () => {
       ? 'My media'
       : activeDrawer === 'visuals'
       ? 'Add visuals'
+      : activeDrawer === 'collage'
+      ? 'Collage'
       : activeDrawer === 'brand'
       ? 'Brand Studio'
       : activeDrawer === 'view'
@@ -225,6 +236,12 @@ export const DesignerToolRail: React.FC = () => {
                 <DesignerSettingsPanel />
               ) : activeDrawer === 'visuals' ? (
                 <DesignerVisualsPanel onOpenMyMedia={() => setActiveDrawer('media')} />
+              ) : activeDrawer === 'collage' ? (
+                <React.Suspense
+                  fallback={<div className="p-3 text-meta text-ink-muted">Loading collage…</div>}
+                >
+                  <DesignerCollagePanel />
+                </React.Suspense>
               ) : activeDrawer === 'media' ? (
                 <div className="flex flex-col flex-1 min-h-0">
                   {/* Compact Upload / AI / Collage Actions at Top of My Media */}
@@ -239,7 +256,7 @@ export const DesignerToolRail: React.FC = () => {
                         className="hidden"
                       />
                     </label>
-                    <div className="grid grid-cols-3 gap-1">
+                    <div className="grid grid-cols-2 gap-1">
                       <button
                         type="button"
                         onClick={() => addPicturePlaceholder()}
@@ -257,15 +274,6 @@ export const DesignerToolRail: React.FC = () => {
                       >
                         <Wand2 size={13} className="text-[#6e56cf]" />
                         <span>AI Image</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setIsCollageModalOpen(true)}
-                        className="flex flex-col items-center gap-0.5 py-1.5 px-1 rounded-[8px] border border-[#e5e9ee] bg-[#f8fafb] hover:bg-[#f4f2ff] text-[10px] font-medium text-[#4a5661] hover:text-[#5c4bb8] transition cursor-pointer"
-                        title="Photo Collage Builder"
-                      >
-                        <LayoutGrid size={13} className="text-[#6e56cf]" />
-                        <span>Collage</span>
                       </button>
                     </div>
                   </div>
