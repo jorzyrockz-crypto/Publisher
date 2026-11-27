@@ -60,7 +60,7 @@ export const CinematicSplashScreen: React.FC = () => {
       onClick={handleSkip}
       role="status"
       aria-label="Loading StudioPress"
-      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#f4f2ff] select-none cursor-pointer overflow-hidden transition-all duration-500 ease-out ${
+      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#f4f2ff] dark:bg-[#131720] select-none cursor-pointer overflow-hidden transition-all duration-500 ease-out ${
         exiting ? 'opacity-0 scale-[1.03] pointer-events-none' : 'opacity-100 scale-100'
       }`}
     >

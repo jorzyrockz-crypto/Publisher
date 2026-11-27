@@ -501,13 +501,14 @@ export const PageCanvas: React.FC<PageCanvasProps> = ({
       <div
         id={`print-page-${targetPage.id}`}
         ref={canvasRef}
-        className={`relative select-none print-page transition-shadow duration-150 ${
+        data-paper-canvas="true"
+        className={`relative select-none print-page bg-white transition-shadow duration-150 ${
           toolMode === 'pan' ? 'pointer-events-none' : ''
         } ${
           isEditingMaster
             ? 'ring-4 ring-amber-400/70'
             : isActivePage
-            ? 'ring-2 ring-indigo-500/70'
+            ? 'ring-2 ring-[#6e56cf]/70'
             : 'hover:ring-2 hover:ring-slate-300'
         }`}
         style={{

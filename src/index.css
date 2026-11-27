@@ -504,6 +504,10 @@
    Dark Mode Theme (Calm Slate & Studio Violet)
    Applies to app chrome while preserving true paper canvas colors.
    ============================================================================ */
+html.dark {
+  color-scheme: dark;
+}
+
 html.dark body {
   background-color: #11141b;
   color: #e6ebf2;
@@ -520,10 +524,11 @@ html.dark ::-webkit-scrollbar-thumb:hover {
   background: #455066;
 }
 
-/* Chrome surfaces */
-html.dark .bg-white:not([data-canvas-page-id] *):not(.paper-canvas),
-html.dark .bg-white\/95,
-html.dark .bg-white\/90 {
+/* Chrome surfaces (never touch paper canvas artwork) */
+html.dark .bg-white:not([data-paper-canvas="true"]):not([data-paper-canvas="true"] *):not([data-canvas-page-id] *),
+html.dark .bg-white\/95:not([data-paper-canvas="true"] *),
+html.dark .bg-white\/90:not([data-paper-canvas="true"] *),
+html.dark .bg-white\/80:not([data-paper-canvas="true"] *) {
   background-color: #1a1f2b !important;
 }
 
@@ -531,11 +536,23 @@ html.dark .bg-\[\#edf0f3\] {
   background-color: #131720 !important;
 }
 
-html.dark .bg-\[\#f8fafb\],
-html.dark .bg-\[\#f3f5f7\],
-html.dark .bg-slate-50,
-html.dark .bg-slate-100 {
+html.dark .bg-\[\#f8fafb\]:not([data-paper-canvas="true"] *),
+html.dark .bg-\[\#f3f5f7\]:not([data-paper-canvas="true"] *),
+html.dark .bg-slate-50:not([data-paper-canvas="true"] *),
+html.dark .bg-slate-50\/70:not([data-paper-canvas="true"] *),
+html.dark .bg-slate-50\/50:not([data-paper-canvas="true"] *),
+html.dark .bg-slate-100:not([data-paper-canvas="true"] *),
+html.dark .bg-slate-100\/80:not([data-paper-canvas="true"] *) {
   background-color: #222836 !important;
+}
+
+html.dark .bg-slate-200:not([data-paper-canvas="true"] *),
+html.dark .bg-slate-200\/70:not([data-paper-canvas="true"] *) {
+  background-color: #2a3142 !important;
+}
+
+html.dark .bg-slate-300:not([data-paper-canvas="true"] *) {
+  background-color: #3a4459 !important;
 }
 
 html.dark .bg-\[\#efeafd\],
@@ -543,52 +560,86 @@ html.dark .bg-\[\#f4f2ff\] {
   background-color: #2c2447 !important;
 }
 
+html.dark .bg-rose-50:not([data-paper-canvas="true"] *) {
+  background-color: rgba(225, 29, 72, 0.14) !important;
+}
+html.dark .bg-amber-50:not([data-paper-canvas="true"] *),
+html.dark .bg-amber-50\/50:not([data-paper-canvas="true"] *) {
+  background-color: rgba(217, 119, 6, 0.14) !important;
+}
+html.dark .bg-emerald-50:not([data-paper-canvas="true"] *) {
+  background-color: rgba(16, 185, 129, 0.14) !important;
+}
+
 html.dark .hover\:bg-\[\#f4f2ff\]:hover,
 html.dark .hover\:bg-\[\#efeafd\]:hover {
   background-color: #2c2447 !important;
 }
 
+html.dark .hover\:bg-slate-50:hover:not([data-paper-canvas="true"] *),
+html.dark .hover\:bg-slate-100:hover:not([data-paper-canvas="true"] *),
+html.dark .hover\:bg-white:hover:not([data-paper-canvas="true"] *),
+html.dark .hover\:bg-white\/60:hover:not([data-paper-canvas="true"] *) {
+  background-color: #2a3142 !important;
+}
+
 /* Hairline borders */
 html.dark .border-\[\#e5e9ee\],
 html.dark .border-slate-200,
-html.dark .border-slate-200\/80 {
+html.dark .border-slate-200\/90,
+html.dark .border-slate-200\/80,
+html.dark .border-slate-100 {
   border-color: #2a3140 !important;
+}
+
+html.dark .border-slate-300 {
+  border-color: #374155 !important;
 }
 
 html.dark .border-\[\#d3c9f9\] {
   border-color: #4f3e8c !important;
 }
 
-/* Text colors */
-html.dark .text-\[\#161a22\],
-html.dark .text-\[\#202833\],
-html.dark .text-slate-800,
-html.dark .text-slate-700 {
+/* Text colors (excluding paper canvas artwork) */
+html.dark .text-\[\#161a22\]:not([data-paper-canvas="true"] *),
+html.dark .text-\[\#202833\]:not([data-paper-canvas="true"] *),
+html.dark .text-slate-900:not([data-paper-canvas="true"] *),
+html.dark .text-slate-800:not([data-paper-canvas="true"] *),
+html.dark .text-slate-700:not([data-paper-canvas="true"] *) {
   color: #e6ebf2 !important;
 }
 
-html.dark .text-\[\#3d4854\],
-html.dark .text-\[\#4a5661\],
-html.dark .text-\[\#5b6673\],
-html.dark .text-slate-600 {
+html.dark .text-\[\#3d4854\]:not([data-paper-canvas="true"] *),
+html.dark .text-\[\#4a5661\]:not([data-paper-canvas="true"] *),
+html.dark .text-\[\#5b6673\]:not([data-paper-canvas="true"] *),
+html.dark .text-slate-600:not([data-paper-canvas="true"] *) {
   color: #a6b0bf !important;
 }
 
-html.dark .text-\[\#6a7682\],
-html.dark .text-\[\#8b94a0\],
-html.dark .text-slate-500,
-html.dark .text-slate-400 {
+html.dark .text-\[\#6a7682\]:not([data-paper-canvas="true"] *),
+html.dark .text-\[\#8b94a0\]:not([data-paper-canvas="true"] *),
+html.dark .text-slate-500:not([data-paper-canvas="true"] *),
+html.dark .text-slate-400:not([data-paper-canvas="true"] *) {
   color: #7d8899 !important;
 }
 
-html.dark .text-\[\#5c4bb8\],
-html.dark .text-\[\#6e56cf\] {
+html.dark .text-\[\#5c4bb8\]:not([data-paper-canvas="true"] *),
+html.dark .text-\[\#6e56cf\]:not([data-paper-canvas="true"] *) {
   color: #b7a4ff !important;
+}
+
+html.dark .text-amber-950 {
+  color: #fcd34d !important;
 }
 
 /* Inputs & selects in chrome */
 html.dark input:not([type='color']):not([type='range']),
 html.dark select,
 html.dark textarea {
+  color: #e6ebf2;
+}
+
+html.dark select option {
+  background-color: #1a1f2b;
   color: #e6ebf2;
 }
