@@ -8,17 +8,15 @@ import { COLOR_SCHEMES } from '../../constants/colorSchemes';
 import { PAGE_SIZES } from '../../constants/pageSizes';
 import { CompositionStyle } from '../../utils/designBlueprints';
 import {
-  Palette,
   Plus,
   Upload,
   Trash2,
   Sparkles,
   Wand2,
   ImagePlus,
-  Layers,
-  FileCheck,
-  LayoutGrid,
   Check,
+  Pencil,
+  ChevronUp,
 } from 'lucide-react';
 
 export const DesignerBrandPanel: React.FC = () => {
@@ -38,8 +36,10 @@ export const DesignerBrandPanel: React.FC = () => {
   } = usePublisher();
 
   const [subTab, setSubTab] = useState<'kit' | 'board' | 'schemes'>('kit');
-  const [draft, setDraft] = useState<BrandKit>(activeBrandKit);
+  const [applyScope, setApplyScope] = useState<'page' | 'all'>('page');
   const [stampLogo, setStampLogo] = useState(true);
+  const [editingKitId, setEditingKitId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<BrandKit>(activeBrandKit);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   const [layoutStyle, setLayoutStyle] = useState<CompositionStyle>('auto');
@@ -55,10 +55,16 @@ export const DesignerBrandPanel: React.FC = () => {
     setDraft(activeBrandKit);
   }, [activeBrandKit]);
 
+  const handleTapKitCard = (kit: BrandKit) => {
+    setDraft(kit);
+    saveBrandKit(kit);
+    applyBrandKit(kit, applyScope, { stampLogo });
+  };
+
   const handleCreateNew = () => {
     const fresh: BrandKit = {
       id: `kit-custom-${Date.now()}`,
-      name: `My Brand Kit ${brandKits.filter((k) => k.isCustom).length + 1}`,
+      name: `Custom Kit ${brandKits.filter((k) => k.isCustom).length + 1}`,
       headingFont: draft.headingFont || 'Montserrat',
       bodyFont: draft.bodyFont || 'Inter',
       isCustom: true,
@@ -67,6 +73,7 @@ export const DesignerBrandPanel: React.FC = () => {
     };
     saveBrandKit(fresh);
     setDraft(fresh);
+    setEditingKitId(fresh.id);
   };
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -117,7 +124,7 @@ export const DesignerBrandPanel: React.FC = () => {
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      {/* Inline Sub-Tabs (Kit | Multi-Size | Schemes) */}
+      {/* Inline Sub-Tabs (Brand Kit | Multi-Size | Schemes) */}
       <div className="px-3 pt-2.5 pb-2 border-b border-[#e5e9ee]">
         <div className="grid grid-cols-3 gap-1 bg-[#f3f5f7] p-0.5 rounded-[9px] border border-[#e5e9ee]">
           <button
@@ -157,197 +164,285 @@ export const DesignerBrandPanel: React.FC = () => {
       </div>
 
       {/* Body */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-3.5">
+      <div className="flex-1 overflow-y-auto p-3 space-y-3">
         {subTab === 'kit' && (
           <>
-            {/* Kit Selector + New/Delete */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold text-[#4a5661]">Active Brand Kit</span>
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={handleCreateNew}
-                    className="flex items-center gap-0.5 px-2 py-0.5 rounded-[6px] bg-[#efeafd] hover:bg-[#e4dbfc] text-[#5c4bb8] text-[10.5px] font-semibold cursor-pointer"
-                    title="Create New Brand Kit"
-                  >
-                    <Plus size={11} />
-                    <span>New</span>
-                  </button>
-                  {draft.isCustom && (
-                    <button
-                      type="button"
-                      onClick={() => deleteBrandKit(draft.id)}
-                      className="p-1 rounded-[6px] text-[#b42318] hover:bg-[#ffe4e7] cursor-pointer"
-                      title="Delete Custom Kit"
-                    >
-                      <Trash2 size={12} />
-                    </button>
-                  )}
-                </div>
+            {/* Top Bar: Tap-to-Apply Scope + New Kit */}
+            <div className="flex items-center justify-between gap-1.5">
+              <div className="flex items-center bg-[#f3f5f7] p-0.5 rounded-[7px] border border-[#e5e9ee] text-[10.5px]">
+                <button
+                  type="button"
+                  onClick={() => setApplyScope('page')}
+                  className={`px-2 py-0.5 rounded-[5px] font-semibold transition cursor-pointer ${
+                    applyScope === 'page'
+                      ? 'bg-white text-[#5c4bb8] shadow-2xs'
+                      : 'text-[#4a5661]'
+                  }`}
+                >
+                  This Page
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setApplyScope('all')}
+                  className={`px-2 py-0.5 rounded-[5px] font-semibold transition cursor-pointer ${
+                    applyScope === 'all'
+                      ? 'bg-white text-[#5c4bb8] shadow-2xs'
+                      : 'text-[#4a5661]'
+                  }`}
+                >
+                  All ({project.pages.length})
+                </button>
               </div>
 
-              <select
-                value={draft.id}
-                onChange={(e) => {
-                  const found = brandKits.find((k) => k.id === e.target.value);
-                  if (found) {
-                    setDraft(found);
-                    saveBrandKit(found);
-                  }
-                }}
-                className="w-full h-7 px-2 rounded-[8px] border border-[#e5e9ee] bg-[#f8fafb] text-[11px] font-medium text-[#161a22] outline-none cursor-pointer"
+              <button
+                type="button"
+                onClick={handleCreateNew}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-[7px] bg-[#efeafd] hover:bg-[#e4dbfc] text-[#5c4bb8] text-[10.5px] font-semibold transition cursor-pointer"
+                title="Create New Brand Kit"
               >
-                {brandKits.map((k) => (
-                  <option key={k.id} value={k.id}>
-                    {k.name}
-                  </option>
-                ))}
-              </select>
-
-              <input
-                type="text"
-                value={draft.name}
-                onChange={(e) => updateField({ name: e.target.value })}
-                placeholder="Brand Kit Name"
-                className="w-full h-7 px-2.5 rounded-[8px] border border-[#e5e9ee] bg-white text-[11px] text-[#161a22] outline-none focus:border-[#6e56cf]"
-              />
+                <Plus size={11} />
+                <span>New Kit</span>
+              </button>
             </div>
 
-            {/* Brand Logo */}
-            <div className="p-2.5 rounded-[10px] border border-[#e5e9ee] bg-[#f8fafb] space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold text-[#4a5661]">Brand Logo</span>
-                <input
-                  ref={logoInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleLogoUpload}
-                  className="hidden"
-                />
-                <button
-                  type="button"
-                  onClick={() => logoInputRef.current?.click()}
-                  className="flex items-center gap-1 px-2 py-0.5 rounded-[6px] border border-[#e5e9ee] bg-white hover:bg-[#f4f2ff] text-[10.5px] font-medium text-[#4a5661] hover:text-[#5c4bb8] cursor-pointer"
-                >
-                  <Upload size={11} />
-                  <span>{draft.logoSrc ? 'Replace' : 'Upload'}</span>
-                </button>
-              </div>
+            <p className="text-[10.5px] text-[#6a7682]">
+              Tap any card to apply its colors &amp; fonts immediately.
+            </p>
 
-              {draft.logoSrc ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-12 h-12 rounded-[8px] border border-[#e5e9ee] bg-white flex items-center justify-center p-1 overflow-hidden flex-shrink-0">
-                    <img
-                      src={draft.logoSrc}
-                      alt="Brand Logo"
-                      className="max-w-full max-h-full object-contain"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1 flex-1 min-w-0">
-                    <button
-                      type="button"
-                      onClick={handleAutoPickFromLogo}
-                      className="flex items-center justify-center gap-1 px-2 py-1 rounded-[7px] bg-[#efeafd] hover:bg-[#e4dbfc] text-[#5c4bb8] text-[10.5px] font-semibold cursor-pointer"
-                    >
-                      <Wand2 size={11} />
-                      <span>Extract Colors</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => addImage(draft.logoSrc!, { width: 120, height: 120 })}
-                      className="flex items-center justify-center gap-1 px-2 py-1 rounded-[7px] border border-[#e5e9ee] bg-white hover:bg-[#f4f2ff] text-[10.5px] font-medium text-[#4a5661] cursor-pointer"
-                    >
-                      <ImagePlus size={11} />
-                      <span>Stamp on Page</span>
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-[10.5px] text-[#6a7682]">
-                  Upload a logo to extract brand colors and stamp onto pages.
-                </p>
-              )}
-            </div>
-
-            {/* Brand Palette Swatches */}
-            <div className="space-y-1.5">
-              <span className="text-[11px] font-semibold text-[#4a5661]">Brand Palette</span>
-              <div className="grid grid-cols-5 gap-1.5 p-2 rounded-[10px] border border-[#e5e9ee] bg-[#f8fafb]">
-                {(
-                  [
-                    ['primary', 'Primary'],
-                    ['secondary', 'Second'],
-                    ['accent', 'Accent'],
-                    ['dark', 'Dark'],
-                    ['light', 'Light'],
-                  ] as const
-                ).map(([key, label]) => (
-                  <div key={key} className="flex flex-col items-center gap-1">
-                    <ColorInput
-                      value={draft.colors[key]}
-                      onChange={(e) => updateColor(key, e.target.value)}
-                      className="w-8 h-7 rounded-[6px] border border-[#e5e9ee]"
-                      title={label}
-                    />
-                    <span className="text-[9.5px] text-[#6a7682]">{label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Typography */}
+            {/* Single-Tap Brand Kit Cards */}
             <div className="space-y-2">
-              <span className="text-[11px] font-semibold text-[#4a5661]">Brand Typography</span>
-              <div className="space-y-1.5">
-                <div>
-                  <span className="text-[10px] text-[#6a7682] block mb-0.5">Heading Font</span>
-                  <FontSelector
-                    value={draft.headingFont}
-                    onChange={(font) => updateField({ headingFont: font })}
-                  />
-                </div>
-                <div>
-                  <span className="text-[10px] text-[#6a7682] block mb-0.5">Body Font</span>
-                  <FontSelector
-                    value={draft.bodyFont}
-                    onChange={(font) => updateField({ bodyFont: font })}
-                  />
-                </div>
-              </div>
-            </div>
+              {brandKits.map((kit) => {
+                const isActive = activeBrandKit.id === kit.id;
+                const isEditing = editingKitId === kit.id;
+                return (
+                  <div
+                    key={kit.id}
+                    className={`rounded-[12px] border transition-all overflow-hidden ${
+                      isActive
+                        ? 'border-[#6e56cf] bg-[#faf8ff] ring-1 ring-[#d3c9f9]'
+                        : 'border-[#e5e9ee] bg-white hover:border-[#b9acef] hover:bg-[#fcfbff]'
+                    }`}
+                  >
+                    {/* Single-Tap Card Surface */}
+                    <div
+                      onClick={() => handleTapKitCard(kit)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleTapKitCard(kit);
+                        }
+                      }}
+                      className="p-2.5 cursor-pointer space-y-2"
+                      title={`Tap to apply "${kit.name}"`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-semibold text-[#161a22] truncate">
+                              {kit.name}
+                            </span>
+                            {isActive && (
+                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-[#efeafd] text-[#5c4bb8] text-[9px] font-bold flex-shrink-0">
+                                <Check size={9} />
+                                Active
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-baseline gap-1.5 mt-0.5 truncate">
+                            <span
+                              style={{ fontFamily: kit.headingFont }}
+                              className="text-sm font-bold text-[#161a22]"
+                            >
+                              Aa
+                            </span>
+                            <span
+                              style={{ fontFamily: kit.bodyFont }}
+                              className="text-[10.5px] text-[#6a7682] truncate"
+                            >
+                              {kit.headingFont} · {kit.bodyFont}
+                            </span>
+                          </div>
+                        </div>
 
-            {/* Apply Brand Kit */}
-            <div className="pt-1 space-y-2 border-t border-[#e5e9ee]">
-              {draft.logoSrc && (
-                <label className="flex items-center gap-2 text-[11px] text-[#4a5661] cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={stampLogo}
-                    onChange={(e) => setStampLogo(e.target.checked)}
-                    className="rounded border-[#d8dee6] text-[#6e56cf]"
-                  />
-                  <span>Also stamp brand logo on apply</span>
-                </label>
-              )}
-              <div className="grid grid-cols-2 gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => applyBrandKit(draft, 'page', { stampLogo })}
-                  className="flex items-center justify-center gap-1 py-2 px-2 rounded-[8px] border border-[#d3c9f9] bg-[#f4f2ff] hover:bg-[#efeafd] text-[#5c4bb8] text-[11px] font-semibold transition cursor-pointer"
-                >
-                  <FileCheck size={12} />
-                  <span>Apply Page</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => applyBrandKit(draft, 'all', { stampLogo })}
-                  className="flex items-center justify-center gap-1 py-2 px-2 rounded-[8px] bg-[#6e56cf] hover:bg-[#5c4bb8] text-white text-[11px] font-semibold transition cursor-pointer"
-                >
-                  <Layers size={12} />
-                  <span>All ({project.pages.length})</span>
-                </button>
-              </div>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          {kit.logoSrc && (
+                            <img
+                              src={kit.logoSrc}
+                              alt=""
+                              className="w-7 h-7 rounded-[6px] object-contain border border-[#e5e9ee] bg-white p-0.5"
+                            />
+                          )}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDraft(kit);
+                              saveBrandKit(kit);
+                              setEditingKitId(isEditing ? null : kit.id);
+                            }}
+                            className={`p-1.5 rounded-[7px] transition cursor-pointer ${
+                              isEditing
+                                ? 'bg-[#efeafd] text-[#5c4bb8]'
+                                : 'text-[#6a7682] hover:text-[#5c4bb8] hover:bg-[#f4f2ff]'
+                            }`}
+                            title={isEditing ? 'Close Editor' : 'Customize Kit'}
+                            aria-label={isEditing ? 'Close Editor' : 'Customize Kit'}
+                          >
+                            {isEditing ? <ChevronUp size={13} /> : <Pencil size={12} />}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* 5-Swatch Color Bar */}
+                      <div className="grid grid-cols-5 gap-1 h-4 rounded-[6px] overflow-hidden border border-black/5">
+                        {[
+                          kit.colors.primary,
+                          kit.colors.secondary,
+                          kit.colors.accent,
+                          kit.colors.dark,
+                          kit.colors.light,
+                        ].map((hex, i) => (
+                          <div
+                            key={i}
+                            style={{ backgroundColor: hex }}
+                            title={hex}
+                            className="h-full w-full"
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Inline Expandable Customize Drawer for this Card */}
+                    {isEditing && (
+                      <div
+                        className="px-2.5 pb-2.5 pt-2 border-t border-[#e5e9ee] bg-[#f8fafb] space-y-2.5"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="text"
+                            value={draft.name}
+                            onChange={(e) => updateField({ name: e.target.value })}
+                            placeholder="Brand Kit Name"
+                            className="flex-1 min-w-0 h-7 px-2 rounded-[7px] border border-[#e5e9ee] bg-white text-[11px] text-[#161a22] outline-none focus:border-[#6e56cf]"
+                          />
+                          {draft.isCustom && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                deleteBrandKit(draft.id);
+                                setEditingKitId(null);
+                              }}
+                              className="p-1.5 rounded-[7px] text-[#b42318] hover:bg-[#ffe4e7] cursor-pointer"
+                              title="Delete Kit"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Swatches */}
+                        <div className="grid grid-cols-5 gap-1">
+                          {(
+                            [
+                              ['primary', 'Pri'],
+                              ['secondary', 'Sec'],
+                              ['accent', 'Acc'],
+                              ['dark', 'Drk'],
+                              ['light', 'Lgt'],
+                            ] as const
+                          ).map(([key, label]) => (
+                            <div key={key} className="flex flex-col items-center gap-0.5">
+                              <ColorInput
+                                value={draft.colors[key]}
+                                onChange={(e) => updateColor(key, e.target.value)}
+                                className="w-8 h-6 rounded-[5px] border border-[#e5e9ee]"
+                                title={label}
+                              />
+                              <span className="text-[9px] text-[#6a7682]">{label}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Fonts */}
+                        <div className="grid grid-cols-2 gap-1.5">
+                          <div>
+                            <span className="text-[9.5px] text-[#6a7682] block mb-0.5">
+                              Heading
+                            </span>
+                            <FontSelector
+                              value={draft.headingFont}
+                              onChange={(font) => updateField({ headingFont: font })}
+                            />
+                          </div>
+                          <div>
+                            <span className="text-[9.5px] text-[#6a7682] block mb-0.5">
+                              Body
+                            </span>
+                            <FontSelector
+                              value={draft.bodyFont}
+                              onChange={(font) => updateField({ bodyFont: font })}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Logo */}
+                        <div className="flex items-center justify-between gap-1.5 pt-0.5">
+                          <input
+                            ref={logoInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleLogoUpload}
+                            className="hidden"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => logoInputRef.current?.click()}
+                            className="flex-1 flex items-center justify-center gap-1 py-1 px-2 rounded-[7px] border border-[#e5e9ee] bg-white hover:bg-[#f4f2ff] text-[10.5px] font-medium text-[#4a5661] hover:text-[#5c4bb8] cursor-pointer"
+                          >
+                            <Upload size={11} />
+                            <span>{draft.logoSrc ? 'Replace Logo' : 'Upload Logo'}</span>
+                          </button>
+                          {draft.logoSrc && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={handleAutoPickFromLogo}
+                                className="p-1.5 rounded-[7px] bg-[#efeafd] text-[#5c4bb8] hover:bg-[#e4dbfc] cursor-pointer"
+                                title="Extract Colors from Logo"
+                              >
+                                <Wand2 size={12} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => addImage(draft.logoSrc!, { width: 120, height: 120 })}
+                                className="p-1.5 rounded-[7px] border border-[#e5e9ee] bg-white text-[#4a5661] hover:text-[#5c4bb8] cursor-pointer"
+                                title="Stamp Logo on Page"
+                              >
+                                <ImagePlus size={12} />
+                              </button>
+                            </>
+                          )}
+                        </div>
+
+                        {draft.logoSrc && (
+                          <label className="flex items-center gap-1.5 text-[10.5px] text-[#4a5661] cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={stampLogo}
+                              onChange={(e) => setStampLogo(e.target.checked)}
+                              className="rounded border-[#d8dee6] text-[#6e56cf]"
+                            />
+                            <span>Stamp logo when tapping card</span>
+                          </label>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </>
         )}
@@ -441,13 +536,13 @@ export const DesignerBrandPanel: React.FC = () => {
 
         {subTab === 'schemes' && (
           <div className="space-y-1.5">
-            <span className="text-[11px] font-semibold text-[#4a5661]">Document Color Schemes</span>
+            <span className="text-[11px] font-semibold text-[#4a5661]">Tap a Scheme to Apply</span>
             {COLOR_SCHEMES.map((scheme) => (
               <button
                 key={scheme.id}
                 type="button"
                 onClick={() => setColorScheme(scheme.id)}
-                className="w-full flex items-center justify-between px-2.5 py-2 rounded-[8px] border border-[#e5e9ee] hover:bg-[#f4f2ff] transition cursor-pointer"
+                className="w-full flex items-center justify-between px-2.5 py-2 rounded-[10px] border border-[#e5e9ee] bg-white hover:border-[#6e56cf] hover:bg-[#f4f2ff] transition cursor-pointer"
               >
                 <span className="text-[11px] font-medium text-[#161a22] truncate">
                   {scheme.name}
