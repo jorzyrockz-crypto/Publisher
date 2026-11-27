@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
 import { SelectionToolbar } from './SelectionToolbar';
+import { DesignerContextBar } from '../workspace/DesignerContextBar';
 import { PageCanvas } from './PageCanvas';
 import { HorizontalRuler, VerticalRuler } from './Ruler';
 import {
@@ -22,6 +23,7 @@ import {
 export const CanvasArea: React.FC = () => {
   const {
     project,
+    workspaceMode,
     activePage,
     isEditingMaster,
     setIsEditingMaster,
@@ -684,8 +686,15 @@ export const CanvasArea: React.FC = () => {
         </div>
       </div>
 
-      {/* Contextual object toolbar (align / z-order / duplicate / lock / delete) */}
-      <SelectionToolbar />
+      {/* Designer Mode: Floating Centered Contextual Pill Toolbar */}
+      {workspaceMode === 'designer' && (
+        <div className="pointer-events-none absolute top-3 left-0 right-0 flex justify-center px-4 z-30">
+          <DesignerContextBar />
+        </div>
+      )}
+
+      {/* Contextual object toolbar (align / z-order / duplicate / lock / delete) in Publisher mode */}
+      {workspaceMode !== 'designer' && <SelectionToolbar />}
     </div>
   );
 };
