@@ -9,7 +9,7 @@ An authentic, modern, desktop-grade clone of **Microsoft Publisher** built with 
 ## 🌟 Key Features
 
 ### 1. Authentic Office Ribbon Interface
-- **Publisher Green Branding**: Classic Microsoft Publisher `#0f6b4e` signature visual theme.
+- **Publisher-style chrome**: the ribbon, Quick Access Toolbar and Backstage view follow Microsoft Publisher's layout, while the accent palette is StudioPress "Iris" violet (see §6) rather than Publisher green.
 - **Quick Access Toolbar**: Instant Save (.pub), Undo/Redo, Export to PDF, and Print buttons.
 - **Ribbon Tabs**:
   - **FILE**: Fullscreen Backstage View (New, Open, Save As, Export, Print, Info).
@@ -47,7 +47,16 @@ An authentic, modern, desktop-grade clone of **Microsoft Publisher** built with 
   - Publisher "BorderArt" decorative borders.
 - **Interactive Tables**:
   - Editable cell contents, custom header and cell background colors, and border widths.
-- **Stock Art Sources**: nine live sources (ten with a Pexels key) — built-in graphics, Iconify (200k+ icons), Wikimedia Commons, **Openverse** (keyless CC imagery that works on static hosts), the optional Clipart.Free key **Pixabay** stock photos (server-side `api/pixabay.js` relay with type/orientation filters, paging and photographer credits) **Unsplash** (hotlinked photos with UTM-tagged attribution and the required download-event tracking) **public-domain museum art** from the Art Institute of Chicago and the Cleveland Museum of Art — keyless, CC0, and the best source for engravings, ornaments and botanical plates — plus **Pexels** (fully implemented behind a server-side relay, but self-hiding: Pexels paused new key issuance in late 2026, so the tab only appears when a deployment already holds `PEXELS_API_KEY`).
+- **Stock Art Sources**: nine live sources (ten with a Pexels key), searched together:
+  - **Built-in graphics**, **Iconify** (200k+ icons) and **Wikimedia Commons** — no key.
+  - **Openverse** — keyless CC imagery that works on static hosts.
+  - **Clipart.Free** — optional key, with a CORS proxy.
+  - **Pixabay** — server-side `api/pixabay.js` relay with type/orientation filters, paging and photographer credits.
+  - **Unsplash** — hotlinked photos with UTM-tagged attribution and the required download-event tracking.
+  - **Public-domain museum art** — Art Institute of Chicago and the Cleveland Museum of Art via `api/openaccess.js`; keyless, CC0, and the best source for engravings, ornaments and botanical plates.
+  - **Openclipart** — 100k+ CC0 SVGs via `api/openclipart.js`; the only true-vector source, so a drawing stays crisp at poster size.
+  - **Pexels** — fully implemented behind `api/pexels.js`, but **self-hiding**: Pexels paused new key issuance in late 2026, so the tab appears only when a deployment already holds `PEXELS_API_KEY`.
+- **Search that respects the network**: results are fetched on intent (Enter or a ~700 ms pause, never on a single character) and each query is cached for five minutes, so retyping is instant.
 - **Building Blocks**:
   - Tear-off Coupons with dashed scissor lines.
   - Pull Quotes with large quotation marks.
@@ -72,6 +81,10 @@ An authentic, modern, desktop-grade clone of **Microsoft Publisher** built with 
 
 ### 6. UI Shell & Design System
 - **"Iris" accent palette**: a Radix-Violet design token set (`#6e56cf`) defined in `src/index.css` — deliberately distinct from Microsoft Publisher's green, with an ink ramp that meets WCAG AA (≥4.5:1) at 10–11px label sizes.
+- **Tokens actually bound**: the same `--sp-*` set is exposed to Tailwind through an `@theme inline` block, so components write `text-accent-ink`, `bg-surface` and `border-line` instead of re-deriving hexes — one accent family, a four-step integer type scale (10/11/12/13 px), two radii and one elevation shadow. Changing the accent is one line in `src/index.css`.
+- **Light and dark**: dark mode redefines those same tokens under `html.dark`, so every token-based surface, border and text adapts in one place while the paper canvas keeps its true print colours. The switcher lives in the Quick Access Toolbar.
+- **Designer workspace**: a switchable Microsoft-Designer-style mode — labelled left rail, single drawer, floating contextual pill and touch-friendly panels — alongside the classic ribbon.
+- **Installable**: PWA manifest and service worker (`public/manifest.webmanifest`, `public/sw.js`) with a splash screen, so it installs like a desktop app.
 - **Compact chrome**: 46px quick-access bar, ribbon that folds itself on <820px-tall laptops (`Ctrl+F1`, chevron, or click the active tab), and a triaged status bar that drops non-essential metadata on narrow viewports.
 - **Contextual selection toolbar**: align / distribute / z-order / group / duplicate / lock / delete float at the bottom of the canvas, so common object work never requires the inspector.
 - **Collapsible inspector**: every inspector section is a fold-out card with a clickable header, and the sticky header shows the current selection type.
@@ -92,7 +105,7 @@ Logic lives in `src/utils/documentPalette.ts`; the UI is `src/components/common/
 - **Auto-fit on load**: the artboard measures the real viewport on first paint and zooms to frame Page 1 exactly — no clipped pages on 1280×800 laptops.
 - **IndexedDB document storage**: projects save to IndexedDB, which (unlike `localStorage`'s ~5 MB) comfortably holds photo-heavy documents — a 1280px stock photo is ~550 KB as a data URL. `localStorage` keeps only a small mirror for instant boot, whichever copy has the newer timestamp wins, and `navigator.storage.persist()` asks the browser not to evict it. The status bar reports the backend and document size. Logic lives in `src/utils/workspaceStorage.ts`.
 - **AI Type Studio (free, keyless)**: the WordArt gallery can write the headline and pick the treatment for you. A free text model suggests 3–4 display phrases with a matching one of the 20 WordArt styles, tuned by mood (elegant / bold / playful) and by whether the page is dark. Ideas land as **real editable text**, not a flattened image, so they stay sharp in PNG/PDF export and can be restyled afterwards. The model is reached through `api/ai.js`; when it is busy or unreachable the panel falls back to local suggestions and says so. Logic lives in `src/utils/aiTypeStudio.ts`.
-- **Works on GitHub Pages and Vercel**: Cloud AI (Pollinations), Iconify, Wikimedia and Openverse are called directly from production builds (all CORS-enabled); Clipart.Free can use an optional CORS proxy and Pixabay needs the bundled Vercel function. See [docs/static-hosting.md](docs/static-hosting.md) and [`workers/clipart-proxy.js`](workers/clipart-proxy.js).
+- **Works on GitHub Pages and Vercel**: Cloud AI (Pollinations), Iconify, Wikimedia and Openverse are called directly from production builds (all CORS-enabled); Clipart.Free can use an optional CORS proxy, and Pixabay, museum art and Openclipart each need their bundled Vercel function (`api/pixabay.js`, `api/openaccess.js`, `api/openclipart.js`). See [docs/static-hosting.md](docs/static-hosting.md) and [`workers/clipart-proxy.js`](workers/clipart-proxy.js).
 - **Vercel**: the `studiopress` project builds fine (`npm run build` → `dist/`), but push-to-deploy is disabled and Deployment Protection gates non-production URLs behind a Vercel login — see the [Vercel checklist](docs/static-hosting.md#vercel-checklist-project-studiopress) before assuming the deployment is broken.
 
 ---
