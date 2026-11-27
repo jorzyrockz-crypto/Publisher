@@ -1,4 +1,4 @@
-const CACHE_NAME = 'studiopress-pwa-v1';
+const CACHE_NAME = 'studiopress-pwa-v2';
 const APP_SHELL = [
   './',
   './index.html',

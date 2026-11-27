@@ -395,3 +395,85 @@ export function formatBytes(bytes: number): string {
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
+
+/**
+ * Clears persisted workspace documents (IndexedDB + localStorage mirror/legacy keys)
+ * and optionally unregisters Service Workers + Cache Storage so a stuck or
+ * corrupted session can recover cleanly.
+ */
+export async function clearWorkspaceStorage(options?: { resetCaches?: boolean }): Promise<void> {
+  lastSavedContent = null;
+  lastSaveInfo = null;
+
+  try {
+    localStorage.removeItem(STORAGE_MARKER_KEY);
+    localStorage.removeItem(MIRROR_KEY);
+    localStorage.removeItem(LEGACY_AUTOSAVE_KEY);
+    localStorage.removeItem(LEGACY_TABS_KEY);
+  } catch {
+    // ignore storage errors
+  }
+
+  if (dbPromise) {
+    try {
+      const db = await Promise.race([
+        dbPromise,
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 300)),
+      ]);
+      db?.close();
+    } catch {
+      // ignore
+    }
+    dbPromise = null;
+  }
+
+  if (isIndexedDbAvailable()) {
+    await new Promise<void>((resolve) => {
+      let settled = false;
+      const done = () => {
+        if (!settled) {
+          settled = true;
+          resolve();
+        }
+      };
+      const timer = setTimeout(done, 800);
+      try {
+        const req = indexedDB.deleteDatabase(DB_NAME);
+        req.onsuccess = () => {
+          clearTimeout(timer);
+          done();
+        };
+        req.onerror = () => {
+          clearTimeout(timer);
+          done();
+        };
+        req.onblocked = () => {
+          clearTimeout(timer);
+          done();
+        };
+      } catch {
+        clearTimeout(timer);
+        done();
+      }
+    });
+  }
+
+  if (options?.resetCaches !== false) {
+    try {
+      if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister().catch(() => false)));
+      }
+    } catch {
+      // ignore
+    }
+    try {
+      if (typeof caches !== 'undefined') {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k).catch(() => false)));
+      }
+    } catch {
+      // ignore
+    }
+  }
+}

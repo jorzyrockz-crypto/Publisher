@@ -8,6 +8,7 @@ import {
   getPollinationsKey,
   savePollinationsKey,
 } from '../../utils/apiEndpoints';
+import { clearWorkspaceStorage } from '../../utils/workspaceStorage';
 import {
   Sun,
   Moon,
@@ -18,6 +19,7 @@ import {
   RotateCcw,
   Sparkles,
   Check,
+  Trash2,
 } from 'lucide-react';
 
 export const SettingsTab: React.FC = () => {
@@ -258,6 +260,25 @@ export const SettingsTab: React.FC = () => {
           >
             <Sparkles size={12} className="text-[#6e56cf]" />
             <span>Replay Intro</span>
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              if (
+                !window.confirm(
+                  'Reset StudioPress workspace and clear cached browser storage? Unsaved documents in this browser will be removed.'
+                )
+              ) {
+                return;
+              }
+              await clearWorkspaceStorage({ resetCaches: true });
+              window.location.reload();
+            }}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-[8px] border border-[#f2cfd3] bg-[#fff5f6] hover:bg-[#ffe4e7] text-[#b42318] text-[11px] font-medium transition cursor-pointer"
+            title="Clear saved browser documents & PWA cache and start fresh"
+          >
+            <Trash2 size={12} />
+            <span>Reset App</span>
           </button>
           {savedNotice && (
             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-[8px] bg-[#efeafd] text-[#5c4bb8] text-[10.5px] font-semibold">

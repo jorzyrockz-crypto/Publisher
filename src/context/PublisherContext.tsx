@@ -25,6 +25,7 @@ import { mergeShapeGeometry } from '../utils/shapeBoolean';
 import { pageRingsToLocal, ringsToPath, shapeOutlineRings } from '../utils/shapeClip';
 import { TEMPLATES } from '../constants/templates';
 import {
+  clearWorkspaceStorage,
   flushMirrorSync,
   readBootCache,
   readStoredWorkspace,
@@ -295,6 +296,18 @@ function defaultWorkspace(): WorkspaceTab[] {
  */
 function loadInitialWorkspace(): BootWorkspace {
   try {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('reset') === '1' || params.get('fresh') === '1') {
+        void clearWorkspaceStorage({ resetCaches: true });
+        params.delete('reset');
+        params.delete('fresh');
+        const nextSearch = params.toString();
+        const cleanUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ''}${window.location.hash}`;
+        window.history.replaceState({}, '', cleanUrl);
+        return { tabs: defaultWorkspace(), activeTabId: 'tab-initial', expectIndexedDb: false, savedAt: 0 };
+      }
+    }
     const cached = readBootCache();
     if (cached.workspace && cached.workspace.tabs.length > 0) {
       const tabs = cached.workspace.tabs.filter(
@@ -324,16 +337,55 @@ function loadInitialWorkspace(): BootWorkspace {
 /**
  * Shown while the authoritative document is read out of IndexedDB. Without it
  * the editor would flash the default template and could export the wrong page.
+ * Includes an escape hatch to wipe stuck/corrupted browser storage and start fresh.
  */
-const WorkspaceRestoreSplash: React.FC = () => (
-  <div className="h-screen w-screen flex items-center justify-center bg-[#f4f6f8]">
-    <div className="flex flex-col items-center gap-3">
-      <div className="w-8 h-8 rounded-full border-2 border-[#d3c9f9] border-t-[#6e56cf] animate-spin" />
-      <p className="text-xs font-semibold text-[#161a22]">Restoring your document…</p>
-      <p className="text-[11px] text-[#6a7682]">Large images load from browser storage</p>
+const WorkspaceRestoreSplash: React.FC<{ onReset: () => Promise<void> | void }> = ({ onReset }) => {
+  const [resetting, setResetting] = useState(false);
+  const isDark =
+    typeof window !== 'undefined' &&
+    (document.documentElement.classList.contains('dark') ||
+      localStorage.getItem('studiopress_theme') === 'dark');
+
+  const handleReset = async () => {
+    if (resetting) return;
+    setResetting(true);
+    try {
+      await onReset();
+    } finally {
+      setResetting(false);
+    }
+  };
+
+  return (
+    <div
+      className={`h-screen w-screen flex items-center justify-center px-4 ${
+        isDark ? 'bg-[#12151c] text-[#f0f3f8]' : 'bg-[#f4f6f8] text-[#161a22]'
+      }`}
+    >
+      <div className="flex flex-col items-center gap-3 text-center max-w-xs">
+        <div className="w-8 h-8 rounded-full border-2 border-[#d3c9f9] border-t-[#6e56cf] animate-spin" />
+        <p className="text-xs font-semibold">
+          {resetting ? 'Resetting workspace…' : 'Restoring your document…'}
+        </p>
+        <p className={`text-[11px] ${isDark ? 'text-[#9aa5b1]' : 'text-[#6a7682]'}`}>
+          Large images load from browser storage
+        </p>
+        <button
+          type="button"
+          onClick={handleReset}
+          disabled={resetting}
+          className={`mt-2 px-3.5 py-1.5 rounded-[8px] border text-[11px] font-semibold transition cursor-pointer disabled:opacity-50 ${
+            isDark
+              ? 'border-[#2f3644] bg-[#1c212b] hover:bg-[#272e3b] text-[#e2e8f0]'
+              : 'border-[#d8dee6] bg-white hover:bg-[#f4f2ff] hover:border-[#d3c9f9] text-[#4a5661] hover:text-[#5c4bb8]'
+          }`}
+        >
+          {resetting ? 'Clearing storage…' : 'Reset App & Start Fresh'}
+        </button>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const initialWorkspaceRef = useRef<BootWorkspace | null>(null);
@@ -2701,10 +2753,23 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setPan({ x: 0, y: 0 });
   }, [activePage]);
 
+  const handleResetWorkspace = useCallback(async () => {
+    restoreAbandonedRef.current = true;
+    await clearWorkspaceStorage({ resetCaches: true });
+    const freshTabs = defaultWorkspace();
+    tabHistoriesRef.current = {};
+    setWorkspaceTabs(freshTabs);
+    setActiveTabId(freshTabs[0].id);
+    setProjectState(freshTabs[0].project);
+    setHistoryPast([]);
+    setHistoryFuture([]);
+    setIsRestoring(false);
+  }, []);
+
   // Hold the editor back until the real document is in memory, so nobody sees
   // (or exports) the default template while IndexedDB is still answering.
   if (isRestoring) {
-    return <WorkspaceRestoreSplash />;
+    return <WorkspaceRestoreSplash onReset={handleResetWorkspace} />;
   }
 
   return (
