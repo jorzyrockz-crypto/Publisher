@@ -136,7 +136,7 @@ function FilterChipRow<T extends string>({
 }) {
   return (
     <div className="flex items-center gap-1 flex-wrap">
-      <span className="text-[9px] font-bold uppercase tracking-[0.08em] text-[#6a7682] mr-0.5">
+      <span className="text-2xs font-bold uppercase tracking-[0.08em] text-ink-placeholder mr-0.5">
         {label}
       </span>
       {options.map((opt) => (
@@ -144,10 +144,10 @@ function FilterChipRow<T extends string>({
           key={opt.id}
           type="button"
           onClick={() => onChange(opt.id)}
-          className={`px-1.5 py-0.5 rounded-[6px] text-[10px] font-semibold transition cursor-pointer ${
+          className={`px-1.5 py-0.5 rounded-chip text-2xs font-semibold transition cursor-pointer ${
             value === opt.id
-              ? 'bg-[#efeafd] text-[#5c4bb8]'
-              : 'bg-[#f3f5f7] text-[#4a5661] hover:bg-[#f4f2ff] hover:text-[#5c4bb8]'
+              ? 'bg-accent-soft text-accent-ink'
+              : 'bg-surface-sunken text-ink-secondary hover:bg-accent-soft-hover hover:text-accent-ink'
           }`}
         >
           {opt.label}
@@ -181,7 +181,7 @@ function ResultPaging({
           type="button"
           disabled={loading}
           onClick={onMore}
-          className="w-full py-1 rounded-[8px] border border-[#d3c9f9] bg-white hover:bg-[#f4f2ff] text-[#5c4bb8] text-[10px] font-bold transition cursor-pointer disabled:opacity-60 flex items-center justify-center gap-1"
+          className="w-full py-1 rounded-tile border border-accent-line bg-white hover:bg-accent-soft-hover text-accent-ink text-2xs font-bold transition cursor-pointer disabled:opacity-60 flex items-center justify-center gap-1"
         >
           {loading ? (
             <>
@@ -192,7 +192,7 @@ function ResultPaging({
           )}
         </button>
       )}
-      <p className="text-[9.5px] leading-snug text-[#6a7682] text-center">{credit}</p>
+      <p className="text-2xs leading-snug text-ink-placeholder text-center">{credit}</p>
     </div>
   );
 }
@@ -1107,7 +1107,7 @@ export const StockArtPanel: React.FC = () => {
   return (
     <aside
       style={{ width: panelWidth }}
-      className={`bg-white border-l border-[#e5e9ee] flex flex-col h-full flex-shrink-0 select-none text-[#161a22] ${
+      className={`bg-white border-l border-line flex flex-col h-full flex-shrink-0 select-none text-ink ${
         isNarrowViewport ? 'absolute right-0 top-0 bottom-0 z-30 shadow-[0_8px_28px_rgba(28,44,58,0.12)]' : 'relative z-20'
       } ${isResizing ? '' : 'transition-[width] duration-150'}`}
     >
@@ -1117,20 +1117,20 @@ export const StockArtPanel: React.FC = () => {
         onDoubleClick={resetWidth}
         title="Drag to resize • Double-click to reset"
         className={`absolute top-0 left-0 bottom-0 w-1.5 cursor-col-resize z-30 transition-colors ${
-          isResizing ? 'bg-[#6e56cf]' : 'hover:bg-[#6e56cf]/50'
+          isResizing ? 'bg-accent' : 'hover:bg-accent/50'
         }`}
       />
       {/* Inspector-style Header */}
-      <div className="px-3.5 py-2.5 border-b border-[#e5e9ee] bg-white flex items-center justify-between">
+      <div className="px-4 py-3 border-b border-line bg-surface flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-[8px] bg-[#efeafd] text-[#5c4bb8] flex items-center justify-center">
+          <div className="w-7 h-7 rounded-tile bg-accent-soft text-accent-ink flex items-center justify-center">
             <Images size={14} />
           </div>
           <div>
-            <h3 className="text-xs font-semibold text-[#161a22] leading-tight">
+            <h3 className="text-lead font-semibold text-ink leading-tight">
               Stock Art & Clipart
             </h3>
-            <p className="text-[10px] text-[#5b6673] leading-tight">
+            <p className="text-2xs text-ink-muted leading-tight">
               Unified search across {pexelsConfigured === true ? 10 : 9} sources
             </p>
           </div>
@@ -1140,10 +1140,10 @@ export const StockArtPanel: React.FC = () => {
             type="button"
             onClick={() => setShowKeyBar(!showKeyBar)}
             title="Clipart.Free API Key Settings"
-            className={`p-1.5 rounded-[8px] border transition cursor-pointer ${
+            className={`p-1.5 rounded-tile border transition cursor-pointer ${
               showKeyBar
-                ? 'bg-[#efeafd] border-[#d3c9f9] text-[#5c4bb8]'
-                : 'border-transparent text-[#5b6673] hover:text-[#5c4bb8] hover:bg-[#f4f2ff]'
+                ? 'bg-accent-soft border-accent-line text-accent-ink'
+                : 'border-transparent text-ink-muted hover:text-accent-ink hover:bg-accent-soft-hover'
             }`}
           >
             <KeyRound size={13} />
@@ -1152,7 +1152,7 @@ export const StockArtPanel: React.FC = () => {
             type="button"
             onClick={() => setIsStockArtPanelOpen(false)}
             title="Close Stock Art Panel"
-            className="p-1.5 rounded-[8px] text-[#5b6673] hover:text-[#161a22] hover:bg-[#f4f2ff] transition cursor-pointer"
+            className="p-1.5 rounded-tile text-ink-muted hover:text-ink hover:bg-accent-soft-hover transition cursor-pointer"
           >
             <X size={14} />
           </button>
@@ -1160,10 +1160,10 @@ export const StockArtPanel: React.FC = () => {
       </div>
 
       {/* Search & Filters */}
-      <div className="p-3 border-b border-[#e5e9ee] space-y-2.5 bg-white">
+      <div className="p-3 border-b border-line space-y-2.5 bg-white">
         {showKeyBar && (
-          <div className="p-2 rounded-[8px] bg-[#f8fafb] border border-[#e5e9ee] space-y-1.5">
-            <label className="block text-[10px] font-bold uppercase tracking-[0.09em] text-[#6a7682]">
+          <div className="p-2 rounded-tile bg-surface-sunken border border-line space-y-1.5">
+            <label className="block text-2xs font-bold uppercase tracking-[0.09em] text-ink-placeholder">
               Clipart.Free API Key (cf_...)
             </label>
             <div className="flex items-center gap-1.5">
@@ -1175,18 +1175,18 @@ export const StockArtPanel: React.FC = () => {
                   saveClipartFreeKey(e.target.value);
                 }}
                 placeholder="cf_..."
-                className="flex-1 bg-white px-2 py-1 rounded-[8px] border border-[#e5e9ee] text-[11px] outline-none focus:border-[#b3a4f2]"
+                className="flex-1 bg-white px-2 py-1 rounded-tile border border-line text-meta outline-none focus:border-accent-focus"
               />
               <button
                 type="button"
                 onClick={() => setShowKeyBar(false)}
-                className="px-2.5 py-1 rounded-[8px] bg-[#6e56cf] hover:bg-[#5c4bb8] text-white text-[10px] font-semibold cursor-pointer"
+                className="px-2.5 py-1 rounded-tile bg-accent hover:bg-accent-hover text-white text-2xs font-semibold cursor-pointer"
               >
                 Done
               </button>
             </div>
 
-            <label className="block pt-0.5 text-[10px] font-bold uppercase tracking-[0.09em] text-[#6a7682]">
+            <label className="block pt-0.5 text-2xs font-bold uppercase tracking-[0.09em] text-ink-placeholder">
               CORS Proxy (static hosting)
             </label>
             <input
@@ -1197,9 +1197,9 @@ export const StockArtPanel: React.FC = () => {
                 saveClipartProxyBase(e.target.value);
               }}
               placeholder="https://your-worker.workers.dev"
-              className="w-full bg-white px-2 py-1 rounded-[8px] border border-[#e5e9ee] text-[11px] outline-none focus:border-[#b3a4f2]"
+              className="w-full bg-white px-2 py-1 rounded-tile border border-line text-meta outline-none focus:border-accent-focus"
             />
-            <p className="text-[9.5px] leading-snug text-[#6a7682]">
+            <p className="text-2xs leading-snug text-ink-placeholder">
               Optional. Iconify &amp; Wikimedia work without a proxy; Clipart.Free needs one on static hosts (or when
               the app&apos;s host has no outbound internet).
             </p>
@@ -1216,14 +1216,14 @@ export const StockArtPanel: React.FC = () => {
                   setIsTestingCf(false);
                 }
               }}
-              className="w-full py-1 rounded-[8px] border border-[#d3c9f9] bg-[#efeafd] hover:bg-[#f4f2ff] text-[#5c4bb8] text-[10px] font-bold transition cursor-pointer disabled:opacity-60"
+              className="w-full py-1 rounded-tile border border-accent-line bg-accent-soft hover:bg-accent-soft-hover text-accent-ink text-2xs font-bold transition cursor-pointer disabled:opacity-60"
             >
               {isTestingCf ? 'Testing connection…' : 'Test Clipart.Free connection'}
             </button>
 
             {cfTest && (
               <p
-                className={`text-[9.5px] leading-snug rounded-[6px] px-1.5 py-1 border ${
+                className={`text-2xs leading-snug rounded-chip px-1.5 py-1 border ${
                   cfTest.ok
                     ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
                     : 'bg-amber-50 border-amber-200 text-amber-900'
@@ -1246,20 +1246,20 @@ export const StockArtPanel: React.FC = () => {
           <div className="relative flex-1">
             <Search
               size={13}
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#6a7682] pointer-events-none"
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-placeholder pointer-events-none"
             />
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search cliparts, icons, photos..."
-              className="w-full pl-8 pr-2.5 py-1.5 rounded-[8px] border border-[#e5e9ee] bg-[#f8fafb] focus:bg-white text-xs text-[#161a22] placeholder-[#6a7682] outline-none focus:border-[#b3a4f2] transition"
+              className="w-full pl-8 pr-3 py-2 rounded-tile border border-line bg-surface-sunken focus:bg-surface text-body text-ink placeholder-ink-placeholder outline-none focus:border-accent-focus transition"
             />
           </div>
           <button
             type="submit"
             disabled={isAnyLoading}
-            className="px-3 py-1.5 rounded-[8px] bg-[#6e56cf] hover:bg-[#5c4bb8] disabled:opacity-60 text-white text-xs font-semibold flex items-center gap-1 transition cursor-pointer"
+            className="px-3 py-1.5 rounded-tile bg-accent hover:bg-accent-hover disabled:opacity-60 text-white text-body font-semibold flex items-center gap-1 transition cursor-pointer"
           >
             {isAnyLoading ? <Loader2 size={13} className="animate-spin" /> : 'Search'}
           </button>
@@ -1275,10 +1275,10 @@ export const StockArtPanel: React.FC = () => {
                 setQuery(chip);
                 runUnifiedSearch(chip);
               }}
-              className={`px-2 py-0.5 rounded-[6px] text-[10px] font-medium transition cursor-pointer ${
+              className={`px-2 py-0.5 rounded-chip text-2xs font-medium transition cursor-pointer ${
                 query.toLowerCase() === chip
-                  ? 'bg-[#efeafd] text-[#5c4bb8] font-semibold'
-                  : 'bg-[#f3f5f7] text-[#4a5661] hover:bg-[#f4f2ff] hover:text-[#5c4bb8]'
+                  ? 'bg-accent-soft text-accent-ink font-semibold'
+                  : 'bg-surface-sunken text-ink-secondary hover:bg-accent-soft-hover hover:text-accent-ink'
               }`}
             >
               {chip}
@@ -1329,10 +1329,10 @@ export const StockArtPanel: React.FC = () => {
               key={tab.id}
               type="button"
               onClick={() => setSourceFilter(tab.id)}
-              className={`px-2 py-0.5 rounded-[6px] text-[10px] font-semibold transition cursor-pointer tabular-nums ${
+              className={`px-2 py-0.5 rounded-chip text-2xs font-semibold transition cursor-pointer tabular-nums ${
                 sourceFilter === tab.id
-                  ? 'bg-[#efeafd] text-[#5c4bb8]'
-                  : 'bg-[#f3f5f7] text-[#4a5661] hover:bg-[#f4f2ff] hover:text-[#5c4bb8]'
+                  ? 'bg-accent-soft text-accent-ink'
+                  : 'bg-surface-sunken text-ink-secondary hover:bg-accent-soft-hover hover:text-accent-ink'
               }`}
             >
               {tab.label}
@@ -1342,10 +1342,10 @@ export const StockArtPanel: React.FC = () => {
             type="button"
             onClick={() => setSvgOnly(!svgOnly)}
             title="Show only recolorable Vector SVGs"
-            className={`ml-auto px-2 py-0.5 rounded-[6px] text-[10px] font-semibold border transition cursor-pointer flex items-center gap-1 ${
+            className={`ml-auto px-2 py-0.5 rounded-chip text-2xs font-semibold border transition cursor-pointer flex items-center gap-1 ${
               svgOnly
-                ? 'bg-[#efeafd] border-[#d3c9f9] text-[#5c4bb8]'
-                : 'bg-[#f8fafb] border-[#e5e9ee] text-[#4a5661] hover:text-[#5c4bb8] hover:bg-[#f4f2ff]'
+                ? 'bg-accent-soft border-accent-line text-accent-ink'
+                : 'bg-surface-sunken border-line text-ink-secondary hover:text-accent-ink hover:bg-accent-soft-hover'
             }`}
           >
             <Sparkles size={10} />
@@ -1374,12 +1374,12 @@ export const StockArtPanel: React.FC = () => {
                 runPixabaySearch(query, 1);
               }}
             />
-            <p className="text-[9.5px] text-right">
+            <p className="text-2xs text-right">
               <a
                 href="https://pixabay.com/"
                 target="_blank"
                 rel="noreferrer noopener"
-                className="font-semibold text-[#5c4bb8] hover:underline"
+                className="font-semibold text-accent-ink hover:underline"
               >
                 Powered by Pixabay
               </a>
@@ -1400,12 +1400,12 @@ export const StockArtPanel: React.FC = () => {
                 runPexelsSearch(query, 1);
               }}
             />
-            <p className="text-[9.5px] text-right">
+            <p className="text-2xs text-right">
               <a
                 href="https://www.pexels.com/"
                 target="_blank"
                 rel="noreferrer noopener"
-                className="font-semibold text-[#5c4bb8] hover:underline"
+                className="font-semibold text-accent-ink hover:underline"
               >
                 Photos provided by Pexels
               </a>
@@ -1434,12 +1434,12 @@ export const StockArtPanel: React.FC = () => {
                 runUnsplashSearch(query, 1);
               }}
             />
-            <p className="text-[9.5px] text-right">
+            <p className="text-2xs text-right">
               <a
                 href={unsplashCreditUrl('https://unsplash.com/')}
                 target="_blank"
                 rel="noreferrer noopener"
-                className="font-semibold text-[#5c4bb8] hover:underline"
+                className="font-semibold text-accent-ink hover:underline"
               >
                 Photos from Unsplash
               </a>
@@ -1449,7 +1449,7 @@ export const StockArtPanel: React.FC = () => {
       </div>
 
       {/* Results Area */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2.5 bg-[#f8fafb]">
+      <div className="flex-1 overflow-y-auto p-3 space-y-2.5 bg-surface-sunken">
         {sourceErrors.length > 0 && (
           <div className="space-y-1">
             {Array.from(new Set(sourceErrors)).map((err) => {
@@ -1457,7 +1457,7 @@ export const StockArtPanel: React.FC = () => {
               return (
                 <div
                   key={err}
-                  className="p-1.5 rounded-[8px] bg-amber-50 border border-amber-200 text-[10px] text-amber-900 flex items-start gap-1.5"
+                  className="p-1.5 rounded-tile bg-amber-50 border border-amber-200 text-2xs text-amber-900 flex items-start gap-1.5"
                 >
                   <AlertCircle size={12} className="flex-shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0 space-y-1">
@@ -1467,7 +1467,7 @@ export const StockArtPanel: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setShowKeyBar(true)}
-                          className="px-1.5 py-0.5 rounded-[5px] bg-white border border-amber-300 font-semibold hover:bg-amber-100 transition cursor-pointer"
+                          className="px-1.5 py-0.5 rounded-chip bg-white border border-amber-300 font-semibold hover:bg-amber-100 transition cursor-pointer"
                         >
                           Proxy settings
                         </button>
@@ -1477,7 +1477,7 @@ export const StockArtPanel: React.FC = () => {
                             setSourceDisabled('clipartfree', true);
                             setSourceErrors((prev) => prev.filter((e) => !e.startsWith('Clipart.Free')));
                           }}
-                          className="px-1.5 py-0.5 rounded-[5px] bg-white border border-amber-300 font-semibold hover:bg-amber-100 transition cursor-pointer"
+                          className="px-1.5 py-0.5 rounded-chip bg-white border border-amber-300 font-semibold hover:bg-amber-100 transition cursor-pointer"
                         >
                           Don&apos;t retry
                         </button>
@@ -1499,15 +1499,15 @@ export const StockArtPanel: React.FC = () => {
         )}
 
         {pexelsUnavailable && (sourceFilter === 'pexels' || sourceFilter === 'all') && (
-          <div className="p-1.5 rounded-[8px] bg-[#f8fafb] border border-[#e5e9ee] text-[10px] text-[#4a5661] flex items-start gap-1.5">
-            <AlertCircle size={12} className="flex-shrink-0 mt-0.5 text-[#8a8fa3]" />
+          <div className="p-1.5 rounded-tile bg-surface-sunken border border-line text-2xs text-ink-secondary flex items-start gap-1.5">
+            <AlertCircle size={12} className="flex-shrink-0 mt-0.5 text-ink-faint" />
             <div className="flex-1 min-w-0 space-y-1">
               <span className="block leading-snug">{PEXELS_PROXY_HINT}</span>
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => runPexelsSearch(query, 1)}
-                  className="px-1.5 py-0.5 rounded-[5px] bg-white border border-[#e5e9ee] font-semibold hover:bg-[#f4f2ff] transition cursor-pointer"
+                  className="px-1.5 py-0.5 rounded-chip bg-white border border-line font-semibold hover:bg-accent-soft-hover transition cursor-pointer"
                 >
                   Retry
                 </button>
@@ -1517,7 +1517,7 @@ export const StockArtPanel: React.FC = () => {
                     setSourceDisabled('pexels', true);
                     setPexelsUnavailable(false);
                   }}
-                  className="px-1.5 py-0.5 rounded-[5px] bg-white border border-[#e5e9ee] font-semibold hover:bg-[#f4f2ff] transition cursor-pointer"
+                  className="px-1.5 py-0.5 rounded-chip bg-white border border-line font-semibold hover:bg-accent-soft-hover transition cursor-pointer"
                 >
                   Hide
                 </button>
@@ -1527,15 +1527,15 @@ export const StockArtPanel: React.FC = () => {
         )}
 
         {pixabayUnavailable && (sourceFilter === 'pixabay' || sourceFilter === 'all') && (
-          <div className="p-1.5 rounded-[8px] bg-[#f8fafb] border border-[#e5e9ee] text-[10px] text-[#4a5661] flex items-start gap-1.5">
-            <AlertCircle size={12} className="flex-shrink-0 mt-0.5 text-[#8a8fa3]" />
+          <div className="p-1.5 rounded-tile bg-surface-sunken border border-line text-2xs text-ink-secondary flex items-start gap-1.5">
+            <AlertCircle size={12} className="flex-shrink-0 mt-0.5 text-ink-faint" />
             <div className="flex-1 min-w-0 space-y-1">
               <span className="block leading-snug">{PIXABAY_PROXY_HINT}</span>
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => runPixabaySearch(query, 1)}
-                  className="px-1.5 py-0.5 rounded-[5px] bg-white border border-[#e5e9ee] font-semibold hover:bg-[#f4f2ff] transition cursor-pointer"
+                  className="px-1.5 py-0.5 rounded-chip bg-white border border-line font-semibold hover:bg-accent-soft-hover transition cursor-pointer"
                 >
                   Retry
                 </button>
@@ -1545,7 +1545,7 @@ export const StockArtPanel: React.FC = () => {
                     setSourceDisabled('pixabay', true);
                     setPixabayUnavailable(false);
                   }}
-                  className="px-1.5 py-0.5 rounded-[5px] bg-white border border-[#e5e9ee] font-semibold hover:bg-[#f4f2ff] transition cursor-pointer"
+                  className="px-1.5 py-0.5 rounded-chip bg-white border border-line font-semibold hover:bg-accent-soft-hover transition cursor-pointer"
                 >
                   Hide
                 </button>
@@ -1555,15 +1555,15 @@ export const StockArtPanel: React.FC = () => {
         )}
 
         {unsplashUnavailable && (sourceFilter === 'unsplash' || sourceFilter === 'all') && (
-          <div className="p-1.5 rounded-[8px] bg-[#f8fafb] border border-[#e5e9ee] text-[10px] text-[#4a5661] flex items-start gap-1.5">
-            <AlertCircle size={12} className="flex-shrink-0 mt-0.5 text-[#8a8fa3]" />
+          <div className="p-1.5 rounded-tile bg-surface-sunken border border-line text-2xs text-ink-secondary flex items-start gap-1.5">
+            <AlertCircle size={12} className="flex-shrink-0 mt-0.5 text-ink-faint" />
             <div className="flex-1 min-w-0 space-y-1">
               <span className="block leading-snug">{UNSPLASH_PROXY_HINT}</span>
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => runUnsplashSearch(query, 1)}
-                  className="px-1.5 py-0.5 rounded-[5px] bg-white border border-[#e5e9ee] font-semibold hover:bg-[#f4f2ff] transition cursor-pointer"
+                  className="px-1.5 py-0.5 rounded-chip bg-white border border-line font-semibold hover:bg-accent-soft-hover transition cursor-pointer"
                 >
                   Retry
                 </button>
@@ -1573,7 +1573,7 @@ export const StockArtPanel: React.FC = () => {
                     setSourceDisabled('unsplash', true);
                     setUnsplashUnavailable(false);
                   }}
-                  className="px-1.5 py-0.5 rounded-[5px] bg-white border border-[#e5e9ee] font-semibold hover:bg-[#f4f2ff] transition cursor-pointer"
+                  className="px-1.5 py-0.5 rounded-chip bg-white border border-line font-semibold hover:bg-accent-soft-hover transition cursor-pointer"
                 >
                   Hide
                 </button>
@@ -1583,7 +1583,7 @@ export const StockArtPanel: React.FC = () => {
         )}
 
         {disabledSources.includes('clipartfree') && (
-          <div className="flex items-center gap-1.5 px-1.5 py-1 rounded-[8px] bg-[#f8fafb] border border-[#e5e9ee] text-[10px] text-[#5b6673]">
+          <div className="flex items-center gap-1.5 px-1.5 py-1 rounded-tile bg-surface-sunken border border-line text-2xs text-ink-muted">
             <span>Clipart.Free is turned off for this browser.</span>
             <button
               type="button"
@@ -1591,7 +1591,7 @@ export const StockArtPanel: React.FC = () => {
                 setSourceDisabled('clipartfree', false);
                 runUnifiedSearch();
               }}
-              className="ml-auto px-1.5 py-0.5 rounded-[5px] bg-[#efeafd] border border-[#d3c9f9] text-[#5c4bb8] font-semibold hover:bg-[#f4f2ff] transition cursor-pointer"
+              className="ml-auto px-1.5 py-0.5 rounded-chip bg-accent-soft border border-accent-line text-accent-ink font-semibold hover:bg-accent-soft-hover transition cursor-pointer"
             >
               Turn on
             </button>
@@ -1599,7 +1599,7 @@ export const StockArtPanel: React.FC = () => {
         )}
 
         {isAnyLoading && (
-          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-[#efeafd] border border-[#d3c9f9] text-[10.5px] text-[#5c4bb8] font-medium">
+          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-tile bg-accent-soft border border-accent-line text-2xs text-accent-ink font-medium">
             <Loader2 size={12} className="animate-spin flex-shrink-0" />
             <span>
               Searching{' '}
@@ -1623,8 +1623,8 @@ export const StockArtPanel: React.FC = () => {
         {combinedResults.length === 0 && !isAnyLoading ? (
           <div className="py-12 text-center space-y-1.5 px-4">
             <Images size={26} className="mx-auto text-slate-300" />
-            <p className="text-xs font-semibold text-slate-600">No matching graphics found</p>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-body font-semibold text-slate-600">No matching graphics found</p>
+            <p className="text-meta text-ink-faint">
               Try a broader keyword like <strong>star</strong>, <strong>cat</strong>, or{' '}
               <strong>trophy</strong>.
             </p>
@@ -1632,7 +1632,7 @@ export const StockArtPanel: React.FC = () => {
         ) : (
           <>
           <div
-            className={`grid gap-2 ${
+            className={`grid gap-2.5 ${
               panelWidth >= 380 ? 'grid-cols-3' : 'grid-cols-2'
             }`}
           >
@@ -1641,7 +1641,7 @@ export const StockArtPanel: React.FC = () => {
               return (
                 <div
                   key={item.uid}
-                  className="group relative flex flex-col rounded-xl bg-white border border-slate-200/90 hover:border-[#d3c9f9] hover:shadow-sm transition overflow-hidden"
+                  className="group relative flex flex-col rounded-tile bg-white border border-line hover:border-accent-line hover:shadow-sm transition overflow-hidden"
                 >
                   {/* Clickable Card Body */}
                   <button
@@ -1649,9 +1649,9 @@ export const StockArtPanel: React.FC = () => {
                     disabled={isInserting}
                     onClick={() => handleInsertItem(item, false)}
                     title={`Click to insert "${item.title}" (${item.sourceLabel})`}
-                    className="flex flex-col items-center p-2 text-left w-full cursor-pointer disabled:opacity-60"
+                    className="flex flex-col items-center p-2.5 text-left w-full cursor-pointer disabled:opacity-60"
                   >
-                    <div className="w-full h-20 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden p-1.5 relative">
+                    <div className="w-full h-20 rounded-chip bg-surface-sunken border border-line-soft flex items-center justify-center overflow-hidden p-2 relative">
                       <img
                         src={item.thumbUrl}
                         alt={item.title}
@@ -1660,25 +1660,7 @@ export const StockArtPanel: React.FC = () => {
                       />
                       {/* Source Badge */}
                       <span
-                        className={`absolute top-1 left-1 px-1.5 py-0.2 rounded text-[8px] font-bold uppercase tracking-tight ${
-                          item.source === 'builtin'
-                            ? 'bg-[#efeafd] text-[#5c4bb8]'
-                            : item.source === 'clipartfree'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : item.source === 'iconify'
-                            ? 'bg-sky-100 text-sky-800'
-                            : item.source === 'pixabay'
-                            ? 'bg-rose-100 text-rose-800'
-                            : item.source === 'unsplash'
-                            ? 'bg-neutral-900 text-white'
-                            : item.source === 'openart'
-                            ? 'bg-teal-100 text-teal-800'
-                            : item.source === 'pexels'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : item.source === 'oclipart'
-                            ? 'bg-indigo-100 text-indigo-800'
-                            : 'bg-amber-100 text-amber-800'
-                        }`}
+                        className="absolute top-1 left-1 max-w-[72%] truncate px-1.5 py-0.5 rounded-[4px] bg-white/90 text-ink-secondary text-2xs font-bold uppercase tracking-tight border border-line"
                       >
                         {item.source === 'clipartfree'
                           ? 'CF'
@@ -1697,16 +1679,16 @@ export const StockArtPanel: React.FC = () => {
                           : item.sourceLabel}
                       </span>
                       {item.isSvg && (
-                        <span className="absolute top-1 right-1 px-1 py-0.2 rounded bg-[#6e56cf] text-white text-[8px] font-bold">
+                        <span className="absolute top-1 right-1 px-1 py-0.2 rounded bg-accent text-white text-2xs font-bold">
                           SVG
                         </span>
                       )}
                     </div>
-                    <span className="mt-1.5 text-[10px] font-semibold text-slate-700 truncate w-full text-center">
+                    <span className="mt-1.5 text-2xs font-semibold text-ink-secondary truncate w-full text-center">
                       {isInserting ? 'Inserting...' : item.title}
                     </span>
                     {item.credit && (
-                      <span className="text-[9px] text-slate-400 truncate w-full text-center leading-tight">
+                      <span className="text-2xs text-ink-faint truncate w-full text-center leading-tight">
                         {item.credit}
                       </span>
                     )}
@@ -1721,7 +1703,7 @@ export const StockArtPanel: React.FC = () => {
                         handleInsertItem(item, true);
                       }}
                       title="Insert as Die-Cut Sticker"
-                      className="opacity-0 group-hover:opacity-100 absolute bottom-7 right-2 px-1.5 py-0.5 rounded-md bg-slate-900/85 hover:bg-[#6e56cf] text-white text-[9px] font-bold flex items-center gap-0.5 transition cursor-pointer shadow-xs"
+                      className="opacity-0 group-hover:opacity-100 absolute bottom-7 right-2 px-1.5 py-0.5 rounded-chip bg-ink/85 hover:bg-accent-hover text-white text-2xs font-bold flex items-center gap-0.5 transition cursor-pointer shadow-xs"
                     >
                       <Sticker size={9} />
                       <span>Sticker</span>
@@ -1746,7 +1728,7 @@ export const StockArtPanel: React.FC = () => {
                     href="https://pixabay.com/"
                     target="_blank"
                     rel="noreferrer noopener"
-                    className="font-semibold text-[#5c4bb8] hover:underline"
+                    className="font-semibold text-accent-ink hover:underline"
                   >
                     Pixabay
                   </a>
@@ -1771,7 +1753,7 @@ export const StockArtPanel: React.FC = () => {
                     href="https://openclipart.org/"
                     target="_blank"
                     rel="noreferrer noopener"
-                    className="font-semibold text-[#5c4bb8] hover:underline"
+                    className="font-semibold text-accent-ink hover:underline"
                   >
                     Openclipart
                   </a>{' '}
@@ -1795,7 +1777,7 @@ export const StockArtPanel: React.FC = () => {
                     href="https://www.pexels.com/license/"
                     target="_blank"
                     rel="noreferrer noopener"
-                    className="font-semibold text-[#5c4bb8] hover:underline"
+                    className="font-semibold text-accent-ink hover:underline"
                   >
                     Pexels License
                   </a>
@@ -1819,7 +1801,7 @@ export const StockArtPanel: React.FC = () => {
                     href="https://www.artic.edu/"
                     target="_blank"
                     rel="noreferrer noopener"
-                    className="font-semibold text-[#5c4bb8] hover:underline"
+                    className="font-semibold text-accent-ink hover:underline"
                   >
                     Art Institute of Chicago
                   </a>{' '}
@@ -1828,7 +1810,7 @@ export const StockArtPanel: React.FC = () => {
                     href="https://www.clevelandart.org/art/collection"
                     target="_blank"
                     rel="noreferrer noopener"
-                    className="font-semibold text-[#5c4bb8] hover:underline"
+                    className="font-semibold text-accent-ink hover:underline"
                   >
                     Cleveland Museum of Art
                   </a>
@@ -1852,7 +1834,7 @@ export const StockArtPanel: React.FC = () => {
                     href={unsplashCreditUrl('https://unsplash.com/')}
                     target="_blank"
                     rel="noreferrer noopener"
-                    className="font-semibold text-[#5c4bb8] hover:underline"
+                    className="font-semibold text-accent-ink hover:underline"
                   >
                     Unsplash
                   </a>
@@ -1866,7 +1848,7 @@ export const StockArtPanel: React.FC = () => {
       </div>
 
       {/* Footer Tip */}
-      <div className="px-3 py-2 border-t border-slate-200 bg-slate-50 text-[10px] text-slate-500 flex items-center justify-between">
+      <div className="px-3 py-2 border-t border-slate-200 bg-surface-sunken text-2xs text-slate-500 flex items-center justify-between">
         <span>Click to insert • SVG items can be recolored</span>
       </div>
     </aside>

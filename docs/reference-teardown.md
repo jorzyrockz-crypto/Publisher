@@ -129,6 +129,34 @@ Do A–C first: they add capability without touching existing surfaces. D is the
 "feel" change and should land last, in slices (Stock Art panel → ribbon → modals
 → canvas chrome), so any regression is obvious and local.
 
+### Phase D pilot — Stock Art panel (done)
+
+Finding worth recording: **the design system already existed and nothing used it.**
+`src/index.css` defines `--sp-accent`, `--sp-ink-*`, `--sp-line`, `--sp-surface*`
+with documented contrast ratios, and `grep` found **zero** component references to
+any `var(--sp-*)`. Every component re-derived its own hex — which is exactly how
+`#5c4bb8` and `#6e56cf` both ended up as "the accent".
+
+The fix is a binding, not a rewrite: an `@theme inline` block maps `--sp-*` onto
+Tailwind names (`text-accent-ink`, `bg-surface`, `border-line`), adds a 4-step
+integer type scale (`text-2xs/meta/body/lead`), two radii (`chip`, `tile`) and one
+shadow (`elevated`). Because the utilities point at the variables, a colour change
+is now one line in `:root`.
+
+Pilot result on `StockArtPanel.tsx`:
+
+| | before | after |
+| --- | --- | --- |
+| distinct hex values | 15 | **1** (a canvas argument, not a class) |
+| font sizes | 6 (8, 9, 9.5, 10, 10.5, 11 px) | **4** (10, 11, 12, 13) |
+| radii | 5–15 px, mixed | **2** (6, 8) |
+| source badges | 9 pastel variants | 1 neutral chip (the label already names the source) |
+| `slate-*` + custom neutrals | mixed in one file | one neutral ramp |
+| header / card padding | 3.5 / 2 | 4 / 2.5 |
+
+Roll-out order for the rest: ribbon → modals → canvas chrome → status bar, one
+surface per commit so a regression is local.
+
 ---
 
 ## 6. Things in the reference we should *not* copy
