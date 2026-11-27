@@ -688,7 +688,11 @@ export const CanvasArea: React.FC = () => {
 
       {/* Designer Mode: Floating Centered Contextual Pill Toolbar */}
       {workspaceMode === 'designer' && (
-        <div className="pointer-events-none absolute top-3 left-0 right-0 flex justify-center px-4 z-30">
+        <div
+          className={`pointer-events-none absolute ${
+            rulerVisible ? 'top-9' : 'top-3'
+          } left-0 right-0 flex justify-center px-4 z-30`}
+        >
           <DesignerContextBar />
         </div>
       )}
