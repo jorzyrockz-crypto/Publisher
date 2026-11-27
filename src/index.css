@@ -524,6 +524,48 @@ html.dark ::-webkit-scrollbar-thumb:hover {
   background: #455066;
 }
 
+/* ----------------------------------------------------------------------------
+   Token overrides for dark mode.
+
+   The dark theme below was written against the *old* hardcoded class names
+   (`html.dark .bg-white`, `html.dark .bg-[#f8fafb]`, …). Anything that had been
+   migrated to the token utilities (`bg-surface`, `border-line`, `text-ink-*`)
+   therefore stayed light-on-dark. Rather than add a third set of selectors,
+   redefine the tokens themselves: every `--color-*` binding in the `@theme
+   inline` block points at these variables, so one override here restyles every
+   token-based surface, border and text at once — and keeps working for whatever
+   gets migrated next.
+
+   Values are taken from the dark palette already in use below, so token-based
+   and legacy surfaces stay the same colour.
+   ---------------------------------------------------------------------------- */
+html.dark {
+  /* Ink ramp, flipped for dark surfaces */
+  --sp-ink: #e6ebf2;
+  --sp-ink-body: #c3ccda;
+  --sp-ink-secondary: #a6b0bf;
+  --sp-ink-muted: #949eb0;
+  --sp-ink-subtle: #8b96a3;
+  --sp-ink-placeholder: #7d8899;
+  --sp-ink-faint: #6e7a8b;
+
+  /* Surfaces */
+  --sp-line: #2a3140;
+  --sp-line-soft: #232a36;
+  --sp-surface: #1a1f2b;
+  --sp-surface-sunken: #222836;
+  --sp-canvas: #131720;
+
+  /* Accent: brighter fill on dark, pale ink for text, deep tint for surfaces */
+  --sp-accent: #6f58d8;
+  --sp-accent-hover: #7d67e6;
+  --sp-accent-ink: #b7a4ff;
+  --sp-accent-soft: #2c2447;
+  --sp-accent-soft-hover: #342a52;
+  --sp-accent-line: #4f3e8c;
+  --sp-accent-focus: #6f5bd0;
+}
+
 /* Chrome surfaces (never touch paper canvas artwork) */
 html.dark .bg-white:not([data-paper-canvas="true"]):not([data-paper-canvas="true"] *):not([data-canvas-page-id] *),
 html.dark .bg-white\/95:not([data-paper-canvas="true"] *),
