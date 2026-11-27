@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
-import { SHAPE_CATALOG } from '../../utils/shapePaths';
-import { ShapePreviewIcon } from '../common/ShapePreviewIcon';
 import { PAGE_SIZES } from '../../constants/pageSizes';
 import { WORD_ART_STYLES } from '../../utils/wordArt';
 import { ColorInput } from '../common/ColorInput';
@@ -10,6 +8,7 @@ import { StockArtPanel } from '../sidebar/StockArtPanel';
 import { DesignerBrandPanel } from './DesignerBrandPanel';
 import { DesignerViewPanel } from './DesignerViewPanel';
 import { DesignerSettingsPanel } from './DesignerSettingsPanel';
+import { DesignerVisualsPanel } from './DesignerVisualsPanel';
 import {
   Wand2,
   Type,
@@ -22,9 +21,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Image as ImageIcon,
-  Table as TableIcon,
-  QrCode,
-  Minus,
   Sparkles,
   LayoutGrid,
   RotateCw,
@@ -67,12 +63,8 @@ export const DesignerToolRail: React.FC = () => {
     setPageBackgroundColor,
     addTextBox,
     updateElement,
-    addShape,
-    addLine,
     addPicturePlaceholder,
     addImage,
-    addTable,
-    addQRCode,
     setIsWordArtModalOpen,
     setIsAIImageModalOpen,
     setIsCollageModalOpen,
@@ -144,7 +136,7 @@ export const DesignerToolRail: React.FC = () => {
     }`;
 
   const drawerWidthClass =
-    activeDrawer === 'media' || activeDrawer === 'brand'
+    activeDrawer === 'media' || activeDrawer === 'brand' || activeDrawer === 'visuals'
       ? 'w-[296px]'
       : 'w-[268px]';
 
@@ -156,7 +148,7 @@ export const DesignerToolRail: React.FC = () => {
       : activeDrawer === 'media'
       ? 'My media'
       : activeDrawer === 'visuals'
-      ? 'Visuals & Shapes'
+      ? 'Add visuals'
       : activeDrawer === 'brand'
       ? 'Brand Studio'
       : activeDrawer === 'view'
@@ -231,6 +223,8 @@ export const DesignerToolRail: React.FC = () => {
                 <DesignerViewPanel />
               ) : activeDrawer === 'settings' ? (
                 <DesignerSettingsPanel />
+              ) : activeDrawer === 'visuals' ? (
+                <DesignerVisualsPanel onOpenMyMedia={() => setActiveDrawer('media')} />
               ) : activeDrawer === 'media' ? (
                 <div className="flex flex-col flex-1 min-h-0">
                   {/* Compact Upload / AI / Collage Actions at Top of My Media */}
@@ -524,57 +518,6 @@ export const DesignerToolRail: React.FC = () => {
                               >
                                 {style.label}
                               </span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  {activeDrawer === 'visuals' && (
-                    <>
-                      <div className="space-y-1.5">
-                        <span className="text-[11px] font-semibold text-[#4a5661]">Quick Elements</span>
-                        <div className="grid grid-cols-3 gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => addLine()}
-                            className="flex flex-col items-center gap-1 p-2 rounded-[8px] border border-[#e5e9ee] hover:bg-[#f4f2ff] text-[10px] font-medium cursor-pointer"
-                          >
-                            <Minus size={14} className="-rotate-45" />
-                            <span>Line</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => addTable(3, 3)}
-                            className="flex flex-col items-center gap-1 p-2 rounded-[8px] border border-[#e5e9ee] hover:bg-[#f4f2ff] text-[10px] font-medium cursor-pointer"
-                          >
-                            <TableIcon size={14} />
-                            <span>Table</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => addQRCode()}
-                            className="flex flex-col items-center gap-1 p-2 rounded-[8px] border border-[#e5e9ee] hover:bg-[#f4f2ff] text-[10px] font-medium cursor-pointer"
-                          >
-                            <QrCode size={14} />
-                            <span>QR Code</span>
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <span className="text-[11px] font-semibold text-[#4a5661]">Vector Shapes</span>
-                        <div className="grid grid-cols-4 gap-1.5">
-                          {SHAPE_CATALOG.map((item) => (
-                            <button
-                              key={item.type}
-                              type="button"
-                              onClick={() => addShape(item.type)}
-                              className="p-2 rounded-[8px] border border-[#e5e9ee] bg-[#f8fafb] hover:bg-[#f4f2ff] hover:border-[#d3c9f9] flex items-center justify-center transition cursor-pointer"
-                              title={item.label}
-                            >
-                              <ShapePreviewIcon shapeType={item.type} size={20} />
                             </button>
                           ))}
                         </div>
