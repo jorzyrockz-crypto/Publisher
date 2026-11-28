@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, ChevronRight, LayoutGrid, Package, Printer } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { usePublisher } from '../../context/PublisherContext';
 import { AssetPackPanel } from './AssetPackPanel';
 
@@ -17,57 +17,78 @@ type Tone = 'violet' | 'amber' | 'teal';
 interface ToolBannerProps {
   title: string;
   hint: string;
-  Icon: typeof LayoutGrid;
+  /** Clay render for the banner's right edge: the object, not an icon of the object. */
+  art: string;
   tone: Tone;
+  compact?: boolean;
   onClick: () => void;
 }
 
-const TONES: Record<
-  Tone,
-  { card: string; chip: string; title: string; glow: string }
-> = {
+const TONES: Record<Tone, { border: string; hover: string; title: string; glow: string }> = {
   violet: {
-    card: 'border-[#e3dcfb] hover:border-[#c9bcf5] hover:bg-[#f7f4ff]',
-    chip: 'bg-[#efeafd] text-[#5c4bb8]',
+    border: 'border-[#e6dffb]',
+    hover: 'hover:border-[#c9bcf5] hover:shadow-[0_6px_18px_-6px_rgba(92,75,184,0.35)]',
     title: 'text-[#3c2f96]',
-    glow: 'shadow-[0_1px_0_rgba(92,75,184,0.06)]',
+    glow: 'shadow-[0_1px_2px_rgba(92,75,184,0.08)]',
   },
   amber: {
-    card: 'border-[#f6e3c0] hover:border-[#eccf9a] hover:bg-[#fffaf1]',
-    chip: 'bg-[#fdf0d8] text-[#a5691a]',
+    border: 'border-[#f4e4c6]',
+    hover: 'hover:border-[#e8cd97] hover:shadow-[0_6px_18px_-6px_rgba(180,120,20,0.35)]',
     title: 'text-[#8a5310]',
-    glow: 'shadow-[0_1px_0_rgba(180,120,20,0.06)]',
+    glow: 'shadow-[0_1px_2px_rgba(180,120,20,0.08)]',
   },
   teal: {
-    card: 'border-[#d3ece8] hover:border-[#b3ded8] hover:bg-[#f4fbfa]',
-    chip: 'bg-[#e2f4f1] text-[#0f766e]',
+    border: 'border-[#d6ece8]',
+    hover: 'hover:border-[#b3ded8] hover:shadow-[0_6px_18px_-6px_rgba(15,118,110,0.35)]',
     title: 'text-[#0b5c56]',
-    glow: 'shadow-[0_1px_0_rgba(15,118,110,0.06)]',
+    glow: 'shadow-[0_1px_2px_rgba(15,118,110,0.08)]',
   },
 };
 
-const ToolBanner: React.FC<ToolBannerProps> = ({ title, hint, Icon, tone, onClick }) => {
+/**
+ * A banner is a clay thumbnail with a label beside it, not an icon in a chip. The renders sit on
+ * their own warm ground, so the card borrows that ground and lets the picture bleed to the edge —
+ * masked on its left so it melts into the card instead of sitting in a box inside a box.
+ */
+const ToolBanner: React.FC<ToolBannerProps> = ({
+  title,
+  hint,
+  art,
+  tone,
+  compact = false,
+  onClick,
+}) => {
   const t = TONES[tone];
+  const artWidth = compact ? 58 : 84;
   return (
     <button
       type="button"
       onClick={onClick}
       title={hint}
-      className={`group w-full flex items-center gap-2 px-2 py-2 rounded-[10px] border bg-white text-left transition cursor-pointer ${t.card} ${t.glow}`}
+      className={`group relative w-full h-[72px] rounded-[12px] overflow-hidden border bg-[#fbf8f3] text-left transition-all duration-150 cursor-pointer ${t.border} ${t.hover} ${t.glow}`}
     >
-      <span className={`w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0 ${t.chip}`}>
-        <Icon size={14} />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className={`block text-[11px] font-bold leading-tight truncate ${t.title}`}>
+      <img
+        src={art}
+        alt=""
+        aria-hidden="true"
+        loading="lazy"
+        decoding="async"
+        className="absolute right-0 top-0 h-full object-cover object-center transition-transform duration-200 group-hover:scale-[1.06]"
+        style={{
+          width: `${artWidth}px`,
+          maskImage: 'linear-gradient(to right, transparent 0%, black 34%)',
+          WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 34%)',
+        }}
+      />
+      <span
+        className="relative flex h-full flex-col justify-center gap-0.5 pl-3 pr-2"
+        style={{ paddingRight: `${artWidth - 10}px` }}
+      >
+        <span className={`block text-[11.5px] font-bold leading-tight truncate ${t.title}`}>
           {title}
         </span>
-        <span className="block text-[9px] leading-tight text-[#8a94a0] truncate">{hint}</span>
+        <span className="block text-[9.5px] leading-tight text-[#8a94a0] truncate">{hint}</span>
       </span>
-      <ChevronRight
-        size={12}
-        className="shrink-0 text-[#c3ccd6] transition-transform group-hover:translate-x-0.5 group-hover:text-[#8a94a0]"
-      />
     </button>
   );
 };
@@ -123,23 +144,26 @@ export const SidebarTools: React.FC<SidebarToolsProps> = ({
       <div className="space-y-1.5">
         <ToolBanner
           title="Collage Maker"
-          hint={compact ? 'Grid of photos' : 'Photos into a grid'}
-          Icon={LayoutGrid}
+          hint={compact ? 'Photo grid' : 'Photos into a grid'}
+          art="./tool-art/collage-clay.webp"
           tone="violet"
+          compact={compact}
           onClick={() => setIsCollageModalOpen(true)}
         />
         <ToolBanner
-          title={compact ? 'Tarpapel' : 'Tarpaulin Printer'}
+          title="Tarpaulin Printer"
           hint={compact ? 'A4 sheets' : 'Any design, on A4 sheets'}
-          Icon={Printer}
+          art="./tool-art/tarpapel-clay.webp"
           tone="amber"
+          compact={compact}
           onClick={() => setIsTarpapelModalOpen(true)}
         />
         <ToolBanner
           title="Story Kit"
           hint={compact ? 'Art packs' : 'Backdrops, frames, stickers'}
-          Icon={Package}
+          art="./tool-art/storykit-clay.webp"
           tone="teal"
+          compact={compact}
           onClick={() => setView('storykit')}
         />
       </div>

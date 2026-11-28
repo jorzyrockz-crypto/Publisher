@@ -333,7 +333,7 @@ export const PageThumbnails: React.FC<PageThumbnailsProps> = ({ showTools = true
       />
       {/* Tools: the two jobs that begin with existing material, not a blank page */}
       {showTools && (
-        <SidebarTools compact={panelWidth < 200} onImmersiveChange={handleToolsImmersive} />
+        <SidebarTools compact={panelWidth < 232} onImmersiveChange={handleToolsImmersive} />
       )}
 
       {/* Segmented Header Tabs: Pages | Layers */}
