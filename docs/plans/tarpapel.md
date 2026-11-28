@@ -141,9 +141,22 @@ Three decisions worth keeping:
 - **Two doors, one setting.** Opening the modal seeds from the print panel's last tarpapel settings
   and writes them back on export, so the two surfaces can never disagree.
 
-Reached from command search — **"Print as Tarpaulin"** — and implemented as `TarpapelModal.tsx` +
-`isTarpapelModalOpen` in the context. It calls `computeTarpapelMetrics` and `exportTarpapelPdf`; it
-owns no tiling code.
+Reached from command search — **"Print as Tarpaulin"**. It calls `computeTarpapelMetrics` and
+`exportTarpapelPdf`; it owns no tiling code.
+
+**Redesign (second pass).** The first version was one narrow column of controls with a wireframe
+rectangle for a preview. Now: a source rail on the left (searchable, grouping *open in the workspace*
+→ *imported file* → *made for walls*), the sheet controls pinned under it, and the right side given
+over to the **actual page render**, cut by the sheet grid — `renderPageModelToCanvas` at ~1500 px, so
+a teacher approves the real design rather than a silhouette. The poster is sized by measuring its
+stage (`ResizeObserver`) instead of `aspect-ratio` + both max-constraints, which squashes art instead
+of shrinking it. The read-out strip reports sheets / assembled size / sheet / design scale, and says
+in words what the pad-or-crop will do.
+
+**What counts as a source.** Not just the active document: **every page of every open tab**, every
+wall-sized gallery template (`Poster`, `Tarpapel`, `Champs Reading`, `Hero Banner`, `Program`), and an
+uploaded JPG/PNG. A design does not have to be open, or even made in this app, to be printed at
+poster size.
 
 ### P0.6 — image quick path (PaperTarp parity) ✅ folded into P0.5
 
