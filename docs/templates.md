@@ -95,6 +95,38 @@ That guard is the reason this pass was safe to run across the whole library on a
 It is also why the numbers below are honest: they are what the templates score, not what the rules
 intended.
 
+## 5. Forms are exempt
+
+`TEMPLATES` pipes every project through `enhanceProject` and then `polishProject`. That is right for a
+poster — the passes place artwork, tidy the grid and pick the better of three candidates — and wrong
+for a form. A reading log's millimetre margins, its fifteen 9 mm rows and its percentage column widths
+*are* the design; a pass that "improves the rhythm" by nudging a text frame 4px down silently moves the
+row rules off the printing baseline, and the page is then no longer the document the school asked for.
+
+So `category: 'Champs Reading'` returns the authored project untouched, and the three forms live in
+`src/constants/champsReadingTemplates.ts`:
+
+| template | paper | what it is |
+|---|---|---|
+| Learner Reading Passport | A4 landscape, 2 sheets | folded cover + pupil details, home reflection on the back, 20-book log inside |
+| Book Circulation & Daily Usage Log | A4 landscape, 1 sheet | header ribbon, School/Grade/Month/Teacher strip, 15 borrow rows, totals and signatures |
+| Level & Genre Bin Cards | A4 portrait, 2 sheets | 8-up 92 × 64 mm cards on dashed cut lines: colour-coded levels, then picture-labelled genre bins |
+
+Two things about the geometry are worth knowing before editing one:
+
+- **Millimetres first.** Every measurement is `mm(n)` at 96 dpi (12 mm margin → 45px, 92 × 64 mm card
+  → 347 × 244px), so a photocopier reproduces the sheet at 100% with no scaling. If a number in that
+  file is not a millimetre conversion, it is an inset measured from one.
+- **Rules, not tables.** The log's columns are 15 / 40 / 12 / 18 / 15 percent, which `TableElement`
+  cannot express: it draws uniform cells and stamps a 6px corner radius on every one. The tables here
+  are therefore drawn from `rule()` and `vRule()` — filled hairlines and thin rectangles — which land
+  on exact pixel boundaries, print identically from the DOM and the canvas exporter, and keep the
+  header, the column guides and the row rules in one coordinate system.
+
+The colour-coded cards ship as the templates that fill them: the eight genre icons (big book, decodable
+blocks, pop-up book, audio station, puppets, return bin, local tales, storybooks) are pieces in the
+built-in Story Kit, so a teacher who renames a bin can swap the picture with art already on the shelf.
+
 ## Before / after
 
 Measured with `scoreLayout` over all 72 pages of the 63 templates, same scorer both sides:

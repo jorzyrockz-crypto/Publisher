@@ -76,6 +76,23 @@ export const WORD_ART_STYLES: WordArtOption[] = [
     className: 'wordart-reading-nook-sage',
   },
   { id: 'storytime-banner', label: 'Storytime Ribbon', className: 'wordart-storytime-banner' },
+  // Reading-corner forms: a school-blue banner, a coral welcome, a gold logbook ribbon.
+  {
+    id: 'champs-basa-blue',
+    label: 'Basa Blue Banner',
+    className: 'wordart-champs-basa-blue',
+    dark: true,
+  },
+  {
+    id: 'champs-kasadya-coral',
+    label: 'Kasadya Coral',
+    className: 'wordart-champs-kasadya-coral',
+  },
+  {
+    id: 'champs-gold-ribbon',
+    label: 'Champs Gold Ribbon',
+    className: 'wordart-champs-gold-ribbon',
+  },
   // Portfolios: quiet, trimmed, at 800.
   {
     id: 'portfolio-editorial',
@@ -1073,6 +1090,54 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     backdrop: { type: 'ribbon-banner', color: '#c2410c', paddingX: 36, paddingY: 12 },
     shadows: [],
   },
+  // ---- reading-corner forms ---------------------------------------------------------------
+  // Printed at A4 on a school photocopier: three colours, a cream die-cut so the words survive a
+  // grey machine, and no bloom that a mono print would turn into mud.
+  'champs-basa-blue': {
+    weight: '900',
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#60a5fa' },
+        { offset: 0.5, color: '#2563eb' },
+        { offset: 1, color: '#1e3a8a' },
+      ],
+    },
+    stroke: { width: 4, color: '#eff6ff' },
+    heavyStroke: true,
+    castShadow: { dx: 0, dy: 3, blur: 6, color: 'rgba(30, 58, 138, 0.3)' },
+    shadows: [],
+  },
+  'champs-kasadya-coral': {
+    weight: '900',
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#fb7185' },
+        { offset: 0.55, color: '#e11d48' },
+        { offset: 1, color: '#9f1239' },
+      ],
+    },
+    stroke: { width: 3, color: '#fff1f2' },
+    heavyStroke: true,
+    castShadow: { dx: 0, dy: 2, blur: 5, color: 'rgba(159, 18, 57, 0.26)' },
+    shadows: [],
+  },
+  'champs-gold-ribbon': {
+    weight: '900',
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#fef3c7' },
+        { offset: 0.5, color: '#fbbf24' },
+        { offset: 1, color: '#b45309' },
+      ],
+    },
+    castShadow: { dx: 0, dy: 2, blur: 4, color: 'rgba(24, 24, 27, 0.4)' },
+    backdrop: { type: 'ribbon-banner', color: '#0f766e', paddingX: 34, paddingY: 12 },
+    shadows: [],
+  },
+
   // ---- portfolios ------------------------------------------------------------------------
   // Refined, not shouted: a hairline trim and a soft lift. 800 rather than 900 so a serif or a
   // geometric sans keeps its shapes — the two styles that look wrong at poster weight.

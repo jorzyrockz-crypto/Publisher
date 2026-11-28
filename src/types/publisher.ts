@@ -68,6 +68,9 @@ export type WordArtStyle =
   | 'fairytale-sparkle'
   | 'reading-nook-sage'
   | 'storytime-banner'
+  | 'champs-basa-blue'
+  | 'champs-kasadya-coral'
+  | 'champs-gold-ribbon'
   | 'portfolio-editorial'
   | 'portfolio-indigo';
 

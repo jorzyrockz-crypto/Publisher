@@ -1,7 +1,7 @@
 {
   "packId": "storybook-reading-v1",
   "name": "Story Kit",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "assets": [
     {
       "id": "bg-enchanted-forest",
@@ -276,6 +276,24 @@
       "height": 363
     },
     {
+      "id": "frame-storybook-border",
+      "label": "Storybook Page Border",
+      "layer": "frame",
+      "tags": [
+        "border",
+        "frame",
+        "storybook",
+        "passport",
+        "page"
+      ],
+      "slot": "corner",
+      "fit": "page",
+      "thumb": "thumbs/frame-storybook-border.webp",
+      "full": "full/frame-storybook-border.webp",
+      "width": 584,
+      "height": 1024
+    },
+    {
       "id": "sticker-reading-kids",
       "label": "Kids Reading Together",
       "layer": "sticker",
@@ -412,6 +430,113 @@
       "full": "full/sticker-wood-plank.webp",
       "width": 1024,
       "height": 380
+    },
+    {
+      "id": "sticker-reading-passport",
+      "label": "Reading Passport",
+      "layer": "sticker",
+      "tags": [
+        "passport",
+        "book",
+        "reading",
+        "award",
+        "blank"
+      ],
+      "thumb": "thumbs/sticker-reading-passport.webp",
+      "full": "full/sticker-reading-passport.webp",
+      "width": 651,
+      "height": 653
+    },
+    {
+      "id": "sticker-big-book-easel",
+      "label": "Big Book on an Easel",
+      "layer": "sticker",
+      "tags": [
+        "big book",
+        "easel",
+        "display",
+        "story"
+      ],
+      "thumb": "thumbs/sticker-big-book-easel.webp",
+      "full": "full/sticker-big-book-easel.webp",
+      "width": 1024,
+      "height": 721
+    },
+    {
+      "id": "sticker-audio-station",
+      "label": "Listening Station",
+      "layer": "sticker",
+      "tags": [
+        "audio",
+        "listening",
+        "headphones",
+        "station"
+      ],
+      "thumb": "thumbs/sticker-audio-station.webp",
+      "full": "full/sticker-audio-station.webp",
+      "width": 895,
+      "height": 724
+    },
+    {
+      "id": "sticker-abc-blocks",
+      "label": "Alphabet Blocks",
+      "layer": "sticker",
+      "tags": [
+        "abc",
+        "blocks",
+        "alphabet",
+        "decodable"
+      ],
+      "thumb": "thumbs/sticker-abc-blocks.webp",
+      "full": "full/sticker-abc-blocks.webp",
+      "width": 737,
+      "height": 623
+    },
+    {
+      "id": "sticker-story-puppet",
+      "label": "Story Puppet",
+      "layer": "sticker",
+      "tags": [
+        "puppet",
+        "props",
+        "drama",
+        "story"
+      ],
+      "thumb": "thumbs/sticker-story-puppet.webp",
+      "full": "full/sticker-story-puppet.webp",
+      "width": 791,
+      "height": 693
+    },
+    {
+      "id": "sticker-return-bin",
+      "label": "Book Return Bin",
+      "layer": "sticker",
+      "tags": [
+        "return",
+        "bin",
+        "box",
+        "library"
+      ],
+      "thumb": "thumbs/sticker-return-bin.webp",
+      "full": "full/sticker-return-bin.webp",
+      "width": 917,
+      "height": 697
+    },
+    {
+      "id": "sticker-popup-book",
+      "label": "Pop-Up Book",
+      "layer": "sticker",
+      "tags": [
+        "pop-up",
+        "tactile",
+        "book",
+        "castle",
+        "genre"
+      ],
+      "thumb": "thumbs/sticker-popup-book.webp",
+      "full": "full/sticker-popup-book.webp",
+      "width": 1024,
+      "height": 533
     },
     {
       "id": "badge-rosette",

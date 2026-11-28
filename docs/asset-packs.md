@@ -125,7 +125,7 @@ and the detached copy comes out clean: no inherited radius, no inherited crop, `
 
 ## The shipped kit
 
-`public/asset-packs/storybook-reading-v1/` — **Story Kit, v1.2.0, 29 pieces, 4.5 MB**, built by
+`public/asset-packs/storybook-reading-v1/` — **Story Kit, v1.3.0, 37 pieces, 5.4 MB**, built by
 **`npm run pack:storybook`** from art in `.pack-src/` and `.pack-src-eco/` (generated, gitignored):
 
 | piece | layer | slot | size |
@@ -149,6 +149,14 @@ and the detached copy comes out clean: no inherited radius, no inherited crop, `
 | Reading Corner Sign | sticker | — | 559×696 |
 | Rosette Award | badge | — | 520×697 |
 | Star Medal | badge | — | 313×632 |
+| Reading Passport | sticker | — | 651×653 |
+| Big Book on an Easel | sticker | — | 1024×721 |
+| Listening Station | sticker | — | 895×724 |
+| ABC Blocks | sticker | — | 737×623 |
+| Story Puppet & Stage | sticker | — | 791×693 |
+| Pop-Up Book | sticker | — | 1024×533 |
+| Book Return Bin | sticker | — | 917×697 |
+| Storybook Page Border | frame | corner, page | 584×1024 |
 
 and the eco / fiesta ten, in the same kit:
 
@@ -165,7 +173,13 @@ and the eco / fiesta ten, in the same kit:
 | Wooden Signboard | sticker | — | 1024×380 |
 | Gold Laurel Frame | badge | — | 782×713 |
 
-The manifest is written in layer order — nine backdrops, eight frames, nine stickers, three badges —
+The last seven of those were cut for the **Champs Reading Corner** forms (`champsReadingTemplates.ts`):
+the passport stamp, the big-book easel, the listening station, the ABC blocks, the pop-up book, the
+puppet stage and the return bin are the icons on the genre bin cards, and the page border frames the
+passport cover. That is the rule working as intended — a form needed art, so the art went into the kit
+rather than into a one-off file beside it.
+
+The manifest is written in layer order — nine backdrops, nine frames, sixteen stickers, three badges —
 rather than in the order the pieces were authored, because the picker's "All" list is what a reader
 actually scrolls. An entry may name its own `src` folder, which is how one kit can be built from two
 source trees.
@@ -235,7 +249,7 @@ it — thumb and full are separate files so the picker never decodes a 1024px im
 
 Store, zip and picker logic are exercised in Node with `fake-indexeddb`:
 
-- the built-in kit is fetched and parsed as the app does it: **29 pieces**, layers 9 / 8 / 9 / 3,
+- the built-in kit is fetched and parsed as the app does it: **37 pieces**, layers 9 / 9 / 16 / 3,
   and every `thumb` and `full` the manifest names exists over HTTP with the thumb smaller than its
   full — the check that catches a manifest which has outrun the files;
 - one piece from each register resolves to a `data:image/webp;base64,…` with real bytes — a storybook

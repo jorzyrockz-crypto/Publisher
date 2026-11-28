@@ -200,6 +200,78 @@ const STORYBOOK_ASSETS = [
   },
 ];
 
+/** The reading-corner forms need their own furniture: a passport, display and listening pieces. */
+const CHAMPS_ASSETS = [
+  {
+    id: 'sticker-reading-passport',
+    label: 'Reading Passport',
+    layer: 'sticker',
+    tags: ['passport', 'book', 'reading', 'award', 'blank'],
+    cutout: true,
+    scanPockets: { cell: 16, min: 80 },
+  },
+  {
+    id: 'sticker-big-book-easel',
+    label: 'Big Book on an Easel',
+    layer: 'sticker',
+    tags: ['big book', 'easel', 'display', 'story'],
+    cutout: true,
+    scanPockets: { cell: 16, min: 80 },
+  },
+  {
+    id: 'sticker-audio-station',
+    label: 'Listening Station',
+    layer: 'sticker',
+    tags: ['audio', 'listening', 'headphones', 'station'],
+    cutout: true,
+    // The cassette label is cream, not paper, so a scan that only takes near-white is safe.
+    scanPockets: { cell: 16, min: 80 },
+  },
+  {
+    id: 'sticker-abc-blocks',
+    label: 'Alphabet Blocks',
+    layer: 'sticker',
+    tags: ['abc', 'blocks', 'alphabet', 'decodable'],
+    cutout: true,
+    scanPockets: { cell: 16, min: 80 },
+  },
+  {
+    id: 'sticker-story-puppet',
+    label: 'Story Puppet',
+    layer: 'sticker',
+    tags: ['puppet', 'props', 'drama', 'story'],
+    cutout: true,
+    scanPockets: { cell: 16, min: 80 },
+  },
+  {
+    id: 'sticker-return-bin',
+    label: 'Book Return Bin',
+    layer: 'sticker',
+    tags: ['return', 'bin', 'box', 'library'],
+    cutout: true,
+    scanPockets: { cell: 16, min: 80 },
+  },
+  {
+    id: 'sticker-popup-book',
+    label: 'Pop-Up Book',
+    layer: 'sticker',
+    tags: ['pop-up', 'tactile', 'book', 'castle', 'genre'],
+    cutout: true,
+    scanPockets: { cell: 16, min: 80 },
+  },
+  {
+    id: 'frame-storybook-border',
+    label: 'Storybook Page Border',
+    layer: 'frame',
+    tags: ['border', 'frame', 'storybook', 'passport', 'page'],
+    cutout: true,
+    slot: 'corner',
+    fit: 'page',
+    // The centre is deliberately cream — it is the writing panel — so nothing is scanned there.
+    clearSeeds: [],
+  },
+];
+
 /** The eco kit: campaign backdrops on the one hand, fiesta and award pieces on the other. */
 const ECO_ASSETS = [
   {
@@ -315,7 +387,7 @@ const PACKS = [
   {
     packId: 'storybook-reading-v1',
     name: 'Story Kit',
-    version: '1.2.0',
+    version: '1.3.0',
     src: '.pack-src',
     out: 'public/asset-packs/storybook-reading-v1',
     zip: null,
@@ -323,6 +395,7 @@ const PACKS = [
     assets: [
       ...STORYBOOK_ASSETS,
       ...ECO_ASSETS.map((asset) => ({ ...asset, src: '.pack-src-eco' })),
+      ...CHAMPS_ASSETS,
     ],
   },
   {
