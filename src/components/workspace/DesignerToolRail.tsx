@@ -5,6 +5,7 @@ import { WORD_ART_STYLES } from '../../utils/wordArt';
 import { ColorInput } from '../common/ColorInput';
 import { PageThumbnails } from '../sidebar/PageThumbnails';
 import { StockArtPanel } from '../sidebar/StockArtPanel';
+import { AssetPackPanel } from '../sidebar/AssetPackPanel';
 import { DesignerBrandPanel } from './DesignerBrandPanel';
 import { DesignerViewPanel } from './DesignerViewPanel';
 import { DesignerSettingsPanel } from './DesignerSettingsPanel';
@@ -38,6 +39,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Images,
+  Package,
   Sparkles,
   LayoutGrid,
   RotateCw,
@@ -55,6 +57,7 @@ type DesignerDrawerTab =
   | 'text'
   | 'media'
   | 'stock'
+  | 'packs'
   | 'visuals'
   | 'collage'
   | 'brand'
@@ -207,6 +210,7 @@ export const DesignerToolRail: React.FC = () => {
     { id: 'text', label: 'Text', icon: <Type size={18} /> },
     { id: 'media', label: 'My media', icon: <Upload size={18} /> },
     { id: 'stock', label: 'Stock', icon: <Images size={18} /> },
+    { id: 'packs', label: 'Story kit', icon: <Package size={18} /> },
     { id: 'visuals', label: 'Visuals', icon: <Shapes size={18} /> },
     { id: 'collage', label: 'Collage', icon: <LayoutGrid size={18} /> },
     { id: 'brand', label: 'Brand', icon: <Palette size={18} /> },
@@ -229,7 +233,8 @@ export const DesignerToolRail: React.FC = () => {
         activeDrawer === 'brand' ||
         activeDrawer === 'visuals' ||
         activeDrawer === 'collage' ||
-        activeDrawer === 'stock'
+        activeDrawer === 'stock' ||
+        activeDrawer === 'packs'
       ? 'w-[296px]'
       : 'w-[268px]';
 
@@ -246,6 +251,8 @@ export const DesignerToolRail: React.FC = () => {
       ? 'Collage'
       : pane === 'stock'
       ? 'Stock art'
+      : pane === 'packs'
+      ? 'Story kit'
       : pane === 'brand'
       ? 'Brand Studio'
       : pane === 'view'
@@ -310,7 +317,7 @@ export const DesignerToolRail: React.FC = () => {
             <div
               className={`${drawerWidthClass} h-full bg-white border-r border-[#e5e9ee] flex flex-col overflow-hidden`}
             >
-              {pane !== 'stock' && (
+              {pane !== 'stock' && pane !== 'packs' && (
                 <div className="px-3.5 py-3 border-b border-[#e5e9ee] flex items-center justify-between flex-shrink-0">
                   <div className="flex items-center gap-1.5 min-w-0">
                     {sidePanel && (
@@ -355,6 +362,10 @@ export const DesignerToolRail: React.FC = () => {
                    hides its own drawer header here: the panel brings an inspector-style
                    one, and two stacked titles is noise. */
                 <StockArtPanel embedded />
+              ) : pane === 'packs' ? (
+                /* The storybook kit — backdrops, frames and stickers drawn to be used together,
+                   laid out by layer. Same rule as Stock: the panel carries its own header. */
+                <AssetPackPanel embedded />
               ) : pane === 'media' ? (
                 <DesignerMediaPanel
                   uploads={uploads}

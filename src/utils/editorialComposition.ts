@@ -7,6 +7,8 @@ import type {
 import type { TemplateCategory } from "../constants/templates";
 import { artworkFor, isTypeOnlyCategory } from "../constants/generatedArtwork";
 import { contrastRatio } from "./documentPalette";
+import { wordArtHasBackdrop, wordArtSelfContained } from "./wordArt";
+import type { WordArtStyle } from "../types/publisher";
 
 /**
  * Composed layouts — the part that makes a template look *designed* rather than tidied.
@@ -273,6 +275,21 @@ function isComposable(page: Page): boolean {
     page.elements.some(
       (el) =>
         el.type === "image" && (el as { collageMeta?: unknown }).collageMeta,
+    )
+  )
+    return false;
+  // Lettering that *is* the design must not be recomposed: a stack of two or more WordArt lines
+  // is a lockup, and a sticker or brush style carries its own border or backdrop. A single display
+  // title among ordinary copy is fair game — the composition keeps the words and the page.
+  const wordArt = page.elements.filter(
+    (el) => el.type === "text" && (el as { isWordArt?: boolean }).isWordArt,
+  ) as Array<{ wordArtStyle?: WordArtStyle }>;
+  if (wordArt.length >= 2) return false;
+  if (
+    wordArt.some(
+      (el) =>
+        wordArtSelfContained(el.wordArtStyle) ||
+        wordArtHasBackdrop(el.wordArtStyle),
     )
   )
     return false;

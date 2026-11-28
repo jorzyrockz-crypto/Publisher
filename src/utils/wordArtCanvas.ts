@@ -1,4 +1,11 @@
-import { glintStarPoints, lerpHex, wordArtGlints } from './wordArt';
+import {
+  glintStarPoints,
+  lerpHex,
+  wordArtBackdropLayers,
+  wordArtGlints,
+  wordArtRimWidth,
+} from './wordArt';
+import type { WordArtStyle } from '../types/publisher';
 import type { WordArtGlint, WordArtSpec } from './wordArt';
 
 /**
@@ -92,7 +99,7 @@ function drawSparkleGlint(
  */
 export function createAngledGradient(
   ctx: CanvasRenderingContext2D,
-  spec: WordArtSpec,
+  spec: Pick<WordArtSpec, 'angle' | 'stops'>,
   box: { x: number; y: number; width: number; height: number }
 ): CanvasGradient {
   const rad = ((spec.angle - 90) * Math.PI) / 180;
@@ -106,6 +113,65 @@ export function createAngledGradient(
     gradient.addColorStop(Math.max(0, Math.min(1, stop.offset)), stop.color);
   }
   return gradient;
+}
+
+/**
+ * The painted highlight: one path per pass, the same paths the DOM fills.
+ *
+ * Three offset, tilted layers with ragged edges read as a brush; a single rounded bar reads as a
+ * text background. `Path2D` is used when the environment has it so the outline is *the same shape*
+ * the SVG layer draws; without it we fall back to a plain band rather than throwing.
+ */
+export function drawBrushBackdrop(
+  ctx: CanvasRenderingContext2D,
+  box: { x: number; y: number; width: number; height: number },
+  style: WordArtStyle | undefined,
+  scale = 1
+): void {
+  const backdrop = wordArtBackdropLayers(style, box);
+  if (!backdrop) return;
+  const { box: padded, layers, fill } = backdrop;
+  const cx = padded.x + padded.width / 2;
+  const cy = padded.y + padded.height / 2;
+
+  for (const layer of layers) {
+    ctx.save();
+    ctx.globalAlpha = layer.alpha;
+    ctx.translate(cx, cy + layer.dy * scale);
+    if (layer.tilt) ctx.rotate(layer.tilt);
+    ctx.beginPath();
+    let started = false;
+    for (const command of layer.commands) {
+      if (command.c === 'M') {
+        ctx.moveTo(command.x, command.y);
+        started = true;
+      } else if (command.c === 'L' && started) {
+        ctx.lineTo(command.x, command.y);
+      } else if (command.c === 'Q' && started) {
+        ctx.quadraticCurveTo(command.cx, command.cy, command.x, command.y);
+      }
+    }
+    if (layer.stroke) {
+      // Grain and plank borders: stroke the same outline the DOM strokes, at the backdrop's own
+      // geometry (already in element pixels, so only the export scale multiplies it).
+      ctx.strokeStyle = layer.stroke.color;
+      ctx.lineWidth = layer.stroke.width * scale;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    } else {
+      ctx.fillStyle = layer.gradient
+        ? createAngledGradient(ctx, layer.gradient, {
+            x: -padded.width / 2,
+            y: -padded.height / 2,
+            width: padded.width,
+            height: padded.height,
+          })
+        : (layer.fill ?? fill);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+  }
 }
 
 /**
@@ -154,7 +220,11 @@ export function renderWordArtCanvas(
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
 
-  const rimWidth = spec.stroke ? spec.stroke.width * RIM_MULTIPLIER * scale : 0;
+  // 0. The painted highlight goes down first — under every shadow, because it is ink on the page,
+  // not part of the lettering.
+  drawBrushBackdrop(ctx, line.box, spec.id, scale);
+
+  const rimWidth = wordArtRimWidth(spec) * RIM_MULTIPLIER * scale;
   const gradient = createAngledGradient(ctx, spec, line.box);
 
   // 1. Light behind the letters, furthest first: the bloom, then the long cast

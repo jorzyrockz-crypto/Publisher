@@ -1,0 +1,160 @@
+{
+  "packId": "storybook-reading-v1",
+  "name": "Storybook & Reading Corner",
+  "version": "1.0.0",
+  "assets": [
+    {
+      "id": "bg-enchanted-forest",
+      "label": "Enchanted Forest Clearing",
+      "layer": "backdrop",
+      "tags": [
+        "forest",
+        "storybook",
+        "nature",
+        "cover"
+      ],
+      "thumb": "thumbs/bg-enchanted-forest.webp",
+      "full": "full/bg-enchanted-forest.webp",
+      "width": 896,
+      "height": 1200
+    },
+    {
+      "id": "bg-cozy-reading-nook",
+      "label": "Cozy Reading Nook",
+      "layer": "backdrop",
+      "tags": [
+        "classroom",
+        "reading",
+        "nook",
+        "interior"
+      ],
+      "thumb": "thumbs/bg-cozy-reading-nook.webp",
+      "full": "full/bg-cozy-reading-nook.webp",
+      "width": 896,
+      "height": 1200
+    },
+    {
+      "id": "bg-sunny-hilltop",
+      "label": "Sunny Hilltop Meadow",
+      "layer": "backdrop",
+      "tags": [
+        "meadow",
+        "hills",
+        "sky",
+        "spring"
+      ],
+      "thumb": "thumbs/bg-sunny-hilltop.webp",
+      "full": "full/bg-sunny-hilltop.webp",
+      "width": 896,
+      "height": 1200
+    },
+    {
+      "id": "frame-top-canopy",
+      "label": "Hanging Canopy Leaves",
+      "layer": "frame",
+      "tags": [
+        "leaves",
+        "border",
+        "top",
+        "frame"
+      ],
+      "slot": "top",
+      "thumb": "thumbs/frame-top-canopy.webp",
+      "full": "full/frame-top-canopy.webp",
+      "width": 1024,
+      "height": 408
+    },
+    {
+      "id": "frame-bottom-grass",
+      "label": "Grass & Wildflower Strip",
+      "layer": "frame",
+      "tags": [
+        "grass",
+        "flowers",
+        "border",
+        "bottom"
+      ],
+      "slot": "bottom",
+      "thumb": "thumbs/frame-bottom-grass.webp",
+      "full": "full/frame-bottom-grass.webp",
+      "width": 1024,
+      "height": 306
+    },
+    {
+      "id": "frame-corner-vines",
+      "label": "Corner Vines & Blossoms",
+      "layer": "frame",
+      "tags": [
+        "vines",
+        "corner",
+        "border",
+        "frame"
+      ],
+      "slot": "corner",
+      "thumb": "thumbs/frame-corner-vines.webp",
+      "full": "full/frame-corner-vines.webp",
+      "width": 1024,
+      "height": 561
+    },
+    {
+      "id": "sticker-reading-kids",
+      "label": "Kids Reading Together",
+      "layer": "sticker",
+      "tags": [
+        "kids",
+        "reading",
+        "books",
+        "mascot"
+      ],
+      "thumb": "thumbs/sticker-reading-kids.webp",
+      "full": "full/sticker-reading-kids.webp",
+      "width": 904,
+      "height": 643
+    },
+    {
+      "id": "sticker-reading-owl",
+      "label": "Reading Owl on Books",
+      "layer": "sticker",
+      "tags": [
+        "owl",
+        "books",
+        "clever",
+        "mascot"
+      ],
+      "thumb": "thumbs/sticker-reading-owl.webp",
+      "full": "full/sticker-reading-owl.webp",
+      "width": 614,
+      "height": 667
+    },
+    {
+      "id": "sticker-playful-monkey",
+      "label": "Playful Monkey",
+      "layer": "sticker",
+      "tags": [
+        "monkey",
+        "animal",
+        "leaf",
+        "mascot"
+      ],
+      "thumb": "thumbs/sticker-playful-monkey.webp",
+      "full": "full/sticker-playful-monkey.webp",
+      "width": 712,
+      "height": 573
+    },
+    {
+      "id": "sticker-magic-book",
+      "label": "Open Magic Book",
+      "layer": "sticker",
+      "tags": [
+        "book",
+        "magic",
+        "sparkles",
+        "story"
+      ],
+      "thumb": "thumbs/sticker-magic-book.webp",
+      "full": "full/sticker-magic-book.webp",
+      "width": 1024,
+      "height": 514
+    }
+  ]
+}

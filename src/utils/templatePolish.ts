@@ -154,11 +154,10 @@ function placeArtwork(
 
   if (isTypeOnlyCategory(category)) return elements;
 
+  // Any picture at all counts, full bleed included: a template that already ships its own
+  // photograph must not get a second one stacked on top of it (with a veil over both).
   const alreadyHasPhoto = elements.some(
-    (el) =>
-      el.type === "image" &&
-      (el as PublisherElement & { src?: string }).src &&
-      !isBackgroundShape(el, page),
+    (el) => el.type === "image" && (el as PublisherElement & { src?: string }).src,
   );
   const hero = heroArtworkFor(category, isPortrait, `${hint} ${page.name}`);
   // A hero only goes in where the page is visibly bare of imagery: adding one behind a busy

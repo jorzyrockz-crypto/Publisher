@@ -13,11 +13,18 @@ import {
 } from '../types/publisher';
 import { buildPatternSvg, buildShapePatternDataUri } from './patternGenerator';
 import { buildWavyRectPath, getShapeSvgPath } from './shapePaths';
-import { buildFontString, layoutText, lineGlyphBoxes, measureTextWidth, verticalOffset } from './textLayout';
+import {
+  buildFontString,
+  curveGlyphBox,
+  layoutText,
+  lineGlyphBoxes,
+  measureTextWidth,
+  verticalOffset,
+} from './textLayout';
 import { buildTextEffectPainter } from './textEffects';
 import { elementClipPath } from './shapeClip';
 import { imageContentRect, imageFit } from './imageFrame';
-import { wordArtPaint, wordArtShadowChain, wordArtSpec } from './wordArt';
+import { wordArtCurve, wordArtPaint, wordArtShadowChain, wordArtSpec } from './wordArt';
 import { renderWordArtCanvas } from './wordArtCanvas';
 import type { WordArtPass } from './wordArtCanvas';
 
@@ -131,7 +138,12 @@ function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
     }
   }
 
-  const layout = layoutText(el);
+  // A WordArt style can carry an arc (0.15 = a gentle smile). The element's own Curve control still
+  // wins, so a template can arch one line without touching the style.
+  const styleCurve = el.isWordArt ? wordArtCurve(el.wordArtStyle, el.textCurve) : (el.textCurve ?? 0);
+  const layout = layoutText(
+    styleCurve === (el.textCurve ?? 0) ? el : { ...el, textCurve: styleCurve }
+  );
   const paint = buildTextEffectPainter(el);
   // WordArt styles carry their own fill, stroke, shadow stack and weight, so
   // the exported text looks like the canvas instead of falling back to el.color.
@@ -281,17 +293,28 @@ function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
   const spec = wa ? wordArtSpec(el.wordArtStyle) : undefined;
   if (spec) {
     const boxes = layout.curve
-      ? [{ x: 0, y: top, width, height }]
+      ? [curveGlyphBox(layout.curve, top) ?? { x: 0, y: top, width, height }]
       : lineGlyphBoxes(layout, top);
-    layout.lines.forEach((line, lineIndex) => {
-      const box = boxes[lineIndex] ?? boxes[0];
-      const lineUnits = units.filter((unit) => unit.lineIndex === lineIndex);
+    // Curved text has no `lines` — the arc replaces them — so the WordArt painter walks the
+    // curve as a single pseudo-line. Reading `layout.lines` here is what used to make a curved
+    // WordArt word disappear from the export entirely.
+    const lineEntries = layout.curve
+      ? [{ text: layout.curve.chars.map((char) => char.text).join(''), box: boxes[0] }]
+      : layout.lines.map((line, index) => ({
+          text: line.runs.map((run) => run.text).join(''),
+          box: boxes[index] ?? boxes[0],
+        }));
+
+    lineEntries.forEach(({ text: lineText, box }, lineIndex) => {
+      const lineUnits = units.filter(
+        (unit) => unit.lineIndex === (layout.curve ? 0 : lineIndex)
+      );
       if (!lineUnits.length) return;
       renderWordArtCanvas(
         ctx,
         spec,
         {
-          text: line.runs.map((run) => run.text).join(''),
+          text: lineText,
           x: 0,
           y: 0,
           box,

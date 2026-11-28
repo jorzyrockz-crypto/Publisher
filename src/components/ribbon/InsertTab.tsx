@@ -21,6 +21,7 @@ import {
   LayoutGrid,
   ImagePlus,
   Smile,
+  Package,
 } from 'lucide-react';
 
 export const InsertTab: React.FC = () => {
@@ -40,7 +41,9 @@ export const InsertTab: React.FC = () => {
     setIsWordArtModalOpen,
     setIsAIImageModalOpen,
     isStockArtPanelOpen,
+    isAssetPackPanelOpen,
     setIsStockArtPanelOpen,
+    setIsAssetPackPanelOpen,
     setIsCollageModalOpen,
   } = usePublisher();
 
@@ -337,7 +340,11 @@ export const InsertTab: React.FC = () => {
 
           {/* Stock Art & Clipart Unified Inspector Panel */}
           <button
-            onClick={() => setIsStockArtPanelOpen(!isStockArtPanelOpen)}
+            onClick={() => {
+              const next = !isStockArtPanelOpen;
+              setIsStockArtPanelOpen(next);
+              if (next) setIsAssetPackPanelOpen(false);
+            }}
             className={`flex items-center gap-1.5 px-2.5 py-1.5 active:scale-95 rounded-[8px] text-xs transition-all cursor-pointer ${
               isStockArtPanelOpen
                 ? 'bg-[#efeafd] text-[#5c4bb8] font-semibold'
@@ -347,6 +354,25 @@ export const InsertTab: React.FC = () => {
           >
             <Images size={15} className="text-[#6e56cf]" />
             <span>Stock Art</span>
+          </button>
+
+          {/* Storybook asset packs: one kit, placed by layer. Mutually exclusive with Stock Art,
+              because both own the same right-hand column. */}
+          <button
+            onClick={() => {
+              const next = !isAssetPackPanelOpen;
+              setIsAssetPackPanelOpen(next);
+              if (next) setIsStockArtPanelOpen(false);
+            }}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 active:scale-95 rounded-[8px] text-xs transition-all cursor-pointer ${
+              isAssetPackPanelOpen
+                ? 'bg-[#efeafd] text-[#5c4bb8] font-semibold'
+                : 'hover:bg-[#f4f2ff] hover:text-[#5c4bb8] font-medium text-[#161a22]'
+            }`}
+            title="Storybook & Reading Corner asset pack — backdrops, frames and stickers, all offline"
+          >
+            <Package size={15} className="text-[#6e56cf]" />
+            <span>Story Kit</span>
           </button>
 
           {/* Stickers Picker (Single Source of Truth shared with Collage Vibe Packs) */}

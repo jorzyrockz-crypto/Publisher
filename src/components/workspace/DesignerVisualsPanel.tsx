@@ -71,7 +71,7 @@ export const DesignerVisualsPanel: React.FC<{
   const illustrationItems = useMemo(
     () =>
       filteredGraphics.filter((g) =>
-        ['Badges', 'Education', 'Animals', 'Plants', 'People', 'Things'].includes(g.category)
+        ['Badges', 'Clay', 'Education', 'Animals', 'Plants', 'People', 'Things'].includes(g.category)
       ),
     [filteredGraphics]
   );

@@ -44,7 +44,32 @@ export type WordArtStyle =
   | 'rose-gold'
   | 'cyber-acid'
   | 'obsidian-gold'
-  | 'candy-gloss';
+  | 'candy-gloss'
+  // Poster stickers: a chunky gradient face inside a fat rounded white border, with the paper-lift
+  // shadow that keeps the word readable over a busy collage.
+  | 'sticker-royal'
+  | 'sticker-forest'
+  | 'sticker-coral'
+  | 'sticker-teal'
+  // Flat ink on a painted highlight — the brush-swipe and pastel-pill poster looks.
+  | 'brush-sunshine'
+  | 'brush-blush'
+  | 'pill-highlight'
+  | 'eco-champion'
+  | 'eco-leaf'
+  | 'wood-plank-action'
+  | 'eco-ribbon'
+  | 'forest-script-sticker'
+  | 'trophy-gold'
+  | 'fiesta-mosaic'
+  | 'parchment-script'
+  | 'folklore-wood'
+  | 'storybook-crayon'
+  | 'fairytale-sparkle'
+  | 'reading-nook-sage'
+  | 'storytime-banner'
+  | 'portfolio-editorial'
+  | 'portfolio-indigo';
 
 export type BorderArtStyle =
   | 'none'

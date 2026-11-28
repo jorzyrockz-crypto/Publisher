@@ -20,7 +20,8 @@ import { FloatingDropdown } from '../common/FloatingDropdown';
 import { ShapePreviewIcon } from '../common/ShapePreviewIcon';
 import { SHAPE_CATALOG } from '../../utils/shapePaths';
 import { imageFit, panRoom } from '../../utils/imageFrame';
-import { wordArtPaint, wordArtPickerOptions } from '../../utils/wordArt';
+import { wordArtCurve, wordArtPaint, wordArtPickerOptions } from '../../utils/wordArt';
+import type { WordArtStyle } from '../../types/publisher';
 import { useImageAspect } from '../../hooks/useImageAspect';
 import {
   PATTERN_CATALOG,
@@ -102,6 +103,17 @@ import {
  * where it is larger than its frame, so an axis with no slack is shown as
  * unavailable instead of silently doing nothing.
  */
+
+/** The curve that is actually painted: the element's own, else the WordArt style's `arc`. */
+const effectiveTextCurve = (element: {
+  isWordArt?: boolean;
+  wordArtStyle?: WordArtStyle;
+  textCurve?: number;
+}) =>
+  element.isWordArt
+    ? wordArtCurve(element.wordArtStyle, element.textCurve)
+    : (element.textCurve ?? 0);
+
 const PanAxes: React.FC<{
   element: ImageElement;
   onChange: (patch: Partial<ImageElement>) => void;
@@ -227,6 +239,10 @@ export const PropertiesPanel: React.FC = () => {
     label: opt.label,
     cssClass: opt.className,
     dark: opt.dark,
+    // A backdrop style is the one thing a 36px tile cannot show — the highlight is geometry, not a
+    // text effect. Label the kind and show its colour, rather than faking a shape the export would
+    // not match.
+    backdrop: wordArtPaint(opt.id)?.backdrop,
   }));
 
   const elementsPool = isEditingMaster
@@ -2327,7 +2343,7 @@ export const PropertiesPanel: React.FC = () => {
                         Curve
                       </label>
                       <span className="font-mono text-[10px] text-slate-500">
-                        {textEl.textCurve ?? 0}
+                        {effectiveTextCurve(textEl)}
                       </span>
                     </div>
                     <input
@@ -2335,7 +2351,11 @@ export const PropertiesPanel: React.FC = () => {
                       min={-100}
                       max={100}
                       step={5}
-                      value={textEl.textCurve ?? 0}
+                      // A WordArt style can carry its own arc. Reading the raw element value here
+                      // would claim "0" over type that is visibly arched, so the control always
+                      // shows the curve that is painted; touching it writes an explicit curve,
+                      // which then wins over the style.
+                      value={effectiveTextCurve(textEl)}
                       onChange={(e) =>
                         updateElement(textEl.id, { textCurve: Number(e.target.value) })
                       }
@@ -2348,7 +2368,7 @@ export const PropertiesPanel: React.FC = () => {
                           type="button"
                           onClick={() => updateElement(textEl.id, { textCurve: preset.value })}
                           className={`py-1 rounded-lg text-[9.5px] font-bold border transition ${
-                            (textEl.textCurve ?? 0) === preset.value
+                            effectiveTextCurve(textEl) === preset.value
                               ? 'bg-white border-[#b4a4f4] text-[#5c4bb8] shadow-xs'
                               : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-[#c9bdf7]'
                           }`}
@@ -2439,11 +2459,25 @@ export const PropertiesPanel: React.FC = () => {
                                     }`}
                                   >
                                     <div
-                                      className={`w-full h-9 rounded-lg flex items-center justify-center font-black text-lg leading-none ${
+                                      className={`relative w-full h-9 rounded-lg flex items-center justify-center font-black text-lg leading-none ${
                                         opt.dark ? 'bg-slate-900' : 'bg-slate-50 border border-slate-100'
                                       }`}
                                     >
                                       <span className={opt.cssClass}>Aa</span>
+                                      {opt.backdrop && (
+                                        <span
+                                          className="absolute right-1 top-1 rounded-[3px] px-1 text-[7px] font-bold uppercase tracking-wide text-slate-900/80 border border-black/10"
+                                          style={{ backgroundColor: opt.backdrop.color }}
+                                        >
+                                          {opt.backdrop.type === 'brush-swipe'
+                                            ? 'swipe'
+                                            : opt.backdrop.type === 'pastel-pill'
+                                              ? 'pill'
+                                              : opt.backdrop.type === 'wood-plank'
+                                                ? 'plank'
+                                                : 'ribbon'}
+                                        </span>
+                                      )}
                                     </div>
                                     <span className="text-[10px] font-semibold text-slate-700 leading-tight truncate w-full">
                                       {opt.label}
