@@ -21,6 +21,7 @@ import { ShapePreviewIcon } from '../common/ShapePreviewIcon';
 import { SHAPE_CATALOG } from '../../utils/shapePaths';
 import { imageFit, panRoom } from '../../utils/imageFrame';
 import { wordArtCurve, wordArtPaint, wordArtPickerOptions } from '../../utils/wordArt';
+import { wordArtFacePatch } from '../../constants/wordArtFonts';
 import type { WordArtStyle } from '../../types/publisher';
 import { useImageAspect } from '../../hooks/useImageAspect';
 import {
@@ -2487,6 +2488,10 @@ export const PropertiesPanel: React.FC = () => {
                                       updateElement(textEl.id, {
                                         isWordArt: opt.id !== 'none',
                                         wordArtStyle: opt.id,
+                                        // A style is a letterform before it is a colour: picking
+                                        // one brings its face with it. Styles with no face leave the
+                                        // document's font alone.
+                                        ...wordArtFacePatch(opt.id),
                                       });
                                       setIsWordArtPickerOpen(false);
                                     }}

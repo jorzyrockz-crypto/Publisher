@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
 import { WordArtStyle } from '../../types/publisher';
 import { WORD_ART_STYLES } from '../../utils/wordArt';
+import { wordArtFacePatch } from '../../constants/wordArtFonts';
 import {
   TONE_OPTIONS,
   TypeIdea,
@@ -90,6 +91,7 @@ export const WordArtPickerModal: React.FC = () => {
       fontWeight: 'bold',
       isWordArt: true,
       wordArtStyle: selectedStyle,
+      ...wordArtFacePatch(selectedStyle),
       width: 440,
       height: 90,
       fontFamily: 'Impact',

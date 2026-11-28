@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
 import { PAGE_SIZES } from '../../constants/pageSizes';
 import { WORD_ART_STYLES } from '../../utils/wordArt';
+import { wordArtFacePatch } from '../../constants/wordArtFonts';
 import { ColorInput } from '../common/ColorInput';
 import { PageThumbnails } from '../sidebar/PageThumbnails';
 import { StockArtPanel } from '../sidebar/StockArtPanel';
@@ -604,6 +605,7 @@ export const DesignerToolRail: React.FC = () => {
                                   updateElement(selectedTextElement.id, {
                                     isWordArt: true,
                                     wordArtStyle: style.id,
+                                    ...wordArtFacePatch(style.id),
                                   });
                                 } else {
                                   addTextBox({
@@ -612,6 +614,7 @@ export const DesignerToolRail: React.FC = () => {
                                     fontWeight: 'bold',
                                     isWordArt: true,
                                     wordArtStyle: style.id,
+                                    ...wordArtFacePatch(style.id),
                                     width: 360,
                                     height: 84,
                                   });

@@ -461,3 +461,22 @@ Poster category. `src/constants/posterWordArtTemplates.ts` holds it.
   `npm run wordart:css -- --check` in sync.
 - Library: **89.0 average, median 90, A 38, D 0**; 43 pages better than the authored version, 30
   unchanged, **0 worse**.
+
+## The face a style asks for
+
+A style paints letters; it does not choose the typeface. That gap is why a green ramp in Plus Jakarta
+Sans reads as "a gradient" rather than "a sticker": the letterform is half the look.
+
+`src/constants/wordArtFonts.ts` carries the other half — `WORDART_FONT_MAP`, style id → family,
+weight and italic. Picking a style in the Text panel, the Designer rail or the WordArt gallery brings
+its face with it (`wordArtFacePatch`). Nothing happens on load, so a document keeps the fonts it was
+designed with, and the table is deliberately partial: material styles (Gold 3D, Chrome, Fire, Varsity)
+are happy in whatever font the page already uses, and 18 of the 52 styles say nothing at all.
+
+Two rules, and `npm run check:wordart` enforces both:
+
+- **every id must exist** — a typo means the face is silently never applied;
+- **every family must be in `src/constants/fonts.ts`** — this one already bit us. `Lilita One` and
+  `Bangers` were being asked for by sticker and comic styles while the catalogue had never offered
+  them, so the browser fell back to a system face and the styles looked broken rather than
+  misconfigured. Both are catalogued now.

@@ -61,6 +61,11 @@ export const GOOGLE_FONTS_CATALOG: FontDefinition[] = [
   { family: 'Nunito', category: 'Sans-Serif', source: 'google' },
   { family: 'Patrick Hand', category: 'Script', source: 'google' },
   { family: 'Chewy', category: 'Display', source: 'google' },
+  // WordArt faces that were being asked for before they were offered: `Lilita One` makes the sticker
+  // ramps read as die-cuts, `Bangers` is the comic caption the wood-plank and trophy styles want.
+  // Without these rows the browser falls back silently and the style looks broken.
+  { family: 'Lilita One', category: 'Display', source: 'google' },
+  { family: 'Bangers', category: 'Display', source: 'google' },
   { family: 'Plus Jakarta Sans', category: 'Sans-Serif', source: 'google' },
   { family: 'Fira Code', category: 'Monospace', source: 'google' },
 ];
