@@ -59,20 +59,21 @@ function buildSelection(
  * Group ids cannot do this job: Group rewrites them and Ungroup clears them, and neither
  * distinguishes two collages sharing a page.
  */
-export function useCollageSelection(): CollageSelection | null {
-  const { activePage, selectedElementIds } = usePublisher();
-
-  return useMemo(() => {
+export function resolveCollageSelection(
+  elements: PublisherElement[],
+  selectedElementIds: string[]
+): CollageSelection | null {
+  {
     if (selectedElementIds.length === 0) return null;
 
     const selectedSet = new Set(selectedElementIds);
-    const selected = activePage.elements.filter((el) => selectedSet.has(el.id));
+    const selected = elements.filter((el) => selectedSet.has(el.id));
     if (selected.length === 0) return null;
 
     // 1. Stamped identity — reliable regardless of grouping.
     const stampedId = selected.find((el) => el.collageMeta?.collageId)?.collageMeta?.collageId;
     if (stampedId) {
-      const members = activePage.elements.filter((el) => el.collageMeta?.collageId === stampedId);
+      const members = elements.filter((el) => el.collageMeta?.collageId === stampedId);
       // A collage plus a text box is not "the collage is selected".
       if (!selected.every((el) => members.some((member) => member.id === el.id))) return null;
       const carrier = members.find((el) => el.collageMeta?.collageId === stampedId);
@@ -86,7 +87,7 @@ export function useCollageSelection(): CollageSelection | null {
     if (groupId && !selected.every((el) => el.groupId === groupId)) return null;
 
     const groupMembers = groupId
-      ? activePage.elements.filter((el) => el.groupId === groupId)
+      ? elements.filter((el) => el.groupId === groupId)
       : selected;
     const carrier = groupMembers.find((el) => Boolean(el.collageMeta));
     if (!carrier || !carrier.collageMeta) return null;
@@ -107,5 +108,17 @@ export function useCollageSelection(): CollageSelection | null {
     }
 
     return buildSelection(meta, members, groupId ?? '');
-  }, [activePage.elements, selectedElementIds]);
+  }
+}
+
+/**
+ * The same answer for a live editor. Kept thin so the rule itself can be exercised without
+ * React — see `resolveCollageSelection`.
+ */
+export function useCollageSelection(): CollageSelection | null {
+  const { activePage, selectedElementIds } = usePublisher();
+  return useMemo(
+    () => resolveCollageSelection(activePage.elements, selectedElementIds),
+    [activePage.elements, selectedElementIds]
+  );
 }

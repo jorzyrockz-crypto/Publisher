@@ -143,6 +143,11 @@ export interface CollageBuildResult {
   pageBackdrop: PageBackdropPatch | null;
 }
 
+/** A collage's name, minted when it is inserted and kept for its whole life. */
+export function mintCollageId(): string {
+  return `col-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
 export function buildCollageElements(input: CollageBuildInput): CollageBuildResult {
   const { meta, originX, originY, pageWidth, pageHeight, margins, groupId } = input;
   const groupSlots = input.groupSlots ?? true;
@@ -177,7 +182,7 @@ export function buildCollageElements(input: CollageBuildInput): CollageBuildResu
   // Minted once, at insert: every element of this collage carries it from then on, so the
   // collage can be found again whatever happens to its group.
   if (!serializedMeta.collageId) {
-    serializedMeta.collageId = `col-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    serializedMeta.collageId = mintCollageId();
   }
   const elements: PublisherElement[] = [];
   let pageBackdrop: PageBackdropPatch | null = null;

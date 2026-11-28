@@ -21,6 +21,7 @@ import {
   BackstageSection,
 } from '../types/publisher';
 import { buildCollageElements } from '../utils/collageBuild';
+import { adoptCollageIds, freshCollageIds } from '../utils/collageIdentity';
 import type { CollageControlSection } from '../constants/collageControls';
 import { buildMergedPartFromShape } from '../utils/shapePaths';
 import { mergeShapeGeometry } from '../utils/shapeBoolean';
@@ -302,6 +303,21 @@ interface BootWorkspace {
   savedAt: number;
 }
 
+/**
+ * Collages saved before they were stamped with an id adopt one here, so a document that
+ * predates the change behaves exactly like one inserted today.
+ */
+function withAdoptedCollages(tabs: WorkspaceTab[]): WorkspaceTab[] {
+  let changed = false;
+  const next = tabs.map((tab) => {
+    const pages = adoptCollageIds(tab.project.pages);
+    if (pages === tab.project.pages) return tab;
+    changed = true;
+    return { ...tab, project: { ...tab.project, pages } };
+  });
+  return changed ? next : tabs;
+}
+
 function defaultWorkspace(): WorkspaceTab[] {
   return [
     {
@@ -334,8 +350,10 @@ function loadInitialWorkspace(): BootWorkspace {
     }
     const cached = readBootCache();
     if (cached.workspace && cached.workspace.tabs.length > 0) {
-      const tabs = cached.workspace.tabs.filter(
-        (tab) => tab?.id && tab?.project && Array.isArray(tab.project.pages) && tab.project.pages.length > 0
+      const tabs = withAdoptedCollages(
+        cached.workspace.tabs.filter(
+          (tab) => tab?.id && tab?.project && Array.isArray(tab.project.pages) && tab.project.pages.length > 0
+        )
       );
       if (tabs.length > 0) {
         const activeExists = tabs.some((tab) => tab.id === cached.workspace!.activeTabId);
@@ -511,8 +529,10 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       .then((stored: StoredWorkspace | null) => {
         if (cancelled || restoreAbandonedRef.current) return;
         if (!stored || stored.savedAt <= bootSavedAt) return;
-        const validTabs = stored.tabs.filter(
-          (tab) => tab?.id && tab?.project && Array.isArray(tab.project.pages) && tab.project.pages.length > 0
+        const validTabs = withAdoptedCollages(
+          stored.tabs.filter(
+            (tab) => tab?.id && tab?.project && Array.isArray(tab.project.pages) && tab.project.pages.length > 0
+          )
         );
         if (validTabs.length === 0) return;
         const activeExists = validTabs.some((tab) => tab.id === stored.activeTabId);
@@ -1960,7 +1980,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
     });
 
-    commitCurrentElements([...currentElements, ...duplicated]);
+    commitCurrentElements([...currentElements, ...freshCollageIds(duplicated)]);
     setSelectedElementIds(newIds);
   }, [currentElements, selectedElementIds, commitCurrentElements]);
 
@@ -1988,7 +2008,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       });
     });
 
-    commitCurrentElements([...currentElements, ...pasted]);
+    commitCurrentElements([...currentElements, ...freshCollageIds(pasted)]);
     setSelectedElementIds(newIds);
   }, [copiedElements, currentElements, commitCurrentElements]);
 
