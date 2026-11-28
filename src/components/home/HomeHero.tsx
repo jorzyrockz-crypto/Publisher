@@ -6,9 +6,13 @@ import { HomeShortcuts } from './HomeShortcuts';
 /**
  * The top of Home: the question, the search, and the six formats people actually start from.
  *
+ * No card around it. A bordered, tinted panel put a box inside a box — the page is already the
+ * surface — and it clipped the shortcut cards' hover shadow at its own edge. The headline, the
+ * field and the row now sit straight on the page's warm ground.
+ *
  * The search is the hero's real content — it filters the grid below as you type, so there is no
- * submit button and nothing to navigate to. Under it, `HomeShortcuts` puts the six ways to start as
- * mini cards rather than pills; see that component for what each one opens.
+ * submit button and nothing to navigate to, and no caption line under it either: the gallery's own
+ * heading counts what matched. The count survives as a live region for screen readers.
  */
 export const HomeHero: React.FC<{
   query: string;
@@ -16,14 +20,10 @@ export const HomeHero: React.FC<{
   resultCount: number;
 }> = ({ query, onQueryChange, resultCount }) => {
   return (
-    <section className="home-hero-wash relative overflow-hidden rounded-tile border border-accent-line/70 px-5 py-8 text-center sm:px-8 sm:py-10">
+    <section className="pt-1 text-center">
       <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink sm:text-3xl">
         What will you design today?
       </h1>
-      <p className="mx-auto mt-2 max-w-xl text-lead text-ink-secondary">
-        {TEMPLATES.length} print-ready layouts for schools and small studios — tarpaulins, reading
-        corner signs, posters, collages and certificates — or start from a blank page.
-      </p>
 
       <div className="mx-auto mt-5 w-full max-w-2xl">
         <div className="relative">
@@ -51,15 +51,12 @@ export const HomeHero: React.FC<{
           )}
         </div>
 
-        <p className="mt-1.5 h-4 text-2xs font-medium text-ink-muted">
-          {query
-            ? `${resultCount} template${resultCount === 1 ? '' : 's'} match “${query}”`
-            : 'Type to filter the gallery below as you go.'}
+        <p className="sr-only" role="status" aria-live="polite">
+          {query ? `${resultCount} template${resultCount === 1 ? '' : 's'} match “${query}”` : ''}
         </p>
       </div>
 
       <HomeShortcuts />
-
     </section>
   );
 };

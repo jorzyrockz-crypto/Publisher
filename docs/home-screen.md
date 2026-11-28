@@ -67,31 +67,24 @@ second set of selectors, and no white card glowing on a dark ground.
 
 ---
 
-## 3. Hero, search and quick start
+## 3. Hero and search
 
-`HomeHero`. The gradient is two radial washes of `--sp-accent-from` and `--sp-accent-focus` over a
-tint of `--sp-accent-soft` → `--sp-surface`, in `.home-hero-wash`. Two radials rather than one
-linear ramp because a 1400px linear gradient bands on 8-bit displays; the dark theme halves the
-wash so the card does not glow.
+`HomeHero` is the headline, the field and the shortcut row — and nothing else. No card around them:
+a bordered, tinted panel on a page that is already a surface is a box inside a box, and the
+`overflow: hidden` that came with its rounded corner was what clipped the shortcut cards' hover
+shadow at the top and bottom edge. The page's warm ground (`.home-ground`, below) is the only
+background, and `.home-hero-wash` is gone with the panel.
+
+No sentence above the field and no caption under it either. The headline carries the question, the
+gallery's own heading counts what matched, and the count otherwise survives as a polite live region
+(`role="status"` + `sr-only`) — so "7 templates match tarpapel" still reaches a screen reader
+without a second line of grey type between the field and the cards.
 
 The search **is** the hero's function: `onChange` sets the same filter state the grid below uses, so
 results change as you type. There is no submit button, and the placeholder quotes the real template
 count (`TEMPLATES.length`, 73) so it can never claim a library size the build does not have.
 
-The six chips split into the only two kinds of start there are:
-
-| chip | what it opens | where the document comes from |
-|---|---|---|
-| Tarpapel (3×2) | a tarpapel canvas, print grid already set (see §6) | built |
-| Reading Corner | the first `Champs Reading` sign | the library |
-| A4 Poster | the first A4 portrait poster | the library |
-| Photo Collage | the first collage layout | the library |
-| Social Media | a 1080 × 1080 square post | built |
-| Blank Canvas | a blank A4 | built |
-
-Every chip **starts a document**: the next screen is always the editor. A chip called "Reading
-Corner" that scrolls a grid is a link dressed as a button — browsing by category is what the
-gallery's own pill row is for.
+The six ways to start live under the field as mini cards rather than chips; see §4.
 
 ---
 
@@ -134,8 +127,12 @@ sky, slate. Title and subtitle clear WCAG AA on the card's own ground in both th
 5.7 / 5.4, 5.8 / 5.6, 6.7 / 5.5, 6.5 / 4.9, 7.9 / 4.9 on light; 7.6 / 6.1, 7.8 / 5.7, 8.2 / 7.0,
 7.3 / 5.9, 7.7 / 6.7, 7.8 / 6.1 on dark.
 
-The row scrolls sideways with faded ends rather than wrapping: a second line of cards under the
-search box is the one thing that would push the gallery out of the first screenful.
+The row is centred and scrolls sideways rather than wrapping: a second line of cards under the
+search box is the one thing that would push the gallery out of the first screenful. `justify-content:
+safe center` centres it when it fits and falls back to left alignment when it overflows, so the
+first card is never stranded outside the reach of the scroll box. The strip carries vertical padding
+of its own (offset with a negative margin, so the layout does not move) because `overflow-x: auto`
+clips on both axes — without it every lifted card loses its top and bottom edge.
 
 ### Artwork
 

@@ -15,7 +15,11 @@ import { useDesignLauncher } from './useDesignLauncher';
  * the canvas. Either way the next thing on screen is the editor.
  *
  * The row scrolls sideways rather than wrapping — six cards on a laptop is a row, and a second line
- * of cards under the search box pushes the gallery below the fold.
+ * of cards under the search box pushes the gallery below the fold. `safe center` keeps the row
+ * centred when it fits and falls back to left alignment when it overflows, which is what stops the
+ * first card being unreachable inside the scroll box. The vertical padding is the scroll container's
+ * room for the hover shadow: `overflow-x` clips on both axes, so without it every lifted card loses
+ * its top and bottom edge.
  */
 export const HomeShortcuts: React.FC = () => {
   const { startTarpapel, startBlank, applyTemplate } = useDesignLauncher();
@@ -47,7 +51,7 @@ export const HomeShortcuts: React.FC = () => {
 
   return (
     <div
-      className="home-strip home-fade-x mt-4 flex gap-2 overflow-x-auto pb-1.5"
+      className="home-strip mt-1 -mb-2 flex gap-2 overflow-x-auto px-1 py-2.5 [justify-content:safe_center]"
       role="group"
       aria-label="Start a design"
     >
