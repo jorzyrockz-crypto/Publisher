@@ -1443,7 +1443,10 @@ export function buildWordArtCssRule(style: WordArtStyle, className = `wordart-${
     // In em, like the rim it clears: the filter runs on the *painted* glyphs, so the ring is offset
     // from the white rim's outer edge. A 2 px offset around an 0.25 em rim is a 2 px keyline on a
     // 72 px letter and a hairline on a 138 px one; `drop-shadow()` takes any length, em included.
-    const ringEm = Math.max(0.5, paint.outline.width / 2) / 72;
+    // Offset from the painted output, which already includes the white rim — so the offset that
+    // shows `ring` of dark beyond it *is* `ring`. Half of it, as it was, drew a keyline half the
+    // width the other two painters draw.
+    const ringEm = Math.max(0.5, paint.outline.width) / 72;
     const asEm = (value: number) => `${Math.round(value * 1000) / 1000}em`;
     for (const [dx, dy] of RING_OFFSETS) {
       filters.push(`drop-shadow(${asEm(dx * ringEm)} ${asEm(dy * ringEm)} 0 ${paint.outline.color})`);
@@ -1574,15 +1577,18 @@ export function strokeCss(paint: WordArtPaint): string {
 }
 
 /**
- * The keyline silhouette's stroke — the rim plus the ring's own width, in em.
+ * The keyline silhouette's stroke — the rim plus *twice* the ring, in em.
  *
- * The DOM draws the second keyline as a stroked copy of the glyphs *under* the rim, so its stroke
- * has to clear the rim completely or the dark ring is hidden by the white one. That is rim + ring,
- * not the rim alone, and both parts scale with the type like everything else here.
+ * The DOM draws the second keyline as a stroked copy of the glyphs under the rim. A centred stroke
+ * shows only half of itself past the glyph edge, and `paint-order: stroke fill` hides the other half:
+ * the white rim at width R reaches R/2 outside the letters, so a silhouette at R + ring would reach
+ * R/2 + ring/2 and show a ring *half* the width the canvas paints (`rimWidth + ring * 2`, whose
+ * visible part is exactly `ring`). Doubling the ring here is what makes the editor and the export
+ * agree to the pixel rather than to the half.
  */
 export function outlineStrokeCss(paint?: WordArtPaint): string {
   if (!paint?.outline) return '';
-  return `${wordArtEmSize(wordArtRimWidth(paint) + paint.outline.width)} ${paint.outline.color}`;
+  return `${wordArtEmSize(wordArtRimWidth(paint) + paint.outline.width * 2)} ${paint.outline.color}`;
 }
 
 export function wordArtShadowChain(paint?: WordArtPaint): WordArtShadow[] {
@@ -1590,11 +1596,18 @@ export function wordArtShadowChain(paint?: WordArtPaint): WordArtShadow[] {
   const chain: WordArtShadow[] = [];
   const extrusion = paint.extrusion;
   if (extrusion) {
+    // One *step* per shadow, not the running total. A CSS filter list is a chain — each
+    // `drop-shadow()` is applied to the output of the one before it — so listing `1d, 2d, 3d, 4d`
+    // does not put copies at 1, 2, 3 and 4: it puts them at 1, 3, 6 and 10, and a 4-step extrusion
+    // comes out two and a half times too deep, with the last copy flung off the letter. The canvas
+    // loops the steps itself and paints them at `dx * i`, so the CSS has to say `d` four times to
+    // mean the same thing. (Same compounding is why the keyline ring is listed before the blurred
+    // shadows — order and count of these filters is not cosmetic.)
     const { steps, dx, dy, startColor, endColor } = extrusion;
     for (let i = 1; i <= steps; i += 1) {
       chain.push({
-        dx: round2(dx * i),
-        dy: round2(dy * i),
+        dx: round2(dx),
+        dy: round2(dy),
         blur: 0,
         color: lerpHex(startColor, endColor, steps === 1 ? 1 : (i - 1) / (steps - 1)),
       });

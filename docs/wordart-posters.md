@@ -515,3 +515,31 @@ Two rules, and `npm run check:wordart` enforces both:
 | `npm run wordart:css -- --check` | `src/index.css` matches what `buildWordArtCssRule` generates |
 | `npm run check:wordart` | every styled face names a real style and a font the app can load |
 | `npm run check:wordart-parity` | the sheet, the DOM and the canvas agree: em rims, ring before blur, no rim haze, strokes in their own colour, canvas rim scaling with the type |
+
+### Extrusion: the CSS list is a chain, not a list of offsets
+
+`filter: drop-shadow()` is applied to the output of the previous filter, so four entries of
+`drop-shadow(1px 1px)` put copies at 1, 3, 6 and 10 px — not 1, 2, 3, 4. Emitting the running total
+(`dx * i`) compounded twice and made every 3D style two-and-a-half times too deep, with the last copy
+flung off the letter while the canvas, which loops its own steps, stayed correct.
+
+`wordArtShadowChain` now emits one *step* per copy and lets the chain do the stacking: six entries of
+`drop-shadow(0.8px 1.3px)` land exactly where the canvas's `dx * i` does. Same reason the keyline ring
+is listed before the blurred shadows, and the same reason the rim halo had to go — in a filter chain
+the count and order of drops is the drawing, not a detail.
+
+Because the chain no longer reports how far a block reaches, `textEffectsFit` reads the depth from the
+spec (`steps × the step`) when it decides how much room a text box needs.
+
+### Canvas parity
+
+| what | editor | export |
+|---|---|---|
+| rim width | `0.25em` (via `strokeCss`) | `wordArtRimWidth × fontSize / 72` |
+| keyline | `outlineStrokeCss` silhouette | fill + stroke pass at `rim + ring × 2` |
+| blur | `drop-shadow(… blur)` | `filter: blur(blur × scale / 2)` — CSS blur reads about twice as wide, and the export multiplier keeps a 3× PNG's bloom in proportion |
+| anchor | glyph box | `line.x, line.y` |
+
+`npm run check:wordart-parity` runs all 52 painted styles through the canvas default painter and fails
+if any stroke falls back to the context default, any pass is drawn off its anchor, any blur fails to
+scale with the multiplier, or any extrusion lists running totals instead of steps.

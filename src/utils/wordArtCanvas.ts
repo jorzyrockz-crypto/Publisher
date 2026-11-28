@@ -214,7 +214,10 @@ export function renderWordArtCanvas(
     options.paint ??
     ((pass: WordArtPass) => {
       ctx.save();
-      if (pass.blur > 0 && 'filter' in ctx) ctx.filter = `blur(${pass.blur / 2}px)`;
+      // Half the CSS radius is the canvas radius (a `drop-shadow` blur reads about twice as wide as
+      // `filter: blur`), and the *export multiplier* has to be applied or a 3x PNG gets a bloom and a
+      // cast shadow sized for the 1x one — the letters sharpen and the soft parts stay soft.
+      if (pass.blur > 0 && 'filter' in ctx) ctx.filter = `blur(${(pass.blur * scale) / 2}px)`;
       ctx.translate(pass.offsetX, pass.offsetY);
       if (pass.mode === 'stroke') {
         // `strokeText` reads `strokeStyle`, and nothing was setting it: every rim, keyline and
@@ -223,10 +226,13 @@ export function renderWordArtCanvas(
         // the pass.
         ctx.strokeStyle = pass.style;
         ctx.lineWidth = pass.lineWidth ?? 1;
-        ctx.strokeText(line.text, 0, 0);
+        // Where the line says it is. Both current callers pass an anchor of (0, 0) and place the
+        // context themselves, so this is the same pixel — but a caller that hands in a real anchor
+        // and gets its text drawn at the origin is a bug waiting in the default painter.
+        ctx.strokeText(line.text, line.x, line.y);
       } else {
         ctx.fillStyle = pass.style;
-        ctx.fillText(line.text, 0, 0);
+        ctx.fillText(line.text, line.x, line.y);
       }
       ctx.restore();
     });

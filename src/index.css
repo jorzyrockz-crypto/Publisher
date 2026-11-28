@@ -301,11 +301,11 @@
   paint-order: stroke fill;
   filter:
     drop-shadow(0.8px 1.3px 0px #ff7b00)
-    drop-shadow(1.6px 2.6px 0px #eb6800)
-    drop-shadow(2.4px 3.9px 0px #d75500)
-    drop-shadow(3.2px 5.2px 0px #c24200)
-    drop-shadow(4px 6.5px 0px #ae2f00)
-    drop-shadow(4.8px 7.8px 0px #9a1c00)
+    drop-shadow(0.8px 1.3px 0px #eb6800)
+    drop-shadow(0.8px 1.3px 0px #d75500)
+    drop-shadow(0.8px 1.3px 0px #c24200)
+    drop-shadow(0.8px 1.3px 0px #ae2f00)
+    drop-shadow(0.8px 1.3px 0px #9a1c00)
     drop-shadow(0px 10px 16px rgba(0, 0, 0, 0.65))
     drop-shadow(0px 0px 14px rgba(168, 85, 247, 0.55));
 }
@@ -319,9 +319,9 @@
   paint-order: stroke fill;
   filter:
     drop-shadow(0px 1.2px 0px #64748b)
-    drop-shadow(0px 2.4px 0px #48556b)
-    drop-shadow(0px 3.6px 0px #2b364a)
-    drop-shadow(0px 4.8px 0px #0f172a)
+    drop-shadow(0px 1.2px 0px #48556b)
+    drop-shadow(0px 1.2px 0px #2b364a)
+    drop-shadow(0px 1.2px 0px #0f172a)
     drop-shadow(0px 8px 14px rgba(15, 23, 42, 0.45))
     drop-shadow(0px 0px 12px rgba(125, 211, 252, 0.45));
 }
@@ -335,10 +335,10 @@
   paint-order: stroke fill;
   filter:
     drop-shadow(0.6px 1.2px 0px #be185d)
-    drop-shadow(1.2px 2.4px 0px #a2134c)
-    drop-shadow(1.8px 3.6px 0px #850f3b)
-    drop-shadow(2.4px 4.8px 0px #690a2a)
-    drop-shadow(3px 6px 0px #4c0519)
+    drop-shadow(0.6px 1.2px 0px #a2134c)
+    drop-shadow(0.6px 1.2px 0px #850f3b)
+    drop-shadow(0.6px 1.2px 0px #690a2a)
+    drop-shadow(0.6px 1.2px 0px #4c0519)
     drop-shadow(0px 8px 14px rgba(0, 0, 0, 0.45))
     drop-shadow(0px 0px 12px rgba(251, 113, 133, 0.4));
 }
@@ -353,10 +353,10 @@
   paint-order: stroke fill;
   filter:
     drop-shadow(1.2px 1.2px 0px #ec4899)
-    drop-shadow(2.4px 2.4px 0px #d23c84)
-    drop-shadow(3.6px 3.6px 0px #b8306e)
-    drop-shadow(4.8px 4.8px 0px #9d2459)
-    drop-shadow(6px 6px 0px #831843)
+    drop-shadow(1.2px 1.2px 0px #d23c84)
+    drop-shadow(1.2px 1.2px 0px #b8306e)
+    drop-shadow(1.2px 1.2px 0px #9d2459)
+    drop-shadow(1.2px 1.2px 0px #831843)
     drop-shadow(0px 8px 12px rgba(0, 0, 0, 0.6))
     drop-shadow(0px 0px 14px rgba(163, 230, 53, 0.5));
 }
@@ -370,9 +370,9 @@
   paint-order: stroke fill;
   filter:
     drop-shadow(0.5px 1.1px 0px #b45309)
-    drop-shadow(1px 2.2px 0px #8f4007)
-    drop-shadow(1.5px 3.3px 0px #6a2d05)
-    drop-shadow(2px 4.4px 0px #451a03)
+    drop-shadow(0.5px 1.1px 0px #8f4007)
+    drop-shadow(0.5px 1.1px 0px #6a2d05)
+    drop-shadow(0.5px 1.1px 0px #451a03)
     drop-shadow(0px 6px 12px rgba(0, 0, 0, 0.5));
 }
 
@@ -385,10 +385,10 @@
   paint-order: stroke fill;
   filter:
     drop-shadow(0px 1.4px 0px #881337)
-    drop-shadow(0px 2.8px 0px #791030)
-    drop-shadow(0px 4.2px 0px #6a0c28)
-    drop-shadow(0px 5.6px 0px #5b0921)
-    drop-shadow(0px 7px 0px #4c0519)
+    drop-shadow(0px 1.4px 0px #791030)
+    drop-shadow(0px 1.4px 0px #6a0c28)
+    drop-shadow(0px 1.4px 0px #5b0921)
+    drop-shadow(0px 1.4px 0px #4c0519)
     drop-shadow(0px 8px 12px rgba(76, 5, 25, 0.4));
 }
 
@@ -444,14 +444,14 @@
   -webkit-text-stroke: 0.25em #ffffff;
   paint-order: stroke fill;
   filter:
-    drop-shadow(0.028em 0em 0 #0b2f6e)
-    drop-shadow(0.019em 0.019em 0 #0b2f6e)
-    drop-shadow(0em 0.028em 0 #0b2f6e)
-    drop-shadow(-0.019em 0.019em 0 #0b2f6e)
-    drop-shadow(-0.028em 0em 0 #0b2f6e)
-    drop-shadow(-0.019em -0.019em 0 #0b2f6e)
-    drop-shadow(0em -0.028em 0 #0b2f6e)
-    drop-shadow(0.019em -0.019em 0 #0b2f6e)
+    drop-shadow(0.056em 0em 0 #0b2f6e)
+    drop-shadow(0.039em 0.039em 0 #0b2f6e)
+    drop-shadow(0em 0.056em 0 #0b2f6e)
+    drop-shadow(-0.039em 0.039em 0 #0b2f6e)
+    drop-shadow(-0.056em 0em 0 #0b2f6e)
+    drop-shadow(-0.039em -0.039em 0 #0b2f6e)
+    drop-shadow(0em -0.056em 0 #0b2f6e)
+    drop-shadow(0.039em -0.039em 0 #0b2f6e)
     drop-shadow(0px 6px 12px rgba(9, 38, 94, 0.35));
 }
 
@@ -463,14 +463,14 @@
   -webkit-text-stroke: 0.25em #ffffff;
   paint-order: stroke fill;
   filter:
-    drop-shadow(0.028em 0em 0 #7a0b46)
-    drop-shadow(0.019em 0.019em 0 #7a0b46)
-    drop-shadow(0em 0.028em 0 #7a0b46)
-    drop-shadow(-0.019em 0.019em 0 #7a0b46)
-    drop-shadow(-0.028em 0em 0 #7a0b46)
-    drop-shadow(-0.019em -0.019em 0 #7a0b46)
-    drop-shadow(0em -0.028em 0 #7a0b46)
-    drop-shadow(0.019em -0.019em 0 #7a0b46)
+    drop-shadow(0.056em 0em 0 #7a0b46)
+    drop-shadow(0.039em 0.039em 0 #7a0b46)
+    drop-shadow(0em 0.056em 0 #7a0b46)
+    drop-shadow(-0.039em 0.039em 0 #7a0b46)
+    drop-shadow(-0.056em 0em 0 #7a0b46)
+    drop-shadow(-0.039em -0.039em 0 #7a0b46)
+    drop-shadow(0em -0.056em 0 #7a0b46)
+    drop-shadow(0.039em -0.039em 0 #7a0b46)
     drop-shadow(0px 6px 12px rgba(96, 6, 52, 0.35));
 }
 
@@ -505,9 +505,9 @@
   paint-order: stroke fill;
   filter:
     drop-shadow(0px 1.5px 0px #14532d)
-    drop-shadow(0px 3px 0px #0f4725)
-    drop-shadow(0px 4.5px 0px #0a3a1e)
-    drop-shadow(0px 6px 0px #052e16)
+    drop-shadow(0px 1.5px 0px #0f4725)
+    drop-shadow(0px 1.5px 0px #0a3a1e)
+    drop-shadow(0px 1.5px 0px #052e16)
     drop-shadow(0px 6px 10px rgba(5, 46, 22, 0.35));
 }
 
@@ -561,10 +561,10 @@
   paint-order: stroke fill;
   filter:
     drop-shadow(0.5px 1.3px 0px #b45309)
-    drop-shadow(1px 2.6px 0px #984508)
-    drop-shadow(1.5px 3.9px 0px #7d3706)
-    drop-shadow(2px 5.2px 0px #612805)
-    drop-shadow(2.5px 6.5px 0px #451a03)
+    drop-shadow(0.5px 1.3px 0px #984508)
+    drop-shadow(0.5px 1.3px 0px #7d3706)
+    drop-shadow(0.5px 1.3px 0px #612805)
+    drop-shadow(0.5px 1.3px 0px #451a03)
     drop-shadow(0px 8px 14px rgba(0, 0, 0, 0.65))
     drop-shadow(0px 0px 16px rgba(250, 204, 21, 0.48));
 }
@@ -609,9 +609,9 @@
   paint-order: stroke fill;
   filter:
     drop-shadow(0px 1.5px 0px #1d4ed8)
-    drop-shadow(0px 3px 0px #1d47be)
-    drop-shadow(0px 4.5px 0px #1e41a4)
-    drop-shadow(0px 6px 0px #1e3a8a)
+    drop-shadow(0px 1.5px 0px #1d47be)
+    drop-shadow(0px 1.5px 0px #1e41a4)
+    drop-shadow(0px 1.5px 0px #1e3a8a)
     drop-shadow(0px 6px 10px rgba(30, 58, 138, 0.3));
 }
 

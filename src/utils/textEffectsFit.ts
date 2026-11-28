@@ -53,6 +53,12 @@ export function textEffectBleed(el: TextElement): number {
   // WordArt stacks its own shadows, extrusion steps and blooms on top.
   const wordArt = el.isWordArt ? wordArtPaint(el.wordArtStyle) : undefined;
   if (wordArt) {
+    // The chain lists one *step* per extrusion copy (CSS compounds them), so its entries no longer
+    // tell you how far the block reaches. The spec does: steps × the step.
+    if (wordArt.extrusion) {
+      const { steps, dx, dy } = wordArt.extrusion;
+      consider(Math.hypot(dx, dy) * steps + 2);
+    }
     for (const shadow of wordArtShadowChain(wordArt)) {
       consider(Math.hypot(shadow.dx, shadow.dy) + (shadow.blur || 0) * 1.5);
     }
