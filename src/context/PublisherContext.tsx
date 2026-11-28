@@ -20,6 +20,7 @@ import {
   ShapeType,
   BackstageSection,
 } from '../types/publisher';
+import { buildCollageElements } from '../utils/collageBuild';
 import { buildMergedPartFromShape } from '../utils/shapePaths';
 import { mergeShapeGeometry } from '../utils/shapeBoolean';
 import { pageRingsToLocal, ringsToPath, shapeOutlineRings } from '../utils/shapeClip';
@@ -139,6 +140,12 @@ interface PublisherContextType {
     groupId?: string,
     elementId?: string
   ) => void;
+  /**
+   * Applies a changed `CollageMeta` to a collage already on the page, leaving its position
+   * alone. This is what lets the canvas toolbar change a collage without opening the
+   * builder — the modal and the toolbar write elements through the same builder.
+   */
+  patchCollageMeta: (groupId: string, nextMeta: import('../utils/borderArtStyles').CollageMeta) => void;
   setIsBrandBoardModalOpen: (open: boolean) => void;
   setIsBrandKitModalOpen: (open: boolean) => void;
   saveBrandKit: (kit: BrandKit) => void;
@@ -1690,6 +1697,56 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     [currentElements, commitCurrentElements]
   );
 
+  const patchCollageMeta = useCallback(
+    (groupId: string, nextMeta: import('../utils/borderArtStyles').CollageMeta) => {
+      const members = currentElements.filter((el) => el.groupId === groupId);
+      if (members.length === 0) return;
+
+      // The collage's own top-left, never the page centre: a restyle must not move it.
+      const originX = Math.min(...members.map((el) => el.x));
+      const originY = Math.min(...members.map((el) => el.y));
+      const baseZ = Math.min(...members.map((el) => el.zIndex));
+
+      const { elements, pageBackdrop } = buildCollageElements({
+        meta: nextMeta,
+        originX,
+        originY,
+        pageWidth: activePage.width,
+        pageHeight: activePage.height,
+        margins: activePage.margins,
+        groupId,
+        groupSlots: true,
+      });
+
+      // Reuse the ids and z-order of the elements being replaced. The builder mints new
+      // ids, and a new id is a broken reference: undo restores the previous elements, the
+      // selection still points at the new ones, and the toolbar silently empties. Keeping
+      // the z values also stops the collage creeping up the stack one patch at a time.
+      const pool = new Map<string, PublisherElement[]>();
+      members.forEach((member) => {
+        const key = member.name ?? '';
+        const list = pool.get(key) ?? [];
+        list.push(member);
+        pool.set(key, list);
+      });
+      const rebuilt = elements.map((el) => {
+        const previous = pool.get(el.name ?? '')?.shift();
+        return {
+          ...el,
+          id: previous?.id ?? el.id,
+          zIndex: previous?.zIndex ?? baseZ + el.zIndex,
+        };
+      });
+      const remaining = currentElements.filter((el) => el.groupId !== groupId);
+
+      if (pageBackdrop) applyPageBackdrop(pageBackdrop);
+      commitCurrentElements([...remaining, ...rebuilt]);
+      // Reselect the rebuilt group, so the toolbar survives its own click.
+      setSelectedElementIds(rebuilt.map((el) => el.id));
+    },
+    [currentElements, activePage, commitCurrentElements, applyPageBackdrop]
+  );
+
   const updateElement = useCallback(
     (id: string, updates: Partial<PublisherElement>, options?: { transient?: boolean }) => {
       if (isEditingMaster) {
@@ -2895,6 +2952,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setIsCollageModalOpen,
         openCollageEditor,
         replaceCollageGroup,
+        patchCollageMeta,
         setIsBrandBoardModalOpen,
         setIsBrandKitModalOpen,
         saveBrandKit,

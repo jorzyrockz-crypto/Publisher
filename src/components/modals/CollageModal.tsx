@@ -25,17 +25,17 @@ import {
   getBackdropPreviewStyle,
   getEffectCssFilter,
   getMaskClipPath,
-  toPublisherBorderArt,
-  toPublisherEffect,
-  toPublisherMask,
 } from '../../utils/borderArtStyles';
 import { GRADIENT_SWATCHES, buildLinearGradientCss } from '../../constants/gradientSwatches';
+import {
+  buildCollageElements,
+  createEmptySlot,
+  defaultCollageOrigin,
+  getAspectDimensions,
+} from '../../utils/collageBuild';
 import { STICKER_CATALOG, getStickerById } from '../../constants/stickerLibrary';
 import {
   BackgroundPatternType,
-  ImageElement,
-  PublisherElement,
-  ShapeElement,
 } from '../../types/publisher';
 import { PATTERN_CATALOG } from '../../utils/patternGenerator';
 import {
@@ -86,15 +86,6 @@ const DEFAULT_BACKDROP: CollageBackdropConfig = {
   padding: 16,
 };
 
-const createEmptySlot = (): CollageSlotState => ({
-  imageUrl: null,
-  cropX: 0,
-  cropY: 0,
-  zoom: 1,
-  imageRotation: 0,
-  flipH: false,
-});
-
 const createDefaultMeta = (): CollageMeta => ({
   layoutId: '4-grid',
   aspectRatio: '1:1',
@@ -102,31 +93,6 @@ const createDefaultMeta = (): CollageMeta => ({
   backdrop: { ...DEFAULT_BACKDROP },
   slots: Array.from({ length: 9 }, createEmptySlot),
 });
-
-function getAspectDimensions(
-  aspect: CollageMeta['aspectRatio'],
-  availW: number,
-  availH: number,
-  paperW: number,
-  paperH: number,
-  maxBox: number
-): { width: number; height: number } {
-  let ratio = 1;
-  if (aspect === '4:3') ratio = 4 / 3;
-  else if (aspect === '3:4') ratio = 3 / 4;
-  else if (aspect === '16:9') ratio = 16 / 9;
-  else if (aspect === '9:16') ratio = 9 / 16;
-  else if (aspect === 'page-margin') ratio = availW / Math.max(1, availH);
-  else if (aspect === 'full-paper') ratio = paperW / Math.max(1, paperH);
-
-  let width = maxBox;
-  let height = Math.round(maxBox / ratio);
-  if (height > maxBox) {
-    height = maxBox;
-    width = Math.round(maxBox * ratio);
-  }
-  return { width: Math.max(120, width), height: Math.max(120, height) };
-}
 
 export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
   const {
@@ -695,230 +661,31 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
   };
 
   const handleSaveCollage = () => {
-    const canvasDims =
-      meta.aspectRatio === 'page-margin'
-        ? { width: availW, height: availH }
-        : meta.aspectRatio === 'full-paper'
-        ? { width: activePage.width, height: activePage.height }
-        : getAspectDimensions(
-            meta.aspectRatio,
-            availW,
-            availH,
-            activePage.width,
-            activePage.height,
-            Math.min(availW, availH, 680)
-          );
-    const originX = editingCollageState
-      ? editingCollageState.originX
-      : meta.aspectRatio === 'full-paper'
-      ? 0
-      : meta.aspectRatio === 'page-margin'
-      ? activePage.margins.left
-      : Math.round((activePage.width - canvasDims.width) / 2);
-    const originY = editingCollageState
-      ? editingCollageState.originY
-      : meta.aspectRatio === 'full-paper'
-      ? 0
-      : meta.aspectRatio === 'page-margin'
-      ? activePage.margins.top
-      : Math.round((activePage.height - canvasDims.height) / 2);
+    // Same builder the on-canvas controls use, so a collage cannot be written two ways.
+    const origin = editingCollageState
+      ? { x: editingCollageState.originX, y: editingCollageState.originY }
+      : defaultCollageOrigin(meta, activePage.width, activePage.height, activePage.margins);
 
-    const saveAspect = canvasDims.width / Math.max(1, canvasDims.height);
-    const saveLayout = resolveCollageLayout(meta, slotPhotoDims, saveAspect);
-
-    const canvasPad = meta.backdrop.type === 'none' ? 0 : Math.round(meta.backdrop.padding * 1.4);
-    const slotCanvasW = Math.max(120, canvasDims.width - canvasPad * 2);
-    const slotCanvasH = Math.max(120, canvasDims.height - canvasPad * 2);
-    const canvasSlots = computeCollageSlots(
-      saveLayout,
-      slotCanvasW,
-      slotCanvasH,
-      Math.round(meta.globalStyle.gap * 1.3),
-      meta.globalStyle.scatterTilt,
-      meta.globalStyle.slotScale ?? 1,
-      meta.sizeSeed ?? 0
-    );
-
-    const groupId = groupSlots
-      ? editingCollageState?.groupId || `grp-collage-${Date.now()}`
-      : undefined;
-    const serializedMeta: CollageMeta = JSON.parse(JSON.stringify(meta));
-    const elementsToInsert: PublisherElement[] = [];
-
-    // Cover Document Page Background if requested
-    if (meta.coverDocumentBackground && meta.backdrop.type !== 'none') {
-      const overlayPat =
-        meta.backdrop.patternType && meta.backdrop.patternType !== 'none'
-          ? {
-              type: meta.backdrop.patternType,
-              color: meta.backdrop.patternColor || '#4f46e5',
-              opacity: meta.backdrop.patternOpacity ?? 0.25,
-              scale: 22,
-              strokeWidth: 1.5,
-              rotation: 0,
-            }
-          : undefined;
-
-      if (meta.backdrop.type === 'pastel-gradient') {
-        applyPageBackdrop({
-          backgroundColor: meta.backdrop.color || '#fdf2f8',
-          backgroundGradient: {
-            color1: meta.backdrop.color || '#fdf2f8',
-            color2: meta.backdrop.gradientColor2 || '#e0f2fe',
-            angle: meta.backdrop.gradientAngle ?? 135,
-          },
-          backgroundPattern: overlayPat,
-        });
-      } else if (meta.backdrop.type === 'dot-grid') {
-        applyPageBackdrop({
-          backgroundColor: meta.backdrop.color || '#f8fafc',
-          backgroundGradient: undefined,
-          backgroundPattern: overlayPat || {
-            type: 'dots',
-            color: '#64748b',
-            opacity: 0.25,
-            scale: 22,
-            strokeWidth: 1.5,
-            rotation: 0,
-          },
-        });
-      } else if (meta.backdrop.type === 'kraft-paper') {
-        applyPageBackdrop({
-          backgroundColor: meta.backdrop.color || '#e6ccb2',
-          backgroundGradient: undefined,
-          backgroundPattern: overlayPat || {
-            type: 'terrazzo',
-            color: '#785028',
-            opacity: 0.14,
-            scale: 26,
-            strokeWidth: 1.5,
-            rotation: 0,
-          },
-        });
-      } else {
-        applyPageBackdrop({
-          backgroundColor: meta.backdrop.color || '#f1f5f9',
-          backgroundGradient: undefined,
-          backgroundPattern: overlayPat,
-        });
-      }
-    }
-
-    // Optional Backdrop Card element behind slots
-    if (meta.backdrop.type !== 'none' && !meta.coverDocumentBackground) {
-      const backdropFill =
-        meta.backdrop.type === 'pastel-gradient'
-          ? meta.backdrop.color || '#fdf2f8'
-          : meta.backdrop.color || '#f8fafc';
-      const backdropEl: ShapeElement = {
-        id: `shp-col-bg-${Date.now()}`,
-        type: 'shape',
-        name: 'Collage Backdrop Card',
-        groupId,
-        collageMeta: serializedMeta,
-        shapeType: 'rounded-rect',
-        cornerRadius: 18,
-        fillColor: backdropFill,
-        fillType: meta.backdrop.type === 'pastel-gradient' ? 'linear-gradient' : 'solid',
-        gradientColor2:
-          meta.backdrop.type === 'pastel-gradient'
-            ? meta.backdrop.gradientColor2 || '#e0f2fe'
-            : undefined,
-        gradientAngle: meta.backdrop.gradientAngle ?? 135,
-        strokeColor: meta.backdrop.type === 'kraft-paper' ? '#d4a373' : '#e2e8f0',
-        strokeWidth: 1,
-        x: originX,
-        y: originY,
-        width: canvasDims.width,
-        height: canvasDims.height,
-        rotation: 0,
-        zIndex: 1,
-        shadow: true,
-        shadowBlur: 14,
-      };
-      elementsToInsert.push(backdropEl);
-    }
-
-    canvasSlots.forEach((slot, idx) => {
-      const sState = meta.slots[idx] || createEmptySlot();
-      const effBorderArt = sState.styleOverride?.borderArt ?? meta.globalStyle.borderArt;
-      const effFrameColor = sState.styleOverride?.frameColor ?? meta.globalStyle.frameColor;
-      const effAccentColor = sState.styleOverride?.accentColor ?? meta.globalStyle.accentColor;
-      const effThickness = sState.styleOverride?.frameThickness ?? meta.globalStyle.frameThickness;
-      const effEffect = sState.styleOverride?.effect ?? meta.globalStyle.effect;
-      const effMask = sState.styleOverride?.mask ?? meta.globalStyle.mask;
-
-      const tiltOffset =
-        tiltSeed > 0 && meta.globalStyle.scatterTilt
-          ? ((idx + tiltSeed) % 2 === 0 ? 1 : -1) * (((idx * 3 + tiltSeed) % 5) + 1)
-          : 0;
-      const finalRotation = meta.globalStyle.scatterTilt ? slot.rotation + tiltOffset : slot.rotation;
-
-      const imgEl: ImageElement = {
-        id: `img-col-${Date.now()}-${idx}`,
-        type: 'image',
-        name: sState.imageUrl ? `Collage Photo ${idx + 1}` : `Photo Slot ${idx + 1}`,
-        groupId,
-        collageMeta: groupSlots ? serializedMeta : undefined,
-        src: sState.imageUrl || '',
-        x: originX + canvasPad + slot.x,
-        y: originY + canvasPad + slot.y,
-        width: slot.width,
-        height: slot.height,
-        rotation: finalRotation,
-        zIndex: 2 + (sState.zIndexOverride ?? slot.zIndex),
-        objectFit: 'cover',
-        aspectRatioLocked: false,
-        borderRadius: meta.globalStyle.cornerRadius,
-        borderArt: toPublisherBorderArt(effBorderArt),
-        borderArtColor: effFrameColor,
-        borderArtColor2: effAccentColor,
-        borderArtWidth: effThickness,
-        borderArtCaption: sState.caption,
-        effectPreset: toPublisherEffect(effEffect),
-        maskShape: toPublisherMask(effMask),
-        panX: sState.cropX,
-        panY: sState.cropY,
-        imageScale: sState.zoom,
-        imageRotation: sState.imageRotation,
-        flipH: sState.flipH,
-      };
-      elementsToInsert.push(imgEl);
+    const { elements, pageBackdrop } = buildCollageElements({
+      meta,
+      originX: origin.x,
+      originY: origin.y,
+      pageWidth: activePage.width,
+      pageHeight: activePage.height,
+      margins: activePage.margins,
+      groupId: groupSlots
+        ? editingCollageState?.groupId || `grp-collage-${Date.now()}`
+        : undefined,
+      tiltSeed,
+      groupSlots,
     });
 
-    // Placed Collage / Vibe Stickers layered on top
-    (meta.stickers || []).forEach((placed, idx) => {
-      const def = getStickerById(placed.stickerId);
-      if (!def) return;
-      const stickerPx = Math.round((placed.size / 450) * Math.min(canvasDims.width, canvasDims.height));
-      const stkEl: ImageElement = {
-        id: `img-col-stk-${Date.now()}-${idx}`,
-        type: 'image',
-        name: `${def.name} Sticker`,
-        groupId,
-        collageMeta: groupSlots ? serializedMeta : undefined,
-        src: def.dataUri,
-        x: Math.round(originX + placed.x * canvasDims.width),
-        y: Math.round(originY + placed.y * canvasDims.height),
-        width: Math.max(32, stickerPx),
-        height: Math.max(32, stickerPx),
-        rotation: placed.rotation,
-        zIndex: 40 + idx,
-        objectFit: 'contain',
-        aspectRatioLocked: true,
-        effectPreset: 'sticker',
-      };
-      elementsToInsert.push(stkEl);
-    });
+    if (pageBackdrop) applyPageBackdrop(pageBackdrop);
 
     if (editingCollageState) {
-      replaceCollageGroup(
-        elementsToInsert,
-        editingCollageState.groupId,
-        editingCollageState.elementId
-      );
+      replaceCollageGroup(elements, editingCollageState.groupId, editingCollageState.elementId);
     } else {
-      addElementsBatch(elementsToInsert);
+      addElementsBatch(elements);
     }
     setIsCollageModalOpen(false);
   };
