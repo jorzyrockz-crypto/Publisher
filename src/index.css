@@ -571,6 +571,78 @@
   filter:
     drop-shadow(0px 4px 6px rgba(0, 0, 0, 0.7));
 }
+
+.wordart-storybook-crayon {
+  font-weight: 900;
+  background: linear-gradient(180deg, #fde047 0%, #fb923c 50%, #f43f5e 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 8px #ffffff;
+  paint-order: stroke fill;
+  filter:
+    drop-shadow(0px 1.5px 0px #1d4ed8)
+    drop-shadow(0px 3px 0px #1d47be)
+    drop-shadow(0px 4.5px 0px #1e41a4)
+    drop-shadow(0px 6px 0px #1e3a8a)
+    drop-shadow(0px 0px 2px #ffffff)
+    drop-shadow(0px 6px 10px rgba(30, 58, 138, 0.3));
+}
+
+.wordart-fairytale-sparkle {
+  font-weight: 900;
+  background: linear-gradient(160deg, #fdf4ff 0%, #e879f9 35%, #818cf8 70%, #38bdf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 2.5px #ffffff;
+  paint-order: stroke fill;
+  filter:
+    drop-shadow(0px 5px 10px rgba(49, 46, 129, 0.3))
+    drop-shadow(0px 0px 12px rgba(192, 132, 252, 0.55));
+}
+
+.wordart-reading-nook-sage {
+  font-weight: 900;
+  background: linear-gradient(180deg, #34d399 0%, #059669 55%, #065f46 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 12px #fffbeb;
+  paint-order: stroke fill;
+  filter:
+    drop-shadow(0px 0px 2px #fffbeb)
+    drop-shadow(0px 4px 10px rgba(6, 78, 59, 0.22));
+}
+
+.wordart-storytime-banner {
+  font-weight: 900;
+  background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  --wordart-backdrop: #c2410c;
+  filter:
+    drop-shadow(0px 2px 4px rgba(67, 20, 7, 0.45));
+}
+
+.wordart-portfolio-editorial {
+  font-weight: 800;
+  background: linear-gradient(165deg, #475569 0%, #1e293b 45%, #0f172a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 1.5px #d97706;
+  paint-order: stroke fill;
+  filter:
+    drop-shadow(0px 4px 12px rgba(15, 23, 42, 0.22));
+}
+
+.wordart-portfolio-indigo {
+  font-weight: 800;
+  background: linear-gradient(135deg, #4f46e5 0%, #2563eb 55%, #0d9488 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 1.5px #ffffff;
+  paint-order: stroke fill;
+  filter:
+    drop-shadow(0px 6px 16px rgba(37, 99, 235, 0.22));
+}
 /* end WordArt styles */
 
 /* AI-grade metal: horizon-break gradients, marching extrusion and bloom.

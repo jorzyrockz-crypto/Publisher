@@ -63,7 +63,13 @@ export type WordArtStyle =
   | 'trophy-gold'
   | 'fiesta-mosaic'
   | 'parchment-script'
-  | 'folklore-wood';
+  | 'folklore-wood'
+  | 'storybook-crayon'
+  | 'fairytale-sparkle'
+  | 'reading-nook-sage'
+  | 'storytime-banner'
+  | 'portfolio-editorial'
+  | 'portfolio-indigo';
 
 export type BorderArtStyle =
   | 'none'

@@ -67,6 +67,22 @@ export const WORD_ART_STYLES: WordArtOption[] = [
     className: 'wordart-parchment-script',
   },
   { id: 'folklore-wood', label: 'Folklore Wood Sign', className: 'wordart-folklore-wood' },
+  // Children's books and reading corners.
+  { id: 'storybook-crayon', label: 'Storybook Crayon Pop', className: 'wordart-storybook-crayon' },
+  { id: 'fairytale-sparkle', label: 'Fairytale Magic', className: 'wordart-fairytale-sparkle' },
+  {
+    id: 'reading-nook-sage',
+    label: 'Cozy Sage Nook',
+    className: 'wordart-reading-nook-sage',
+  },
+  { id: 'storytime-banner', label: 'Storytime Ribbon', className: 'wordart-storytime-banner' },
+  // Portfolios: quiet, trimmed, at 800.
+  {
+    id: 'portfolio-editorial',
+    label: 'Editorial Slate & Gold',
+    className: 'wordart-portfolio-editorial',
+  },
+  { id: 'portfolio-indigo', label: 'Modern Indigo Ink', className: 'wordart-portfolio-indigo' },
 ];
 
 const BY_ID = new Map<string, WordArtOption>(WORD_ART_STYLES.map((s) => [s.id, s]));
@@ -982,6 +998,103 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     stroke: { width: 3.5, color: '#291002' },
     castShadow: { dx: 0, dy: 4, blur: 6, color: 'rgba(0, 0, 0, 0.7)' },
     backdrop: { type: 'wood-plank', color: '#78350f', paddingX: 44, paddingY: 14 },
+    shadows: [],
+  },
+  // ---- children's books & reading corners ------------------------------------------------
+  // Crayon-bright, die-cut, and unafraid: these are read by a five-year-old across a classroom.
+  'storybook-crayon': {
+    weight: '900',
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#fde047' },
+        { offset: 0.5, color: '#fb923c' },
+        { offset: 1, color: '#f43f5e' },
+      ],
+    },
+    stroke: { width: 4, color: '#ffffff' },
+    heavyStroke: true,
+    extrusion: { steps: 4, dx: 0, dy: 1.5, startColor: '#1d4ed8', endColor: '#1e3a8a' },
+    castShadow: { dx: 0, dy: 6, blur: 10, color: 'rgba(30, 58, 138, 0.3)' },
+    shadows: [],
+  },
+  'fairytale-sparkle': {
+    weight: '900',
+    glints: true,
+    gradient: {
+      angle: 160,
+      stops: [
+        { offset: 0, color: '#fdf4ff' },
+        { offset: 0.35, color: '#e879f9' },
+        { offset: 0.7, color: '#818cf8' },
+        { offset: 1, color: '#38bdf8' },
+      ],
+    },
+    stroke: { width: 2.5, color: '#ffffff' },
+    bloom: [{ blur: 12, color: 'rgba(192, 132, 252, 0.55)' }],
+    castShadow: { dx: 0, dy: 5, blur: 10, color: 'rgba(49, 46, 129, 0.3)' },
+    shadows: [],
+  },
+  'reading-nook-sage': {
+    weight: '900',
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#34d399' },
+        { offset: 0.55, color: '#059669' },
+        { offset: 1, color: '#065f46' },
+      ],
+    },
+    stroke: { width: 6, color: '#fffbeb' },
+    heavyStroke: true,
+    castShadow: { dx: 0, dy: 4, blur: 10, color: 'rgba(6, 78, 59, 0.22)' },
+    // A reading-corner header wants the gentle smile, and it belongs to the *style*: arch it here
+    // and every page that uses it agrees, with the Curve control still free to override.
+    arc: 0.12,
+    shadows: [],
+  },
+  'storytime-banner': {
+    weight: '900',
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#fffbeb' },
+        { offset: 1, color: '#fef3c7' },
+      ],
+    },
+    castShadow: { dx: 0, dy: 2, blur: 4, color: 'rgba(67, 20, 7, 0.45)' },
+    backdrop: { type: 'ribbon-banner', color: '#c2410c', paddingX: 36, paddingY: 12 },
+    shadows: [],
+  },
+  // ---- portfolios ------------------------------------------------------------------------
+  // Refined, not shouted: a hairline trim and a soft lift. 800 rather than 900 so a serif or a
+  // geometric sans keeps its shapes — the two styles that look wrong at poster weight.
+  'portfolio-editorial': {
+    weight: '800',
+    gradient: {
+      angle: 165,
+      stops: [
+        { offset: 0, color: '#475569' },
+        { offset: 0.45, color: '#1e293b' },
+        { offset: 1, color: '#0f172a' },
+      ],
+    },
+    stroke: { width: 1.5, color: '#d97706' },
+    castShadow: { dx: 0, dy: 4, blur: 12, color: 'rgba(15, 23, 42, 0.22)' },
+    shadows: [],
+  },
+  'portfolio-indigo': {
+    weight: '800',
+    gradient: {
+      angle: 135,
+      stops: [
+        { offset: 0, color: '#4f46e5' },
+        { offset: 0.55, color: '#2563eb' },
+        { offset: 1, color: '#0d9488' },
+      ],
+    },
+    stroke: { width: 1.5, color: '#ffffff' },
+    castShadow: { dx: 0, dy: 6, blur: 16, color: 'rgba(37, 99, 235, 0.22)' },
     shadows: [],
   },
 };

@@ -141,6 +141,46 @@ loaded. The rule now also accepts a declared `heavyStroke` of 5px or more. The f
 are white, so nothing that already existed changes behaviour; the library score is identical
 (89.0 avg / 90 median / A 58 / B 15 / no C or D).
 
+## Children's books, reading corners and portfolios
+
+Six themed styles, three moods, one spec.
+
+| id | label | look |
+|---|---|---|
+| `storybook-crayon` | Storybook Crayon Pop | sunshine→coral ramp, 4px white die-cut rim, cobalt 4-step block |
+| `fairytale-sparkle` | Fairytale Magic | lavender→periwinkle→sky, white rim, violet bloom, corner glints |
+| `reading-nook-sage` | Cozy Sage Nook | emerald-sage, 6px cream die-cut rim, **arc 0.12** |
+| `storytime-banner` | Storytime Ribbon | cream type on a terracotta swallowtail ribbon |
+| `portfolio-editorial` | Editorial Slate & Gold | slate→charcoal face, 1.5px burnished-gold trim, soft lift |
+| `portfolio-indigo` | Modern Indigo Ink | indigo→blue→teal diagonal, 1.5px white edge, airy shadow |
+
+Three of the six are new compositions of old machinery: the ribbon is the `ribbon-banner` backdrop in
+terracotta, the sage style carries its own `arc` (the reading-corner header arches because the *style*
+says so, and the Curve control still overrides it), and the fairytale glints are the same three
+anchors as the chrome styles. Only the crayon block and the two portfolio trims needed new numbers.
+
+**Rim widths follow the die-cut rule.** `storybook-crayon` declares 4px and `reading-nook-sage` 6px,
+both with `heavyStroke: true`, so the generated stylesheet emits 8px and 12px and the *visible* rim is
+the width the style asked for. The two portfolio styles deliberately do not: a 1.5px gold hairline at
+800 weight is the whole point of the pair, and doubling it would turn a trim into a border.
+
+**Weight is part of the style.** The portfolios force `weight: '800'` rather than 900, so a serif
+(`Playfair Display`, `Cinzel`) or a geometric sans keeps its counters instead of closing up. Every
+other style in the catalogue forces 900.
+
+**Where each one reads.** `storybook-crayon` and `reading-nook-sage` are self-contrasting (heavy
+near-white rims), so they survive illustrated grounds and bulletin-board photos — the render sheet
+puts both over a busy botanical image to prove it. `fairytale-sparkle` is *not*: its top stops are
+near-white, so on a cream page the design pass repaints it, and that is correct — it belongs on a
+mid-tone illustration or a coloured panel, which is where a fairy-tale title actually lives. The
+portfolio pair is the mirror case: on a dark ground the pass replaces `portfolio-editorial` with
+something that reads, because slate on forest green is invisible.
+
+The seven font pairings the guide asks for are now in the Google catalogue —
+Fredoka, Baloo 2, Quicksand, Nunito, Patrick Hand, Chewy and Plus Jakarta Sans — alongside the
+Playfair Display, Cinzel, Pacifico and Montserrat that were already there. They load through the
+same `preloadProjectFonts` path templates use, so a book cover set in Baloo 2 arrives in Baloo 2.
+
 ## Fiesta and award: metal, spectrum, parchment and wood
 
 Four styles for an award night or a town fiesta.

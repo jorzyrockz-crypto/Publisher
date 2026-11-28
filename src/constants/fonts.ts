@@ -53,6 +53,15 @@ export const GOOGLE_FONTS_CATALOG: FontDefinition[] = [
   { family: 'Lobster', category: 'Script', source: 'google' },
   { family: 'Permanent Marker', category: 'Script', source: 'google' },
   { family: 'Kaushan Script', category: 'Script', source: 'google' },
+  // The pairings the themed WordArt styles ask for: rounded book faces, and the quiet
+  // portfolio sans that reads at 800 without closing its counters.
+  { family: 'Fredoka', category: 'Display', source: 'google' },
+  { family: 'Baloo 2', category: 'Display', source: 'google' },
+  { family: 'Quicksand', category: 'Sans-Serif', source: 'google' },
+  { family: 'Nunito', category: 'Sans-Serif', source: 'google' },
+  { family: 'Patrick Hand', category: 'Script', source: 'google' },
+  { family: 'Chewy', category: 'Display', source: 'google' },
+  { family: 'Plus Jakarta Sans', category: 'Sans-Serif', source: 'google' },
   { family: 'Fira Code', category: 'Monospace', source: 'google' },
 ];
 
