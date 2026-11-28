@@ -206,12 +206,12 @@ export const DesignerToolRail: React.FC = () => {
     label: string;
     icon: React.ReactNode;
   }> = [
-    { id: 'tools', label: 'Tools', icon: <Wrench size={18} /> },
     { id: 'edit', label: 'Edit', icon: <Wand2 size={18} /> },
     { id: 'text', label: 'Text', icon: <Type size={18} /> },
     { id: 'media', label: 'My media', icon: <Upload size={18} /> },
     { id: 'stock', label: 'Stock', icon: <Images size={18} /> },
     { id: 'visuals', label: 'Visuals', icon: <Shapes size={18} /> },
+    { id: 'tools', label: 'Tools', icon: <Wrench size={18} /> },
     { id: 'collage', label: 'Collage', icon: <LayoutGrid size={18} /> },
     { id: 'brand', label: 'Brand', icon: <Palette size={18} /> },
     { id: 'layers', label: 'Layers', icon: <Layers size={18} /> },
