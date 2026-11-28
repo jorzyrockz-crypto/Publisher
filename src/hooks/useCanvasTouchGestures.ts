@@ -72,10 +72,16 @@ export function useCanvasTouchGestures({
   containerRef,
   zoom,
   setZoom,
+  zoomLive,
+  onGestureStart,
 }: {
   containerRef: React.RefObject<HTMLDivElement | null>;
   zoom: number;
   setZoom: (value: number) => void;
+  /** Paint a zoom without re-rendering; falls back to `setZoom` when absent. */
+  zoomLive?: (value: number) => void;
+  /** Called before a gesture that will measure the sheet, to commit any zoom in flight. */
+  onGestureStart?: () => void;
 }) {
   const modeRef = useRef<Mode>('idle');
   const mouseTargetRef = useRef<EventTarget | null>(null);
@@ -101,6 +107,14 @@ export function useCanvasTouchGestures({
   useEffect(() => {
     setZoomRef.current = setZoom;
   }, [setZoom]);
+  const liveZoomRef = useRef(zoomLive);
+  useEffect(() => {
+    liveZoomRef.current = zoomLive;
+  }, [zoomLive]);
+  const gestureStartRef = useRef(onGestureStart);
+  useEffect(() => {
+    gestureStartRef.current = onGestureStart;
+  }, [onGestureStart]);
 
   const cancelLongPress = useCallback(() => {
     if (longPressRef.current !== null) {
@@ -143,6 +157,8 @@ export function useCanvasTouchGestures({
       }
 
       if (modeRef.current !== 'idle') return;
+
+      gestureStartRef.current?.();
 
       const touch = e.touches[0];
       const point = { x: touch.clientX, y: touch.clientY };
@@ -203,7 +219,9 @@ export function useCanvasTouchGestures({
 
         // Scale is the ratio of finger spread to the spread when the pinch began.
         const next = Math.min(3, Math.max(0.2, (pinch.startZoom * distance) / pinch.spreadAtStart));
-        setZoomRef.current(Number(next.toFixed(2)));
+        // Live while the fingers are down: the sheet scales on the compositor, React stays idle.
+        if (liveZoomRef.current) liveZoomRef.current(next);
+        else setZoomRef.current(Number(next.toFixed(2)));
 
         // Keep the pasteboard point that was under the fingers under the fingers: this is what
         // makes a pinch feel anchored rather than like the sheet sliding away.
@@ -236,6 +254,8 @@ export function useCanvasTouchGestures({
         if (e.touches.length < 2) {
           modeRef.current = 'idle';
           pinchRef.current = null;
+          // The gesture is over: hand the value to React once.
+          gestureStartRef.current?.();
         }
         return;
       }

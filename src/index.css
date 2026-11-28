@@ -735,6 +735,16 @@ a[href] {
   -webkit-overflow-scrolling: touch;
 }
 
+/* Containment: a move or a resize inside one page must not invalidate layout for the others,
+   and the scaled canvas is its own paint layer while zooming. */
+[data-page-frame='true'] {
+  contain: layout style;
+}
+
+[data-paper-canvas='true'] {
+  contain: layout style;
+}
+
 /* A long press on the sheet must not start a text selection or the iOS callout menu: on a
    canvas that gesture belongs to the object under the finger. A box being edited is the
    exception — there the caret and selection are the whole point. */

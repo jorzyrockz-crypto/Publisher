@@ -5,6 +5,7 @@ import { DesignerContextBar } from '../workspace/DesignerContextBar';
 import { PageCanvas } from './PageCanvas';
 import { HorizontalRuler, VerticalRuler } from './Ruler';
 import { useCanvasTouchGestures } from '../../hooks/useCanvasTouchGestures';
+import { useLiveZoom } from '../../hooks/useLiveZoom';
 import {
   ZoomIn,
   ZoomOut,
@@ -157,24 +158,51 @@ export const CanvasArea: React.FC = () => {
 
   const effectivePanMode = toolMode === 'pan' || isSpaceHeld;
 
+  // The rulers follow the pointer; they do not need to do it more than once a frame.
+  const cursorFrameRef = useRef<number | null>(null);
   const handleCursorMove = (x: number, y: number) => {
-    setCursorPos({ x, y });
+    if (cursorFrameRef.current !== null) return;
+    cursorFrameRef.current = window.requestAnimationFrame(() => {
+      cursorFrameRef.current = null;
+      setCursorPos({ x, y });
+    });
   };
+  useEffect(
+    () => () => {
+      if (cursorFrameRef.current !== null) cancelAnimationFrame(cursorFrameRef.current);
+    },
+    []
+  );
+
+  // Zoom is painted straight onto the DOM while a gesture is in flight (see the hook); the
+  // scroll position is anchored on the pointer so the artwork does not slide away.
+  const { zoomLive, flush: flushZoom, currentZoom } = useLiveZoom({
+    containerRef,
+    zoom,
+    setZoom,
+  });
 
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-    if (e.ctrlKey || e.metaKey) {
-      e.preventDefault();
-      const delta = e.deltaY < 0 ? 0.08 : -0.08;
-      setZoom(Number((zoom + delta).toFixed(2)));
-    }
+    if (!(e.ctrlKey || e.metaKey)) return;
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? 0.08 : -0.08;
+    zoomLive(currentZoom() + delta, { clientX: e.clientX, clientY: e.clientY });
   };
 
   // Fingers are turned into the mouse events every drag handler here already understands;
   // two fingers pinch-zoom and a long press opens the canvas menu. See the hook for details.
-  const touchGestures = useCanvasTouchGestures({ containerRef, zoom, setZoom });
+  const touchGestures = useCanvasTouchGestures({
+    containerRef,
+    zoom,
+    setZoom,
+    zoomLive: (value) => zoomLive(value),
+    onGestureStart: flushZoom,
+  });
 
   const handleWorkspaceMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!containerRef.current) return;
+    // Commit any zoom still in flight before anything measures the sheet.
+    flushZoom();
 
     const target = e.target as HTMLElement;
     const clickedInsidePage = Boolean(target.closest('.print-page'));
@@ -357,6 +385,7 @@ export const CanvasArea: React.FC = () => {
         <div
           ref={containerRef}
           data-canvas-viewport="true"
+          style={{ ['--sp-zoom' as string]: zoom }}
           onWheel={handleWheel}
           onMouseDown={handleWorkspaceMouseDown}
           className={`flex-1 h-full overflow-auto relative ${
@@ -395,8 +424,8 @@ export const CanvasArea: React.FC = () => {
             <div
               className="relative flex-shrink-0"
               style={{
-                width: `${artboardMaxRight * zoom + 80}px`,
-                height: `${artboardMaxBottom * zoom + 96}px`,
+                width: `calc(${artboardMaxRight + 80}px * var(--sp-zoom))`,
+                height: `calc(${artboardMaxBottom + 96}px * var(--sp-zoom))`,
               }}
             >
               {project.pages.map((pg, idx) => {
@@ -409,8 +438,8 @@ export const CanvasArea: React.FC = () => {
                     data-canvas-page-id={pg.id}
                     style={{
                       position: 'absolute',
-                      left: `${coords.x * zoom}px`,
-                      top: `${coords.y * zoom}px`,
+                      left: `calc(${coords.x}px * var(--sp-zoom))`,
+                      top: `calc(${coords.y}px * var(--sp-zoom))`,
                     }}
                     className="flex flex-col items-start"
                   >
@@ -472,8 +501,8 @@ export const CanvasArea: React.FC = () => {
                   <div
                     style={{
                       position: 'absolute',
-                      left: `${(lastCoords.x + lastPg.width + 60) * zoom}px`,
-                      top: `${(lastCoords.y + 36) * zoom}px`,
+                      left: `calc(${lastCoords.x + lastPg.width + 60}px * var(--sp-zoom))`,
+                      top: `calc(${lastCoords.y + 36}px * var(--sp-zoom))`,
                     }}
                     className="flex flex-col gap-2"
                   >
