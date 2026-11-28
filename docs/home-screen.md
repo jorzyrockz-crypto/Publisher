@@ -172,6 +172,14 @@ PDF exports use, so the card shows the artwork rather than a DOM screenshot that
 file. Not on using a template: the strip is "your work", and a template you looked at once is not
 your work yet.
 
+**Why the file is `.spress` and not `.pub`.** `.pub` is Microsoft Publisher's extension, and Windows
+associates it: a double-click handed our JSON to an app that cannot read it, and a Publisher file of
+the same name could overwrite ours. `saveProjectToFile` writes `.spress`, and a document's `name` is
+a title with no extension — it is the save that adds one, so a template called `Honor Roll.pub` and a
+file opened from an old save both end up as `Honor Roll.spress`, never `Honor Roll.pub.spress`. Both
+pickers still accept `.pub` (and plain `.json`), because the files people already saved under the old
+name are their work and have to open.
+
 **What is deliberately not offered:** a card for a document that could not be cached. The body is
 written before the card; if the body does not fit, the card is never created. A card that opens
 nothing is worse than no card.

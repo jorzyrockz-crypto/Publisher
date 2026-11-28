@@ -68,7 +68,7 @@ export function useDesignLauncher() {
       const size = clampCustomSize(width, height);
       createNewTab(
         buildBlankProject({
-          name: `Custom ${size.width} × ${size.height}.pub`,
+          name: `Custom ${size.width} × ${size.height}`,
           width: size.width,
           height: size.height,
           pageSizeName: 'custom',

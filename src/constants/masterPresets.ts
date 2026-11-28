@@ -1,4 +1,5 @@
 import { PageMargins, PublisherElement } from '../types/publisher';
+import { projectBaseName } from '../utils/projectFile';
 
 export interface MasterPresetInfo {
   id: string;
@@ -43,7 +44,7 @@ export function buildMasterPresetElements(
 ): PublisherElement[] {
   const ts = Date.now();
   const contentW = Math.max(160, pageWidth - margins.left - margins.right);
-  const cleanTitle = projectName.replace(/\.pub$/i, '').toUpperCase();
+  const cleanTitle = projectBaseName(projectName).toUpperCase();
 
   switch (presetId) {
     case 'corporate-header-footer':

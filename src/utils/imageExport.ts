@@ -1,6 +1,7 @@
 import { DocumentProject, Page, PublisherElement } from '../types/publisher';
 import { renderPageModelToCanvas } from './canvasRenderer';
 import { resolveMasterElementsForProject } from './printUtils';
+import { projectBaseName, projectFileName } from './projectFile';
 import { recordRecentDesign } from './recentDesigns';
 
 export async function exportToImage(
@@ -39,9 +40,8 @@ export function saveProjectToFile(project: DocumentProject): void {
   const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
-  const safeName = project.name.endsWith('.pub') ? project.name : `${project.name}.pub`;
   link.href = url;
-  link.download = safeName;
+  link.download = projectFileName(project.name);
   document.body.appendChild(link);
   link.click();
   link.remove();
@@ -55,7 +55,7 @@ export function loadProjectFromFile(file: File): Promise<DocumentProject> {
       try {
         const parsed = JSON.parse(e.target?.result as string);
         if (!parsed.pages || !Array.isArray(parsed.pages)) {
-          throw new Error('Invalid StudioPress project file format (.pub)');
+          throw new Error('Invalid StudioPress project file format (.spress)');
         }
         resolve(parsed);
       } catch (err) {
@@ -149,7 +149,7 @@ export async function exportAllPagesToPngZip(
   const { default: JSZip } = await import('jszip');
   const scale = options.scale ?? 2;
   const zip = new JSZip();
-  const safeBase = (project.name || 'publication').replace(/\.pub$/i, '').replace(/[^\w\-. ]+/g, '_');
+  const safeBase = projectBaseName(project.name || 'publication').replace(/[^\w\-. ]+/g, '_');
   const folder = zip.folder(safeBase) || zip;
 
   const total = project.pages.length;

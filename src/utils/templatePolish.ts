@@ -208,7 +208,14 @@ export function placeArtwork(
     rotation: 0,
     zIndex: 1,
     fillColor: page.backgroundColor || "#ffffff",
-    opacity: darkPage ? 0.5 : 0.85,
+    // Enough tint to lift type off the photograph, not enough to hide it: a hero at 85% of the page
+    // colour read as a solid panel with an image ghosting behind it. Light pages keep slightly more
+    // because dark ink over a mid-tone photo is the fragile case; a dark page's white type is
+    // readable already.
+    opacity: darkPage ? 0.25 : 0.3,
+    // The shape is a fill, not an outline. Without this the renderer subtracts an absent stroke
+    // width from the rect and the veil paints as `NaN`.
+    strokeWidth: 0,
     locked: true,
   } as unknown as PublisherElement;
 

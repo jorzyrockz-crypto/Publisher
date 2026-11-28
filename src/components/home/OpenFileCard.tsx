@@ -1,15 +1,16 @@
 import React, { useRef, useState } from 'react';
 import { FolderOpen, Loader2 } from 'lucide-react';
+import { PROJECT_FILE_ACCEPT } from '../../utils/projectFile';
 import { useDesignLauncher } from './useDesignLauncher';
 
-/** What the app writes on save (`.pub`) and what this dialog has always accepted (`.spress`). */
-const ACCEPT = '.pub,.spress,.json,application/json';
+/** What the app writes on save, what it used to write, and plain JSON. */
+const ACCEPT = PROJECT_FILE_ACCEPT;
 
 /**
  * Opening a saved document.
  *
  * A browser cannot remember where a download went, so the file picker is the only honest route back
- * into a `.pub`/`.spress` on disk. Two shapes of the same control: a dashed card for the strips and
+ * into a `.spress` (or, from an older save, `.pub`) on disk. Two shapes of the same control: a dashed card for the strips and
  * a small pill for the My Projects header.
  */
 export const OpenFileCard: React.FC<{ variant?: 'card' | 'strip' | 'pill' }> = ({

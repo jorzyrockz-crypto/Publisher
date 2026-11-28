@@ -833,8 +833,11 @@ function leaderDom(
 }
 
 const ShapeRenderer: React.FC<{ element: ShapeElement }> = ({ element }) => {
-  const { width, height, shapeType, fillColor, strokeColor, strokeWidth, strokeDash, cornerRadius } =
-    element;
+  const { width, height, shapeType, fillColor, strokeColor, strokeDash, cornerRadius } = element;
+  // A shape authored without a stroke (the hero veil, a generated panel, anything saved before the
+  // keyline field existed) has no `strokeWidth`. Reading it as-is put `undefined` into `width -
+  // strokeWidth` and every rect was drawn with `NaN` geometry and React dropped the attribute.
+  const strokeWidth = element.strokeWidth ?? 0;
   const dashArray =
     strokeDash === 'dashed' ? '8 4' : strokeDash === 'dotted' ? '3 3' : undefined;
 

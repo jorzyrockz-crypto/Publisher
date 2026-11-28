@@ -7,6 +7,7 @@
   useMemo,
   useRef,
 } from 'react';
+import { projectBaseName } from '../utils/projectFile';
 import { projectTextGeometry } from '../utils/textBoxGrowth';
 import {
   DocumentProject,
@@ -955,8 +956,12 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         : {
             ...JSON.parse(JSON.stringify(blankTpl.project)),
             id: `proj-${Date.now()}`,
-            name: `Publication ${workspaceTabs.length + 1}.pub`,
+            name: `Publication ${workspaceTabs.length + 1}`,
           };
+      // A document's name is a title; the extension is the save's business. Normalising on the way
+      // in means a template named `Honor Roll.pub` and a file opened from an old `.pub` both show a
+      // clean title in the tab strip, and neither saves as `Honor Roll.pub.spress`.
+      nextProj.name = projectBaseName(nextProj.name) || 'Untitled';
       const newTabId = `tab-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 
       tabHistoriesRef.current[activeTabId] = {
@@ -986,7 +991,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         const freshProj: DocumentProject = {
           ...JSON.parse(JSON.stringify(blankTpl.project)),
           id: `proj-${Date.now()}`,
-          name: 'Publication 1.pub',
+          name: 'Publication 1',
         };
         const freshId = `tab-${Date.now()}`;
         setWorkspaceTabs([{ id: freshId, project: freshProj, updatedAt: Date.now() }]);
@@ -1040,8 +1045,8 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       const baseProj = tabId === activeTabId ? project : source.project;
       const cloned: DocumentProject = JSON.parse(JSON.stringify(baseProj));
       cloned.id = `proj-${Date.now()}`;
-      const cleanName = cloned.name.replace(/\.pub$/i, '');
-      cloned.name = `${cleanName} (Copy).pub`;
+      const cleanName = projectBaseName(cloned.name);
+      cloned.name = `${cleanName} (Copy)`;
 
       const newTabId = `tab-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
       tabHistoriesRef.current[activeTabId] = {

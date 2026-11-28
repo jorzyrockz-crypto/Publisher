@@ -20,7 +20,7 @@ An authentic, modern, desktop-grade clone of **Microsoft Publisher** built with 
 
 ### 1. Authentic Office Ribbon Interface
 - **Publisher-style chrome**: the ribbon, Quick Access Toolbar and Backstage view follow Microsoft Publisher's layout, while the accent palette is StudioPress "Iris" violet (see §6) rather than Publisher green.
-- **Quick Access Toolbar**: Instant Save (.pub), Undo/Redo, Export to PDF, and Print buttons.
+- **Quick Access Toolbar**: Instant Save (`.spress`), Undo/Redo, Export to PDF, and Print buttons.
 - **Ribbon Tabs**:
   - **FILE**: Fullscreen Backstage View (Open, Save, Save As, Export, Print, Info). Starting a document is Home's job now, so the File menu is only about the one you already have.
   - **HOME**: Clipboard, Font styling, Paragraph formatting, Object insertion, and Z-Order arrangement.
@@ -86,7 +86,8 @@ An authentic, modern, desktop-grade clone of **Microsoft Publisher** built with 
 - **Print-Shop Ready**: Optional **bleed** (0.125" / 0.25") with mirrored edge extension plus **crop marks and trim guides**, so files drop straight into a commercial press workflow.
 - **Image Export**: 300 DPI PNG and JPEG image exports.
 - **Batch Export**: **All Pages as PNG (ZIP)** renders every page at 300 DPI and packages them into a single download (JSZip loads on demand, with live progress).
-- **Project File**: Save and reload `.pub` files directly to disk.
+- **Project File**: Save and reload `.spress` files directly to disk (files saved under the old
+  `.pub` name still open).
 - **Print**: Direct browser print integration formatted for exact page sizes.
 
 ### 6. UI Shell & Design System
@@ -146,7 +147,7 @@ cheatsheet with a live filter.
 
 | Shortcut | Action |
 | --- | --- |
-| `Ctrl + S` | Save publication (`.pub`) |
+| `Ctrl + S` | Save publication (`.spress`) |
 | `Ctrl + P` | Open **File ▸ Print Publication** |
 | `Ctrl + K` | Command search |
 | `Ctrl + Z` / `Ctrl + Y` | Undo / Redo |

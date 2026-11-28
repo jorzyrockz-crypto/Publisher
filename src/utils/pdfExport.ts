@@ -1,5 +1,6 @@
 import { DocumentProject, Page } from '../types/publisher';
 import { renderPageModelToCanvas } from './canvasRenderer';
+import { projectBaseName } from './projectFile';
 import { expandCanvasWithBleed } from './imageExport';
 import {
   PrintSettings,
@@ -146,7 +147,7 @@ export async function exportToPdf(
   }
 
   const suffix = bleedIn > 0 ? '-bleed' : '';
-  const filename = (project.name || 'publication').replace(/\.pub$/i, '') + suffix + '.pdf';
+  const filename = projectBaseName(project.name || 'publication') + suffix + '.pdf';
   pdf.save(filename);
 }
 
@@ -197,7 +198,7 @@ export async function exportBookletPdf(
     }
   });
 
-  const filename = (project.name || 'booklet').replace(/\.pub$/i, '') + '-booklet.pdf';
+  const filename = projectBaseName(project.name || 'booklet') + '-booklet.pdf';
   pdf.save(filename);
 }
 
@@ -260,7 +261,7 @@ export async function exportTarpapelPdf(
   });
 
   const filename =
-    (project.name || 'tarpapel').replace(/\.pub$/i, '') +
+    projectBaseName(project.name || 'tarpapel') +
     `-tarpapel-${settings.tarpapelCols}x${settings.tarpapelRows}.pdf`;
   pdf.save(filename);
 }

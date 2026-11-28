@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
+import { projectBaseName } from '../../utils/projectFile';
 import {
   ChevronLeft,
   ChevronRight,
@@ -138,7 +139,7 @@ export const DocumentTabsBar: React.FC = () => {
                     className="w-2 h-2 rounded-full flex-shrink-0"
                     style={{ backgroundColor: t.tabColor || '#6e56cf' }}
                   />
-                  <span className="truncate">{t.project.name.replace(/\.pub$/i, '')}</span>
+                  <span className="truncate">{projectBaseName(t.project.name)}</span>
                 </span>
                 <span className="text-[10px] text-[#6a7682] tabular-nums">{t.project.pages.length}p</span>
               </button>
@@ -154,7 +155,7 @@ export const DocumentTabsBar: React.FC = () => {
       >
         {workspaceTabs.map((tab) => {
           const isActive = tab.id === activeTabId;
-          const displayName = tab.project.name.replace(/\.pub$/i, '');
+          const displayName = projectBaseName(tab.project.name);
           const isEditing = editingTabId === tab.id;
           const accentColor = tab.tabColor || '#6e56cf';
 

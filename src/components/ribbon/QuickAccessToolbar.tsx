@@ -71,7 +71,7 @@ export const QuickAccessToolbar: React.FC = () => {
   }, []);
 
   // Global app shortcuts that live in the shell: Ctrl+K command search,
-  // Ctrl+S save (.pub) and Ctrl+P print — matching the cheatsheet.
+  // Ctrl+S save (.spress) and Ctrl+P print — matching the cheatsheet.
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
@@ -164,7 +164,7 @@ export const QuickAccessToolbar: React.FC = () => {
         <button
           onClick={() => saveProjectToFile(project)}
           className="p-1.5 hover:bg-[#f4f2ff] text-[#4a5661] hover:text-[#5c4bb8] active:scale-95 rounded-[8px] transition-all cursor-pointer"
-          title="Save Publication (.pub)"
+          title="Save Publication (.spress)"
         >
           <Save size={15} />
         </button>

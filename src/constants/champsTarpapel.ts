@@ -1257,7 +1257,7 @@ export function tarpapelToProject(spec: TarpapelTemplate): DocumentProject {
 
   return {
     id: `proj-${spec.id}`,
-    name: `${name}.pub`,
+    name,
     pages: [page],
     activePageIndex: 0,
     pageSizeName: 'custom',

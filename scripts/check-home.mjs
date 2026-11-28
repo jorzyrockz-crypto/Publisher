@@ -21,14 +21,17 @@ const server = await createServer({
   logLevel: 'error',
 });
 
-const [catalog, blanks, recents, printing, catalogue, featuresModule] = await Promise.all([
-  server.ssrLoadModule('/src/components/home/homeCatalog.ts'),
-  server.ssrLoadModule('/src/utils/blankDesign.ts'),
-  server.ssrLoadModule('/src/utils/recentDesigns.ts'),
-  server.ssrLoadModule('/src/utils/printUtils.ts'),
-  server.ssrLoadModule('/src/constants/templates.ts'),
-  server.ssrLoadModule('/src/components/home/shortcutCatalog.ts'),
-]);
+const [catalog, blanks, recents, printing, catalogue, featuresModule, polish, projectFile] =
+  await Promise.all([
+    server.ssrLoadModule('/src/components/home/homeCatalog.ts'),
+    server.ssrLoadModule('/src/utils/blankDesign.ts'),
+    server.ssrLoadModule('/src/utils/recentDesigns.ts'),
+    server.ssrLoadModule('/src/utils/printUtils.ts'),
+    server.ssrLoadModule('/src/constants/templates.ts'),
+    server.ssrLoadModule('/src/components/home/shortcutCatalog.ts'),
+    server.ssrLoadModule('/src/utils/templatePolish.ts'),
+    server.ssrLoadModule('/src/utils/projectFile.ts'),
+  ]);
 await server.close();
 
 const { TEMPLATES } = catalogue;
@@ -260,7 +263,56 @@ const ok = (cond, msg, extra = '') => {
   }
 }
 
-/* 11. the glass degrades instead of disappearing */
+/* 11. the hero veil is a fill, not a keyline, and it tints instead of hiding */
+{
+  const { polishProject } = polish;
+  let veils = 0;
+  let keyed = null;
+  let opaque = null;
+  let sizeless = null;
+  let belowHero = 0;
+
+  for (const template of TEMPLATES) {
+    const polished = polishProject(JSON.parse(JSON.stringify(template.project)), template.category);
+    for (const page of polished.pages) {
+      const heroZ = Math.min(
+        ...page.elements.filter((el) => String(el.id).startsWith('tpl-art-')).map((el) => el.zIndex)
+      );
+      for (const element of page.elements) {
+        if (element.name !== 'Hero veil') continue;
+        veils += 1;
+        // A keyline on a full-page shape draws a border around the sheet, and a shape that has to
+        // subtract an absent stroke width renders as a NaN rect — the veil is a fill, so it says so.
+        if (element.strokeWidth !== 0) keyed = keyed ?? `${template.id}: strokeWidth ${element.strokeWidth}`;
+        // The veil exists to lift type off a photograph. Much past a third of the page colour and it
+        // stops being a tint: the ~30 hero templates read as a solid panel with art ghosting behind.
+        if (!(element.opacity > 0.15 && element.opacity <= 0.3)) opaque = opaque ?? `${template.id}: ${element.opacity}`;
+        if (!(element.width > 0) || !(element.height > 0)) sizeless = sizeless ?? template.id;
+        if (Number.isFinite(heroZ) && element.zIndex > heroZ) belowHero += 1;
+      }
+    }
+  }
+
+  ok(veils > 0, 'no template gains a hero veil, so nothing keeps type off the artwork');
+  ok(keyed === null, 'a hero veil carries a keyline instead of being a pure fill', keyed ?? '');
+  ok(opaque === null, 'a hero veil is heavy enough to hide the photograph it sits on', opaque ?? '');
+  ok(sizeless === null, 'a hero veil has no positive width and height', sizeless ?? '');
+  ok(belowHero === veils, 'a hero veil does not sit over the photograph it exists to tint', `${belowHero}/${veils}`);
+}
+
+/* 12. a save writes `.spress`, and an old `.pub` still opens */
+{
+  const { projectBaseName, projectFileName, PROJECT_FILE_ACCEPT } = projectFile;
+  ok(projectFileName('Honor Roll.pub') === 'Honor Roll.spress', 'a template name saved as .pub');
+  ok(projectFileName('Honor Roll') === 'Honor Roll.spress', 'a bare title did not gain .spress');
+  ok(projectFileName('Honor Roll.spress') === 'Honor Roll.spress', 're-saving stacked a second extension');
+  ok(projectBaseName('Honor Roll.spress') === 'Honor Roll', 'a saved name did not read back as a title');
+  ok(PROJECT_FILE_ACCEPT.split(',').includes('.pub'), 'the picker dropped the old .pub files');
+  ok(PROJECT_FILE_ACCEPT.split(',').includes('.spress'), 'the picker does not offer the current extension');
+  ok(!PROJECT_FILE_ACCEPT.split(',').some((ext) => ext === '.doc' || ext === '.docx'), 'the picker takes office files it cannot read');
+}
+
+/* 13. the glass degrades instead of disappearing */
 {
   const css = readFileSync('src/index.css', 'utf8');
 

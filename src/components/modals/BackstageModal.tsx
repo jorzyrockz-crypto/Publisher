@@ -11,6 +11,7 @@ import {
   exportAllPagesToPngZip,
 } from '../../utils/imageExport';
 import { exportToPdf, exportBookletPdf, exportTarpapelPdf } from '../../utils/pdfExport';
+import { PROJECT_FILE_ACCEPT } from '../../utils/projectFile';
 import {
   PrintLayoutMode,
   PrintSettings,
@@ -288,14 +289,14 @@ export const BackstageModal: React.FC = () => {
               <div>
                 <h3 className="font-bold text-base text-slate-800">Open from your device</h3>
                 <p className="text-xs text-slate-500 mt-1">
-                  Select a saved StudioPress project file (.pub) — opens in a new tab
+                  Select a saved StudioPress project file (.spress) — opens in a new tab
                 </p>
               </div>
 
               <input
                 type="file"
                 ref={fileInputRef}
-                accept=".pub,.spress,.json,application/json"
+                accept={PROJECT_FILE_ACCEPT}
                 className="hidden"
                 onChange={async (e) => {
                   const file = e.target.files?.[0];
@@ -348,7 +349,7 @@ export const BackstageModal: React.FC = () => {
                   className="px-6 py-2.5 bg-[#6e56cf] hover:bg-[#5c4bb8] active:scale-95 text-white rounded-xl font-semibold text-xs transition shadow-sm flex items-center gap-2"
                 >
                   <Save size={14} />
-                  <span>Download .pub File</span>
+                  <span>Download .spress File</span>
                 </button>
               </div>
             </div>
@@ -1802,7 +1803,7 @@ export const BackstageModal: React.FC = () => {
                     className="px-3.5 py-2 rounded-xl border border-[#e5e9ee] bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
                   >
                     <Save size={14} />
-                    <span>Save .pub</span>
+                    <span>Save .spress</span>
                   </button>
                   <button
                     type="button"
@@ -1830,7 +1831,7 @@ export const BackstageModal: React.FC = () => {
                       type="text"
                       value={project.name}
                       onChange={(e) =>
-                        setProject({ ...project, name: e.target.value || 'Untitled.pub' })
+                        setProject({ ...project, name: e.target.value || 'Untitled.spress' })
                       }
                       className="w-full px-3 py-1.5 rounded-xl border border-[#e5e9ee] bg-slate-50 focus:bg-white font-bold text-slate-800 outline-none focus:border-[#b3a4f2]"
                     />
