@@ -267,12 +267,21 @@ export function renderWordArtCanvas(
     }
   }
 
-  // 3. Rim, under the fill.
+  // 3. The keyline, under the rim: a silhouette in the dark ink, wide enough that the rim's own
+  // edge leaves exactly `outline.width` of it showing — the same arithmetic the DOM does with a
+  // stroked copy of the glyphs.
+  if (spec.outline) {
+    const keyline = rimWidth + spec.outline.width * 2 * scale;
+    paint({ mode: 'fill', style: spec.outline.color, offsetX: 0, offsetY: 0, blur: 0 });
+    paint({ mode: 'stroke', style: spec.outline.color, lineWidth: keyline, offsetX: 0, offsetY: 0, blur: 0 });
+  }
+
+  // 4. Rim, under the fill.
   if (spec.stroke) {
     paint({ mode: 'stroke', style: spec.stroke.color, lineWidth: rimWidth, offsetX: 0, offsetY: 0, blur: 0 });
   }
 
-  // 4. The face.
+  // 5. The face.
   paint({
     mode: 'fill',
     style: gradient,
@@ -282,7 +291,7 @@ export function renderWordArtCanvas(
     gradient: { angle: spec.angle, stops: spec.stops, box: line.box },
   });
 
-  // 5. Sparkles, on top.
+  // 6. Sparkles, on top.
   const glints = options.glints ?? wordArtGlints(spec.id, line.box.width, line.box.height);
   for (const glint of glints) {
     drawSparkleGlint(

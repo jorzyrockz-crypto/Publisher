@@ -18,10 +18,28 @@ Six styles close that gap, and two small features make them behave.
 | `brush-sunshine` | Sunshine Brush Swipe | navy → ink gradient on a ragged `#facc15` swipe |
 | `brush-blush` | Pastel Blush Ribbon | rose → wine gradient on a `#fbcfe8` swipe, arched 0.12 |
 | `pill-highlight` | Pastel Pill Highlight | indigo ink on a pastel pill |
+| `cartoon-bubble-blue` | Bubble Sign Blue | sky → royal → navy ramp, 9px white die-cut, 4px navy keyline |
+| `cartoon-bubble-pink` | Bubble Sign Pink | blush → magenta → wine ramp, 9px white die-cut, 4px wine keyline |
 
 All six go through the existing `PAINT` table, so the gallery, the inspector, the DOM painter and
 the canvas exporter pick them up with no new plumbing. `npm run wordart:css` regenerates the
 `.wordart-*` block in `src/index.css`; `-- --check` proves it is in sync.
+
+### The second keyline
+
+A cartoon sign has *two* outlines: a fat white die-cut and, outside it, a thin dark keyline that
+separates the white from whatever the sign is printed on. One `-webkit-text-stroke` per span cannot
+draw two rings, so the paint grew an `outline` field and each painter stacks one more silhouette
+under the rim:
+
+- **DOM** (`ElementRenderer`): a copy of the glyphs stroked to `rim + outline.width` and filled with
+  the keyline colour, painted before the real glyphs. The rim covers the inner half, so exactly
+  `outline.width` of dark shows.
+- **Canvas** (`wordArtCanvas`): one extra pass — a filled *and* stroked silhouette — before the rim.
+  Same arithmetic, so the export matches the editor.
+- **Preview tiles** (`buildWordArtCssRule`): a ring of hairline drop-shadows in the keyline colour,
+  because the `.wordart-*` class is a single element and cannot stack a silhouette. The tiles are a
+  stand-in; the canvas is the truth.
 
 ### The border is the width you see
 

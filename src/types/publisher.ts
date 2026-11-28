@@ -64,6 +64,10 @@ export type WordArtStyle =
   | 'fiesta-mosaic'
   | 'parchment-script'
   | 'folklore-wood'
+  // The cartoon bubble sign: gradient face, fat white die-cut border, and a second, darker
+  // keyline outside it — the school-banner lettering in the reference art.
+  | 'cartoon-bubble-blue'
+  | 'cartoon-bubble-pink'
   | 'storybook-crayon'
   | 'fairytale-sparkle'
   | 'reading-nook-sage'

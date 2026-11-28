@@ -328,6 +328,20 @@ const TextRenderer: React.FC<{
         })`
       : undefined);
 
+  /**
+   * The second keyline of a bubble-sign style. One `-webkit-text-stroke` per span, so the dark ring
+   * is a silhouette *under* the letters: a copy of the glyphs stroked wide enough to clear the white
+   * rim, filled in the same dark ink, then covered by the real glyphs. The rim's outer edge sits at
+   * `strokeWidth`, so the keyline clears it by exactly its own width.
+   */
+  const outlineStyle: React.CSSProperties = waCss.outline
+    ? {
+        WebkitTextStroke: `${(paint.strokeWidth || 0) + waCss.outline.width}px ${waCss.outline.color}`,
+        paintOrder: 'stroke fill',
+        color: waCss.outline.color,
+      }
+    : {};
+
   const strokeStyle: React.CSSProperties = waCss.webkitTextStroke
     ? { WebkitTextStroke: waCss.webkitTextStroke, paintOrder: waCss.paintOrder }
     : paint.strokeWidth
@@ -375,7 +389,12 @@ const TextRenderer: React.FC<{
         }
       : {};
 
-  const renderGlyphs = (color: string, prefix: string, withEffects: boolean) => {
+  const renderGlyphs = (
+    color: string,
+    prefix: string,
+    withEffects: boolean,
+    silhouette = false
+  ) => {
     if (layout.curve) {
       return layout.curve.chars.map((char, index) =>
         char.text.trim() ? (
@@ -390,9 +409,9 @@ const TextRenderer: React.FC<{
               lineHeight: 1,
               whiteSpace: 'pre',
               color,
-              ...(withEffects ? gradientStyle(char.x, offset + char.y, boxes[0]) : {}),
-              ...(withEffects ? strokeStyle : {}),
-              textShadow: withEffects ? glyphShadow : undefined,
+              ...(withEffects && !silhouette ? gradientStyle(char.x, offset + char.y, boxes[0]) : {}),
+              ...(withEffects ? (silhouette ? outlineStyle : strokeStyle) : {}),
+              textShadow: withEffects && !silhouette ? glyphShadow : undefined,
             }}
           >
             {char.text}
@@ -423,11 +442,11 @@ const TextRenderer: React.FC<{
               lineHeight: 1,
               letterSpacing: element.letterSpacing ? `${element.letterSpacing}px` : undefined,
               color: isSpace ? 'transparent' : color,
-              ...(withEffects && !isSpace
+              ...(withEffects && !isSpace && !silhouette
                 ? gradientStyle(run.x, offset + line.textTop, boxes[lineIndex] ?? boxes[0])
                 : {}),
-              ...(withEffects ? strokeStyle : {}),
-              textShadow: withEffects ? glyphShadow : undefined,
+              ...(withEffects ? (silhouette ? outlineStyle : strokeStyle) : {}),
+              textShadow: withEffects && !silhouette ? glyphShadow : undefined,
               backgroundColor: highlight,
               textDecoration: element.textDecoration,
               width: isSpace ? run.width : undefined,
@@ -565,6 +584,12 @@ const TextRenderer: React.FC<{
         >
           {layout.dropCap.char}
         </span>
+      )}
+
+      {/* The keyline, under everything: the glyphs stroked in the dark ink and filled with it, so
+          only a ring shows once the rim and the face are painted over the top. */}
+      {waCss.outline && (
+        <div style={{ position: 'absolute', inset: 0 }}>{renderGlyphs(waCss.outline.color, 'outline', true, true)}</div>
       )}
 
       {/* Base copy carries the fill, stroke and shadows. The WordArt stack is

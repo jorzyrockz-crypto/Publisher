@@ -40,6 +40,19 @@ export const WORD_ART_STYLES: WordArtOption[] = [
   { id: 'sticker-forest', label: 'Fresh Leaf Sticker', className: 'wordart-sticker-forest', dark: true },
   { id: 'sticker-coral', label: 'Warm Coral Sticker', className: 'wordart-sticker-coral' },
   { id: 'sticker-teal', label: 'Deep Teal Sticker', className: 'wordart-sticker-teal', dark: true },
+  // The cartoon-sign lettering: a glossy ramp inside a fat white die-cut, itself inside a second,
+  // darker keyline. Two outlines, because that is what makes a word look printed on a sign rather
+  // than typed on it.
+  {
+    id: 'cartoon-bubble-blue',
+    label: 'Bubble Sign Blue',
+    className: 'wordart-cartoon-bubble-blue',
+  },
+  {
+    id: 'cartoon-bubble-pink',
+    label: 'Bubble Sign Pink',
+    className: 'wordart-cartoon-bubble-pink',
+  },
   // Flat ink on a painted highlight — the brush-swipe and pastel-pill headline.
   { id: 'brush-sunshine', label: 'Sunshine Brush Swipe', className: 'wordart-brush-sunshine' },
   { id: 'brush-blush', label: 'Pastel Blush Ribbon', className: 'wordart-brush-blush' },
@@ -210,6 +223,12 @@ export interface WordArtPaint {
    */
   heavyStroke?: boolean;
   shadows: WordArtShadow[];
+  /**
+   * A second keyline, outside the sticker rim: the dark ring that separates a white die-cut from
+   * whatever it is printed on. Painted as a silhouette under the rim, so the visible thickness is
+   * the declared width — the rim covers the inner half, exactly like `heavyStroke`.
+   */
+  outline?: { width: number; color: string };
   /** Marching 3D block, painted behind everything. */
   extrusion?: WordArtExtrusion;
   /** Soft light spills (painted furthest back). */
@@ -226,6 +245,18 @@ export interface WordArtPaint {
    */
   arc?: number;
 }
+
+/** Eight directions, for the ring that stands in for a second keyline in the previews. */
+const RING_OFFSETS: [number, number][] = [
+  [1, 0],
+  [0.7, 0.7],
+  [0, 1],
+  [-0.7, 0.7],
+  [-1, 0],
+  [-0.7, -0.7],
+  [0, -1],
+  [0.7, -0.7],
+];
 
 /** The three passes that make a swipe look painted rather than drawn. */
 export const SWIPE_LAYERS: { dy: number; dh: number; alpha: number; tilt: number }[] = [
@@ -856,6 +887,42 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     heavyStroke: true,
     shadows: [],
   },
+  'cartoon-bubble-blue': {
+    weight: '900',
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#b9e2ff' },
+        { offset: 0.16, color: '#4aa3ff' },
+        { offset: 0.5, color: '#1c72e8' },
+        { offset: 0.84, color: '#0c47a8' },
+        { offset: 1, color: '#082f76' },
+      ],
+    },
+    stroke: { width: 9, color: '#ffffff' },
+    heavyStroke: true,
+    outline: { width: 4, color: '#0b2f6e' },
+    castShadow: { dx: 0, dy: 6, blur: 12, color: 'rgba(9, 38, 94, 0.35)' },
+    shadows: [],
+  },
+  'cartoon-bubble-pink': {
+    weight: '900',
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#ffd1e8' },
+        { offset: 0.16, color: '#ff5fae' },
+        { offset: 0.5, color: '#ea1a84' },
+        { offset: 0.84, color: '#b00a5a' },
+        { offset: 1, color: '#7d0740' },
+      ],
+    },
+    stroke: { width: 9, color: '#ffffff' },
+    heavyStroke: true,
+    outline: { width: 4, color: '#7a0b46' },
+    castShadow: { dx: 0, dy: 6, blur: 12, color: 'rgba(96, 6, 52, 0.35)' },
+    shadows: [],
+  },
   'sticker-teal': {
     weight: '900',
     gradient: {
@@ -1280,6 +1347,8 @@ export interface WordArtSpec {
   castShadow?: WordArtShadow;
   /** Extra authored shadows, painted nearest the glyphs. */
   shadows: WordArtShadow[];
+  /** The second keyline outside the rim, if the style has one. */
+  outline?: { width: number; color: string };
   /** A painted highlight behind the letters, if the style asks for one. */
   backdrop?: WordArtBackdrop;
   /**
@@ -1308,6 +1377,7 @@ export function wordArtSpec(style?: WordArtStyle): WordArtSpec | undefined {
     bloom: paint.bloom,
     castShadow: paint.castShadow,
     shadows: paint.shadows,
+    outline: paint.outline,
     backdrop: paint.backdrop,
     arc: paint.arc,
   };
@@ -1350,6 +1420,13 @@ export function buildWordArtCssRule(style: WordArtStyle, className = `wordart-${
     lines.push(`  --wordart-backdrop: ${paint.backdrop.color};`);
   }
   const chain = wordArtShadowChain(paint);
+  if (paint.outline) {
+    // One `-webkit-text-stroke` per element, and the rim already has it. A ring of hairline
+    // drop-shadows is the preview's stand-in for the second keyline; the canvas paints the real
+    // thing (ElementRenderer adds a silhouette layer, wordArtCanvas a pass).
+    const r = Math.max(0.5, paint.outline.width / 2);
+    for (const [dx, dy] of RING_OFFSETS) chain.push({ dx: dx * r, dy: dy * r, blur: 0, color: paint.outline.color });
+  }
   if (chain.length) {
     lines.push('  filter:');
     const shadows = chain.map((s) => `    drop-shadow(${shadowCss(s)})`);
@@ -1564,6 +1641,8 @@ function shadowCss(s: WordArtShadow): string {
  * never on the element box (it would swallow the box fill).
  */
 export interface WordArtCss {
+  /** The second keyline, if the style has one — the renderer paints it as a silhouette layer. */
+  outline?: { width: number; color: string };
   fontWeight?: '800' | '900';
   color?: string;
   /** `linear-gradient(...)` value, already ordered. */
@@ -1597,6 +1676,7 @@ export function wordArtCss(style?: WordArtStyle): WordArtCss {
     css.webkitTextStroke = `${paint.stroke.width}px ${paint.stroke.color}`;
     css.paintOrder = 'stroke fill';
   }
+  if (paint.outline) css.outline = paint.outline;
   // `text-shadow` bleeds through a background-clipped fill and muddies the
   // metal; a drop-shadow filter paints behind the clipped glyphs instead.
   const chain = wordArtShadowChain(paint);
