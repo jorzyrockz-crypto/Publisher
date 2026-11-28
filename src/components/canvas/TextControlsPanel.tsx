@@ -47,13 +47,19 @@ function readRecentColors(): string[] {
   }
 }
 
+const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="text-[11px] font-bold uppercase tracking-[0.09em] text-[#6a7682] mb-1.5">
+    {children}
+  </div>
+);
+
 const PanelHeader: React.FC<{ title: string; onBack: () => void }> = ({ title, onBack }) => (
   <div className="flex items-center gap-1.5">
     <button
       type="button"
       onClick={onBack}
       aria-label="Back to the toolbar"
-      className="w-6 h-6 flex items-center justify-center rounded-full text-[#4a5661] hover:bg-[#f4f2ff] hover:text-[#5c4bb8] transition cursor-pointer"
+      className="w-9 h-9 flex items-center justify-center rounded-full text-[#4a5661] hover:bg-[#f4f2ff] hover:text-[#5c4bb8] transition cursor-pointer touch-manipulation"
     >
       <ChevronLeft size={15} />
     </button>
@@ -167,13 +173,13 @@ export const TextControlsPanel: React.FC<{ variant?: 'card' | 'pane' }> = ({ var
           if (!downloaded.has(family)) void loadGoogleFontStylesheet(family);
           applyToAll({ fontFamily: family });
         }}
-        className={`w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-[8px] text-left transition cursor-pointer ${
-          isCurrent ? 'bg-[#efeafd] text-[#5c4bb8]' : 'hover:bg-[#f4f2ff] text-[#161a22]'
+        className={`w-full min-h-[52px] flex items-center justify-between gap-2 px-3 rounded-[12px] text-left transition cursor-pointer active:scale-[0.99] touch-manipulation ${
+          isCurrent ? 'bg-[#efeafd] text-[#5c4bb8]' : 'bg-[#f8fafb] text-[#161a22]'
         }`}
         style={{ fontFamily: `"${family}", Inter, sans-serif` }}
       >
-        <span className="text-[14px] leading-tight truncate">{family}</span>
-        {isCurrent && <Check size={13} className="shrink-0" />}
+        <span className="text-[17px] leading-tight truncate">{family}</span>
+        {isCurrent && <Check size={16} className="shrink-0" />}
       </button>
     );
   };
@@ -183,8 +189,8 @@ export const TextControlsPanel: React.FC<{ variant?: 'card' | 'pane' }> = ({ var
       ref={rootRef}
       className={
         variant === 'card'
-          ? 'rounded-[10px] border border-[#d3c9f9] bg-[#faf8ff] p-2.5 space-y-2.5'
-          : 'space-y-2.5'
+          ? 'rounded-[12px] border border-[#d3c9f9] bg-[#faf8ff] p-3 space-y-4'
+          : 'space-y-5 pb-6'
       }
     >
       {variant === 'card' && (
@@ -193,27 +199,31 @@ export const TextControlsPanel: React.FC<{ variant?: 'card' | 'pane' }> = ({ var
 
       {section === 'type' && (
         <>
-          <div className="flex items-center gap-1.5 h-8 px-2 rounded-[8px] border border-[#d3c9f9] bg-white">
-            <Search size={13} className="text-[#6a7682]" />
+          {/* Search: 48px tall and 16px type, so it neither crowds a thumb nor zooms on iOS. */}
+          <div className="flex items-center gap-2 h-12 px-3 rounded-[12px] border border-[#d3c9f9] bg-white">
+            <Search size={17} className="text-[#6a7682] flex-shrink-0" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search"
-              className="flex-1 min-w-0 bg-transparent text-[11.5px] outline-none placeholder:text-[#9aa4af]"
+              placeholder="Search fonts"
+              inputMode="search"
+              className="flex-1 min-w-0 bg-transparent text-[16px] outline-none placeholder:text-[#9aa4af]"
             />
           </div>
 
-          {/* Chips wrap; a scroll strip with no visible scrollbar is a place controls go to hide. */}
-          <div className="flex flex-wrap gap-1">
+          {/* Chips wrap rather than scroll: a strip that scrolls invisibly is a place
+              controls go to hide, and a fingertip cannot find what it cannot see. */}
+          <div className="flex flex-wrap gap-2">
             {CATEGORIES.map((option) => (
               <button
                 key={option.id}
                 type="button"
                 onClick={() => setCategory(option.id)}
-                className={`px-2 py-0.5 rounded-full text-[10.5px] font-semibold transition cursor-pointer ${
+                aria-pressed={category === option.id}
+                className={`min-h-[38px] px-3.5 rounded-full text-[13px] font-semibold transition cursor-pointer active:scale-95 touch-manipulation ${
                   category === option.id
-                    ? 'bg-[#e6e0fb] text-[#5c4bb8] border border-[#d3c9f9]'
-                    : 'bg-white text-[#3f4a56] border border-[#e5e9ee] hover:border-[#d3c9f9]'
+                    ? 'bg-[#e6e0fb] text-[#5c4bb8] border border-[#c9bcf5]'
+                    : 'bg-white text-[#3f4a56] border border-[#e5e9ee]'
                 }`}
               >
                 {option.label}
@@ -222,23 +232,21 @@ export const TextControlsPanel: React.FC<{ variant?: 'card' | 'pane' }> = ({ var
           </div>
 
           {familiesInDesign.length > 0 && (
-            <div className="space-y-0.5">
-              <div className="text-[10px] font-bold uppercase tracking-[0.09em] text-[#6a7682] px-0.5">
-                In this design
-              </div>
-              {familiesInDesign.slice(0, 4).map(renderFamilyRow)}
+            <div>
+              <SectionLabel>In this design</SectionLabel>
+              <div className="space-y-1">{familiesInDesign.slice(0, 4).map(renderFamilyRow)}</div>
             </div>
           )}
 
-          <div className="space-y-0.5">
-            <div className="text-[10px] font-bold uppercase tracking-[0.09em] text-[#6a7682] px-0.5">
-              {query.trim() ? 'Results' : 'Recommended fonts'}
-            </div>
-            <div className="max-h-[240px] overflow-y-auto pr-0.5">
+          <div>
+            <SectionLabel>{query.trim() ? 'Results' : 'Recommended fonts'}</SectionLabel>
+            <div className="max-h-[46vh] overflow-y-auto overscroll-contain -mx-1 px-1">
               {matches.length === 0 ? (
-                <div className="px-2 py-3 text-[11px] text-[#6a7682]">No font matches “{query}”.</div>
+                <div className="px-2 py-4 text-[13px] text-[#6a7682]">
+                  No font matches “{query}”.
+                </div>
               ) : (
-                matches.slice(0, 40).map((font) => renderFamilyRow(font.family))
+                <div className="space-y-1">{matches.slice(0, 40).map((font) => renderFamilyRow(font.family))}</div>
               )}
             </div>
           </div>
@@ -247,56 +255,51 @@ export const TextControlsPanel: React.FC<{ variant?: 'card' | 'pane' }> = ({ var
 
       {section === 'colour' && (
         <>
-          <div className="flex items-center gap-1">
-            {(
-              [
-                { id: 'fill', label: 'Fill' },
-                { id: 'highlight', label: 'Highlight' },
-                { id: 'stroke', label: 'Stroke' },
-              ] as const
-            ).map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                onClick={() => setTarget(option.id)}
-                className={`flex items-center gap-1.5 px-2 py-1 rounded-[8px] border text-[10.5px] font-semibold transition cursor-pointer ${
-                  target === option.id
-                    ? 'border-[#6e56cf] bg-white text-[#5c4bb8]'
-                    : 'border-[#e5e9ee] bg-white text-[#3f4a56] hover:border-[#d3c9f9]'
-                }`}
-              >
-                <span
-                  className="font-bold text-[13px] leading-none"
-                  style={{
-                    textDecorationLine: option.id === 'fill' ? 'underline' : undefined,
-                    textDecorationColor: '#6e56cf',
-                    textDecorationThickness: '2px',
-                    borderBottom: option.id === 'highlight' ? '3px solid #6e56cf' : undefined,
-                  }}
+          {/* Three roles as a segmented control: 48px tall, one thumb each. */}
+          <div>
+            <SectionLabel>Applies to</SectionLabel>
+            <div className="grid grid-cols-3 gap-1.5 p-1.5 rounded-[14px] bg-[#f1eff9] border border-[#e2dcf7]">
+              {(
+                [
+                  { id: 'fill', label: 'Fill' },
+                  { id: 'highlight', label: 'Highlight' },
+                  { id: 'stroke', label: 'Stroke' },
+                ] as const
+              ).map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => setTarget(option.id)}
+                  aria-pressed={target === option.id}
+                  className={`min-h-[48px] rounded-[10px] flex flex-col items-center justify-center gap-0.5 transition cursor-pointer active:scale-95 touch-manipulation ${
+                    target === option.id
+                      ? 'bg-white text-[#5c4bb8] shadow-xs'
+                      : 'text-[#4a5661]'
+                  }`}
                 >
-                  Aa
-                </span>
-                {option.label}
-              </button>
-            ))}
+                  <span className="text-[17px] font-bold leading-none">Aa</span>
+                  <span className="text-[11px] font-semibold">{option.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="space-y-1">
-            <div className="text-[10px] font-bold uppercase tracking-[0.09em] text-[#6a7682] px-0.5">
-              Current colors
-            </div>
-            <div className="flex items-center gap-1.5">
+          <div>
+            <SectionLabel>Current colors</SectionLabel>
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 title="Add this colour"
+                aria-label="Add this colour"
                 onClick={() => applyColor(currentColor === 'transparent' ? '#111827' : currentColor)}
-                className="w-7 h-7 rounded-full border border-[#d3c9f9] bg-white flex items-center justify-center text-[#4a5661] hover:bg-[#f4f2ff] transition cursor-pointer"
+                className="w-11 h-11 rounded-full border border-[#d3c9f9] bg-white flex items-center justify-center text-[#4a5661] active:scale-95 transition cursor-pointer touch-manipulation"
               >
-                <Plus size={13} />
+                <Plus size={18} />
               </button>
               <button
                 type="button"
                 title="Pick a colour from the screen"
+                aria-label="Pick a colour from the screen"
                 onClick={() => {
                   const EyeDropperCtor = (
                     window as unknown as {
@@ -309,17 +312,18 @@ export const TextControlsPanel: React.FC<{ variant?: 'card' | 'pane' }> = ({ var
                     .then((result) => applyColor(result.sRGBHex))
                     .catch(() => undefined);
                 }}
-                className="w-7 h-7 rounded-full border border-[#d3c9f9] bg-white flex items-center justify-center text-[#4a5661] hover:bg-[#f4f2ff] transition cursor-pointer"
+                className="w-11 h-11 rounded-full border border-[#d3c9f9] bg-white flex items-center justify-center text-[#4a5661] active:scale-95 transition cursor-pointer touch-manipulation"
               >
-                <Pipette size={13} />
+                <Pipette size={18} />
               </button>
               <span
                 title={currentColor}
-                className="w-8 h-8 rounded-full border-2 border-white ring-2 ring-[#6e56cf]"
+                aria-label={`Current colour ${currentColor}`}
+                className="w-11 h-11 rounded-full border-2 border-white ring-2 ring-[#6e56cf]"
                 style={{
                   background:
                     currentColor === 'transparent'
-                      ? 'repeating-conic-gradient(#e5e9ee 0% 25%, #ffffff 0% 50%) 50% / 8px 8px'
+                      ? 'repeating-conic-gradient(#e5e9ee 0% 25%, #ffffff 0% 50%) 50% / 10px 10px'
                       : currentColor,
                 }}
               />
@@ -328,8 +332,9 @@ export const TextControlsPanel: React.FC<{ variant?: 'card' | 'pane' }> = ({ var
                   key={hex}
                   type="button"
                   title={hex}
+                  aria-label={`Recent colour ${hex}`}
                   onClick={() => applyColor(hex)}
-                  className="w-7 h-7 rounded-full border border-[#e5e9ee] cursor-pointer"
+                  className="w-11 h-11 rounded-full border border-[#e5e9ee] active:scale-95 transition cursor-pointer touch-manipulation"
                   style={{ background: hex }}
                 />
               ))}
@@ -338,21 +343,20 @@ export const TextControlsPanel: React.FC<{ variant?: 'card' | 'pane' }> = ({ var
 
           {/* The document's own palette, not a fixed list: mined colours, harmonies of its
               dominant hue, and — for text — only swatches that stay readable on this page. */}
-          <div className="space-y-1">
-            <div className="text-[10px] font-bold uppercase tracking-[0.09em] text-[#6a7682] px-0.5">
-              Suggestions
-            </div>
+          <div>
+            <SectionLabel>Suggestions</SectionLabel>
             <SmartPalette
               value={currentColor}
               target={SMART_TARGET[target]}
               onSelect={applyColor}
               showHeader={false}
-              maxHeightClass="max-h-[260px]"
+              size="touch"
+              maxHeightClass="max-h-[46vh]"
             />
           </div>
 
-          <label className="flex items-center gap-1.5 text-[10.5px] text-[#3f4a56]">
-            <span className="font-semibold">Hex</span>
+          <div>
+            <SectionLabel>Hex</SectionLabel>
             <input
               value={currentColor === 'transparent' ? '' : currentColor}
               onChange={(e) => {
@@ -360,9 +364,12 @@ export const TextControlsPanel: React.FC<{ variant?: 'card' | 'pane' }> = ({ var
                 if (/^#[0-9a-fA-F]{6}$/.test(value)) applyColor(value);
               }}
               placeholder="#161A22"
-              className="flex-1 min-w-0 h-7 px-2 rounded-[8px] border border-[#d3c9f9] bg-white text-[11px] font-mono outline-none"
+              spellCheck={false}
+              inputMode="text"
+              aria-label="Hex colour value"
+              className="w-full h-12 px-3 rounded-[12px] border border-[#d3c9f9] bg-white text-[16px] font-mono outline-none"
             />
-          </label>
+          </div>
         </>
       )}
     </div>

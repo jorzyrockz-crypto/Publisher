@@ -21,6 +21,11 @@ interface SmartPaletteProps {
   showHeader?: boolean;
   /** Height of the scrolling swatch area. */
   maxHeightClass?: string;
+  /**
+   * `sm` is for a mouse-driven popover; `touch` gives every swatch a 40px target and spaces
+   * the rows out, because a fingertip is not a cursor.
+   */
+  size?: 'sm' | 'touch';
 }
 
 const SwatchButton: React.FC<{
@@ -28,7 +33,8 @@ const SwatchButton: React.FC<{
   active: boolean;
   target: ColorTarget;
   onSelect: (hex: string) => void;
-}> = ({ swatch, active, target, onSelect }) => {
+  size: 'sm' | 'touch';
+}> = ({ swatch, active, target, onSelect, size }) => {
   const tooltip = [
     swatch.hex.toUpperCase(),
     swatch.ratio ? `${formatRatio(swatch.ratio)} contrast` : null,
@@ -43,14 +49,18 @@ const SwatchButton: React.FC<{
       onClick={() => onSelect(swatch.hex)}
       title={tooltip}
       aria-label={tooltip}
-      className={`relative w-6 h-6 rounded-[7px] border transition-transform hover:scale-110 cursor-pointer ${
+      className={`relative ${
+        size === 'touch'
+          ? 'w-10 h-10 rounded-[12px] active:scale-90 touch-manipulation'
+          : 'w-6 h-6 rounded-[7px] hover:scale-110'
+      } border transition-transform cursor-pointer ${
         active ? 'border-[#5c4bb8] ring-2 ring-[#d3c9f9]' : 'border-black/10'
       }`}
       style={{ backgroundColor: swatch.hex }}
     >
       {active && (
         <Check
-          size={11}
+          size={size === 'touch' ? 16 : 11}
           strokeWidth={3}
           className="absolute inset-0 m-auto text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)]"
         />
@@ -77,6 +87,7 @@ export const SmartPalette: React.FC<SmartPaletteProps> = ({
   onSelect,
   showHeader = true,
   maxHeightClass = 'max-h-[236px]',
+  size = 'sm',
 }) => {
   const { project, activePage } = usePublisher();
   const palette = useMemo(() => analyzeDocument(project, activePage), [project, activePage]);
@@ -124,7 +135,7 @@ export const SmartPalette: React.FC<SmartPaletteProps> = ({
                 <span className="text-[8.5px] text-[#8d99a5] truncate">{group.hint}</span>
               )}
             </div>
-            <div className="flex flex-wrap gap-1 mt-1">
+            <div className={`flex flex-wrap ${size === 'touch' ? 'gap-2 mt-1.5' : 'gap-1 mt-1'}`}>
               {group.swatches.map((swatch) => (
                 <SwatchButton
                   key={`${group.id}-${swatch.hex}`}
@@ -132,6 +143,7 @@ export const SmartPalette: React.FC<SmartPaletteProps> = ({
                   active={swatch.hex.toLowerCase() === (value || '').toLowerCase()}
                   target={target}
                   onSelect={onSelect}
+                  size={size}
                 />
               ))}
             </div>

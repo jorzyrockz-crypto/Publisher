@@ -221,12 +221,15 @@ export const DesignerToolRail: React.FC = () => {
         : 'bg-[#f8fafb] border-[#e5e9ee] text-[#4a5661] hover:bg-[#f4f2ff]'
     }`;
 
-  const drawerWidthClass =
-    activeDrawer === 'media' ||
-    activeDrawer === 'brand' ||
-    activeDrawer === 'visuals' ||
-    activeDrawer === 'collage' ||
-    activeDrawer === 'stock'
+  // A nested panel is a touch surface: 40px swatches and 48px rows need the extra width, and
+  // the drawer sits beside the bar, so it can afford it without crowding the canvas.
+  const drawerWidthClass = sidePanel
+    ? 'w-[336px]'
+    : activeDrawer === 'media' ||
+        activeDrawer === 'brand' ||
+        activeDrawer === 'visuals' ||
+        activeDrawer === 'collage' ||
+        activeDrawer === 'stock'
       ? 'w-[296px]'
       : 'w-[268px]';
 
@@ -320,9 +323,10 @@ export const DesignerToolRail: React.FC = () => {
                           sidePanel.close();
                         }}
                         aria-label="Back to the edit panel"
-                        className="w-6 h-6 flex items-center justify-center rounded-full text-[#4a5661] hover:bg-[#f4f2ff] hover:text-[#5c4bb8] transition cursor-pointer flex-shrink-0"
+                        title="Back"
+                        className="w-9 h-9 -ml-1.5 flex items-center justify-center rounded-full text-[#4a5661] hover:bg-[#f4f2ff] hover:text-[#5c4bb8] transition cursor-pointer flex-shrink-0 touch-manipulation"
                       >
-                        <ChevronLeft size={15} />
+                        <ChevronLeft size={18} />
                       </button>
                     )}
                     <h2 className="text-xs font-semibold text-[#161a22] truncate">

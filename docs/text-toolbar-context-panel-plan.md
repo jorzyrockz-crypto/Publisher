@@ -267,3 +267,23 @@ What differs from the plan as written:
 
 Still open from the plan: the **Alignment** and **Effects** sections (slice C). The alignment
 button still cycles, which is the direct behaviour the rule asks for.
+
+---
+
+## 10. Touch sizing (the panel is a thumb surface)
+
+The drawer panel is reached from a bar that is already thumb-sized, so it is sized the same way
+rather than like a desktop popover:
+
+| control | size |
+|---|---|
+| role segmented control (Fill / Highlight / Stroke) | 48 px tall, one segment per thumb |
+| palette swatches (`SmartPalette size="touch"`) | 40 × 40, 8 px gaps |
+| current colour / add / eyedropper / recents | 44 × 44 |
+| hex field, font search | 48 px tall, 16 px type (below that, iOS zooms on focus) |
+| font rows | 52 px tall, 17 px preview in the family's own face |
+| category chips | 38 px tall, wrapping — never a hidden-scroll strip |
+| drawer width while a panel is open | 336 px, so 40 px swatches fit without crowding |
+
+The mouse-driven popover keeps the compact size (`SmartPalette size="sm"`); only the panel is
+enlarged. Both read the same palette, so "suggestions" means one thing everywhere.

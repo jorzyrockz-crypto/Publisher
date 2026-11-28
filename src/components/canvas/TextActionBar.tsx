@@ -5,7 +5,7 @@ import { useTextSelection } from '../../hooks/useTextSelection';
 import { useTextPanelState } from '../../hooks/useTextPanelState';
 
 const iconBtn = (active: boolean) =>
-  `min-w-[34px] min-h-[34px] p-1.5 rounded-[10px] flex items-center justify-center transition cursor-pointer active:scale-95 ${
+  `min-w-[40px] min-h-[40px] p-1.5 rounded-[10px] flex items-center justify-center transition cursor-pointer active:scale-95 ${
     active ? 'bg-[#efeafd] text-[#5c4bb8]' : 'text-[#4a5661] hover:text-[#161a22] hover:bg-[#f4f2ff]'
   }`;
 
@@ -38,7 +38,7 @@ export const TextActionBar: React.FC = () => {
         onClick={colour.toggle}
         aria-label="Text color"
         title="Text color"
-        className={`h-9 px-2 rounded-[10px] flex items-center gap-1 border transition cursor-pointer touch-manipulation ${
+        className={`h-10 px-2.5 rounded-[10px] flex items-center gap-1 border transition cursor-pointer active:scale-95 touch-manipulation ${
           colour.open ? 'border-[#6e56cf] bg-[#efeafd]' : 'border-[#e5e9ee] bg-[#f8fafb] hover:bg-white'
         }`}
       >
@@ -56,7 +56,7 @@ export const TextActionBar: React.FC = () => {
         onClick={font.toggle}
         aria-label="Font"
         title="Font"
-        className={`h-9 max-w-[168px] px-2.5 rounded-[10px] flex items-center gap-1.5 border transition cursor-pointer touch-manipulation ${
+        className={`h-10 max-w-[176px] px-3 rounded-[10px] flex items-center gap-1.5 border transition cursor-pointer active:scale-95 touch-manipulation ${
           font.open ? 'border-[#6e56cf] bg-[#efeafd]' : 'border-[#e5e9ee] bg-[#f8fafb] hover:bg-white'
         }`}
       >
@@ -67,7 +67,7 @@ export const TextActionBar: React.FC = () => {
         <span className="w-3 h-3 rounded-full border border-[#161a22] flex-shrink-0" />
       </button>
 
-      <div className="flex items-center border border-[#e5e9ee] rounded-[10px] bg-[#f8fafb] h-9 px-1 gap-1">
+      <div className="flex items-center border border-[#e5e9ee] rounded-[10px] bg-[#f8fafb] h-10 px-1 gap-1">
         <button
           type="button"
           onClick={() =>
@@ -75,7 +75,7 @@ export const TextActionBar: React.FC = () => {
               Object.fromEntries(elements.map((el) => [el.id, { fontSize: Math.max(8, (el.fontSize || 16) - 2) }]))
             )
           }
-          className="w-7 h-7 flex items-center justify-center rounded-[7px] text-[#4a5661] hover:text-[#5c4bb8] hover:bg-white cursor-pointer touch-manipulation"
+          className="w-9 h-9 flex items-center justify-center rounded-[8px] text-[#4a5661] hover:text-[#5c4bb8] hover:bg-white cursor-pointer active:scale-95 touch-manipulation"
           title="Decrease Font Size"
         >
           <Minus size={13} />
@@ -88,7 +88,7 @@ export const TextActionBar: React.FC = () => {
               Object.fromEntries(elements.map((el) => [el.id, { fontSize: Math.min(200, (el.fontSize || 16) + 2) }]))
             )
           }
-          className="w-7 h-7 flex items-center justify-center rounded-[7px] text-[#4a5661] hover:text-[#5c4bb8] hover:bg-white cursor-pointer touch-manipulation"
+          className="w-9 h-9 flex items-center justify-center rounded-[8px] text-[#4a5661] hover:text-[#5c4bb8] hover:bg-white cursor-pointer active:scale-95 touch-manipulation"
           title="Increase Font Size"
         >
           <Plus size={13} />
