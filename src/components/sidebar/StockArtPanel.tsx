@@ -269,7 +269,9 @@ export const StockArtPanel: React.FC<{ embedded?: boolean }> = ({ embedded = fal
   const { isStockArtPanelOpen, setIsStockArtPanelOpen, addImage, activePage } = usePublisher();
   const isActive = embedded || isStockArtPanelOpen;
 
-  const [query, setQuery] = useState('graduation');
+  // Opens neutral. A hardcoded starter query greeted every design with the same results
+  // (and fired a nine-source search) no matter what the page was about.
+  const [query, setQuery] = useState('');
   const [sourceFilter, setSourceFilter] = useState<StockSourceFilter>('all');
   const [svgOnly, setSvgOnly] = useState(false);
 
@@ -980,7 +982,9 @@ export const StockArtPanel: React.FC<{ embedded?: boolean }> = ({ embedded = fal
 
     if (!hasAutoSearchedRef.current) {
       hasAutoSearchedRef.current = true;
-      if (trimmed.length >= MIN_QUERY_LENGTH) runUnifiedSearch(query);
+      // Always seed the grid: with a real query it searches, and with an empty one
+      // runUnifiedSearch only lists the built-in graphics (no network).
+      runUnifiedSearch(query);
       return;
     }
     if (trimmed.length > 0 && trimmed.length < MIN_QUERY_LENGTH) return;
@@ -1217,6 +1221,54 @@ export const StockArtPanel: React.FC<{ embedded?: boolean }> = ({ embedded = fal
     pxItems.length +
     ocItems.length;
 
+  // Source tabs. Human labels, no abbreviations, and zero-result sources are dropped
+  // unless you are looking at one — a row of eight "(0)" chips tells the user nothing.
+  const sourceTabs: Array<{ id: StockSourceFilter; label: string; title: string; count: number }> = [
+    { id: 'all', label: 'All', title: 'Every source', count: totalAllCount },
+    { id: 'builtin', label: 'Built-in', title: 'StudioPress graphics', count: builtinItems.length },
+    {
+      id: 'clipartfree',
+      label: 'Clipart',
+      title: 'Clipart.Free (needs a key)',
+      count: disabledSources.includes('clipartfree') ? 0 : cfItems.length,
+    },
+    { id: 'iconify', label: 'Iconify', title: 'Iconify icons', count: iconifyItems.length },
+    { id: 'wikimedia', label: 'Wikimedia', title: 'Wikimedia Commons', count: wikiItems.length },
+    { id: 'openverse', label: 'Openverse', title: 'Openverse (CC imagery)', count: ovItems.length },
+    {
+      id: 'pixabay',
+      label: 'Pixabay',
+      title: 'Pixabay photos and illustrations',
+      count: disabledSources.includes('pixabay') ? 0 : pbItems.length,
+    },
+    {
+      id: 'unsplash',
+      label: 'Unsplash',
+      title: 'Unsplash photos',
+      count: disabledSources.includes('unsplash') ? 0 : unItems.length,
+    },
+    { id: 'openart', label: 'Museum', title: 'Museum art (AIC + Cleveland)', count: oaItems.length },
+    {
+      id: 'oclipart',
+      label: 'Vectors',
+      title: 'Openclipart CC0 vectors',
+      count: ocItems.length,
+    },
+    ...(pexelsConfigured === true
+      ? [
+          {
+            id: 'pexels' as StockSourceFilter,
+            label: 'Pexels',
+            title: 'Pexels photos',
+            count: disabledSources.includes('pexels') ? 0 : pxItems.length,
+          },
+        ]
+      : []),
+  ];
+  const visibleSourceTabs = sourceTabs.filter(
+    (tab) => tab.id === 'all' || tab.id === sourceFilter || tab.count > 0
+  );
+
   const Wrapper = embedded ? 'div' : 'aside';
 
   return (
@@ -1388,8 +1440,9 @@ export const StockArtPanel: React.FC<{ embedded?: boolean }> = ({ embedded = fal
           </button>
         </form>
 
-        {/* Quick Keyword Chips */}
-        <div className="flex items-center gap-1 flex-wrap">
+        {/* Quick Keyword Chips — only while the field is empty; otherwise they are two
+            rows of permanent chrome in a 296px drawer. */}
+        <div className={`flex items-center gap-1 flex-wrap ${query.trim() ? 'hidden' : ''}`}>
           {QUICK_SEARCH_CHIPS.map((chip) => (
             <button
               key={chip}
@@ -1409,70 +1462,53 @@ export const StockArtPanel: React.FC<{ embedded?: boolean }> = ({ embedded = fal
           ))}
         </div>
 
-        {/* Source Filter Tabs */}
-        <div className="flex items-center gap-1 flex-wrap pt-0.5">
-          {(
-            [
-              { id: 'all', label: `All (${totalAllCount})` },
-              { id: 'builtin', label: `Built-in (${builtinItems.length})` },
-              {
-                id: 'clipartfree',
-                label: disabledSources.includes('clipartfree') ? 'CF (off)' : `CF (${cfItems.length})`,
-              },
-              { id: 'iconify', label: `Iconify (${iconifyItems.length})` },
-              { id: 'wikimedia', label: `Wiki (${wikiItems.length})` },
-              { id: 'openverse', label: `Open (${ovItems.length})` },
-              {
-                id: 'pixabay',
-                label: disabledSources.includes('pixabay')
-                  ? 'Pix (off)'
-                  : `Pix (${pbItems.length})`,
-              },
-              {
-                id: 'unsplash',
-                label: disabledSources.includes('unsplash')
-                  ? 'Uns (off)'
-                  : `Uns (${unItems.length})`,
-              },
-              { id: 'openart', label: `Art (${oaItems.length})` },
-              { id: 'oclipart', label: `Vec (${ocItems.length})` },
-              ...(pexelsConfigured === true
-                ? [
-                    {
-                      id: 'pexels' as const,
-                      label: disabledSources.includes('pexels')
-                        ? 'Pex (off)'
-                        : `Pex (${pxItems.length})`,
-                    },
-                  ]
-                : []),
-            ] as const
-          ).map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setSourceFilter(tab.id)}
-              className={`px-2 py-0.5 rounded-chip text-2xs font-semibold transition cursor-pointer tabular-nums ${
-                sourceFilter === tab.id
-                  ? 'bg-accent-soft text-accent-ink'
-                  : 'bg-surface-sunken text-ink-secondary hover:bg-accent-soft-hover hover:text-accent-ink'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+        {/* Source filters as a grid, not a horizontal scroller: a mouse cannot pan a
+            scroller whose scrollbar is hidden, so anything past the right edge was
+            unreachable. Cells are uniform, wrap into rows, and the SVG toggle is the
+            last cell so nothing floats loose. Zero-result sources are already hidden,
+            so this is usually one row. */}
+        <div className="grid gap-1 [grid-template-columns:repeat(auto-fit,minmax(88px,1fr))]">
+          {visibleSourceTabs.map((tab) => {
+            const active = sourceFilter === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setSourceFilter(tab.id)}
+                aria-pressed={active}
+                title={tab.title}
+                className={`flex h-[22px] min-w-0 items-center justify-between gap-1 rounded-chip px-2 text-2xs font-semibold transition cursor-pointer ${
+                  active
+                    ? 'bg-accent-soft text-accent-ink'
+                    : 'bg-surface-sunken text-ink-secondary hover:bg-accent-soft-hover hover:text-accent-ink'
+                }`}
+              >
+                <span className="min-w-0 flex-1 truncate text-left">{tab.label}</span>
+                {tab.count > 0 && (
+                  <span
+                    className={`flex-shrink-0 tabular-nums font-medium ${
+                      active ? 'text-accent-ink/60' : 'text-ink-muted'
+                    }`}
+                  >
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
           <button
             type="button"
             onClick={() => setSvgOnly(!svgOnly)}
-            title="Show only recolorable Vector SVGs"
-            className={`ml-auto px-2 py-0.5 rounded-chip text-2xs font-semibold border transition cursor-pointer flex items-center gap-1 ${
+            aria-pressed={svgOnly}
+            title="Show only recolorable vector SVGs"
+            className={`flex h-[22px] items-center justify-center gap-1 rounded-chip border text-2xs font-semibold transition cursor-pointer ${
               svgOnly
                 ? 'bg-accent-soft border-accent-line text-accent-ink'
                 : 'bg-surface-sunken border-line text-ink-secondary hover:text-accent-ink hover:bg-accent-soft-hover'
             }`}
           >
             <Sparkles size={10} />
-            <span>SVG Only</span>
+            <span>SVG</span>
           </button>
         </div>
 
@@ -1571,8 +1607,11 @@ export const StockArtPanel: React.FC<{ embedded?: boolean }> = ({ embedded = fal
         )}
       </div>
 
-      {/* Results Area */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2.5 bg-surface-sunken">
+      {/* Results Area — min-h-0 is what lets this actually shrink and scroll inside a
+          flex column; without it the list grew past the drawer and was clipped, which
+          is exactly why the mouse wheel felt dead. overscroll-contain stops the wheel
+          from chaining out to the canvas zoom handler at the end of the list. */}
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 space-y-2.5 bg-surface-sunken">
         {sourceErrors.length > 0 && (
           <div className="space-y-1">
             {Array.from(new Set(sourceErrors)).map((err) => {
@@ -1754,11 +1793,9 @@ export const StockArtPanel: React.FC<{ embedded?: boolean }> = ({ embedded = fal
           </div>
         ) : (
           <>
-          <div
-            className={`grid gap-2.5 ${
-              panelWidth >= 380 ? 'grid-cols-3' : 'grid-cols-2'
-            }`}
-          >
+          {/* auto-fill keys off the actual space: 2 columns in the 296px drawer,
+              3-4 in the Publisher panel, and no state to fall out of sync. */}
+          <div className="grid gap-2.5 [grid-template-columns:repeat(auto-fill,minmax(94px,1fr))]">
             {combinedResults.map((item) => {
               const isInserting = insertingUid === item.uid;
               return (

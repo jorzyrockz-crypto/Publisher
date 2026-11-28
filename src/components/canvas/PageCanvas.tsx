@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
 import { ElementRenderer } from './ElementRenderer';
 import { SelectionBox } from './SelectionBox';
@@ -20,6 +20,8 @@ import {
   Type,
   QrCode,
   Layers,
+  Group,
+  Ungroup,
 } from 'lucide-react';
 
 interface PageCanvasProps {
@@ -75,6 +77,8 @@ export const PageCanvas: React.FC<PageCanvasProps> = React.memo(({
     removeGuide,
     fillPlaceholderFromImageElement,
     openCollageEditor,
+    groupSelected,
+    ungroupSelected,
   } = usePublisher();
 
   const [contextMenu, setContextMenu] = useState<{
@@ -137,6 +141,11 @@ export const PageCanvas: React.FC<PageCanvasProps> = React.memo(({
       } else if (e.ctrlKey && e.key.toLowerCase() === 'd') {
         e.preventDefault();
         duplicateSelectedElements();
+      } else if (e.ctrlKey && e.key.toLowerCase() === 'g') {
+        // The context menu prints these two shortcuts, so they have to work.
+        e.preventDefault();
+        if (e.shiftKey) ungroupSelected();
+        else groupSelected();
       } else if (e.ctrlKey && e.key.toLowerCase() === 'z') {
         e.preventDefault();
         undo();
@@ -177,6 +186,8 @@ export const PageCanvas: React.FC<PageCanvasProps> = React.memo(({
     copySelectedElements,
     pasteElements,
     updateElement,
+    groupSelected,
+    ungroupSelected,
   ]);
 
   const handleCanvasMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -456,6 +467,26 @@ export const PageCanvas: React.FC<PageCanvasProps> = React.memo(({
     [];
 
   const displayedElements = isEditingMaster ? activeMasterEls : targetPage.elements;
+
+  /**
+   * What the right-click menu can offer for the current selection. Group needs two or more
+   * loose elements -- grouping what is already one group is a no-op, so it is hidden rather
+   * than shown disabled (right-clicking a grouped object selects the whole group, so that
+   * case is common). Ungroup only makes sense if something in the selection carries a group.
+   */
+  const groupMenuActions = useMemo(() => {
+    const selected = new Set(selectedElementIds);
+    const picked = displayedElements.filter((el) => selected.has(el.id));
+    const groupIds = new Set(
+      picked.map((el) => el.groupId).filter((id): id is string => Boolean(id))
+    );
+    const isOneGroup = groupIds.size === 1 && picked.every((el) => el.groupId);
+    return {
+      canGroup: picked.length >= 2 && !isOneGroup,
+      canUngroup: groupIds.size > 0,
+      count: selectedElementIds.length,
+    };
+  }, [displayedElements, selectedElementIds]);
 
   const photoEditingElement = editingPhotoId
     ? (displayedElements.find((el) => el.id === editingPhotoId) as ImageElement | undefined)
@@ -1138,7 +1169,7 @@ export const PageCanvas: React.FC<PageCanvasProps> = React.memo(({
         className="fixed z-50 bg-white/95 backdrop-blur-md border border-slate-200 shadow-2xl rounded-2xl p-1.5 w-48 text-xs text-slate-700 animate-in fade-in zoom-in-95 duration-100"
         style={{
           left: Math.min(contextMenu.x, window.innerWidth - 200),
-          top: Math.min(contextMenu.y, window.innerHeight - 280),
+          top: Math.min(contextMenu.y, window.innerHeight - 330),
         }}
         onMouseDown={(e) => e.stopPropagation()}
       >
@@ -1164,6 +1195,37 @@ export const PageCanvas: React.FC<PageCanvasProps> = React.memo(({
               <Copy size={13} /> <span>Duplicate</span>
               <span className="ml-auto text-[10px] text-slate-400">Ctrl+D</span>
             </button>
+            {(groupMenuActions.canGroup || groupMenuActions.canUngroup) && (
+              <>
+                <div className="border-t border-slate-100 my-1" />
+                {groupMenuActions.canGroup && (
+                  <button
+                    onClick={() => {
+                      groupSelected();
+                      setContextMenu(null);
+                    }}
+                    className="w-full text-left px-2.5 py-1.5 hover:bg-indigo-50 hover:text-indigo-800 rounded-xl flex items-center gap-2 transition"
+                    title={`Group ${groupMenuActions.count} selected objects`}
+                  >
+                    <Group size={13} /> <span>Group</span>
+                    <span className="ml-auto text-[10px] text-slate-400">Ctrl+G</span>
+                  </button>
+                )}
+                {groupMenuActions.canUngroup && (
+                  <button
+                    onClick={() => {
+                      ungroupSelected();
+                      setContextMenu(null);
+                    }}
+                    className="w-full text-left px-2.5 py-1.5 hover:bg-indigo-50 hover:text-indigo-800 rounded-xl flex items-center gap-2 transition"
+                    title="Release the selected objects from their group"
+                  >
+                    <Ungroup size={13} /> <span>Ungroup</span>
+                    <span className="ml-auto text-[10px] text-slate-400">Ctrl+Shift+G</span>
+                  </button>
+                )}
+              </>
+            )}
             {contextMenuElement?.collageMeta && (
               <>
                 <div className="border-t border-slate-100 my-1" />
