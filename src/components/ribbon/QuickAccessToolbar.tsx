@@ -110,7 +110,10 @@ export const QuickAccessToolbar: React.FC = () => {
   );
 
   return (
-    <div className="h-[46px] bg-white text-[#161a22] flex items-center justify-between px-3 select-none text-xs border-b border-[#e5e9ee] relative z-40">
+    <div
+      className="h-[46px] bg-white text-[#161a22] flex items-center justify-between px-3 select-none text-xs border-b border-[#e5e9ee] relative z-40"
+      data-quick-access="true"
+    >
       {/* Left: Brand Emblem, Title, Document Name & Ghost Quick Actions */}
       <div className="flex items-center gap-2 min-w-0">
         {/* Brand Emblem + Publisher Studio (opens Backstage / File) */}

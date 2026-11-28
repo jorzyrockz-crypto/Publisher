@@ -4,6 +4,7 @@ import { SelectionToolbar } from './SelectionToolbar';
 import { DesignerContextBar } from '../workspace/DesignerContextBar';
 import { PageCanvas } from './PageCanvas';
 import { HorizontalRuler, VerticalRuler } from './Ruler';
+import { useCanvasTouchGestures } from '../../hooks/useCanvasTouchGestures';
 import {
   ZoomIn,
   ZoomOut,
@@ -168,6 +169,10 @@ export const CanvasArea: React.FC = () => {
     }
   };
 
+  // Fingers are turned into the mouse events every drag handler here already understands;
+  // two fingers pinch-zoom and a long press opens the canvas menu. See the hook for details.
+  const touchGestures = useCanvasTouchGestures({ containerRef, zoom, setZoom });
+
   const handleWorkspaceMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!containerRef.current) return;
 
@@ -330,7 +335,11 @@ export const CanvasArea: React.FC = () => {
       )}
 
       {/* Main Workspace Area: Left Ruler + Scrollable Pasteboard Canvas */}
-      <div className="flex flex-1 w-full h-full overflow-hidden relative">
+      <div
+        className="flex flex-1 w-full h-full overflow-hidden relative"
+        data-canvas-workspace="true"
+        {...touchGestures}
+      >
         {rulerVisible && (
           <div className="w-5 bg-white/90 border-r border-slate-200 z-10 flex-shrink-0 overflow-hidden relative shadow-2xs">
             <div style={{ marginTop: '40px' }}>

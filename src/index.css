@@ -685,3 +685,137 @@ html.dark select option {
   background-color: #1a1f2b;
   color: #e6ebf2;
 }
+
+/* ============================================================
+   Touch devices
+
+   The app is a desktop publishing tool, but it is opened on tablets and
+   phones. Three things make that work: no 300ms tap delay and no double-tap
+   zoom on controls, no pull-to-refresh or rubber-band while dragging on the
+   pasteboard, and targets big enough to hit. The canvas gestures themselves
+   live in `useCanvasTouchGestures`.
+   ============================================================ */
+
+/* Tailwind custom variant, so a component can opt in with `touch:min-h-11`. */
+@custom-variant touch (@media (pointer: coarse));
+
+html {
+  /* Safari on iOS inflates text in landscape otherwise. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  /* A drag on the pasteboard must never turn into a page bounce or a reload. */
+  overscroll-behavior: none;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+[role='button'],
+[role='tab'],
+[role='menuitem'],
+summary,
+label,
+a[href] {
+  /* Kills the 300ms delay and double-tap zoom without banning pinch-zoom. */
+  touch-action: manipulation;
+}
+
+/* The pasteboard owns its gestures: a finger there drags an object, pans, or pinches.
+   The rulers are inside the same surface because dragging a guide out of one is a touch
+   gesture too. */
+[data-canvas-workspace='true'],
+[data-canvas-viewport='true'] {
+  touch-action: none;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* A long press on the sheet must not start a text selection or the iOS callout menu: on a
+   canvas that gesture belongs to the object under the finger. A box being edited is the
+   exception — there the caret and selection are the whole point. */
+.print-page,
+.print-page * {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.print-page [contenteditable='true'],
+.print-page [contenteditable='true'] *,
+.print-page textarea,
+.print-page input {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+
+@media (pointer: coarse) {
+  /* Inputs under 16px make iOS zoom the whole layout the moment one is focused. */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  /* Fingers need a bigger grip than a cursor: the dot stays small, the target does not. */
+  .resize-handle-modern {
+    width: 22px;
+    height: 22px;
+    border-width: 3px;
+    /* Keep the visible dot where it was, and grow only the part that catches the touch. */
+    margin: -6px;
+  }
+
+  .resize-handle-modern::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 9999px;
+  }
+
+  /* Momentum scrolling in every panel and strip. */
+  [class*='overflow-y-auto'],
+  [class*='overflow-x-auto'] {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  /* A thin scrollbar is unreadable on a tablet and impossible to grab on a phone. */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #c9d1da;
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  /* Hover styles never fire from a finger, so anything that only appears on hover is not
+     "quiet until hovered" on a tablet — it is missing. Those controls stay visible. */
+  [class*='group-hover:opacity-100'],
+  [class*='hover:opacity-100'],
+  [data-touch-reveal] {
+    opacity: 1 !important;
+  }
+
+  /* Chrome that was sized for a cursor: the ribbon tab strip and the quick-access row are
+     the two places a tablet user goes first, and both were about 26px tall. */
+  [data-ribbon-tabs='true'] > div > button {
+    min-height: 44px;
+    padding-inline: 14px;
+    font-size: 13px;
+  }
+
+  [data-quick-access='true'] button {
+    min-width: 40px;
+    min-height: 40px;
+  }
+}

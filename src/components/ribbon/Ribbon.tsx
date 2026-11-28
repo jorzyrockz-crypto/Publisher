@@ -43,7 +43,10 @@ export const Ribbon: React.FC = () => {
       <QuickAccessToolbar />
 
       {/* Calm Tab Strip */}
-      <div className="flex items-center justify-between px-3 py-1 bg-white border-b border-[#e5e9ee]">
+      <div
+        className="flex items-center justify-between px-3 py-1 bg-white border-b border-[#e5e9ee]"
+        data-ribbon-tabs="true"
+      >
         <div className="flex items-center gap-1">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
