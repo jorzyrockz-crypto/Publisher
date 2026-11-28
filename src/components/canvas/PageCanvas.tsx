@@ -487,6 +487,27 @@ export const PageCanvas: React.FC<PageCanvasProps> = React.memo(({
     return () => holder.removeEventListener('wheel', onWheel);
   }, [editingPhotoId, photoEditingScale, updateElement]);
 
+  /** Open the collage builder on the group this element belongs to. */
+  const openCollageForElement = (element: PublisherElement) => {
+    const meta = element.collageMeta;
+    if (!meta) return;
+    const groupMembers = element.groupId
+      ? displayedElements.filter((el) => el.groupId === element.groupId)
+      : [element];
+    openCollageEditor({
+      meta,
+      groupId: element.groupId,
+      elementId: element.id,
+      originX: Math.min(...groupMembers.map((el) => el.x)),
+      originY: Math.min(...groupMembers.map((el) => el.y)),
+    });
+  };
+
+  /** Selected collage member, for the right-click menu's builder entry. */
+  const contextMenuElement = contextMenu?.elementId
+    ? displayedElements.find((el) => el.id === contextMenu.elementId)
+    : undefined;
+
   const masterElements = !isEditingMaster ? getMasterElementsForPage(targetPage) : [];
 
   return (
@@ -910,20 +931,26 @@ export const PageCanvas: React.FC<PageCanvasProps> = React.memo(({
                 selectElement(element.id, false);
                 return;
               }
+              // A collage photo is a photo. Double-click lifts its frame and the same
+              // pan/wheel-zoom gesture as any other picture applies -- the builder is no
+              // longer the only place a slot's framing can be changed.
+              if (
+                element.type === 'image' &&
+                element.collageMeta &&
+                Boolean(element.src) &&
+                !element.locked &&
+                isActivePage
+              ) {
+                e.stopPropagation();
+                setEditingTextId(null);
+                setEditingPhotoId(isEditingThisPhoto ? null : element.id);
+                selectElement(element.id, false);
+                return;
+              }
+              // Empty slots, the backdrop card and stickers still belong to the builder.
               if (element.collageMeta && !element.locked) {
                 e.stopPropagation();
-                const groupMembers = element.groupId
-                  ? displayedElements.filter((el) => el.groupId === element.groupId)
-                  : [element];
-                const originX = Math.min(...groupMembers.map((el) => el.x));
-                const originY = Math.min(...groupMembers.map((el) => el.y));
-                openCollageEditor({
-                  meta: element.collageMeta,
-                  groupId: element.groupId,
-                  elementId: element.id,
-                  originX,
-                  originY,
-                });
+                openCollageForElement(element);
                 return;
               }
               if (element.type === 'text' && !element.locked) {
@@ -1137,6 +1164,20 @@ export const PageCanvas: React.FC<PageCanvasProps> = React.memo(({
               <Copy size={13} /> <span>Duplicate</span>
               <span className="ml-auto text-[10px] text-slate-400">Ctrl+D</span>
             </button>
+            {contextMenuElement?.collageMeta && (
+              <>
+                <div className="border-t border-slate-100 my-1" />
+                <button
+                  onClick={() => {
+                    openCollageForElement(contextMenuElement);
+                    setContextMenu(null);
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 hover:bg-indigo-50 hover:text-indigo-800 rounded-xl flex items-center gap-2 transition"
+                >
+                  <Layers size={13} /> <span>Edit collage</span>
+                </button>
+              </>
+            )}
             <div className="border-t border-slate-100 my-1" />
             <button
               onClick={() => {

@@ -757,3 +757,28 @@ export function resolveCollageLayout(
   }
   return COLLAGE_LAYOUTS.find((l) => l.id === meta.layoutId) || COLLAGE_LAYOUTS[0];
 }
+
+/**
+ * The clean preset for each photo count. Counts not listed fall back to the smallest
+ * preset that still holds every photo, then to the largest preset there is.
+ */
+export const PRESET_FOR_COUNT: Record<number, string> = {
+  2: '2-split-v',
+  3: '3-cols',
+  4: '4-grid',
+  5: '5-bento',
+  6: '6-grid',
+  8: '8-story',
+  9: '9-grid',
+};
+
+export const DEFAULT_COLLAGE_LAYOUT_ID = '2-split-v';
+
+export function pickCollageLayoutForCount(count: number): string {
+  if (count <= 0) return DEFAULT_COLLAGE_LAYOUT_ID;
+  const exact = PRESET_FOR_COUNT[count];
+  if (exact) return exact;
+  const bySlots = [...COLLAGE_LAYOUTS].sort((a, b) => a.slotCount - b.slotCount);
+  const fits = bySlots.find((item) => item.slotCount >= count);
+  return (fits ?? bySlots[bySlots.length - 1]).id;
+}
