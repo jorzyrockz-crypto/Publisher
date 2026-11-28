@@ -50,7 +50,7 @@ export const HomeNavRail: React.FC<{ collapsed: boolean; onToggleCollapsed: () =
 
   return (
     <aside
-      className={`flex h-full flex-shrink-0 flex-col border-r border-line bg-surface transition-[width] duration-200 ${
+      className={`home-glass home-glass-strong relative z-10 flex h-full flex-shrink-0 flex-col border-r transition-[width] duration-200 ${
         collapsed ? 'w-16' : 'w-56'
       }`}
       aria-label="StudioPress"

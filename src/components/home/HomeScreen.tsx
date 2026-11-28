@@ -60,12 +60,21 @@ export const HomeScreen: React.FC = () => {
   const section = SECTION_TITLES[homeSection];
 
   return (
-    <div className="flex h-full w-full overflow-hidden bg-canvas text-ink">
+    <div className="home-ground relative flex h-full w-full overflow-hidden bg-canvas text-ink">
+      {/* Blooms: colour for the chrome's blur to sample (see .home-blooms). */}
+      <div aria-hidden="true" className="home-blooms pointer-events-none absolute inset-0" />
+
       <HomeNavRail collapsed={collapsed} onToggleCollapsed={() => setCollapsed((v) => !v)} />
 
-      <div className="flex min-w-0 flex-1 flex-col min-h-0">
-        {/* Top bar — the section you are in, and the way back into the document. */}
-        <header className="flex h-14 flex-shrink-0 items-center justify-between gap-3 border-b border-line bg-surface px-5">
+      <div className="relative flex min-w-0 flex-1 flex-col min-h-0">
+        {/* Top bar — the section you are in, and the way back into the document.
+
+            It floats *over* the scroll area rather than sitting above it: a
+            frosted bar is only worth frosting if the gallery can slide under it,
+            and the row of thumbnails passing beneath is the whole effect. The
+            scroll area carries a matching 3.5rem of top padding so the first
+            row still starts below the bar. */}
+        <header className="home-glass absolute inset-x-0 top-0 z-20 flex h-14 items-center justify-between gap-3 border-b px-5">
           <div className="min-w-0">
             <div className="flex items-baseline gap-2">
               <h2 className="truncate text-lead font-bold tracking-[-0.01em] text-ink">
@@ -99,7 +108,7 @@ export const HomeScreen: React.FC = () => {
           </div>
         </header>
 
-        <main className="home-scroll home-ground flex-1 min-h-0 overflow-y-auto">
+        <main className="home-scroll flex-1 min-h-0 overflow-y-auto pt-14">
           <div className="mx-auto max-w-[1500px] space-y-7 px-5 py-5">
             {homeSection === 'home' && (
               <>

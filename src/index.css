@@ -32,6 +32,15 @@
   --sp-surface: #ffffff;
   --sp-surface-sunken: #f8fafb;
   --sp-canvas: #edf0f3;
+
+  /* Glass (Home chrome only). `--sp-glass` is the floor at which 11px
+     `--sp-ink-muted` still clears 4.5:1 over the brightest bloom behind it —
+     the alphas are a contrast budget, not a taste. */
+  --sp-glass: color-mix(in srgb, var(--sp-surface) 68%, transparent);
+  --sp-glass-strong: color-mix(in srgb, var(--sp-surface) 82%, transparent);
+  --sp-glass-line: color-mix(in srgb, var(--sp-ink) 9%, transparent);
+  --sp-glass-spec: #ffffffb8;
+  --sp-glass-blur: 16px;
 }
 
 /* ============================================================
@@ -1434,6 +1443,15 @@ html.dark {
   --sp-accent-soft-hover: #342a52;
   --sp-accent-line: #4f3e8c;
   --sp-accent-focus: #6f5bd0;
+
+  /* Glass: darker and less alpha, with a hairline that brightens instead of
+     darkening — a white specular edge on a dark sheet reads as glass; a black
+     one reads as a border. */
+  --sp-glass: color-mix(in srgb, var(--sp-surface) 58%, transparent);
+  --sp-glass-strong: color-mix(in srgb, var(--sp-surface) 74%, transparent);
+  --sp-glass-line: color-mix(in srgb, var(--sp-ink) 14%, transparent);
+  --sp-glass-spec: #ffffff1a;
+  --sp-glass-blur: 18px;
 }
 
 /* Chrome surfaces (never touch paper canvas artwork) */
@@ -1821,6 +1839,262 @@ html.dark .home-paper-shadow {
 @media (hover: none) {
   .home-card-scrim {
     display: none;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   Home shortcut cards — the six mini tiles inside the hero.
+
+   These were pills with a lucide icon. A pill labels a thing; a card promises
+   it, in the same language as the rest of Home: tinted ground, hairline, a bold
+   colour-matched title, one line of hint, and the clay object on the right.
+
+   A card owns four colours and derives the rest, so a tone is defined once for
+   light and once for dark:
+
+     --sp-tone-glow   the pastel everything else is mixed from
+     --sp-tone-ink    the title
+     --sp-tone-sub    the subtitle
+     --sp-tone-line   the hairline, and its hover
+
+   Contrast, title / subtitle on the card's own ground, both themes:
+   violet 6.6 / 4.8 · amber 5.7 / 5.4 · teal 5.8 / 5.6
+   rose   6.7 / 5.5 · sky   6.5 / 4.9 · slate 7.9 / 4.9
+   dark:  7.6 / 6.1 · 7.8 / 5.7 · 8.2 / 7.0 · 7.3 / 5.9 · 7.7 / 6.7 · 7.8 / 6.1
+   ---------------------------------------------------------------------------- */
+.home-shortcut {
+  --sp-tone-glow: #8a6ff0;
+  --sp-tone-ink: #5a3fb0;
+  --sp-tone-sub: #6f6193;
+  --sp-tone-line: #e4d9fb;
+  --sp-tone-line-hover: #d3c2f6;
+  --sp-tone-tint-a: color-mix(in srgb, var(--sp-tone-glow) 5%, var(--sp-surface));
+  --sp-tone-tint-b: color-mix(in srgb, var(--sp-tone-glow) 12%, var(--sp-surface));
+
+  border: 1px solid var(--sp-tone-line);
+  background-image: linear-gradient(150deg, var(--sp-tone-tint-a), var(--sp-tone-tint-b));
+  box-shadow: inset 0 1px 0 #ffffffb3;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    border-color 160ms ease;
+}
+
+.home-shortcut[data-tone='violet'] {
+  --sp-tone-glow: #8a6ff0;
+  --sp-tone-ink: #5a3fb0;
+  --sp-tone-sub: #6f6193;
+  --sp-tone-line: #e4d9fb;
+  --sp-tone-line-hover: #d3c2f6;
+}
+
+.home-shortcut[data-tone='amber'] {
+  --sp-tone-glow: #e0a33a;
+  --sp-tone-ink: #8a5512;
+  --sp-tone-sub: #75613c;
+  --sp-tone-line: #f0e2c2;
+  --sp-tone-line-hover: #e6d09a;
+}
+
+.home-shortcut[data-tone='teal'] {
+  --sp-tone-glow: #34a68c;
+  --sp-tone-ink: #0d6a58;
+  --sp-tone-sub: #44665e;
+  --sp-tone-line: #cfeade;
+  --sp-tone-line-hover: #b3ddcd;
+}
+
+.home-shortcut[data-tone='rose'] {
+  --sp-tone-glow: #e2618f;
+  --sp-tone-ink: #9c2350;
+  --sp-tone-sub: #7c5566;
+  --sp-tone-line: #f7d9e3;
+  --sp-tone-line-hover: #efbccd;
+}
+
+.home-shortcut[data-tone='sky'] {
+  --sp-tone-glow: #3d8bd8;
+  --sp-tone-ink: #1a5793;
+  --sp-tone-sub: #4c6b86;
+  --sp-tone-line: #d6e6f7;
+  --sp-tone-line-hover: #b6d3ef;
+}
+
+.home-shortcut[data-tone='slate'] {
+  --sp-tone-glow: #64748b;
+  --sp-tone-ink: #38495c;
+  --sp-tone-sub: #5a6879;
+  --sp-tone-line: #dde4ec;
+  --sp-tone-line-hover: #c5d0dd;
+}
+
+/* Dark: the same four per tone, mixed *into* the dark surface so a card is a lit
+   object on the page rather than a lamp. */
+html.dark .home-shortcut {
+  --sp-tone-tint-a: color-mix(in srgb, var(--sp-tone-glow) 10%, var(--sp-surface));
+  --sp-tone-tint-b: color-mix(in srgb, var(--sp-tone-glow) 18%, var(--sp-surface));
+  --sp-tone-line: color-mix(in srgb, var(--sp-tone-glow) 26%, transparent);
+  --sp-tone-line-hover: color-mix(in srgb, var(--sp-tone-glow) 42%, transparent);
+  box-shadow: inset 0 1px 0 #ffffff14;
+}
+
+html.dark .home-shortcut[data-tone='violet'] {
+  --sp-tone-ink: #cbbcff;
+  --sp-tone-sub: #b6abd6;
+}
+
+html.dark .home-shortcut[data-tone='amber'] {
+  --sp-tone-ink: #f2cd8f;
+  --sp-tone-sub: #c9b18a;
+}
+
+html.dark .home-shortcut[data-tone='teal'] {
+  --sp-tone-ink: #93e0ca;
+  --sp-tone-sub: #a6c8bd;
+}
+
+html.dark .home-shortcut[data-tone='rose'] {
+  --sp-tone-ink: #f7adc4;
+  --sp-tone-sub: #d0a3b0;
+}
+
+html.dark .home-shortcut[data-tone='sky'] {
+  --sp-tone-ink: #a5cbf0;
+  --sp-tone-sub: #a8bdd2;
+}
+
+html.dark .home-shortcut[data-tone='slate'] {
+  --sp-tone-glow: #8593a8;
+  --sp-tone-ink: #c2cedb;
+  --sp-tone-sub: #a9b6c4;
+}
+
+.home-shortcut-title {
+  color: var(--sp-tone-ink);
+}
+
+.home-shortcut-sub {
+  color: var(--sp-tone-sub);
+}
+
+/* The artwork is a cut-out, so the shadow follows the object rather than its
+   box — which is what stops the cream printer from dissolving into a cream card
+   behind it. */
+.home-shortcut-art {
+  filter: drop-shadow(0 4px 6px #161a221a);
+  transition: transform 200ms cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+.home-shortcut:hover {
+  transform: translateY(-1px);
+  border-color: var(--sp-tone-line-hover);
+  box-shadow:
+    0 8px 18px color-mix(in srgb, var(--sp-tone-glow) 20%, transparent),
+    inset 0 1px 0 #ffffffb3;
+}
+
+.home-shortcut:hover .home-shortcut-art {
+  transform: translateY(-2px) rotate(-1.5deg);
+}
+
+html.dark .home-shortcut:hover {
+  box-shadow:
+    0 8px 20px #00000059,
+    inset 0 1px 0 #ffffff14;
+}
+
+html.dark .home-shortcut-art {
+  filter: drop-shadow(0 6px 10px #00000066);
+}
+
+/* A lift is motion. People who asked for less of it still get the border and
+   the shadow, which is the part that says "this is a button". */
+@media (prefers-reduced-motion: reduce) {
+  .home-shortcut,
+  .home-shortcut-art {
+    transition: none;
+  }
+  .home-shortcut:hover,
+  .home-shortcut:hover .home-shortcut-art {
+    transform: none;
+  }
+}
+
+/* The page behind the glass.
+
+   `bg-canvas` is a cool grey — right for the pasteboard around a document,
+   slightly clinical for a landing screen — so Home lays four very soft blooms
+   over it: violet top-left, apricot top-right, teal bottom-left, a trace of
+   rose bottom-right. They sit on the *root*, not the scroll area, so the rail
+   and the top bar have colour to pick up and the page does not shift under the
+   blur while you scroll.
+
+   This layer is the reason the frost reads as glass at all: a translucent
+   header over a flat grey is just a grey header. */
+.home-ground {
+  background-image: linear-gradient(180deg, #fbfaff 0, var(--sp-canvas) 340px);
+}
+
+.home-blooms {
+  background-image:
+    radial-gradient(42vw 42vw at 4% -8%, color-mix(in srgb, #a78bfa 20%, transparent) 0%, transparent 70%),
+    radial-gradient(32vw 32vw at 98% -6%, color-mix(in srgb, #e0a33a 16%, transparent) 0%, transparent 72%),
+    radial-gradient(38vw 38vw at 8% 106%, color-mix(in srgb, #34a68c 15%, transparent) 0%, transparent 72%),
+    radial-gradient(28vw 28vw at 92% 84%, color-mix(in srgb, #e2618f 9%, transparent) 0%, transparent 74%);
+}
+
+html.dark .home-ground {
+  background-image: linear-gradient(180deg, #141926 0, var(--sp-canvas) 340px);
+}
+
+html.dark .home-blooms {
+  background-image:
+    radial-gradient(42vw 42vw at 4% -8%, color-mix(in srgb, #a78bfa 16%, transparent) 0%, transparent 70%),
+    radial-gradient(32vw 32vw at 98% -6%, color-mix(in srgb, #e0a33a 12%, transparent) 0%, transparent 72%),
+    radial-gradient(38vw 38vw at 8% 106%, color-mix(in srgb, #34a68c 12%, transparent) 0%, transparent 72%),
+    radial-gradient(28vw 28vw at 92% 84%, color-mix(in srgb, #e2618f 8%, transparent) 0%, transparent 74%);
+}
+
+/* Glass, in one place.
+
+   Three things make a sheet read as glass rather than as a grey box: something
+   coloured behind it (the blooms), a blur that is *saturating* rather than
+   merely frosted, and a 1px specular highlight along the top edge where the
+   light would catch. The border is the ink at 9%, so it darkens a little over
+   white and brightens over the blooms without being restated per surface. */
+.home-glass {
+  background-color: var(--sp-glass);
+  border-color: var(--sp-glass-line);
+  -webkit-backdrop-filter: blur(var(--sp-glass-blur)) saturate(1.4);
+  backdrop-filter: blur(var(--sp-glass-blur)) saturate(1.4);
+  box-shadow:
+    inset 0 1px 0 var(--sp-glass-spec),
+    0 1px 2px #161a220f;
+}
+
+/* Text-bearing sheets — the rail is a column of 12px labels, so it buys a
+   higher alpha than a header that mostly holds one title. */
+.home-glass-strong {
+  background-color: var(--sp-glass-strong);
+}
+
+/* No blur support (or the user asked for less transparency): fall back to the
+   surface the app used before, so the chrome is opaque rather than unreadable. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .home-glass,
+  .home-glass-strong {
+    background-color: var(--sp-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .home-glass,
+  .home-glass-strong {
+    background-color: var(--sp-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 }
 
