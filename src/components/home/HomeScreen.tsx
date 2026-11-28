@@ -5,6 +5,7 @@ import { useWindowWidth } from '../../hooks/useResizablePanel';
 import type { HomeSection } from '../../types/publisher';
 import { HomeNavRail } from './HomeNavRail';
 import { HomeHero } from './HomeHero';
+import { HomeFeatureCards } from './HomeFeatureCards';
 import { TemplateGallery, GalleryFilterState } from './TemplateGallery';
 import { RecentDesignsStrip } from './RecentDesignsStrip';
 import { MyProjectsSection } from './MyProjectsSection';
@@ -99,7 +100,7 @@ export const HomeScreen: React.FC = () => {
           </div>
         </header>
 
-        <main className="home-scroll flex-1 min-h-0 overflow-y-auto">
+        <main className="home-scroll home-ground flex-1 min-h-0 overflow-y-auto">
           <div className="mx-auto max-w-[1500px] space-y-7 px-5 py-5">
             {homeSection === 'home' && (
               <>
@@ -108,6 +109,7 @@ export const HomeScreen: React.FC = () => {
                   onQueryChange={(query) => updateFilters({ query })}
                   resultCount={resultCount}
                 />
+                <HomeFeatureCards />
                 <RecentDesignsStrip />
                 <TemplateGallery
                   title="Start from a template"

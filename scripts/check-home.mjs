@@ -12,6 +12,7 @@
  *
  *   npm run check:home
  */
+import { existsSync, statSync } from 'node:fs';
 import { createServer } from 'vite';
 
 const server = await createServer({
@@ -20,12 +21,13 @@ const server = await createServer({
   logLevel: 'error',
 });
 
-const [catalog, blanks, recents, printing, catalogue] = await Promise.all([
+const [catalog, blanks, recents, printing, catalogue, featuresModule] = await Promise.all([
   server.ssrLoadModule('/src/components/home/homeCatalog.ts'),
   server.ssrLoadModule('/src/utils/blankDesign.ts'),
   server.ssrLoadModule('/src/utils/recentDesigns.ts'),
   server.ssrLoadModule('/src/utils/printUtils.ts'),
   server.ssrLoadModule('/src/constants/templates.ts'),
+  server.ssrLoadModule('/src/components/home/homeFeatures.ts'),
 ]);
 await server.close();
 
@@ -54,11 +56,14 @@ const {
   SQUARE_POST,
 } = blanks;
 
+const { HOME_FEATURES } = featuresModule;
 const { formatEditedAgo } = recents;
 const { computeTarpapelMetrics, DEFAULT_PRINT_SETTINGS } = printing;
 
 let fail = 0;
+let total = 0;
 const ok = (cond, msg, extra = '') => {
+  total += 1;
   if (!cond) {
     fail += 1;
     console.log('FAIL', msg, extra);
@@ -205,5 +210,51 @@ const ok = (cond, msg, extra = '') => {
   ok(!/NaN|Invalid/.test(formatEditedAgo(0, now)), 'an old timestamp produced Invalid Date');
 }
 
+/* 10. the three feature cards promise a destination that exists */
+{
+  ok(HOME_FEATURES.length === 3, 'Home does not show three feature cards', String(HOME_FEATURES.length));
+  ok(new Set(HOME_FEATURES.map((f) => f.id)).size === HOME_FEATURES.length, 'two feature cards share an id');
+  ok(new Set(HOME_FEATURES.map((f) => f.tone)).size === HOME_FEATURES.length, 'two feature cards share a pastel');
+  ok(
+    HOME_FEATURES.every((f) => ['violet', 'amber', 'teal'].includes(f.tone)),
+    'a feature card wears a tone the stylesheet does not define'
+  );
+
+  for (const feature of HOME_FEATURES) {
+    const where = feature.id;
+
+    ok(feature.title.trim().length > 0, `${where}: the card has no title`);
+    ok(!/[.,;:]$/.test(feature.title), `${where}: the title ends in punctuation`, feature.title);
+
+    // One line on a two-column tablet card is about 30 characters at 11px; past
+    // that the subtitle wraps and the row of cards stops lining up.
+    ok(feature.subtitle.length <= 30, `${where}: the subtitle will wrap on a tablet`, feature.subtitle);
+
+    ok(/^\/home\/[a-z-]+\.webp$/.test(feature.art), `${where}: the artwork is not a /home webp`, feature.art);
+    const file = `public${feature.art}`;
+    ok(existsSync(file), `${where}: the artwork is missing from public/`, file);
+    if (existsSync(file)) {
+      const kb = statSync(file).size / 1024;
+      ok(kb > 2, `${where}: the artwork looks empty`, `${kb.toFixed(1)} kB`);
+      ok(kb < 120, `${where}: the artwork is too heavy for a card`, `${kb.toFixed(1)} kB`);
+    }
+    ok(feature.width > 0 && feature.height > 0, `${where}: the artwork has no intrinsic size`);
+
+    const { target } = feature;
+    if (target.kind === 'template-group') {
+      const found = filterTemplates({ group: target.group, format: 'all', query: '' });
+      ok(found.length > 0, `${where}: the card opens a group with no templates in it`, target.group);
+    } else if (target.kind === 'tarpapel') {
+      const doc = buildBlankProject(buildTarpapelProject(DEFAULT_PRINT_SETTINGS));
+      ok(doc.pages[0].width > doc.pages[0].height, `${where}: the tarpapel card does not open a tarpapel`);
+    } else if (target.kind === 'section') {
+      ok(['home', 'templates', 'projects', 'kits'].includes(target.section), `${where}: unknown section`, target.section);
+    } else {
+      ok(false, `${where}: the card has no target`);
+    }
+  }
+}
+
+console.log(`${total} assertions`);
 console.log(fail === 0 ? 'ALL CHECKS PASSED' : `${fail} FAILURES`);
 process.exitCode = fail === 0 ? 0 : 1;

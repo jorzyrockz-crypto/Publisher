@@ -10,6 +10,7 @@ An authentic, modern, desktop-grade clone of **Microsoft Publisher** built with 
 
 ### 0. Home Screen (default view)
 - **The app opens on Home, not on a blank page**: a navigation rail, a search-first hero, a Recent Designs strip and a visual template grid. See `docs/home-screen.md`.
+- **Three pastel feature cards** under the hero — Collage Maker, Tarpaulin Printer and Story Kit — each a real shortcut with its own clay-rendered illustration, tint, hairline and coloured title, in light and dark.
 - **Create a Design** popover: Blank A4, Tarpapel 3×2, Landscape Banner or a custom size — a tarpapel canvas arrives with its 3 × 2 print grid already set.
 - **Recent Designs**: every save keeps a copy in IndexedDB (with a page-1 thumbnail) so it can be reopened from the strip or from My Projects.
 - **Resume Editing** in the Home top bar returns to the exact document you left; the editor is unmounted while Home is on screen, so nothing is lost and nothing intercepts your typing.
