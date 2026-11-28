@@ -99,7 +99,7 @@ function drawSparkleGlint(
  */
 export function createAngledGradient(
   ctx: CanvasRenderingContext2D,
-  spec: WordArtSpec,
+  spec: Pick<WordArtSpec, 'angle' | 'stops'>,
   box: { x: number; y: number; width: number; height: number }
 ): CanvasGradient {
   const rad = ((spec.angle - 90) * Math.PI) / 180;
@@ -139,7 +139,6 @@ export function drawBrushBackdrop(
     ctx.globalAlpha = layer.alpha;
     ctx.translate(cx, cy + layer.dy * scale);
     if (layer.tilt) ctx.rotate(layer.tilt);
-    ctx.fillStyle = fill;
     ctx.beginPath();
     let started = false;
     for (const command of layer.commands) {
@@ -152,8 +151,25 @@ export function drawBrushBackdrop(
         ctx.quadraticCurveTo(command.cx, command.cy, command.x, command.y);
       }
     }
-    ctx.closePath();
-    ctx.fill();
+    if (layer.stroke) {
+      // Grain and plank borders: stroke the same outline the DOM strokes, at the backdrop's own
+      // geometry (already in element pixels, so only the export scale multiplies it).
+      ctx.strokeStyle = layer.stroke.color;
+      ctx.lineWidth = layer.stroke.width * scale;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    } else {
+      ctx.fillStyle = layer.gradient
+        ? createAngledGradient(ctx, layer.gradient, {
+            x: -padded.width / 2,
+            y: -padded.height / 2,
+            width: padded.width,
+            height: padded.height,
+          })
+        : (layer.fill ?? fill);
+      ctx.closePath();
+      ctx.fill();
+    }
     ctx.restore();
   }
 }

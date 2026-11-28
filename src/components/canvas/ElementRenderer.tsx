@@ -475,12 +475,54 @@ const TextRenderer: React.FC<{
               pointerEvents: 'none',
             }}
           >
+            {layers.some((layer) => layer.gradient) && (
+              <defs>
+                {layers.map((layer, layerIndex) => {
+                  if (!layer.gradient) return null;
+                  // Same angled vector the exporter builds with `createLinearGradient`.
+                  const rad = ((layer.gradient.angle - 90) * Math.PI) / 180;
+                  const dx = Math.cos(rad) / 2;
+                  const dy = Math.sin(rad) / 2;
+                  return (
+                    <linearGradient
+                      key={`wa-backdrop-grad-${index}-${layerIndex}`}
+                      id={`wa-backdrop-grad-${element.id}-${index}-${layerIndex}`}
+                      x1={0.5 - dx}
+                      y1={0.5 - dy}
+                      x2={0.5 + dx}
+                      y2={0.5 + dy}
+                    >
+                      {[...layer.gradient.stops]
+                        .sort((a, b) => a.offset - b.offset)
+                        .map((stop) => (
+                          <stop
+                            key={`${stop.offset}-${stop.color}`}
+                            offset={stop.offset}
+                            stopColor={stop.color}
+                          />
+                        ))}
+                    </linearGradient>
+                  );
+                })}
+              </defs>
+            )}
             {layers.map((layer, layerIndex) => (
               <path
                 key={`wa-backdrop-${index}-${layerIndex}`}
                 d={layer.d}
-                fill={fill}
+                // A stroke-only layer (wood grain, plank border) must not be filled, exactly like
+                // the exporter's `stroke()` branch.
+                fill={
+                  layer.stroke
+                    ? 'none'
+                    : layer.gradient
+                      ? `url(#wa-backdrop-grad-${element.id}-${index}-${layerIndex})`
+                      : (layer.fill ?? fill)
+                }
                 fillOpacity={layer.alpha}
+                stroke={layer.stroke?.color}
+                strokeWidth={layer.stroke?.width}
+                strokeLinecap={layer.stroke ? 'round' : undefined}
                 transform={`translate(${padded.width / 2} ${padded.height / 2 + layer.dy}) rotate(${
                   (layer.tilt * 180) / Math.PI
                 })`}

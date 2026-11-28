@@ -239,6 +239,10 @@ export const PropertiesPanel: React.FC = () => {
     label: opt.label,
     cssClass: opt.className,
     dark: opt.dark,
+    // A backdrop style is the one thing a 36px tile cannot show — the highlight is geometry, not a
+    // text effect. Label the kind and show its colour, rather than faking a shape the export would
+    // not match.
+    backdrop: wordArtPaint(opt.id)?.backdrop,
   }));
 
   const elementsPool = isEditingMaster
@@ -2455,11 +2459,25 @@ export const PropertiesPanel: React.FC = () => {
                                     }`}
                                   >
                                     <div
-                                      className={`w-full h-9 rounded-lg flex items-center justify-center font-black text-lg leading-none ${
+                                      className={`relative w-full h-9 rounded-lg flex items-center justify-center font-black text-lg leading-none ${
                                         opt.dark ? 'bg-slate-900' : 'bg-slate-50 border border-slate-100'
                                       }`}
                                     >
                                       <span className={opt.cssClass}>Aa</span>
+                                      {opt.backdrop && (
+                                        <span
+                                          className="absolute right-1 top-1 rounded-[3px] px-1 text-[7px] font-bold uppercase tracking-wide text-slate-900/80 border border-black/10"
+                                          style={{ backgroundColor: opt.backdrop.color }}
+                                        >
+                                          {opt.backdrop.type === 'brush-swipe'
+                                            ? 'swipe'
+                                            : opt.backdrop.type === 'pastel-pill'
+                                              ? 'pill'
+                                              : opt.backdrop.type === 'wood-plank'
+                                                ? 'plank'
+                                                : 'ribbon'}
+                                        </span>
+                                      )}
                                     </div>
                                     <span className="text-[10px] font-semibold text-slate-700 leading-tight truncate w-full">
                                       {opt.label}

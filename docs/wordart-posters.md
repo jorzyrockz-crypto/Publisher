@@ -104,6 +104,43 @@ one line without forking the style, and nobody has to learn a second control. Bo
 text out through that resolved value, so a style-carried arc arches in the editor and in the export.
 `brush-blush` ships with `arc: 0.12`; the wellness-week HEALTH line keeps its explicit `textCurve: 14`.
 
+## Eco campaign: pine, gold, wood and ribbon
+
+Five more styles, same grammar as the stickers — an authored rim doing the contrast work — in a
+forest palette rather than a candy one.
+
+| id | label | look |
+|---|---|---|
+| `eco-champion` | Eco Champion Gold | cream→gold→amber ramp, 6px pine rim, 4-step pine block, long cast shadow |
+| `eco-leaf` | Eco Leaf Block | emerald→pine ramp, white rim |
+| `wood-plank-action` | Rustic Wood Plank | cream/italic on a sawn plank, espresso cast shadow |
+| `eco-ribbon` | Forest Ribbon Banner | near-white type on a notched pine ribbon |
+| `forest-script-sticker` | Pine Script Sticker | pine ramp, 6px white die-cut rim |
+
+Two backdrops join `brush-swipe` and `pastel-pill`:
+
+- **`ribbon-banner`** — the notches are part of the ribbon *outline* (six points), so it fills as one
+  shape with no seams where the cuts meet the band.
+- **`wood-plank`** — a six-point hand-cut silhouette (no parallel edges, the right end longer than
+  the left) filled with a three-stop vertical ramp, plus four shallow grain streaks and a 2px espresso
+  border. The grain and border are **stroke layers**: `WordArtBackdropLayer` now carries
+  `fill? | gradient? | stroke?`, and both painters honour all three. Canvas strokes with
+  `lineWidth`, the DOM with `stroke-width`; canvas fills the gradient with `createLinearGradient`,
+  the DOM with a `<linearGradient>` built from the *same* angle vector.
+
+**Why no `.wordart-backdrop-wood` / `-ribbon` CSS classes.** The sketch for this feature included
+them, and they are exactly the drift the rest of this file is about: a `clip-path` polygon and a
+`repeating-linear-gradient` in CSS cannot be reproduced from the canvas path, so the editor tile
+would show a different ribbon than the PDF. The editor preview is the same SVG the exporter's
+commands produce; `src/index.css` keeps only the text paint for the gallery tiles.
+
+**One rule had to widen.** `wordArtSelfContained` used to mean "a rim ≥4px, near-white". A pine rim is
+not white but it *is* the authored contrast device — without widening the rule, the contrast pass
+repainted `eco-champion` and `forest-script-sticker` into gold and candy the moment a template
+loaded. The rule now also accepts a declared `heavyStroke` of 5px or more. The four sticker styles
+are white, so nothing that already existed changes behaviour; the library score is identical
+(89.0 avg / 90 median / A 58 / B 15 / no C or D).
+
 ## Arched type already existed — and was broken in export
 
 `textCurve` (Curve slider, presets) turns a line into glyphs along a circle, and both renderers

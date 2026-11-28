@@ -54,7 +54,12 @@ export type WordArtStyle =
   // Flat ink on a painted highlight — the brush-swipe and pastel-pill poster looks.
   | 'brush-sunshine'
   | 'brush-blush'
-  | 'pill-highlight';
+  | 'pill-highlight'
+  | 'eco-champion'
+  | 'eco-leaf'
+  | 'wood-plank-action'
+  | 'eco-ribbon'
+  | 'forest-script-sticker';
 
 export type BorderArtStyle =
   | 'none'

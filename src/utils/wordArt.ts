@@ -44,6 +44,20 @@ export const WORD_ART_STYLES: WordArtOption[] = [
   { id: 'brush-sunshine', label: 'Sunshine Brush Swipe', className: 'wordart-brush-sunshine' },
   { id: 'brush-blush', label: 'Pastel Blush Ribbon', className: 'wordart-brush-blush' },
   { id: 'pill-highlight', label: 'Pastel Pill Highlight', className: 'wordart-pill-highlight' },
+  // Eco campaign: pine, gold, wood and ribbon.
+  { id: 'eco-champion', label: 'Eco Champion Gold', className: 'wordart-eco-champion' },
+  { id: 'eco-leaf', label: 'Eco Leaf Block', className: 'wordart-eco-leaf' },
+  {
+    id: 'wood-plank-action',
+    label: 'Rustic Wood Plank',
+    className: 'wordart-wood-plank-action',
+  },
+  { id: 'eco-ribbon', label: 'Forest Ribbon Banner', className: 'wordart-eco-ribbon' },
+  {
+    id: 'forest-script-sticker',
+    label: 'Pine Script Sticker',
+    className: 'wordart-forest-script-sticker',
+  },
 ];
 
 const BY_ID = new Map<string, WordArtOption>(WORD_ART_STYLES.map((s) => [s.id, s]));
@@ -99,7 +113,7 @@ export interface WordArtExtrusion {
  * rather than paint. Geometry, not an image — the DOM and the exporter share one path.
  */
 export interface WordArtBackdrop {
-  type: 'brush-swipe' | 'pastel-pill';
+  type: 'brush-swipe' | 'pastel-pill' | 'wood-plank' | 'ribbon-banner';
   color: string;
   /** How far the highlight runs past the glyph box, horizontally. */
   paddingX?: number;
@@ -214,6 +228,61 @@ export function pillCommands(width: number, height: number): WordArtPathCommand[
   ];
 }
 
+/**
+ * A swallowtail ribbon: both ends cut inward to the vertical middle.
+ *
+ * The notches are part of the *outline*, not a pair of triangles glued on, so the ribbon exports as
+ * one filled shape with no seams where the cuts meet the band.
+ */
+export function ribbonBannerCommands(width: number, height: number): WordArtPathCommand[] {
+  const hw = width / 2;
+  const hh = height / 2;
+  const notch = hh * 0.7;
+  return [
+    { c: 'M', x: -hw - notch, y: -hh },
+    { c: 'L', x: hw + notch, y: -hh },
+    { c: 'L', x: hw, y: 0 },
+    { c: 'L', x: hw + notch, y: hh },
+    { c: 'L', x: -hw - notch, y: hh },
+    { c: 'L', x: -hw, y: 0 },
+  ];
+}
+
+/**
+ * A hand-cut plank: no two edges quite parallel, the right end longer than the left, the bottom
+ * sagging. Straight commands only — a plank sawn by a person is irregular, not bezier-smooth.
+ */
+export function woodPlankCommands(width: number, height: number): WordArtPathCommand[] {
+  const hw = width / 2;
+  const hh = height / 2;
+  const bite = Math.max(2, Math.min(6, hh * 0.12));
+  return [
+    { c: 'M', x: -hw + bite, y: -hh + bite * 0.5 },
+    { c: 'L', x: hw - bite * 0.4, y: -hh },
+    { c: 'L', x: hw + bite * 0.8, y: -hh * 0.1 },
+    { c: 'L', x: hw - bite * 0.8, y: hh },
+    { c: 'L', x: -hw, y: hh - bite * 0.5 },
+    { c: 'L', x: -hw - bite, y: 0 },
+  ];
+}
+
+/** One wood-grain streak, `index` of `count`, as a shallow quad across the plank. */
+export function woodGrainCommands(
+  width: number,
+  height: number,
+  index: number,
+  count = 4
+): WordArtPathCommand[] {
+  const hw = width / 2;
+  const hh = height / 2;
+  const y = -hh + (height / (count + 1)) * (index + 1);
+  const wobble = height * 0.03 * (index % 2 === 0 ? 1 : -1);
+  return [
+    { c: 'M', x: -hw + Math.max(3, height * 0.05), y },
+    { c: 'Q', cx: 0, cy: y + wobble, x: hw - Math.max(3, height * 0.05), y },
+  ];
+}
+
 /** The same commands as an SVG `d`, for the DOM layer. */
 export function pathCommandToSvg(commands: WordArtPathCommand[]): string {
   const n = (value: number) => Math.round(value * 100) / 100;
@@ -240,6 +309,12 @@ export interface WordArtBackdropLayer {
   commands: WordArtPathCommand[];
   /** The same path as an SVG `d`, so the DOM does not have to re-derive it. */
   d: string;
+  /** Solid fill; when absent the backdrop's own `color` is used. */
+  fill?: string;
+  /** Gradient fill (measured across the padded box), painted instead of `fill`. */
+  gradient?: WordArtGradient;
+  /** Stroke this layer's outline instead of filling it — wood grain, plank borders. */
+  stroke?: { color: string; width: number };
   dy: number;
   tilt: number;
   alpha: number;
@@ -270,6 +345,58 @@ export function wordArtBackdropLayers(
     width: Math.max(2, box.width + padX * 2),
     height: Math.max(2, box.height + padY * 2),
   };
+
+  if (backdrop.type === 'ribbon-banner') {
+    const commands = ribbonBannerCommands(padded.width, padded.height);
+    return {
+      fill: backdrop.color,
+      box: padded,
+      layers: [{ commands, d: pathCommandToSvg(commands), dy: 0, tilt: 0, alpha: 1 }],
+    };
+  }
+
+  if (backdrop.type === 'wood-plank') {
+    const plank = woodPlankCommands(padded.width, padded.height);
+    const layers: WordArtBackdropLayer[] = [
+      {
+        commands: plank,
+        d: pathCommandToSvg(plank),
+        // Light at the top edge, the backdrop's own tone through the middle, shadow at the bottom —
+        // the same three-stop ramp the CSS preview used to fake with a linear-gradient.
+        gradient: {
+          angle: 180,
+          stops: [
+            { offset: 0, color: '#92400e' },
+            { offset: 0.5, color: backdrop.color },
+            { offset: 1, color: '#451a03' },
+          ],
+        },
+        dy: 0,
+        tilt: 0,
+        alpha: 1,
+      },
+    ];
+    for (let index = 0; index < 4; index += 1) {
+      const grain = woodGrainCommands(padded.width, padded.height, index);
+      layers.push({
+        commands: grain,
+        d: pathCommandToSvg(grain),
+        stroke: { color: 'rgba(42, 16, 4, 0.35)', width: 1.5 },
+        dy: 0,
+        tilt: 0,
+        alpha: 1,
+      });
+    }
+    layers.push({
+      commands: plank,
+      d: pathCommandToSvg(plank),
+      stroke: { color: '#451a03', width: 2 },
+      dy: 0,
+      tilt: 0,
+      alpha: 1,
+    });
+    return { fill: backdrop.color, box: padded, layers };
+  }
 
   if (backdrop.type === 'pastel-pill') {
     return {
@@ -701,6 +828,82 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     backdrop: { type: 'pastel-pill', color: '#e0e7ff', paddingX: 22, paddingY: 10 },
     shadows: [],
   },
+  // ---- eco campaign ---------------------------------------------------------------------
+  // Plant-a-tree posters: pine and gold, wood and ribbon. Same grammar as the stickers — a heavy
+  // authored rim doing the contrast work — but the palette is forest rather than candy.
+  'eco-champion': {
+    weight: '900',
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#fef08a' },
+        { offset: 0.45, color: '#facc15' },
+        { offset: 0.85, color: '#eab308' },
+        { offset: 1, color: '#ca8a04' },
+      ],
+    },
+    // A pine rim, not white: this is painted signwork, so the outline reads as ink.
+    stroke: { width: 6, color: '#14532d' },
+    heavyStroke: true,
+    extrusion: { steps: 4, dx: 0, dy: 1.5, startColor: '#14532d', endColor: '#052e16' },
+    castShadow: { dx: 0, dy: 6, blur: 10, color: 'rgba(5, 46, 22, 0.35)' },
+    shadows: [],
+  },
+  'eco-leaf': {
+    weight: '900',
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#22c55e' },
+        { offset: 0.55, color: '#15803d' },
+        { offset: 1, color: '#14532d' },
+      ],
+    },
+    stroke: { width: 4, color: '#ffffff' },
+    castShadow: { dx: 0, dy: 4, blur: 8, color: 'rgba(20, 83, 45, 0.25)' },
+    shadows: [],
+  },
+  'wood-plank-action': {
+    weight: '900',
+    italic: true,
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#ffffff' },
+        { offset: 0.7, color: '#fef3c7' },
+        { offset: 1, color: '#fde68a' },
+      ],
+    },
+    castShadow: { dx: 2, dy: 4, blur: 4, color: 'rgba(42, 20, 6, 0.75)' },
+    backdrop: { type: 'wood-plank', color: '#78350f', paddingX: 44, paddingY: 14 },
+    shadows: [],
+  },
+  'eco-ribbon': {
+    weight: '900',
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#ffffff' },
+        { offset: 1, color: '#f0fdf4' },
+      ],
+    },
+    backdrop: { type: 'ribbon-banner', color: '#14532d', paddingX: 36, paddingY: 10 },
+    shadows: [],
+  },
+  'forest-script-sticker': {
+    weight: '900',
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#166534' },
+        { offset: 1, color: '#052e16' },
+      ],
+    },
+    stroke: { width: 6, color: '#ffffff' },
+    heavyStroke: true,
+    castShadow: { dx: 0, dy: 3, blur: 8, color: 'rgba(0, 0, 0, 0.28)' },
+    shadows: [],
+  },
 };
 
 /** Paint instructions for a style, or undefined for plain text. */
@@ -949,6 +1152,10 @@ export function wordArtSelfContained(style?: WordArtStyle): boolean {
     const [r, g, b] = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
     return 0.2126 * r + 0.7152 * g + 0.0722 * b;
   })();
+  // A declared heavy rim is an authored contrast device whether it is white or pine ink. The
+  // contrast pass exists to rescue unstyled type; it must not repaint a sign. (The four die-cut
+  // sticker styles are white, so this only widens the rule to the eco styles.)
+  if (paint.heavyStroke && paint.stroke.width >= 5) return true;
   return paint.stroke.width >= 4 && lum > 0.8;
 }
 

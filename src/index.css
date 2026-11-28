@@ -463,6 +463,65 @@
   color: #1e1b4b;
   --wordart-backdrop: #e0e7ff;
 }
+
+.wordart-eco-champion {
+  font-weight: 900;
+  background: linear-gradient(180deg, #fef08a 0%, #facc15 45%, #eab308 85%, #ca8a04 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 12px #14532d;
+  paint-order: stroke fill;
+  filter:
+    drop-shadow(0px 1.5px 0px #14532d)
+    drop-shadow(0px 3px 0px #0f4725)
+    drop-shadow(0px 4.5px 0px #0a3a1e)
+    drop-shadow(0px 6px 0px #052e16)
+    drop-shadow(0px 0px 2px #14532d)
+    drop-shadow(0px 6px 10px rgba(5, 46, 22, 0.35));
+}
+
+.wordart-eco-leaf {
+  font-weight: 900;
+  background: linear-gradient(180deg, #22c55e 0%, #15803d 55%, #14532d 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 4px #ffffff;
+  paint-order: stroke fill;
+  filter:
+    drop-shadow(0px 0px 2px #ffffff)
+    drop-shadow(0px 4px 8px rgba(20, 83, 45, 0.25));
+}
+
+.wordart-wood-plank-action {
+  font-weight: 900;
+  font-style: italic;
+  background: linear-gradient(180deg, #ffffff 0%, #fef3c7 70%, #fde68a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  --wordart-backdrop: #78350f;
+  filter:
+    drop-shadow(2px 4px 4px rgba(42, 20, 6, 0.75));
+}
+
+.wordart-eco-ribbon {
+  font-weight: 900;
+  background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  --wordart-backdrop: #14532d;
+}
+
+.wordart-forest-script-sticker {
+  font-weight: 900;
+  background: linear-gradient(180deg, #166534 0%, #052e16 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 12px #ffffff;
+  paint-order: stroke fill;
+  filter:
+    drop-shadow(0px 0px 2px #ffffff)
+    drop-shadow(0px 3px 8px rgba(0, 0, 0, 0.28));
+}
 /* end WordArt styles */
 
 /* AI-grade metal: horizon-break gradients, marching extrusion and bloom.
