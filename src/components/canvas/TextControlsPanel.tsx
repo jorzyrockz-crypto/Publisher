@@ -11,6 +11,8 @@ import {
   loadGoogleFontStylesheet,
   type FontDefinition,
 } from '../../constants/fonts';
+import { SmartPalette } from '../common/SmartPalette';
+import type { ColorTarget } from '../../utils/documentPalette';
 import type { TextElement } from '../../types/publisher';
 
 const CATEGORIES: Array<{ id: 'all' | FontDefinition['category']; label: string }> = [
@@ -22,25 +24,16 @@ const CATEGORIES: Array<{ id: 'all' | FontDefinition['category']; label: string 
   { id: 'Monospace', label: 'Mono' },
 ];
 
-const SUGGESTED_COLORS = [
-  '#111827',
-  '#374151',
-  '#6b7280',
-  '#9ca3af',
-  '#d1d5db',
-  '#f3f4f6',
-  '#ffffff',
-  '#be185d',
-  '#dc2626',
-  '#ea580c',
-  '#d97706',
-  '#65a30d',
-  '#57534e',
-  '#d6b28a',
-  '#1c1917',
-  '#b45309',
-  '#78716c',
-];
+
+/**
+ * The same three targets the bar offers, read through the palette's eyes: body text has to
+ * stay readable on the page, a highlight is a surface behind text, a stroke is an outline.
+ */
+const SMART_TARGET: Record<'fill' | 'highlight' | 'stroke', ColorTarget> = {
+  fill: 'text',
+  highlight: 'fill',
+  stroke: 'stroke',
+};
 
 const RECENT_COLORS_KEY = 'ms_publisher_text_recent_colors_v1';
 
@@ -343,23 +336,19 @@ export const TextControlsPanel: React.FC<{ variant?: 'card' | 'pane' }> = ({ var
             </div>
           </div>
 
+          {/* The document's own palette, not a fixed list: mined colours, harmonies of its
+              dominant hue, and — for text — only swatches that stay readable on this page. */}
           <div className="space-y-1">
             <div className="text-[10px] font-bold uppercase tracking-[0.09em] text-[#6a7682] px-0.5">
               Suggestions
             </div>
-            <div className="grid grid-cols-6 gap-1.5">
-              {SUGGESTED_COLORS.map((hex) => (
-                <button
-                  key={hex}
-                  type="button"
-                  title={hex}
-                  aria-label={`Text colour ${hex}`}
-                  onClick={() => applyColor(hex)}
-                  className="aspect-square w-full rounded-full border border-[#e5e9ee] hover:scale-105 transition cursor-pointer"
-                  style={{ background: hex }}
-                />
-              ))}
-            </div>
+            <SmartPalette
+              value={currentColor}
+              target={SMART_TARGET[target]}
+              onSelect={applyColor}
+              showHeader={false}
+              maxHeightClass="max-h-[260px]"
+            />
           </div>
 
           <label className="flex items-center gap-1.5 text-[10.5px] text-[#3f4a56]">

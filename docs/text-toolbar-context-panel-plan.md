@@ -122,10 +122,23 @@ case — the fields the Typography card already has, in the same order, so the t
 The bar's font chip shows the current family name (or `Mixed`) and opens here.
 
 ### 3.2 Text colour
-The full picker the `ColorInput` popover implies but cannot show: recent swatches, the document
-palette, hex entry, plus text-specific targets the popover had nowhere to put — **colour**,
-**highlight** (`backgroundColor`), **stroke** (`textStrokeColor`). The bar's swatch shows the
-current colour and opens here.
+The full picker: text-specific targets the popover had nowhere to put — **colour**,
+**highlight** (`backgroundColor`), **stroke** (`textStrokeColor`) — plus current colours
+(add / eyedropper / recent) and hex entry. The bar's swatch shows the current colour and
+opens here.
+
+**Suggestions are the document's own palette, not a fixed list.** The palette that was already
+built for the colour control (`analyzeDocument` + `buildSmartPalettes`) is extracted as
+`SmartPalette` and used by both, so the panel suggests colours mined from the artwork, harmonies
+of its dominant hue, tints/shades and neutrals — contrast-filtered per role:
+
+| panel target | palette target | rule |
+|---|---|---|
+| Colour | `text` | must stay AA on the page background |
+| Highlight | `fill` | sits behind text |
+| Stroke | `stroke` | outline |
+
+Two implementations of "suggestions" is what produced a hardcoded list in the first place.
 
 ### 3.3 Alignment
 Left / centre / right / justify, plus vertical top / middle / bottom and columns. The bar's
