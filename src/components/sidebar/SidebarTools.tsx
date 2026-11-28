@@ -74,6 +74,8 @@ const ToolBanner: React.FC<ToolBannerProps> = ({ title, hint, Icon, tone, onClic
 
 interface SidebarToolsProps {
   compact?: boolean;
+  /** The Designer drawer already prints "Tools" as its own header; the block does not repeat it. */
+  showLabel?: boolean;
   /**
    * Told when Story Kit takes the whole sidebar, so Pages & Layers can step aside instead of being
    * squeezed into the bottom two centimetres.
@@ -83,6 +85,7 @@ interface SidebarToolsProps {
 
 export const SidebarTools: React.FC<SidebarToolsProps> = ({
   compact = false,
+  showLabel = true,
   onImmersiveChange,
 }) => {
   const { setIsCollageModalOpen, setIsTarpapelModalOpen } = usePublisher();
@@ -110,11 +113,13 @@ export const SidebarTools: React.FC<SidebarToolsProps> = ({
 
   return (
     <div className="px-3 pt-2.5 pb-2.5 border-b border-[#eef1f5] shrink-0">
-      <div className="flex items-center justify-between mb-1.5">
-        <span className="text-[9px] font-bold uppercase tracking-[0.09em] text-[#9aa4b0]">
-          Tools
-        </span>
-      </div>
+      {showLabel && (
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-[9px] font-bold uppercase tracking-[0.09em] text-[#9aa4b0]">
+            Tools
+          </span>
+        </div>
+      )}
       <div className="space-y-1.5">
         <ToolBanner
           title="Collage Maker"

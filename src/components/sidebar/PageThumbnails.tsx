@@ -33,6 +33,7 @@ import {
   Search,
   LayoutGrid,
   Printer,
+  Wrench,
 } from 'lucide-react';
 import { PublisherElement, Page } from '../../types/publisher';
 import { ElementRenderer } from '../canvas/ElementRenderer';
@@ -279,6 +280,14 @@ export const PageThumbnails: React.FC<PageThumbnailsProps> = ({ showTools = true
           <PanelLeftOpen size={15} />
         </button>
         <div className="w-5 h-[1px] bg-[#e5e9ee]" />
+        <button
+          onClick={() => setIsLeftPanelOpen(true)}
+          className="w-7 h-7 rounded-[8px] flex items-center justify-center text-[#4a5661] hover:bg-[#f4f2ff] hover:text-[#5c4bb8] transition cursor-pointer"
+          title="Tools — Collage Maker, Tarpaulin Printer, Story Kit"
+          aria-label="Tools"
+        >
+          <Wrench size={15} />
+        </button>
         <button
           onClick={() => setIsCollageModalOpen(true)}
           className="w-7 h-7 rounded-[8px] flex items-center justify-center text-[#5c4bb8] hover:bg-[#f4f2ff] transition cursor-pointer"
