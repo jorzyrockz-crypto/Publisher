@@ -150,7 +150,13 @@ Two templates ship from it:
 | template | tiling | assembled | what it is |
 |---|---|---|---|
 | `champs-tarpapel-3x2` — Champs Reading Corner Banner | 3 × 2 A4 landscape | 871 × 410 mm | DepEd header strip, three lapped garlands, THE CHAMPS / READING CORNER word art, gold Basa Kasadya ribbon, both side badges in their own column |
-| `champs-wordwall-2x2` — Tree of Knowledge Word Wall | 2 × 2 A4 portrait | 396 × 567 mm | hablon header, eighteen blank abaca word cards at native size, the Heritage Tree as a mounted print, instruction bar |
+| `champs-tarpapel-tree` — Tree of Knowledge Tarpapel | 2 × 2 A4 portrait | 396 × 567 mm | one big cut-out tree with nine blank fruit to write words or names on, a header band, three editable subject tags, Grade & Section footer. Hung alone |
+| `champs-wordwall-2x2` — Word Wall | 2 × 2 A4 portrait | 396 × 567 mm | twenty-four blank cards, 83 × 53 mm on paper, in four 2 × 3 blocks with both glue seams landing in the wide central gutters. Header, subject line, instruction footer |
+
+The tree and the word wall used to be one template with a card grid above a mounted landscape print. They
+are two jobs: the tree is a **poster to hang alone**, the word wall is **furniture that cards hang on**.
+Separating them is what let the word wall grow from 18 cards to 24 at a readable size, and what let the
+tree get the whole canvas.
 
 Four things the code knows that a hand-typed page would get wrong:
 

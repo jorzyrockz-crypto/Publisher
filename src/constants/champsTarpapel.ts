@@ -86,7 +86,17 @@ const ASSET_ALIASES: Record<string, { pack: keyof typeof PACK_BASES; id: string 
   'sticker-reading-carabao': { pack: 'cultural', id: 'sticker-reading-carabao' },
 };
 
+/**
+ * Art drawn for the tarpapels themselves rather than borrowed from a kit: on the Tree poster the tree
+ * is not decoration, it is the poster, so it lives with the templates instead of inside a pack.
+ */
+const LOCAL_ART: Record<string, string> = {
+  'tree-of-knowledge': './tarpapel/tree-of-knowledge.webp',
+};
+
 const resolveAsset = (assetId: string): string | null => {
+  const local = LOCAL_ART[assetId];
+  if (local) return local;
   const alias = ASSET_ALIASES[assetId];
   if (!alias) return null;
   return `${PACK_BASES[alias.pack]}${alias.id}.webp`;
@@ -353,89 +363,328 @@ export const CHAMPS_TARPAPEL_BANNER: TarpapelTemplate = {
 };
 
 /* ------------------------------------------------------------------ *
- * 2 × 2 A4 portrait — Tree of Knowledge interactive word wall (1550 × 2208 mm-px)
+ * 2 × 2 A4 portrait — the Tree of Knowledge (396 × 567 mm)
  * ------------------------------------------------------------------ */
 
-export const CHAMPS_TARPAPEL_WORD_WALL: TarpapelTemplate = {
-  id: 'champs-wordwall-2x2',
-  name: 'Tree of Knowledge Word Wall (2×2 Tarpapel)',
+/**
+ * A different poster from the word wall, and it should be: teachers print this one enormous and
+ * hang it alone. The tree is the design — nine blank fruit, one per word or per child — and the
+ * template's job is to give it a title band, a subject row and a footer without crowding it.
+ *
+ * The tree art is a cut-out with alpha, so it sits on the wash instead of in a white rectangle, and
+ * it is placed at ~1.3× its own pixels: at 250 mm wide on paper that is ~90 dpi, which is the honest
+ * limit of a painted asset and fine for gouache read from a metre away.
+ */
+export const CHAMPS_TARPAPEL_TREE: TarpapelTemplate = {
+  id: 'champs-tarpapel-tree',
+  name: 'Tree of Knowledge Tarpapel (2×2)',
   description:
-    'Four A4 portrait sheets into a 396 × 567 mm word wall: hablon header, a grid of blank abaca and bubble word cards to write on with the class, and the Heritage Tree anchoring the foot. Cards sit at native size, so words stay crisp.',
+    'Four A4 portrait sheets into a 396 × 567 mm tree poster: a cut-out knowledge tree with nine blank fruit to write words or names on, a hablon/bamboo header, three editable subject tags beneath it, and a Grade & Section footer. Made to hang alone.',
   category: 'Champs Reading',
   packId: 'champs-reading-v1',
-  thumbnailColor: '#0d9488',
-  thumbnailGradient: 'linear-gradient(135deg, #0d9488 0%, #d97706 55%, #16a34a 100%)',
+  thumbnailColor: '#15803d',
+  thumbnailGradient: 'linear-gradient(135deg, #15803d 0%, #65a30d 55%, #fbbf24 100%)',
   tiling: { paper: 'A4', orientation: 'portrait', cols: 2, rows: 2, overlapMm: 10, cropMarks: true },
   canvas: { widthMm: 396, heightMm: 567 },
   background: PAPER,
   layers: [
-    { id: 'frame-top', type: 'asset', assetId: 'frame-bamboo-top', layerRole: 'frame', x: 0, y: 0, w: 1, h: 0.105 },
     {
-      id: 'title-tree',
+      id: 'bg-wash',
+      type: 'shape',
+      fill: '#e7f2e3',
+      fillColor2: '#fdfaf2',
+      gradientAngle: 90,
+      x: 0,
+      y: 0,
+      w: 1,
+      h: 1,
+      locked: true,
+    },
+    {
+      id: 'frame-top',
+      type: 'asset',
+      assetId: 'frame-bamboo-top',
+      layerRole: 'frame',
+      x: -0.01,
+      y: 0,
+      w: 1.02,
+      h: 0.075,
+      repeatX: 2,
+    },
+    { id: 'header-pill', type: 'shape', fill: '#fdfaf2', radius: 26, opacity: 0.95, x: 0.04, y: 0.052, w: 0.92, h: 0.1 },
+    {
+      id: 'title-champs',
       type: 'wordart',
       text: 'TREE OF KNOWLEDGE',
       wordArtId: 'cultural-hablon',
       fontFamily: 'Fredoka',
-      fontSizePt: 86,
+      fontSizePt: 76,
       align: 'center',
-      x: 0.06,
-      y: 0.112,
-      w: 0.88,
-      h: 0.1,
+      x: 0.05,
+      y: 0.055,
+      w: 0.9,
+      h: 0.094,
+      arc: 0.04,
       editable: true,
     },
     {
-      id: 'subtitle-word-wall',
+      id: 'title-reading-corner',
       type: 'text',
-      text: 'INTERACTIVE WORD WALL • BASA KASADYA',
+      text: 'BASA KASADYA  ·  READING CORNER',
       fontFamily: 'Plus Jakarta Sans',
       fontWeight: '800',
       fontSizePt: 22,
-      color: '#7c2d12',
+      color: '#166534',
       align: 'center',
       x: 0.12,
-      y: 0.2,
+      y: 0.162,
       w: 0.76,
-      h: 0.04,
-      letterSpacing: 2.4,
+      h: 0.035,
+      letterSpacing: 2.6,
       editable: true,
     },
-    // Cards at native size: 1024 px wide is 1/1.5 of the canvas, so a word written here is 10 mm tall
-    // on paper — the size a child can read from a desk away.
-    { id: 'cards-1', type: 'asset', assetId: 'frame-cultural-cards', layerRole: 'sticker', x: 0.03, y: 0.26, w: 0.45, h: 0.13 },
-    { id: 'cards-2', type: 'asset', assetId: 'frame-cultural-cards', layerRole: 'sticker', x: 0.52, y: 0.26, w: 0.45, h: 0.13 },
-    { id: 'cards-3', type: 'asset', assetId: 'frame-cultural-cards', layerRole: 'sticker', x: 0.03, y: 0.41, w: 0.45, h: 0.13 },
-    { id: 'cards-4', type: 'asset', assetId: 'frame-cultural-cards', layerRole: 'sticker', x: 0.52, y: 0.41, w: 0.45, h: 0.13 },
-    { id: 'cards-5', type: 'asset', assetId: 'frame-cultural-cards', layerRole: 'sticker', x: 0.03, y: 0.56, w: 0.45, h: 0.13 },
-    { id: 'cards-6', type: 'asset', assetId: 'frame-cultural-cards', layerRole: 'sticker', x: 0.52, y: 0.56, w: 0.45, h: 0.13 },
-    // The tree is a painted scene, so it is presented as a print — white mount, soft corner — rather
-    // than pasted as a raw rectangle in the middle of a word wall.
-    { id: 'tree-mount', type: 'shape', fill: '#ffffff', radius: 14, x: 0.235, y: 0.695, w: 0.53, h: 0.215 },
+    // The poster.
     {
-      id: 'tree',
+      id: 'bg-main',
       type: 'asset',
-      assetId: 'bg-heritage-tree',
+      assetId: 'tree-of-knowledge',
       layerRole: 'backdrop',
-      x: 0.248,
-      y: 0.706,
-      w: 0.504,
-      h: 0.193,
+      x: 0.19,
+      y: 0.198,
+      w: 0.62,
+      h: 0.556,
     },
-    { id: 'how-to-bar', type: 'shape', fill: '#7c2d12', x: 0, y: 0.93, w: 1, h: 0.055 },
+    // One instruction, because the fruit are blank and every teacher asks what goes on them.
+    { id: 'fruit-pill', type: 'shape', fill: '#ffffff', radius: 20, opacity: 0.92, x: 0.2, y: 0.768, w: 0.6, h: 0.044 },
     {
-      id: 'how-to',
+      id: 'fruit-hint',
+      type: 'text',
+      text: 'WRITE ONE WORD OR NAME ON EVERY FRUIT',
+      fontFamily: 'Plus Jakarta Sans',
+      fontWeight: 'bold',
+      fontSizePt: 17,
+      color: '#15803d',
+      align: 'center',
+      x: 0.2,
+      y: 0.768,
+      w: 0.6,
+      h: 0.044,
+      letterSpacing: 1.6,
+      editable: true,
+    },
+    // Branch labels: three subjects a teacher renames to whatever the class is growing.
+    { id: 'tag-1', type: 'shape', fill: '#15803d', radius: 18, x: 0.055, y: 0.83, w: 0.28, h: 0.068 },
+    {
+      id: 'tag-1-text',
+      type: 'text',
+      text: 'READING',
+      fontFamily: 'Plus Jakarta Sans',
+      fontWeight: '800',
+      fontSizePt: 19,
+      color: '#ffffff',
+      align: 'center',
+      x: 0.055,
+      y: 0.83,
+      w: 0.28,
+      h: 0.068,
+      letterSpacing: 2,
+      editable: true,
+    },
+    { id: 'tag-2', type: 'shape', fill: '#b45309', radius: 18, x: 0.36, y: 0.83, w: 0.28, h: 0.068 },
+    {
+      id: 'tag-2-text',
+      type: 'text',
+      text: 'MATHEMATICS',
+      fontFamily: 'Plus Jakarta Sans',
+      fontWeight: '800',
+      fontSizePt: 19,
+      color: '#ffffff',
+      align: 'center',
+      x: 0.36,
+      y: 0.83,
+      w: 0.28,
+      h: 0.068,
+      letterSpacing: 2,
+      editable: true,
+    },
+    { id: 'tag-3', type: 'shape', fill: '#0f766e', radius: 18, x: 0.665, y: 0.83, w: 0.28, h: 0.068 },
+    {
+      id: 'tag-3-text',
+      type: 'text',
+      text: 'SCIENCE',
+      fontFamily: 'Plus Jakarta Sans',
+      fontWeight: '800',
+      fontSizePt: 19,
+      color: '#ffffff',
+      align: 'center',
+      x: 0.665,
+      y: 0.83,
+      w: 0.28,
+      h: 0.068,
+      letterSpacing: 2,
+      editable: true,
+    },
+    { id: 'footer-bar', type: 'shape', fill: '#166534', x: 0, y: 0.912, w: 1, h: 0.06 },
+    {
+      id: 'footer',
+      type: 'text',
+      text: 'GRADE & SECTION: __________     ·     ADVISER: __________     ·     SCHOOL YEAR: ______',
+      fontFamily: 'Plus Jakarta Sans',
+      fontWeight: 'bold',
+      fontSizePt: 17,
+      color: '#ffffff',
+      align: 'center',
+      x: 0.06,
+      y: 0.912,
+      w: 0.88,
+      h: 0.06,
+      letterSpacing: 1,
+      editable: true,
+    },
+  ],
+};
+
+/* ------------------------------------------------------------------ *
+ * 2 × 2 A4 portrait — the Word Wall (396 × 567 mm)
+ * ------------------------------------------------------------------ */
+
+/**
+ * The other poster. No tree: a word wall is a *furniture* — twenty-four uniform cards at a size a
+ * child can read from a desk, with the seams deliberately landing in the widest gutters so the glue
+ * strips never cross a card.
+ *
+ * Cards are vectors (a coloured plate with a white face inside), not a three-card asset stretched to
+ * fit a grid: at 88 × 60 mm each, a stretched raster would print its own border at the wrong weight,
+ * and the count has to be divisible by four sheets anyway.
+ */
+const CARD_W = 0.2155;
+const CARD_H = 0.0977;
+const CARD_GAP_X = 0.014;
+const CARD_GAP_Y = 0.012;
+const CARD_INSET_X = 5 / 1550;
+const CARD_INSET_Y = 5 / 2208;
+
+/**
+ * 24 cards in four 2 × 3 blocks. Both gutters are centred on 0.5 — the sheet seam — and are 40 mm
+ * wide across and 30 mm down, so the glue strip falls on paper, never on a card.
+ */
+const wordWallCards = (): TarpapelShapeLayer[] => {
+  const blockX = [0.035, 0.52];
+  const blockY = [0.168, 0.515];
+  const accents = [
+    ['#0f766e', '#b45309'],
+    ['#b45309', '#0f766e'],
+  ];
+  const layers: TarpapelShapeLayer[] = [];
+  blockY.forEach((by, rowBlock) => {
+    blockX.forEach((bx, colBlock) => {
+      const accent = accents[rowBlock][colBlock];
+      for (let r = 0; r < 3; r += 1) {
+        for (let c = 0; c < 2; c += 1) {
+          const x = bx + c * (CARD_W + CARD_GAP_X);
+          const y = by + r * (CARD_H + CARD_GAP_Y);
+          const n = rowBlock * 12 + colBlock * 6 + r * 2 + c + 1;
+          layers.push({ id: `card-${n}-plate`, type: 'shape', fill: accent, radius: 14, x, y, w: CARD_W, h: CARD_H });
+          layers.push({
+            id: `card-${n}`,
+            type: 'shape',
+            fill: '#ffffff',
+            radius: 10,
+            x: x + CARD_INSET_X,
+            y: y + CARD_INSET_Y,
+            w: CARD_W - CARD_INSET_X * 2,
+            h: CARD_H - CARD_INSET_Y * 2,
+          });
+        }
+      }
+    });
+  });
+  return layers;
+};
+
+export const CHAMPS_TARPAPEL_WORD_WALL: TarpapelTemplate = {
+  id: 'champs-wordwall-2x2',
+  name: 'Word Wall (2×2 Tarpapel)',
+  description:
+    'Four A4 portrait sheets into a 396 × 567 mm word wall: twenty-four blank cards, 88 × 60 mm each, arranged so both glue seams fall in the wide central gutters — no card is ever cut or glued across the middle. Header, subject line and an instruction footer.',
+  category: 'Champs Reading',
+  packId: 'champs-reading-v1',
+  thumbnailColor: '#b45309',
+  thumbnailGradient: 'linear-gradient(135deg, #b45309 0%, #0f766e 55%, #fbbf24 100%)',
+  tiling: { paper: 'A4', orientation: 'portrait', cols: 2, rows: 2, overlapMm: 10, cropMarks: true },
+  canvas: { widthMm: 396, heightMm: 567 },
+  background: PAPER,
+  layers: [
+    {
+      id: 'bg-wash',
+      type: 'shape',
+      fill: '#fdf1d8',
+      fillColor2: '#fbf7ee',
+      gradientAngle: 90,
+      x: 0,
+      y: 0,
+      w: 1,
+      h: 1,
+      locked: true,
+    },
+    {
+      id: 'frame-top',
+      type: 'asset',
+      assetId: 'frame-bamboo-top',
+      layerRole: 'frame',
+      x: -0.01,
+      y: 0,
+      w: 1.02,
+      h: 0.075,
+      repeatX: 2,
+    },
+    { id: 'header-pill', type: 'shape', fill: '#fdfaf2', radius: 26, opacity: 0.95, x: 0.08, y: 0.042, w: 0.84, h: 0.096 },
+    {
+      id: 'title-champs',
+      type: 'wordart',
+      text: 'WORD WALL',
+      wordArtId: 'cultural-hablon',
+      fontFamily: 'Fredoka',
+      fontSizePt: 112,
+      align: 'center',
+      x: 0.1,
+      y: 0.046,
+      w: 0.8,
+      h: 0.09,
+      editable: true,
+    },
+    {
+      id: 'title-reading-corner',
+      type: 'text',
+      text: 'BASA KASADYA   ·   GRADE ___   ·   ADVISER ___',
+      fontFamily: 'Plus Jakarta Sans',
+      fontWeight: '800',
+      fontSizePt: 20,
+      color: '#7c2d12',
+      align: 'center',
+      x: 0.06,
+      y: 0.132,
+      w: 0.88,
+      h: 0.032,
+      letterSpacing: 1.4,
+      editable: true,
+    },
+    ...wordWallCards(),
+    { id: 'footer-bar', type: 'shape', fill: '#7c2d12', x: 0, y: 0.868, w: 1, h: 0.075 },
+    {
+      id: 'footer',
       type: 'text',
       text: 'WRITE THE WORD  ·  DRAW IT  ·  USE IT IN A SENTENCE',
       fontFamily: 'Plus Jakarta Sans',
       fontWeight: 'bold',
-      fontSizePt: 16,
+      fontSizePt: 17,
       color: '#ffffff',
       align: 'center',
-      x: 0.1,
-      y: 0.93,
-      w: 0.8,
-      h: 0.055,
-      letterSpacing: 1.2,
+      x: 0.08,
+      y: 0.868,
+      w: 0.84,
+      h: 0.075,
+      letterSpacing: 1.4,
       editable: true,
     },
   ],
@@ -804,5 +1053,8 @@ const definition = (spec: TarpapelTemplate): TemplateDefinition => ({
 
 export const CHAMPS_TARPAPEL_TEMPLATES: TemplateDefinition[] = [
   definition(CHAMPS_TARPAPEL_BANNER),
+  // Two different posters that used to be one: the tree is a poster to hang alone, the word wall is
+  // furniture that twenty-four cards hang on.
+  definition(CHAMPS_TARPAPEL_TREE),
   definition(CHAMPS_TARPAPEL_WORD_WALL),
 ];
