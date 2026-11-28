@@ -146,7 +146,12 @@ interface PublisherContextType {
    * alone. This is what lets the canvas toolbar change a collage without opening the
    * builder — the modal and the toolbar write elements through the same builder.
    */
-  patchCollageMeta: (groupId: string, nextMeta: import('../utils/borderArtStyles').CollageMeta) => void;
+  patchCollageMeta: (
+    groupId: string,
+    nextMeta: import('../utils/borderArtStyles').CollageMeta,
+    /** The collage's elements. Passed explicitly so an ungrouped collage still patches. */
+    memberIds?: string[]
+  ) => void;
 
   /**
    * Nested collage controls (experimental). The canvas bar has direct buttons for one-click
@@ -1718,8 +1723,15 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   );
 
   const patchCollageMeta = useCallback(
-    (groupId: string, nextMeta: import('../utils/borderArtStyles').CollageMeta) => {
-      const members = currentElements.filter((el) => el.groupId === groupId);
+    (
+      groupId: string,
+      nextMeta: import('../utils/borderArtStyles').CollageMeta,
+      memberIds?: string[]
+    ) => {
+      const memberIdSet = memberIds?.length ? new Set(memberIds) : null;
+      const members = memberIdSet
+        ? currentElements.filter((el) => memberIdSet.has(el.id))
+        : currentElements.filter((el) => el.groupId === groupId);
       if (members.length === 0) return;
 
       // The collage's own top-left, never the page centre: a restyle must not move it.
@@ -1734,7 +1746,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         pageWidth: activePage.width,
         pageHeight: activePage.height,
         margins: activePage.margins,
-        groupId,
+        groupId: groupId || undefined,
         groupSlots: true,
       });
 
@@ -1757,7 +1769,8 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           zIndex: previous?.zIndex ?? baseZ + el.zIndex,
         };
       });
-      const remaining = currentElements.filter((el) => el.groupId !== groupId);
+      const replaced = new Set(members.map((el) => el.id));
+      const remaining = currentElements.filter((el) => !replaced.has(el.id));
 
       if (pageBackdrop) applyPageBackdrop(pageBackdrop);
       commitCurrentElements([...remaining, ...rebuilt]);

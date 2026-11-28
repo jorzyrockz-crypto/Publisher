@@ -52,11 +52,12 @@ export const CollageActionBar: React.FC = () => {
 
   if (!collage) return null;
 
-  const { groupId, meta, origin, filledSlots, slotCount } = collage;
+  const { groupId, meta, memberIds, origin, filledSlots, slotCount } = collage;
   const gap = meta.globalStyle.gap;
   const corners = meta.globalStyle.cornerRadius;
 
-  const patch = (next: Parameters<typeof patchCollageMeta>[1]) => patchCollageMeta(groupId, next);
+  const patch = (next: Parameters<typeof patchCollageMeta>[1]) =>
+    patchCollageMeta(groupId, next, memberIds);
 
   const setGap = (next: number) => {
     const clamped = Math.min(GAP_MAX, Math.max(GAP_MIN, Math.round(next)));

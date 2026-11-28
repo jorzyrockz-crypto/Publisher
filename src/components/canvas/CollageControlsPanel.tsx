@@ -79,8 +79,9 @@ export const CollageControlsPanel: React.FC = () => {
 
   if (!collageControlSection || !collage) return null;
 
-  const { groupId, meta, slotCount } = collage;
-  const patch = (next: Parameters<typeof patchCollageMeta>[1]) => patchCollageMeta(groupId, next);
+  const { groupId, meta, memberIds, slotCount } = collage;
+  const patch = (next: Parameters<typeof patchCollageMeta>[1]) =>
+    patchCollageMeta(groupId, next, memberIds);
 
   // Photos already on the page that are not part of this collage.
   const loosePhotos = activePage.elements
