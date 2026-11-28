@@ -307,6 +307,12 @@ export interface ImageElement extends BaseElement {
    * anything.
    */
   isPlaceholder?: boolean;
+  /**
+   * An empty slot the design pass must leave empty. A circular 64px frame waiting for a school's
+   * logo is not "missing artwork" — it is an invitation, and filling it with stock art is the one
+   * thing a teacher would have to undo before using the certificate.
+   */
+  slotKind?: 'logo';
 }
 
 export interface TableElement extends BaseElement {

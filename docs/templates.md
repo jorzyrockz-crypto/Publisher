@@ -50,7 +50,7 @@ Adding more art means dropping a file in `public/templates/` and adding one entr
 | grid | snaps everything to the 8px step | 363 |
 | rhythm | makes stacked gaps multiples of 8, moving the stack below with it | 94 |
 | contrast | walks text colour toward ink/white until it clears 4.5:1 against *what is behind it* | 27 |
-| density | shrinks the biggest decoration 0.88× while ink is over 72% | 55 |
+| density | shrinks the biggest *unlocked* decoration 0.88× while ink is over 72% | 55 |
 
 Two of these are worth calling out.
 
@@ -191,6 +191,61 @@ pieces live across three packs. Rather than rewrite their layout, `ASSET_ALIASES
 (`bg-champs-nook` → the Story Kit's `bg-cozy-reading-nook`, `frame-hanging-vines` → `frame-top-canopy`,
 `sticker-champs-trophy` → `badge-star-medal`, and so on).
 
+## The six certificates, drawn in parts
+
+`src/constants/certificateTemplates.ts` held six object literals that had drifted apart: one pair of
+signature rules on the honor roll, `'______________________\nNames'` typed into a text box on the
+other five, `Inter` and `Poppins` on pages that never load them, and nothing at all behind the paper.
+They are now six pages built from the same four parts, so the pieces that must agree physically
+cannot drift:
+
+| part | what it is | why it is built this way |
+|---|---|---|
+| paper | `page.backgroundPattern` — dots or a grid at 5–6%, tiled at 28–40px | the sheet needs tooth; a *shape* cannot supply it. See below. |
+| signature | a real `line` at 1.5px, the name in bold, the role in muted letter-spaced small caps | runs are not styled, so "bold name over muted role" is three elements — and the rule is a line, not eight underscores |
+| logo slot | a 64px circular `image` with `src: ''` and `slotKind: 'logo'` | it is meant to be empty until the school drops its crest in |
+| QR | a 96px (STEM) or 72px (training) `qr` pointing at a verification URL | the two certificates that certify attendance get one |
+
+Everything else is the individual design: a navy→indigo gradient banner with a gold accent bar and
+two logo slots flanking a `trophy-gold` honor-roll title; a `champs-gold-ribbon` sub-banner and star
+confetti on the star award; a navy→teal sidebar with a `#22d3ee` lit edge on the STEM award; a
+gold→lemon bar on the employee award; a wave-edged teal header band on the completion certificate;
+and a double gold hairline inside the burgundy frame on the appreciation award. Each title is
+`isWordArt` with a style that carries its own contrast, and each is set in a family the app actually
+loads — Playfair Display, Fredoka, Montserrat, Plus Jakarta Sans — with Kaushan Script for the
+handwritten name.
+
+**The paper is a page pattern, not a watermark shape.** A `fillType: 'pattern'` shape was the first
+attempt. It paints `'transparent'` between its motifs, and every contrast check reads a shape's
+`fillColor` as "the colour behind this type" — so the design pass saw transparent-as-ink, decided the
+type was illegible, and walked it 50% toward white. Half the sheet's copy came out grey. Writing the
+paper tone into `fillColor` fixes that one shape, but the page's own pattern is the mechanism the
+model already has: it renders in the canvas, the gallery preview and the rasteriser, it sits behind
+every element by definition, and it cannot be misread as ink.
+
+## Three places the passes fought a certificate
+
+The certificates were fixed in place, but three behaviours in the pipeline had to be corrected —
+each is a general bug that any footer-and-frame page hits, and none of them change what a template
+outside this file looks like:
+
+- **A stroke-only frame was read as a backdrop.** `textBackdrop` returned the frame's
+  `fillColor` (`'transparent'`) for any text inside it, and `fixContrast` then treated transparent as
+  ink of no colour. That is what washed out `certificate-award` and `artisan-bistro-menu`, which
+  ship today with grey type where they were drawn with `#1c1917` and `#451a03`; those two templates
+  now come through with the colours they were authored with (16:1 and 13:1 on their paper). Only a
+  shape that paints no flat ink is looked through — gradients and pattern fills still count.
+- **The density pass resized pinned furniture.** A border rule covering 82% of a certificate counts
+  as its dominant ink, so relief shrank it by 12% and left it floating inside the frame it belongs
+  to. Locked elements are now skipped: locking is the author's statement that this box is furniture.
+- **The artwork pass filled logo slots.** An empty image slot whose name mentions a logo now carries
+  `slotKind: 'logo'` and is left empty; a crest is the one thing a school will replace first.
+
+Geometry is authored on the 8px step and inside the margin snap's dead zone (or locked), so both
+stages — the page as shipped, and the tidied candidate that the ranking might pick on another day —
+come out byte-identical to the design. `check:certs` asserts exactly that, and prints which candidate
+won.
+
 ## Before / after
 
 Measured with `scoreLayout` over all 72 pages of the 63 templates, same scorer both sides:
@@ -222,6 +277,11 @@ past the bottom margin is not spread at all.
 - Every page was rasterised (Pillow, DejaVu) and inspected page by page: the veils, the composed
   posters and invitations, and the pages the guard left alone all read correctly. The renderer
   lives outside the repo (it is a probe, not product code).
+- `npm run check:certs` — 965 assertions over the six certificates: family is one the app loads,
+  no typed-in signature, a rule at 1.5px under every name, the requested WordArt style and face on
+  every title, logo slots still empty, QR blocks holding a URL, every non-WordArt colour clearing
+  4.5:1 (3:1 at display sizes) against the shape actually behind it, and both pipeline stages
+  leaving the geometry and the palette untouched.
 
 ## The seam rule
 

@@ -173,6 +173,17 @@ function scoreWhitespace(elements: PublisherElement[], pageW: number, pageH: num
 }
 
 /**
+ * Does this shape put a flat colour behind the type? A frame strokes an edge and paints nothing
+ * inside it, so there is no colour there to measure a contrast ratio against.
+ */
+function paintsFlatInk(el: PublisherElement): boolean {
+  const shape = el as PublisherElement & { fillColor?: string; fillType?: string };
+  if (shape.fillType === 'linear-gradient') return true;
+  const fill = shape.fillColor;
+  return Boolean(fill && fill !== 'transparent' && fill !== 'none');
+}
+
+/**
  * What is actually behind a text box: the highest object under its centre, not just the page.
  * A headline in white over a dark shape is legible; the same headline over the page would not be.
  * Pictures are photographed content, so their colour is unknown and the check stands down.
@@ -190,6 +201,10 @@ export function textBackdrop(
       if (other.type === 'text') return false;
       return cx >= other.x && cx <= other.x + other.width && cy >= other.y && cy <= other.y + other.height;
     })
+    // A frame that only strokes is not a backdrop: the type reads against whatever is under *that*.
+    // Returning its 'transparent' fill as if it were a colour made the contrast pass read ink of no
+    // colour and lighten the type by half.
+    .filter((other) => other.type !== 'shape' || paintsFlatInk(other))
     .sort((a, b) => b.zIndex - a.zIndex);
 
   const top = behind[0];

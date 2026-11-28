@@ -129,7 +129,7 @@ function marginSnap(value: number, edges: number[]): number | null {
 const snapToStep = (value: number) => Math.round(value / STEP) * STEP;
 
 /** 1. Image slots get artwork; visual pages get a hero behind the type. */
-function placeArtwork(
+export function placeArtwork(
   page: Page,
   category: TemplateCategory,
   stats: PolishStats,
@@ -138,7 +138,11 @@ function placeArtwork(
   const isPortrait = page.height >= page.width;
   const elements = page.elements.map((el) => {
     if (el.type !== "image") return el;
-    const image = el as PublisherElement & { src?: string; name?: string };
+    const image = el as PublisherElement & { src?: string; name?: string; slotKind?: string };
+    // A logo slot is deliberately empty (see ImageElement.slotKind): it is filled by a person, with
+    // the crest of the school that is handing the certificate out. Stock art there is the one thing
+    // every user would have to undo first.
+    if (image.slotKind === "logo") return el;
     const looksPlaceholder =
       !image.src || image.src.startsWith("data:image/svg");
     if (!looksPlaceholder) return el;
@@ -373,14 +377,15 @@ function relieveDensity(
   if (ink / pageArea <= 0.78) return elements;
 
   // Shrink the biggest decorations (shapes, not text or pictures) a little, keeping their
-  // centres, until the page is back inside the comfortable band.
+  // centres, until the page is back inside the comfortable band. A locked element is furniture
+  // the author pinned — a border rule, a band — and resizing it is exactly what locking prevents.
   const pad = page.width * page.height * 0.04;
   let working = elements;
   let inkNow = ink;
   const decorations = elements
     .filter(
       (el): el is ShapeElement =>
-        el.type === "shape" && !isBackgroundShape(el, page),
+        el.type === "shape" && !isBackgroundShape(el, page) && el.locked !== true,
     )
     .sort((a, b) => b.width * b.height - a.width * a.height);
 
