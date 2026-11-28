@@ -257,10 +257,11 @@ until you composite it over a dark page.
 kit. The unpacked build lands in `.pack-dist/eco-fiesta-v1/`, which is ignored: only the zip is
 committed, because the zip is the deliverable.
 
-It is not an "add this kit" button. The pieces are already in the Story Kit, so asking a reader to
-import what they can already see would be busywork; the picker offers the file as *Sample pack to
-copy from (.zip)* in one faint line, next to *Import a .zip pack*, which is where someone who wants
-to author a pack is already looking.
+It is not an "add this kit" button. All ten pieces are already in the Story Kit — verified id by id —
+so asking a reader to import what they can already see would be busywork. The picker offers the file
+as *Sample pack to copy from (.zip)*, one faint underlined line beside *Import a .zip pack*, which is
+where someone who wants to author a pack is already looking. Following that link downloads the zip;
+installing it is the same door a user's own pack comes through, and the result is a fourth chip.
 
 Two things this kit needed that the first did not:
 

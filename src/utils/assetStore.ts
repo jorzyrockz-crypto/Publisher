@@ -80,9 +80,10 @@ export const BUILTIN_PACKS: { packId: string; baseUrl: string }[] = [
 export const BUILTIN_PACK_BASE = './asset-packs/storybook-reading-v1/';
 
 /**
- * The second kit we author, built by `npm run pack:eco` and shipped as a zip rather than as a second
- * built-in — so it reaches the app through the same door a user's pack does. The picker installs it
- * in one click; the same file is what you hand someone who wants a pack to copy from.
+ * The kit we hand out as a `.zip`, built by `npm run pack:eco`. Its ten pieces are *also* in the Story
+ * Kit, so nobody has to install it to use them — it exists to be a file: the sample you open to see
+ * what a pack is, and the thing the import route is tested against. The panel offers it as a download
+ * link, not as an install button, precisely because installing what is already on the shelf is busywork.
  */
 export const FEATURED_PACK_ZIP = './asset-packs/eco-fiesta-v1.zip';
 export const FEATURED_PACK_ID = 'eco-fiesta-v1';
