@@ -426,6 +426,13 @@ export interface Page {
   elements: PublisherElement[];
   masterId?: string;
   hideMaster?: boolean;
+  /**
+   * Trim everything outside the paper. Off by default, because on an ordinary document an element
+   * nudged past the edge should stay reachable. On a tarpapel sheet it has to be on: every sheet of
+   * a 2 × 2 poster carries the whole canvas, shifted, and without the trim each sheet draws its
+   * neighbours' artwork over itself — four copies of the poster instead of four quadrants of one.
+   */
+  clipContent?: boolean;
 }
 
 export interface MasterPageDef {

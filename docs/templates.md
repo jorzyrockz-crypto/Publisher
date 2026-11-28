@@ -230,3 +230,14 @@ The tree itself crosses both seams, and that is deliberate: a subject that fills
 avoid a strip running through it, and a cut trunk is a seam a teacher expects. A cut letter is not.
 `/tmp`-style checks are not the guard — the check lives in the tarpapel test and fails the build if
 any text box intersects a seam band.
+
+## One sheet is a quarter, never a copy
+
+A tarpapel page is built the opposite way round from an ordinary page: it carries **every** element of
+the poster, shifted by that sheet's offset, and relies on the paper edge to trim the rest. That is what
+makes four pages out of one canvas — but only if the page actually trims. Left untrimmed, each page
+paints its neighbours' artwork over itself and the workarea shows the same poster several times over.
+
+So tarpapel pages carry `clipContent: true`, and the page canvas trims to the paper when it is set.
+Ordinary documents leave it off, because on a letter an element nudged past the edge should stay
+reachable. The tarpapel check asserts every sheet of every poster is trimmed.

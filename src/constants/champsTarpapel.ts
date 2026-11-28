@@ -1149,6 +1149,8 @@ export function tarpapelToProject(spec: TarpapelTemplate): DocumentProject {
       margins: { top: 0, right: 0, bottom: 0, left: 0 },
       guides: [],
       elements,
+      // A sheet is a quarter of a poster, not a copy of it.
+      clipContent: true,
     };
   });
 
