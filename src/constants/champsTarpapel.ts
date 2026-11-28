@@ -7,16 +7,18 @@
  * it is a different job from laying out a page, which is why this module exists instead of a page of
  * elements typed by hand.
  *
- * `tarpapelToProject` turns a spec into the document the app already knows how to print: **one page
- * per sheet**, each A4, each showing its own window of the canvas. Nothing needs to know it is a
- * tarpapel afterwards — the pages print through the ordinary pipeline, and the picture is built by
- * gluing the sheets in order.
+ * `tarpapelToProject` turns a spec into **one page the size of the assembled poster** — 410 × 584 mm
+ * for a 2 × 2, not four A4s. That is deliberate. A four-page project opens showing a quarter of the
+ * artwork, which reads as a broken or unfinished template, and its gallery thumbnail is a fragment.
+ * A teacher wants to see the poster, edit the poster, and get sheets when they print; the Tarpaulin
+ * Printer (which tiles any page) is what cuts the sheets, and it already suggests the right grid from
+ * the page size.
  *
- * Two consequences worth knowing before editing a spec:
+ * The grid still decides the layout, because the seams are where the type must not go:
  *
- * - **Neighbouring sheets print identical pixels along an overlap**, because both show the same
- *   canvas window. That is what makes a seam invisible: the glue strip is duplicated artwork, not a
- *   guess.
+ * - **No letter may sit on a seam.** The printer duplicates a 10 mm strip along every seam, so type
+ *   there arrives on the wall twice, offset. Every word in these specs is split at the seam instead —
+ *   `TREE OF` either side of it, and so on. The check walks every text box against every band.
  * - **A4 art cannot hold 871 mm.** A 1024px backdrop stretched across a 3292px canvas prints at
  *   ~30 dpi. So the backdrop layer is laid as a low-opacity wash (its blur becomes atmosphere), and
  *   the weight is carried by pieces at native size — frames across the top, stickers, and vector
@@ -363,7 +365,7 @@ export const CHAMPS_TARPAPEL_BANNER: TarpapelTemplate = {
 };
 
 /* ------------------------------------------------------------------ *
- * 2 × 2 A4 portrait — the Tree of Knowledge (396 × 567 mm)
+ * 2 × 2 A4 portrait — the Tree of Knowledge (410 × 584 mm assembled)
  * ------------------------------------------------------------------ */
 
 /**
@@ -379,13 +381,13 @@ export const CHAMPS_TARPAPEL_TREE: TarpapelTemplate = {
   id: 'champs-tarpapel-tree',
   name: 'Tree of Knowledge Tarpapel (2×2)',
   description:
-    'Four A4 portrait sheets into a 396 × 567 mm tree poster: a cut-out knowledge tree with nine blank fruit to write words or names on, a hablon/bamboo header split TREE OF / KNOWLEDGE at the seam, four editable subject tags, and a Grade & Section footer. Every word stays clear of the glue strip; made to hang alone.',
+    'A 410 × 584 mm tree poster on one page, printed as four A4 sheets and glued: a cut-out knowledge tree with nine blank fruit to write words or names on, a hablon/bamboo header split TREE OF / KNOWLEDGE at the seam, four editable subject tags, and a Grade & Section footer. Every word stays clear of the glue strip; made to hang alone.',
   category: 'Champs Reading',
   packId: 'champs-reading-v1',
   thumbnailColor: '#15803d',
   thumbnailGradient: 'linear-gradient(135deg, #15803d 0%, #65a30d 55%, #fbbf24 100%)',
   tiling: { paper: 'A4', orientation: 'portrait', cols: 2, rows: 2, overlapMm: 10, cropMarks: true },
-  canvas: { widthMm: 396, heightMm: 567 },
+  canvas: { widthMm: 410, heightMm: 584 },
   background: PAPER,
   layers: [
     {
@@ -625,7 +627,7 @@ export const CHAMPS_TARPAPEL_TREE: TarpapelTemplate = {
 };
 
 /* ------------------------------------------------------------------ *
- * 2 × 2 A4 portrait — the Word Wall (396 × 567 mm)
+ * 2 × 2 A4 portrait — the Word Wall (410 × 584 mm assembled)
  * ------------------------------------------------------------------ */
 
 /**
@@ -686,13 +688,13 @@ export const CHAMPS_TARPAPEL_WORD_WALL: TarpapelTemplate = {
   id: 'champs-wordwall-2x2',
   name: 'Word Wall (2×2 Tarpapel)',
   description:
-    'Four A4 portrait sheets into a 396 × 567 mm word wall: twenty-four blank cards, 88 × 60 mm each, arranged so both glue seams fall in the wide central gutters — no card is ever cut or glued across the middle. Header, subject line and an instruction footer.',
+    'A 410 × 584 mm word wall on one page, printed as four A4 sheets and glued: twenty-four blank cards, 83 × 53 mm each, arranged so both glue seams fall in the wide central gutters — no card is ever cut or glued across the middle. Header, subject line and an instruction footer.',
   category: 'Champs Reading',
   packId: 'champs-reading-v1',
   thumbnailColor: '#b45309',
   thumbnailGradient: 'linear-gradient(135deg, #b45309 0%, #0f766e 55%, #fbbf24 100%)',
   tiling: { paper: 'A4', orientation: 'portrait', cols: 2, rows: 2, overlapMm: 10, cropMarks: true },
-  canvas: { widthMm: 396, heightMm: 567 },
+  canvas: { widthMm: 410, heightMm: 584 },
   background: PAPER,
   layers: [
     {
@@ -1125,41 +1127,36 @@ function seamMarks(
   return marks;
 }
 
-/** The document the app prints: one page per sheet, each showing its window of the canvas. */
+/**
+ * The document a template hands the app: **one page, the size of the assembled poster.**
+ *
+ * The pages-per-sheet arrangement this used to build looked like a stack of near-identical
+ * documents in the workarea — every sheet carried the whole canvas, shifted, and without a trim it
+ * painted its neighbours over itself. One page is the honest model: this is a poster, and the
+ * printer is what turns it into four A4s.
+ */
 export function tarpapelToProject(spec: TarpapelTemplate): DocumentProject {
   const geo = tarpapelGeometry(spec);
-  const canvasElements = tarpapelCanvasElements(spec);
+  const name = spec.name.replace(/\s*\(.*\)$/, '');
 
-  const pages: Page[] = geo.sheets.map((sheet) => {
-    const elements: PublisherElement[] = canvasElements.map((element) => ({
-      ...element,
-      id: `${element.id}-s${sheet.col}${sheet.row}`,
-      x: element.x - sheet.x,
-      y: element.y - sheet.y,
-    }));
-    if (spec.tiling.cropMarks) elements.push(...seamMarks(geo, sheet, spec.tiling.cols));
-
-    return {
-      id: `page-${spec.id}-${sheet.col}-${sheet.row}`,
-      name: `Sheet ${sheet.row * spec.tiling.cols + sheet.col + 1} — col ${sheet.col + 1}, row ${sheet.row + 1}`,
-      width: geo.sheetWidth,
-      height: geo.sheetHeight,
-      orientation: spec.tiling.orientation,
-      backgroundColor: spec.background,
-      margins: { top: 0, right: 0, bottom: 0, left: 0 },
-      guides: [],
-      elements,
-      // A sheet is a quarter of a poster, not a copy of it.
-      clipContent: true,
-    };
-  });
+  const page: Page = {
+    id: `page-${spec.id}`,
+    name: `${name} — ${Math.round(spec.canvas.widthMm)} × ${Math.round(spec.canvas.heightMm)} mm`,
+    width: geo.canvasWidth,
+    height: geo.canvasHeight,
+    orientation: geo.canvasWidth >= geo.canvasHeight ? 'landscape' : 'portrait',
+    backgroundColor: spec.background,
+    margins: { top: 0, right: 0, bottom: 0, left: 0 },
+    guides: [],
+    elements: tarpapelCanvasElements(spec),
+  };
 
   return {
     id: `proj-${spec.id}`,
-    name: `${spec.name.replace(/\s*\(.*\)$/, '')}.pub`,
-    pages,
+    name: `${name}.pub`,
+    pages: [page],
     activePageIndex: 0,
-    pageSizeName: spec.tiling.orientation === 'landscape' ? 'a4-landscape' : 'a4',
+    pageSizeName: 'custom',
     colorScheme: 'ocean-navy',
     masterPage: { elements: [], showOnAllPages: false },
   };

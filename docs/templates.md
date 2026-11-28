@@ -150,8 +150,13 @@ Two templates ship from it:
 | template | tiling | assembled | what it is |
 |---|---|---|---|
 | `champs-tarpapel-3x2` — Champs Reading Corner Banner | 3 × 2 A4 landscape | 871 × 410 mm | DepEd header strip, three lapped garlands, THE CHAMPS / READING CORNER word art, gold Basa Kasadya ribbon, both side badges in their own column |
-| `champs-tarpapel-tree` — Tree of Knowledge Tarpapel | 2 × 2 A4 portrait | 396 × 567 mm | one big cut-out tree with nine blank fruit to write words or names on; the headline is split `TREE OF` / `KNOWLEDGE` so the seam falls in the gap between the words; four editable subject tags, instruction strips and footer also split two-and-two. Hung alone |
-| `champs-wordwall-2x2` — Word Wall | 2 × 2 A4 portrait | 396 × 567 mm | twenty-four blank cards, 83 × 53 mm on paper, in four 2 × 3 blocks with both glue seams landing in the wide central gutters. `WORD` / `WALL` headline, subject line and instruction footer split at the seam |
+| `champs-tarpapel-tree` — Tree of Knowledge Tarpapel | 2 × 2 A4 portrait | one 410 × 584 mm page | one big cut-out tree with nine blank fruit to write words or names on; the headline is split `TREE OF` / `KNOWLEDGE` so the seam falls in the gap between the words; four editable subject tags, instruction strips and footer also split two-and-two. Hung alone |
+| `champs-wordwall-2x2` — Word Wall | 2 × 2 A4 portrait | one 410 × 584 mm page | twenty-four blank cards, 83 × 53 mm on paper, in four 2 × 3 blocks with both glue seams landing in the wide central gutters. `WORD` / `WALL` headline, subject line and instruction footer split at the seam |
+
+A tarpapel template opens as **one page the size of the assembled poster** — 410 × 584 mm for a 2 × 2.
+The sheets are a print-time idea, not a document one: opening four pages shows a quarter of the poster
+per page (and, untrimmed, four copies of it), while the gallery thumbnail shows a fragment. The
+Tarpaulin Printer tiles the page and already suggests the right grid from its size.
 
 The tree and the word wall used to be one template with a card grid above a mounted landscape print. They
 are two jobs: the tree is a **poster to hang alone**, the word wall is **furniture that cards hang on**.
@@ -231,13 +236,14 @@ avoid a strip running through it, and a cut trunk is a seam a teacher expects. A
 `/tmp`-style checks are not the guard — the check lives in the tarpapel test and fails the build if
 any text box intersects a seam band.
 
-## One sheet is a quarter, never a copy
+## One page, not four
 
-A tarpapel page is built the opposite way round from an ordinary page: it carries **every** element of
-the poster, shifted by that sheet's offset, and relies on the paper edge to trim the rest. That is what
-makes four pages out of one canvas — but only if the page actually trims. Left untrimmed, each page
-paints its neighbours' artwork over itself and the workarea shows the same poster several times over.
+The document a tarpapel template hands over is a single page of 1550 × 2208 px (410 × 584 mm) holding
+the whole poster. An earlier cut built one page per sheet, each carrying the whole canvas shifted by its
+offset; with the paper edge not trimming, every sheet painted its neighbours' artwork over itself and
+the workarea showed the same poster two, three, four times — which reads as "two identical tarpapels
+inside one template".
 
-So tarpapel pages carry `clipContent: true`, and the page canvas trims to the paper when it is set.
-Ordinary documents leave it off, because on a letter an element nudged past the edge should stay
-reachable. The tarpapel check asserts every sheet of every poster is trimmed.
+Pages can carry `clipContent`, and the canvas trims to the paper when they do, but no tarpapel needs it
+now: there is only ever one page. The check asserts a tarpapel project is exactly one page, and that
+the page is the size the grid adds up to.
