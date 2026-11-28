@@ -9,6 +9,10 @@ lerna-debug.log*
 
 node_modules
 dist
+
+# Raw art for the shipped asset pack (regenerate with `npm run pack:storybook`; the built WebPs
+# under public/asset-packs are what ships)
+.pack-src
 dist-ssr
 *.local
 

@@ -68,6 +68,8 @@ interface PublisherContextType {
   isBuildingBlocksModalOpen: boolean;
   isAIImageModalOpen: boolean;
   isStockArtPanelOpen: boolean;
+  /** The storybook asset-pack picker (built-in kit + imported .zip packs). */
+  isAssetPackPanelOpen: boolean;
   isCollageModalOpen: boolean;
   editingCollageState: {
     meta: import('../utils/borderArtStyles').CollageMeta;
@@ -132,6 +134,7 @@ interface PublisherContextType {
   setIsBuildingBlocksModalOpen: (open: boolean) => void;
   setIsAIImageModalOpen: (open: boolean) => void;
   setIsStockArtPanelOpen: (open: boolean) => void;
+  setIsAssetPackPanelOpen: (open: boolean) => void;
   setIsCollageModalOpen: (open: boolean) => void;
   openCollageEditor: (opts: {
     meta: import('../utils/borderArtStyles').CollageMeta;
@@ -650,6 +653,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [isBuildingBlocksModalOpen, setIsBuildingBlocksModalOpen] = useState(false);
   const [isAIImageModalOpen, setIsAIImageModalOpen] = useState(false);
   const [isStockArtPanelOpen, setIsStockArtPanelOpen] = useState(false);
+  const [isAssetPackPanelOpen, setIsAssetPackPanelOpen] = useState(false);
   const [isCollageModalOpen, setIsCollageModalOpenState] = useState(false);
   const [collageControlSection, setCollageControlSection] = useState<CollageControlSection | null>(
     null
@@ -2987,6 +2991,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         isBuildingBlocksModalOpen,
         isAIImageModalOpen,
         isStockArtPanelOpen,
+        isAssetPackPanelOpen,
         isCollageModalOpen,
         editingCollageState,
         isBrandBoardModalOpen,
@@ -3055,6 +3060,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setIsBuildingBlocksModalOpen,
         setIsAIImageModalOpen,
         setIsStockArtPanelOpen,
+        setIsAssetPackPanelOpen,
         setIsCollageModalOpen,
         openCollageEditor,
         replaceCollageGroup,

@@ -9,6 +9,7 @@ import { PageThumbnails } from './components/sidebar/PageThumbnails';
 import { CanvasArea } from './components/canvas/CanvasArea';
 import { PropertiesPanel } from './components/sidebar/PropertiesPanel';
 import { StockArtPanel } from './components/sidebar/StockArtPanel';
+import { AssetPackPanel } from './components/sidebar/AssetPackPanel';
 import { StatusBar } from './components/statusbar/StatusBar';
 import { CinematicSplashScreen } from './components/common/CinematicSplashScreen';
 // Heavy overlay dialogs are code-split so the initial bundle only ships the
@@ -44,9 +45,11 @@ export const AppContent: React.FC = () => {
     isLeftPanelOpen,
     isRightPanelOpen,
     isStockArtPanelOpen,
+    isAssetPackPanelOpen,
     setIsLeftPanelOpen,
     setIsRightPanelOpen,
     setIsStockArtPanelOpen,
+    setIsAssetPackPanelOpen,
     selectedElementIds,
     closeCollageControl,
     closeTextControl,
@@ -134,7 +137,8 @@ export const AppContent: React.FC = () => {
   }, [workspaceMode, setIsLeftPanelOpen, setIsRightPanelOpen]);
 
   const isNarrow = windowWidth < 1024;
-  const hasNarrowDrawerOpen = isNarrow && (isLeftPanelOpen || isRightPanelOpen || isStockArtPanelOpen);
+  const hasNarrowDrawerOpen =
+    isNarrow && (isLeftPanelOpen || isRightPanelOpen || isStockArtPanelOpen || isAssetPackPanelOpen);
 
   return (
     <div className="flex flex-col w-screen h-screen overflow-hidden bg-[#edf0f3] text-[#161a22] font-sans">
@@ -152,12 +156,14 @@ export const AppContent: React.FC = () => {
               setIsLeftPanelOpen(false);
               setIsRightPanelOpen(false);
               setIsStockArtPanelOpen(false);
+              setIsAssetPackPanelOpen(false);
             }}
             className="absolute inset-0 bg-[#15232d]/25 backdrop-blur-[1px] z-25 transition-opacity"
             aria-hidden="true"
           />
         )}
-        {workspaceMode !== 'designer' && <StockArtPanel />}
+        {workspaceMode !== 'designer' && !isAssetPackPanelOpen && <StockArtPanel />}
+        {workspaceMode !== 'designer' && isAssetPackPanelOpen && <AssetPackPanel />}
         <PropertiesPanel />
       </div>
 
