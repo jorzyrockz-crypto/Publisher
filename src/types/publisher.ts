@@ -52,7 +52,8 @@ export type WordArtStyle =
   | 'sticker-coral'
   | 'sticker-teal'
   // Flat ink on a painted highlight — the brush-swipe and pastel-pill poster looks.
-  | 'brush-highlight'
+  | 'brush-sunshine'
+  | 'brush-blush'
   | 'pill-highlight';
 
 export type BorderArtStyle =

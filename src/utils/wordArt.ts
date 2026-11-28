@@ -41,7 +41,8 @@ export const WORD_ART_STYLES: WordArtOption[] = [
   { id: 'sticker-coral', label: 'Warm Coral Sticker', className: 'wordart-sticker-coral' },
   { id: 'sticker-teal', label: 'Deep Teal Sticker', className: 'wordart-sticker-teal', dark: true },
   // Flat ink on a painted highlight — the brush-swipe and pastel-pill headline.
-  { id: 'brush-highlight', label: 'Painted Brush Highlight', className: 'wordart-brush-highlight' },
+  { id: 'brush-sunshine', label: 'Sunshine Brush Swipe', className: 'wordart-brush-sunshine' },
+  { id: 'brush-blush', label: 'Pastel Blush Ribbon', className: 'wordart-brush-blush' },
   { id: 'pill-highlight', label: 'Pastel Pill Highlight', className: 'wordart-pill-highlight' },
 ];
 
@@ -91,10 +92,20 @@ export interface WordArtExtrusion {
 }
 
 /**
- * A painted highlight behind the letters: the rough yellow brush swipe, or a pastel pill.
- * Both are geometry, not a background image, so the DOM and the canvas can share one path.
+ * A painted highlight behind the letters.
+ *
+ * The numbers are *padding*, in element pixels, and they are deliberately generous: a highlighter
+ * runs past the word, and a swipe that stops dead at the glyph box looks like a text background
+ * rather than paint. Geometry, not an image — the DOM and the exporter share one path.
  */
-export type WordArtBackdrop = 'yellow-brush' | 'pastel-pill';
+export interface WordArtBackdrop {
+  type: 'brush-swipe' | 'pastel-pill';
+  color: string;
+  /** How far the highlight runs past the glyph box, horizontally. */
+  paddingX?: number;
+  /** …and vertically. */
+  paddingY?: number;
+}
 
 export interface WordArtPaint {
   /** The style forces a heavier weight than the document's. */
@@ -121,40 +132,180 @@ export interface WordArtPaint {
   glints?: boolean;
   /** A painted highlight, drawn furthest back — behind every shadow. */
   backdrop?: WordArtBackdrop;
+  /**
+   * A default arc for the style, on the Curve control's scale (÷100). The element's own
+   * `textCurve` overrides it, so a template can arch one line without changing the style.
+   */
+  arc?: number;
+}
+
+/** The three passes that make a swipe look painted rather than drawn. */
+export const SWIPE_LAYERS: { dy: number; dh: number; alpha: number; tilt: number }[] = [
+  { dy: 0, dh: 0, alpha: 0.95, tilt: -0.012 },
+  { dy: -2, dh: -4, alpha: 0.75, tilt: 0.008 },
+  { dy: 3, dh: -6, alpha: 0.65, tilt: -0.005 },
+];
+
+/** One command of a path. Small on purpose: enough for a brush, portable to both painters. */
+export type WordArtPathCommand =
+  | { c: 'M'; x: number; y: number }
+  | { c: 'L'; x: number; y: number }
+  | { c: 'Q'; cx: number; cy: number; x: number; y: number };
+
+/**
+ * The swipe outline, centred on (0,0), as commands rather than an SVG string.
+ *
+ * Commands are the only description that both painters can execute exactly: the DOM joins them
+ * into a `d` attribute, the exporter traces them with `moveTo`/`lineTo`/`quadraticCurveTo`. An
+ * SVG string would force the canvas side to depend on `Path2D`, which is not global in every
+ * runtime — and without it, the highlight silently degrades to a rectangle.
+ */
+export function brushSwipeCommands(width: number, height: number): WordArtPathCommand[] {
+  const hw = width / 2;
+  const hh = height / 2;
+  // Bristle offsets, as a fraction of the stroke height. Fixed numbers, not `Math.random()`: the
+  // editor and the export must paint the identical shape, and a rerender must not twitch.
+  const top = [0.06, -0.1, 0.12, -0.02, 0.14, -0.08, 0.1, 0];
+  const bottom = [-0.08, 0.06, -0.14, 0.02, -0.1, 0.08, -0.04, 0];
+  const steps = top.length - 1;
+  const commands: WordArtPathCommand[] = [];
+
+  // The stroke starts a little inside the box and swells as it travels — the pressed start of a
+  // loaded brush, not a clipped rectangle edge.
+  commands.push({ c: 'M', x: -hw + width * 0.02, y: -hh + hh * top[0] });
+  for (let i = 1; i <= steps; i += 1) {
+    commands.push({
+      c: 'L',
+      x: -hw + (width * i) / steps,
+      y: -hh + hh * top[i],
+    });
+  }
+  // Right-hand tail: lifts up and thins out past the box, then hooks back.
+  commands.push({ c: 'L', x: hw + hh * 0.5, y: -hh * 0.5 });
+  commands.push({ c: 'L', x: hw + hh * 0.18, y: hh * 0.16 });
+  commands.push({ c: 'L', x: hw - width * 0.01, y: hh + hh * bottom[0] });
+  for (let i = 1; i <= steps; i += 1) {
+    commands.push({
+      c: 'L',
+      x: -hw + (width * (steps - i)) / steps,
+      y: hh + hh * bottom[i],
+    });
+  }
+  commands.push({ c: 'L', x: -hw - hh * 0.4, y: hh * 0.4 });
+  commands.push({ c: 'L', x: -hw - hh * 0.1, y: -hh * 0.2 });
+  return commands;
+}
+
+/** A pill (stadium) outline: straight runs with quarter-turn corners. */
+export function pillCommands(width: number, height: number): WordArtPathCommand[] {
+  const w = width / 2;
+  const h = height / 2;
+  const r = Math.max(1, Math.min(h, w));
+  return [
+    { c: 'M', x: -w + r, y: -h },
+    { c: 'L', x: w - r, y: -h },
+    { c: 'Q', cx: w, cy: -h, x: w, y: -h + r },
+    { c: 'L', x: w, y: h - r },
+    { c: 'Q', cx: w, cy: h, x: w - r, y: h },
+    { c: 'L', x: -w + r, y: h },
+    { c: 'Q', cx: -w, cy: h, x: -w, y: h - r },
+    { c: 'L', x: -w, y: -h + r },
+    { c: 'Q', cx: -w, cy: -h, x: -w + r, y: -h },
+  ];
+}
+
+/** The same commands as an SVG `d`, for the DOM layer. */
+export function pathCommandToSvg(commands: WordArtPathCommand[]): string {
+  const n = (value: number) => Math.round(value * 100) / 100;
+  return (
+    commands
+      .map((command) =>
+        command.c === 'Q'
+          ? `Q ${n(command.cx)} ${n(command.cy)} ${n(command.x)} ${n(command.y)}`
+          : `${command.c} ${n(command.x)} ${n(command.y)}`
+      )
+      .join(' ') + ' Z'
+  );
+}
+
+/** Convenience for the DOM and for tests. */
+export const brushSwipePath = (width: number, height: number) =>
+  pathCommandToSvg(brushSwipeCommands(width, height));
+
+export const pillPath = (width: number, height: number) =>
+  pathCommandToSvg(pillCommands(width, height));
+
+export interface WordArtBackdropLayer {
+  /** Path centred on (0,0), in the padded box's pixels. */
+  commands: WordArtPathCommand[];
+  /** The same path as an SVG `d`, so the DOM does not have to re-derive it. */
+  d: string;
+  dy: number;
+  tilt: number;
+  alpha: number;
 }
 
 /**
- * Backdrop geometry, in a 100×100 box stretched over the line box.
- *
- * A brush swipe is a band with a ragged top and two dry tails; a pill is a soft rounded bar. They
- * are *paths*, not images, which is the only way the DOM (SVG) and the exporter (Path2D) can paint
- * the identical highlight — a data-URI background in CSS and a hand-rolled rectangle on canvas
- * would disagree the first time the box changed shape.
+ * Everything a renderer needs to paint a style's highlight over a glyph box: the padded box, the
+ * fill, and one or three layers. Returns undefined when the style has no backdrop or no box.
  */
-export const WORD_ART_BACKDROPS: Record<
-  WordArtBackdrop,
-  { fill: string; path: string; /** vertical band inside the box, 0–1 */ top: number; bottom: number }
-> = {
-  'yellow-brush': {
-    fill: '#fde047',
-    // Ragged top edge, a belly, and a thin dry tail at the right — the "painted over the print" look.
-    path: 'M1.5 46 C12 40.5 26 44 38.5 41.5 C52 38.8 64 43 76 40.6 C86 38.7 93 41.4 98 39.6 L98.6 55 C90 61 80 57.5 70 60.5 C56 64.6 44 60.4 32 63.4 C21 66 11 62.6 2 66.4 L1.5 46 Z',
-    top: 0.32,
-    bottom: 0.72,
-  },
-  'pastel-pill': {
-    fill: '#e0e7ff',
-    // A rounded bar with a slight tilt, drawn as a path so both renderers agree on the corners.
-    path: 'M6 30 C6 24.5 10.5 20 16 20 L84 16.5 C89.5 16.2 94 20.6 94.3 26 L95.2 62 C95.4 67.5 91 72 85.5 72.3 L17 76.5 C11.5 76.8 7 72.4 6.8 67 L6 30 Z',
-    top: 0.14,
-    bottom: 0.66,
-  },
-};
-
-/** The backdrop for a style, ready for either renderer. */
-export function wordArtBackdrop(style?: WordArtStyle) {
+export function wordArtBackdropLayers(
+  style: WordArtStyle | undefined,
+  box: { x: number; y: number; width: number; height: number } | undefined
+):
+  | {
+      fill: string;
+      box: { x: number; y: number; width: number; height: number };
+      layers: WordArtBackdropLayer[];
+    }
+  | undefined {
   const backdrop = wordArtPaint(style)?.backdrop;
-  return backdrop ? { id: backdrop, ...WORD_ART_BACKDROPS[backdrop] } : undefined;
+  if (!backdrop || !box) return undefined;
+
+  const padX = backdrop.paddingX ?? 24;
+  const padY = backdrop.paddingY ?? 10;
+  const padded = {
+    x: box.x - padX,
+    y: box.y - padY,
+    width: Math.max(2, box.width + padX * 2),
+    height: Math.max(2, box.height + padY * 2),
+  };
+
+  if (backdrop.type === 'pastel-pill') {
+    return {
+      fill: backdrop.color,
+      box: padded,
+      layers: [
+        {
+          commands: pillCommands(padded.width, padded.height),
+          d: pillPath(padded.width, padded.height),
+          dy: 0,
+          tilt: 0,
+          alpha: 1,
+        },
+      ],
+    };
+  }
+
+  return {
+    fill: backdrop.color,
+    box: padded,
+    layers: SWIPE_LAYERS.map((layer) => {
+      const commands = brushSwipeCommands(padded.width, padded.height + layer.dh);
+      return {
+        commands,
+        d: pathCommandToSvg(commands),
+        dy: layer.dy,
+        tilt: layer.tilt,
+        alpha: layer.alpha,
+      };
+    }),
+  };
+}
+
+/** Whether a style paints a highlight at all — used by the composition pass and the DOM. */
+export function wordArtHasBackdrop(style?: WordArtStyle): boolean {
+  return Boolean(wordArtPaint(style)?.backdrop);
 }
 
 const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
@@ -514,18 +665,40 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     heavyStroke: true,
     shadows: [],
   },
-  // Navy ink on a yellow paint swipe: the highlight does the shouting, the type stays calm.
-  'brush-highlight': {
+  // Navy ink on a sunshine swipe: the highlight does the shouting, the type stays calm.
+  'brush-sunshine': {
     weight: '900',
-    fill: '#0f172a',
-    backdrop: 'yellow-brush',
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#1e3a8a' },
+        { offset: 1, color: '#0f172a' },
+      ],
+    },
+    backdrop: { type: 'brush-swipe', color: '#facc15', paddingX: 28, paddingY: 12 },
     shadows: [],
   },
-  // The quieter sibling: indigo ink on a pastel pill, for agendas and quote cards.
+  // The softer sibling, for teacher-wellness and quote cards.
+  'brush-blush': {
+    weight: '900',
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#be123c' },
+        { offset: 1, color: '#881337' },
+      ],
+    },
+    backdrop: { type: 'brush-swipe', color: '#fbcfe8', paddingX: 24, paddingY: 10 },
+    // A blush ribbon reads as a banner, so the style arches slightly; type it flat and it looks
+    // like a highlight floating off the word.
+    arc: 0.12,
+    shadows: [],
+  },
+  // Indigo ink on a pastel pill: the same idea, tidier, for agendas.
   'pill-highlight': {
     weight: '900',
     fill: '#1e1b4b',
-    backdrop: 'pastel-pill',
+    backdrop: { type: 'pastel-pill', color: '#e0e7ff', paddingX: 22, paddingY: 10 },
     shadows: [],
   },
 };
@@ -558,6 +731,12 @@ export interface WordArtSpec {
   shadows: WordArtShadow[];
   /** A painted highlight behind the letters, if the style asks for one. */
   backdrop?: WordArtBackdrop;
+  /**
+   * Style-level arc, in the same units as the Curve control (0–100) divided by 100: `0.15` is the
+   * gentle upward smile a banner header wants, `-0.15` the trough. An element's own `textCurve`
+   * always wins — see `wordArtCurve`.
+   */
+  arc?: number;
 }
 
 export function wordArtSpec(style?: WordArtStyle): WordArtSpec | undefined {
@@ -579,6 +758,7 @@ export function wordArtSpec(style?: WordArtStyle): WordArtSpec | undefined {
     castShadow: paint.castShadow,
     shadows: paint.shadows,
     backdrop: paint.backdrop,
+    arc: paint.arc,
   };
 }
 
@@ -616,7 +796,7 @@ export function buildWordArtCssRule(style: WordArtStyle, className = `wordart-${
   if (paint.backdrop) {
     // The DOM paints the swipe as an SVG layer (see ElementRenderer); the class only carries the
     // colour so a preview tile shows the highlight without mounting the SVG.
-    lines.push(`  --wordart-backdrop: ${WORD_ART_BACKDROPS[paint.backdrop].fill};`);
+    lines.push(`  --wordart-backdrop: ${paint.backdrop.color};`);
   }
   const chain = wordArtShadowChain(paint);
   if (chain.length) {
@@ -770,6 +950,13 @@ export function wordArtSelfContained(style?: WordArtStyle): boolean {
     return 0.2126 * r + 0.7152 * g + 0.0722 * b;
   })();
   return paint.stroke.width >= 4 && lum > 0.8;
+}
+
+/** The curve to lay this element out with: the element's own, else the style's `arc`. */
+export function wordArtCurve(style: WordArtStyle | undefined, elementCurve?: number): number {
+  if (elementCurve !== undefined && elementCurve !== 0) return elementCurve;
+  const arc = wordArtPaint(style)?.arc ?? 0;
+  return Math.abs(arc) < 0.001 ? 0 : arc * 100;
 }
 
 /** True when the style only looks right in italic. */

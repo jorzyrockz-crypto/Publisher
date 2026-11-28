@@ -228,6 +228,29 @@ export interface GlyphBox {
  * inline box of the text, so both renderers have to measure the same rectangle
  * or a horizon stop lands at a different height in the editor than in the PNG.
  */
+/**
+ * The glyph box of curved text, fitted to the letters.
+ *
+ * A curve has no lines, so `lineGlyphBoxes` returns nothing and the caller used to fall back to
+ * the whole element box. For a gradient that is merely loose; for a painted highlight it is wrong —
+ * the swipe then fills the frame instead of hugging the word, and reads as a coloured panel.
+ */
+export function curveGlyphBox(curve: { chars: CurveChar[] }, top = 0): GlyphBox | undefined {
+  const chars = curve.chars.filter((char) => char.text.trim());
+  if (!chars.length) return undefined;
+  let x0 = Infinity;
+  let x1 = -Infinity;
+  let y0 = Infinity;
+  let y1 = -Infinity;
+  for (const char of chars) {
+    x0 = Math.min(x0, char.x - char.width / 2);
+    x1 = Math.max(x1, char.x + char.width / 2);
+    y0 = Math.min(y0, char.y - char.fontSize / 2);
+    y1 = Math.max(y1, char.y + char.fontSize / 2);
+  }
+  return { x: x0, y: y0 + top, width: x1 - x0, height: y1 - y0 };
+}
+
 export function lineGlyphBoxes(layout: TextLayoutResult, top: number): GlyphBox[] {
   return layout.lines.map((line) => {
     let x0 = Infinity;

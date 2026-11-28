@@ -14,11 +14,17 @@ import { Scissors, Quote, Award, QrCode, ImagePlus, Upload } from 'lucide-react'
 import { buildWavyRectPath } from '../../utils/shapePaths';
 import { buildShapePatternDataUri } from '../../utils/patternGenerator';
 import { PATTERN_CATALOG } from '../../utils/patternGenerator';
-import { layoutText, lineGlyphBoxes, verticalOffset } from '../../utils/textLayout';
+import { curveGlyphBox, layoutText, lineGlyphBoxes, verticalOffset } from '../../utils/textLayout';
 import type { GlyphBox } from '../../utils/textLayout';
 import { buildTextEffectPainter } from '../../utils/textEffects';
 import { imageContentRect, imageFit, imageMaskClip } from '../../utils/imageFrame';
-import { glintStarPath, wordArtBackdrop, wordArtCss, wordArtGlints } from '../../utils/wordArt';
+import {
+  glintStarPath,
+  wordArtBackdropLayers,
+  wordArtCss,
+  wordArtCurve,
+  wordArtGlints,
+} from '../../utils/wordArt';
 import { useImageAspect } from '../../hooks/useImageAspect';
 import { elementClipPath } from '../../utils/shapeClip';
 
@@ -147,7 +153,16 @@ const TextRenderer: React.FC<{
     [element, resolvedText]
   );
 
-  const layout = useMemo(() => layoutText(layoutElement), [layoutElement]);
+  // A style can carry an arc (0.15 = a gentle smile); the element's own Curve control still wins.
+  const layoutForCurve = useMemo(() => {
+    const styleCurve = layoutElement.isWordArt
+      ? wordArtCurve(layoutElement.wordArtStyle, layoutElement.textCurve)
+      : (layoutElement.textCurve ?? 0);
+    return styleCurve === (layoutElement.textCurve ?? 0)
+      ? layoutElement
+      : { ...layoutElement, textCurve: styleCurve };
+  }, [layoutElement]);
+  const layout = useMemo(() => layoutText(layoutForCurve), [layoutForCurve]);
   const offset = useMemo(() => verticalOffset(layout, layoutElement), [layout, layoutElement]);
 
   // Keyboard input is captured on every keystroke so nothing is lost if the
@@ -209,7 +224,8 @@ const TextRenderer: React.FC<{
   const waCss = wordArtCss(element.isWordArt ? element.wordArtStyle : undefined);
   // The painted highlight: one SVG per line box, behind every glyph layer, drawn from the same
   // path the exporter fills — so the swipe sits under the same letters in the editor and the PDF.
-  const waBackdrop = element.isWordArt ? wordArtBackdrop(element.wordArtStyle) : undefined;
+  const waBackdrop = (box: GlyphBox) =>
+    element.isWordArt ? wordArtBackdropLayers(element.wordArtStyle, box) : undefined;
   // WordArt layers are a drop-shadow chain: `text-shadow` would bleed through
   // the clipped gradient fill and turn the metal muddy.
   const waFilter = waCss.filter;
@@ -325,7 +341,9 @@ const TextRenderer: React.FC<{
   // One box per line: the gradient, the sparkles and the painted backdrop are clipped/placed by
   // it. Before the font has been measured the list can come back empty — falling back to the whole
   // element keeps the first paint (and any headless render) from reading an undefined box.
-  const measuredBoxes: GlyphBox[] = lineGlyphBoxes(layout, offset);
+  const measuredBoxes: GlyphBox[] = layout.curve
+    ? [curveGlyphBox(layout.curve, offset) ?? { x: 0, y: offset, width: element.width, height: element.height }]
+    : lineGlyphBoxes(layout, offset);
   const boxes: GlyphBox[] = measuredBoxes.length
     ? measuredBoxes
     : [{ x: 0, y: 0, width: element.width, height: element.height }];
@@ -424,45 +442,69 @@ const TextRenderer: React.FC<{
     );
   };
 
+  // A painted highlight has to run past the glyphs to look like paint, and past the element box
+  // too. The type itself must still be clipped (a run that overflows the box cannot bleed onto the
+  // page), so the swipes sit on the unclipped outer box and the glyphs keep a clipped inner one.
+  // Same coordinates, same paths as the exporter — only the clipping differs from before.
   return (
     <div
       key="text-view"
-      ref={viewRef}
       style={{
         ...boxStyle,
         width: '100%',
         height: '100%',
         position: 'relative',
-        overflow: 'hidden',
-        fontFamily: element.fontFamily,
-        fontWeight: (waCss.fontWeight ?? element.fontWeight) as React.CSSProperties['fontWeight'],
-        // style-level italic (synthwave, liquid metal) slants the type too
-        fontStyle: waCss.fontStyle ?? element.fontStyle,
-        fontKerning: element.kerning === false ? 'none' : 'normal',
-        fontVariantLigatures: element.ligatures ? 'common-ligatures' : 'none',
-        userSelect: 'none',
       }}
     >
-      {waBackdrop &&
-        boxes.map((box, index) => (
+      {boxes.map((box, index) => {
+        const backdrop = waBackdrop(box);
+        if (!backdrop) return null;
+        const { box: padded, layers, fill } = backdrop;
+        return (
           <svg
             key={`wa-backdrop-${index}`}
             aria-hidden
-            viewBox="0 0 100 100"
-            preserveAspectRatio="none"
+            viewBox={`0 0 ${padded.width} ${padded.height}`}
             style={{
               position: 'absolute',
-              left: box.x,
-              top: box.y + box.height * waBackdrop.top,
-              width: box.width,
-              height: Math.max(1, box.height * (waBackdrop.bottom - waBackdrop.top)),
+              left: padded.x,
+              top: padded.y,
+              width: padded.width,
+              height: padded.height,
+              overflow: 'visible',
               pointerEvents: 'none',
             }}
           >
-            <path d={waBackdrop.path} fill={waBackdrop.fill} />
+            {layers.map((layer, layerIndex) => (
+              <path
+                key={`wa-backdrop-${index}-${layerIndex}`}
+                d={layer.d}
+                fill={fill}
+                fillOpacity={layer.alpha}
+                transform={`translate(${padded.width / 2} ${padded.height / 2 + layer.dy}) rotate(${
+                  (layer.tilt * 180) / Math.PI
+                })`}
+              />
+            ))}
           </svg>
-        ))}
+        );
+      })}
 
+      <div
+        ref={viewRef}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          overflow: 'hidden',
+          fontFamily: element.fontFamily,
+          fontWeight: (waCss.fontWeight ?? element.fontWeight) as React.CSSProperties['fontWeight'],
+          // style-level italic (synthwave, liquid metal) slants the type too
+          fontStyle: waCss.fontStyle ?? element.fontStyle,
+          fontKerning: element.kerning === false ? 'none' : 'normal',
+          fontVariantLigatures: element.ligatures ? 'common-ligatures' : 'none',
+          userSelect: 'none',
+        }}
+      >
       {layout.dropCap && (
         <span
           style={{
@@ -547,6 +589,7 @@ const TextRenderer: React.FC<{
           {renderGlyphs(slice.color, `slice-${sliceIndex}`, false)}
         </div>
       ))}
+      </div>
     </div>
   );
 };

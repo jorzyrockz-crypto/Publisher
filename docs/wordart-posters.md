@@ -15,7 +15,8 @@ Six styles close that gap, and two small features make them behave.
 | `sticker-forest` | Fresh Leaf Sticker | mint → green → forest, 7px border |
 | `sticker-coral` | Warm Coral Sticker | amber → orange → red, 7px border |
 | `sticker-teal` | Deep Teal Sticker | aqua → teal → deep teal, 6px border |
-| `brush-highlight` | Painted Brush Highlight | navy ink on a rough yellow paint swipe |
+| `brush-sunshine` | Sunshine Brush Swipe | navy → ink gradient on a ragged `#facc15` swipe |
+| `brush-blush` | Pastel Blush Ribbon | rose → wine gradient on a `#fbcfe8` swipe, arched 0.12 |
 | `pill-highlight` | Pastel Pill Highlight | indigo ink on a pastel pill |
 
 All six go through the existing `PAINT` table, so the gallery, the inspector, the DOM painter and
@@ -41,15 +42,67 @@ The canvas additionally keeps `lineJoin = 'round'`, which it already had.
 
 ### Backdrops are geometry, not an image
 
-`WordArtPaint.backdrop: 'yellow-brush' | 'pastel-pill'` adds a painted highlight behind the letters.
-Both are described once, as a path in a 100×100 box (`WORD_ART_BACKDROPS` in `src/utils/wordArt.ts`):
+`WordArtPaint.backdrop` is an object, not a choice of two hardcoded looks:
 
-- **canvas** fills the path with `Path2D`, scaled to the line's glyph box;
-- **DOM** renders the same `d` inside an `<svg preserveAspectRatio="none">` sized to that box.
+```ts
+interface WordArtBackdrop {
+  type: 'brush-swipe' | 'pastel-pill';
+  color: string;
+  paddingX?: number; // px the highlight runs past the glyph box, default 24
+  paddingY?: number; // default 10
+}
+```
 
-One path, two painters. A data-URI background in CSS and a hand-rolled rectangle on canvas would
-disagree the moment the box changed shape — which is exactly the drift this codebase already avoids
-elsewhere.
+`wordArtBackdropLayers(style, box)` turns that into a padded box, a fill, and one to three layers —
+and those layers are *path commands*, not an SVG string or a canvas call:
+
+```ts
+type WordArtPathCommand =
+  | { c: 'M'; x: number; y: number }
+  | { c: 'L'; x: number; y: number }
+  | { c: 'Q'; cx: number; cy: number; x: number; y: number };
+```
+
+- the **exporter** traces them with `moveTo`/`lineTo`/`quadraticCurveTo` (`drawBrushBackdrop`);
+- the **DOM** joins them into a `d` attribute (`pathCommandToSvg`), one `<path>` per layer.
+
+A string path would have forced the canvas side to depend on `Path2D`, which is not global in every
+runtime — and without it the highlight silently degraded to a rectangle. That is not hypothetical:
+the first build of this feature exported a flat band while the editor showed a brush. Commands are
+one description the two painters execute identically, so the preview and the PDF cannot drift.
+
+**The swipe is three passes.** `SWIPE_LAYERS` paints the same ragged outline three times: full
+strength, then two lighter, shorter, tilted copies (`dy 0/-2/+3`, `dh 0/-4/-6`, α .95/.75/.65,
+tilt ∓0.012). Overlapping translucent passes give the dry-brush tooth that one flat shape cannot.
+The bristle offsets are fixed fractions of the stroke height, not `Math.random()` — a rerender must
+not twitch, and the editor and the export must agree glyph for glyph. The stroke starts slightly
+inside the box, swells along the word, and lifts off at both ends instead of ending on a cut edge.
+
+**The swipe has to be allowed out of the box.** The DOM text view clips its glyphs
+(`overflow: hidden`) so an overflowing run cannot bleed onto the page — which also clipped the
+highlight's padding, leaving the editor showing a band that stopped at the box while the PDF showed
+paint running past it. The highlight now lives on an unclipped shell and the glyphs keep a clipped
+inner box; the two renderers therefore agree on where the paint goes, down to the tail.
+
+**One box to hug the word.** Curved text has no lines, so `lineGlyphBoxes` returns nothing and the
+caller fell back to the whole element box. For a gradient that is loose; for a highlight it is
+wrong — a 690×130 frame turned a swipe into a coloured panel. `curveGlyphBox` fits the arc's actual
+glyphs (their advances and font sizes), and both painters use it, so an arched word gets an arched
+word's highlight.
+
+**The pill is the same machinery**, `pillCommands()`: a stadium with quarter-turn quadratics, so it
+needs no `roundRect` and no CSS `border-radius`. (Typography rule from the earlier spec still applies:
+the highlight must never be a `border-radius` blob, because that is the one shape the canvas cannot
+reproduce from a box.)
+
+### Arched type, from the style or from the element
+
+`WordArtPaint.arc` (and therefore `WordArtSpec.arc`) is an arc on the Curve slider's scale, ÷100:
+`0.15` is the gentle upward smile a banner header wants, `-0.15` the trough. `wordArtCurve(style,
+elementCurve)` resolves it — **the element's own `textCurve` always wins**, so a template can arch
+one line without forking the style, and nobody has to learn a second control. Both painters lay the
+text out through that resolved value, so a style-carried arc arches in the editor and in the export.
+`brush-blush` ships with `arc: 0.12`; the wellness-week HEALTH line keeps its explicit `textCurve: 14`.
 
 ## Arched type already existed — and was broken in export
 

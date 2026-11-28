@@ -7,7 +7,7 @@ import type {
 import type { TemplateCategory } from "../constants/templates";
 import { artworkFor, isTypeOnlyCategory } from "../constants/generatedArtwork";
 import { contrastRatio } from "./documentPalette";
-import { wordArtBackdrop, wordArtSelfContained } from "./wordArt";
+import { wordArtHasBackdrop, wordArtSelfContained } from "./wordArt";
 import type { WordArtStyle } from "../types/publisher";
 
 /**
@@ -289,7 +289,7 @@ function isComposable(page: Page): boolean {
     wordArt.some(
       (el) =>
         wordArtSelfContained(el.wordArtStyle) ||
-        Boolean(wordArtBackdrop(el.wordArtStyle)),
+        wordArtHasBackdrop(el.wordArtStyle),
     )
   )
     return false;

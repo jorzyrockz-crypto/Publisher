@@ -4,7 +4,7 @@ import type { TemplateDefinition } from './templates';
  * Poster-style WordArt, on a page.
  *
  * The sticker styles (`sticker-royal`, `sticker-forest`, `sticker-coral`, `sticker-teal`) and the
- * painted highlight (`brush-highlight`) are only convincing in context: a fat white die-cut border
+ * painted highlight (`brush-sunshine`) are only convincing in context: a fat white die-cut border
  * is a lie on a white page and a rescue on a busy one. So this template builds the page they were
  * drawn for — foliage, a photo, and four sticker words over the top, with the title on a brush
  * swipe and a gentle arch on the middle line.
@@ -161,7 +161,7 @@ export const WORDART_POSTER_TEMPLATES: TemplateDefinition[] = [
               text: 'My Feelings Matter',
               fontSize: 62,
               color: '#0f172a',
-              wordArtStyle: 'brush-highlight',
+              wordArtStyle: 'brush-sunshine',
             },
             // The detail line, in plain type: stickers shout, the schedule informs.
             {

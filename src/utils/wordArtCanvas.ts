@@ -1,4 +1,11 @@
-import { glintStarPoints, lerpHex, wordArtBackdrop, wordArtGlints, wordArtRimWidth } from './wordArt';
+import {
+  glintStarPoints,
+  lerpHex,
+  wordArtBackdropLayers,
+  wordArtGlints,
+  wordArtRimWidth,
+} from './wordArt';
+import type { WordArtStyle } from '../types/publisher';
 import type { WordArtGlint, WordArtSpec } from './wordArt';
 
 /**
@@ -109,6 +116,49 @@ export function createAngledGradient(
 }
 
 /**
+ * The painted highlight: one path per pass, the same paths the DOM fills.
+ *
+ * Three offset, tilted layers with ragged edges read as a brush; a single rounded bar reads as a
+ * text background. `Path2D` is used when the environment has it so the outline is *the same shape*
+ * the SVG layer draws; without it we fall back to a plain band rather than throwing.
+ */
+export function drawBrushBackdrop(
+  ctx: CanvasRenderingContext2D,
+  box: { x: number; y: number; width: number; height: number },
+  style: WordArtStyle | undefined,
+  scale = 1
+): void {
+  const backdrop = wordArtBackdropLayers(style, box);
+  if (!backdrop) return;
+  const { box: padded, layers, fill } = backdrop;
+  const cx = padded.x + padded.width / 2;
+  const cy = padded.y + padded.height / 2;
+
+  for (const layer of layers) {
+    ctx.save();
+    ctx.globalAlpha = layer.alpha;
+    ctx.translate(cx, cy + layer.dy * scale);
+    if (layer.tilt) ctx.rotate(layer.tilt);
+    ctx.fillStyle = fill;
+    ctx.beginPath();
+    let started = false;
+    for (const command of layer.commands) {
+      if (command.c === 'M') {
+        ctx.moveTo(command.x, command.y);
+        started = true;
+      } else if (command.c === 'L' && started) {
+        ctx.lineTo(command.x, command.y);
+      } else if (command.c === 'Q' && started) {
+        ctx.quadraticCurveTo(command.cx, command.cy, command.x, command.y);
+      }
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+/**
  * Renders one line of WordArt with the same paint order the CSS uses:
  *
  *   bloom → cast shadow → authored shadows → extrusion → rim stroke → fill
@@ -155,28 +205,8 @@ export function renderWordArtCanvas(
   ctx.lineCap = 'round';
 
   // 0. The painted highlight goes down first — under every shadow, because it is ink on the page,
-  // not part of the lettering. Path2D is used when the environment has it so the outline matches
-  // the SVG the DOM paints; the fallback keeps old browsers and node from throwing.
-  const backdrop = wordArtBackdrop(spec.id);
-  if (backdrop) {
-    const { box } = line;
-    const band = {
-      x: box.x,
-      y: box.y + box.height * backdrop.top,
-      width: box.width,
-      height: box.height * (backdrop.bottom - backdrop.top),
-    };
-    ctx.save();
-    ctx.fillStyle = backdrop.fill;
-    ctx.translate(band.x, band.y);
-    ctx.scale(band.width / 100, band.height / 100);
-    if (typeof Path2D === 'function') {
-      ctx.fill(new Path2D(backdrop.path));
-    } else {
-      ctx.fillRect(0, 0, 100, 100);
-    }
-    ctx.restore();
-  }
+  // not part of the lettering.
+  drawBrushBackdrop(ctx, line.box, spec.id, scale);
 
   const rimWidth = wordArtRimWidth(spec) * RIM_MULTIPLIER * scale;
   const gradient = createAngledGradient(ctx, spec, line.box);

@@ -20,7 +20,8 @@ import { FloatingDropdown } from '../common/FloatingDropdown';
 import { ShapePreviewIcon } from '../common/ShapePreviewIcon';
 import { SHAPE_CATALOG } from '../../utils/shapePaths';
 import { imageFit, panRoom } from '../../utils/imageFrame';
-import { wordArtPaint, wordArtPickerOptions } from '../../utils/wordArt';
+import { wordArtCurve, wordArtPaint, wordArtPickerOptions } from '../../utils/wordArt';
+import type { WordArtStyle } from '../../types/publisher';
 import { useImageAspect } from '../../hooks/useImageAspect';
 import {
   PATTERN_CATALOG,
@@ -102,6 +103,17 @@ import {
  * where it is larger than its frame, so an axis with no slack is shown as
  * unavailable instead of silently doing nothing.
  */
+
+/** The curve that is actually painted: the element's own, else the WordArt style's `arc`. */
+const effectiveTextCurve = (element: {
+  isWordArt?: boolean;
+  wordArtStyle?: WordArtStyle;
+  textCurve?: number;
+}) =>
+  element.isWordArt
+    ? wordArtCurve(element.wordArtStyle, element.textCurve)
+    : (element.textCurve ?? 0);
+
 const PanAxes: React.FC<{
   element: ImageElement;
   onChange: (patch: Partial<ImageElement>) => void;
@@ -2327,7 +2339,7 @@ export const PropertiesPanel: React.FC = () => {
                         Curve
                       </label>
                       <span className="font-mono text-[10px] text-slate-500">
-                        {textEl.textCurve ?? 0}
+                        {effectiveTextCurve(textEl)}
                       </span>
                     </div>
                     <input
@@ -2335,7 +2347,11 @@ export const PropertiesPanel: React.FC = () => {
                       min={-100}
                       max={100}
                       step={5}
-                      value={textEl.textCurve ?? 0}
+                      // A WordArt style can carry its own arc. Reading the raw element value here
+                      // would claim "0" over type that is visibly arched, so the control always
+                      // shows the curve that is painted; touching it writes an explicit curve,
+                      // which then wins over the style.
+                      value={effectiveTextCurve(textEl)}
                       onChange={(e) =>
                         updateElement(textEl.id, { textCurve: Number(e.target.value) })
                       }
@@ -2348,7 +2364,7 @@ export const PropertiesPanel: React.FC = () => {
                           type="button"
                           onClick={() => updateElement(textEl.id, { textCurve: preset.value })}
                           className={`py-1 rounded-lg text-[9.5px] font-bold border transition ${
-                            (textEl.textCurve ?? 0) === preset.value
+                            effectiveTextCurve(textEl) === preset.value
                               ? 'bg-white border-[#b4a4f4] text-[#5c4bb8] shadow-xs'
                               : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-[#c9bdf7]'
                           }`}
