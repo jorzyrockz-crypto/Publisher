@@ -105,6 +105,8 @@ interface UnifiedStockItem {
   isSvg: boolean;
   width: number;
   height: number;
+  /** A built-in ground: placed at the page's own size, behind everything already on it. */
+  builtinPage?: boolean;
   rawBuiltinSrc?: string;
   rawClipartFree?: ClipartFreeItem;
   rawIconify?: IconifyItem;
@@ -725,8 +727,12 @@ export const StockArtPanel: React.FC<{ embedded?: boolean }> = ({ embedded = fal
           title: g.name,
           thumbUrl: g.src,
           isSvg: g.src.startsWith('data:image/svg+xml'),
-          width: 200,
-          height: 200,
+          // Built-ins are drawn at their own size (or 200×200 for the inline SVGs, which carry
+          // no natural size); the certificate assets are 1600×1200 grounds and 10:1 dividers,
+          // and both ratios have to survive into the insert.
+          width: g.width ?? 200,
+          height: g.height ?? 200,
+          builtinPage: g.insertAs === 'page',
           rawBuiltinSrc: g.src,
         }))
       );
@@ -1159,16 +1165,26 @@ export const StockArtPanel: React.FC<{ embedded?: boolean }> = ({ embedded = fal
             ? 280
             : 220;
       const ratio = item.width && item.height ? item.width / item.height : 1;
-      const width = Math.max(48, ratio >= 1 ? maxDim : Math.round(maxDim * ratio));
-      const height = Math.max(48, ratio >= 1 ? Math.round(maxDim / ratio) : maxDim);
+      // A ground (certificate paper, a printed border) is the page, not a picture on it: it
+      // lands at 0,0 at page size so the very next thing typed sits on it correctly.
+      const asPage = item.builtinPage === true;
+      const width = asPage
+        ? activePage.width
+        : Math.max(48, ratio >= 1 ? maxDim : Math.round(maxDim * ratio));
+      const height = asPage
+        ? activePage.height
+        : Math.max(48, ratio >= 1 ? Math.round(maxDim / ratio) : maxDim);
 
       addImage(dataUrl, {
         name: item.title.slice(0, 32),
         width,
         height,
-        x: Math.round((activePage.width - width) / 2),
-        y: Math.round((activePage.height - height) / 2),
-        objectFit: item.isSvg || asSticker ? 'contain' : 'cover',
+        x: asPage ? 0 : Math.round((activePage.width - width) / 2),
+        y: asPage ? 0 : Math.round((activePage.height - height) / 2),
+        // Behind the page's content, not on top of it — and only for grounds, so ordinary stock
+        // art keeps the default stacking.
+        ...(asPage ? { zIndex: 1, aspectRatioLocked: false } : {}),
+        objectFit: asPage ? 'fill' : item.isSvg || asSticker ? 'contain' : 'cover',
         // Stock art is transparent clip art: any outline here reads as a box
         // around the drawing, so never frame it on insert.
         borderWidth: 0,

@@ -223,6 +223,42 @@ paper tone into `fillColor` fixes that one shape, but the page's own pattern is 
 model already has: it renders in the canvas, the gallery preview and the rasteriser, it sits behind
 every element by definition, and it cannot be misread as ink.
 
+## The drawn asset library (`public/assets/certificates/`)
+
+Fifteen pieces of certificate art live beside the templates, drawn once so the six certificates can
+point at them instead of restyling a rectangle:
+
+| file | size | what it is |
+|---|---|---|
+| `cert-bg-parchment-guilloche.webp` | 1600×1200, opaque | ivory parchment, faint gold guilloché eased out of the type zone |
+| `cert-bg-modern-blue-geo.webp` | 1600×1200, opaque | white sheet, royal/sky-blue facets down both edges |
+| `cert-bg-k3-pastel-sky.webp` | 1600×1200, opaque | cream-to-sky wash with clouds and stars around the border only |
+| `cert-bg-maroon-heritage.webp` | 1600×1200, opaque | cream paper, faint hablon geometry in burgundy and gold |
+| `cert-border-royal-gold.png` | 1600×1200, transparent | navy + gold double filigree, laurel corners |
+| `cert-border-k3-crayon-stars.png` | 1600×1200, transparent | scalloped rainbow edge, hand-drawn stars and confetti |
+| `cert-border-emerald-modern.png` | 1600×1200, transparent | emerald + champagne corner brackets |
+| `cert-line-blue-ribbon.png`, `cert-line-k3-stars.png` | 1200×120, transparent | blue double hairline with gold ends, pastel dots with three stars |
+
+The seals and K-3 stickers (`cert-seal-*`, `cert-stk-*`, 512×512) are the next batch in the same
+folder and register through `stickerLibrary.ts`, so a certificate can carry one the way it carries
+`stk-gold-seal` today.
+
+**Grounds insert as the page.** `SampleGraphic` gained `width`, `height` and `insertAs: 'page'`.
+A ground is placed at 0,0 at the page's own size, `objectFit: 'fill'`, `zIndex: 1`, ratio unlocked —
+a 1600×1200 certificate background that arrives as a 220×165 chip in the middle of the sheet has to
+be resized by hand before it is worth anything. Dividers keep their 10:1 ratio but insert small,
+because a rule is something you place under a line of type, not a ground.
+
+**How the cut-outs are made.** The art is generated on white, then matted: a flood from the image
+border clears the outside, frames also open the white their border encloses (the gap inside a double
+rule, the pockets between laurel leaves) so nothing reads as a white patch on cream paper, and the
+result is trimmed to its ink, given 1.2% transparent breathing room and scaled to its canvas.
+Backgrounds take the opposite treatment: the outer 3% comes off (the generator likes to draw a sheet
+on a desk, shadow included) and the middle is eased toward the paper tone so a watermark medallion
+never fights the name printed over it. The matte is a probe, not product code — the shipped files
+are the deliverable, and `check:certs` asserts every one of them resolves, is the size it claims, and
+carries an alpha channel where it must.
+
 ## Three places the passes fought a certificate
 
 The certificates were fixed in place, but three behaviours in the pipeline had to be corrected —
@@ -277,11 +313,13 @@ past the bottom margin is not spread at all.
 - Every page was rasterised (Pillow, DejaVu) and inspected page by page: the veils, the composed
   posters and invitations, and the pages the guard left alone all read correctly. The renderer
   lives outside the repo (it is a probe, not product code).
-- `npm run check:certs` — 965 assertions over the six certificates: family is one the app loads,
+- `npm run check:certs` — 1041 assertions over the six certificates and their art: family is one the app loads,
   no typed-in signature, a rule at 1.5px under every name, the requested WordArt style and face on
   every title, logo slots still empty, QR blocks holding a URL, every non-WordArt colour clearing
   4.5:1 (3:1 at display sizes) against the shape actually behind it, and both pipeline stages
-  leaving the geometry and the palette untouched.
+  leaving the geometry and the palette untouched; and, for every registered certificate asset, that
+  the file exists, is the size it declares, is under the weight budget, and carries alpha where it
+  must.
 
 ## The seam rule
 

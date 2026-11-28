@@ -13,6 +13,7 @@
  *
  *   npm run check:certs
  */
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { createServer } from 'vite';
 
 const server = await createServer({
@@ -30,6 +31,7 @@ const { polishProject, polishPage, placeArtwork, TEMPLATE_POLISH_STATS } = await
   '/src/utils/templatePolish.ts',
 );
 const { wordArtCarriesContrast, wordArtPaint } = await server.ssrLoadModule('/src/utils/wordArt.ts');
+const { SAMPLE_GRAPHICS } = await server.ssrLoadModule('/src/constants/sampleGraphics.ts');
 
 let passed = 0;
 const failures = [];
@@ -514,6 +516,77 @@ for (const template of CERTIFICATE_TEMPLATES) {
         `${el.x},${el.y} ${el.width}×${el.height}`,
       );
     }
+  }
+}
+
+
+/* ── the drawn assets ──────────────────────────────────────────────────────────────────── */
+
+/** PNG header: width, height, and whether the file carries an alpha channel. */
+const pngInfo = (buffer) => {
+  const signature = buffer.toString('latin1', 1, 4);
+  if (signature !== 'PNG') return null;
+  return {
+    width: buffer.readUInt32BE(16),
+    height: buffer.readUInt32BE(20),
+    hasAlpha: buffer[25] === 6,
+  };
+};
+
+/** WebP header: RIFF/VP8X, VP8L or VP8. Enough to know the file's real size. */
+const webpInfo = (buffer) => {
+  if (buffer.toString('latin1', 0, 4) !== 'RIFF' || buffer.toString('latin1', 8, 12) !== 'WEBP') {
+    return null;
+  }
+  const fourcc = buffer.toString('latin1', 12, 16);
+  if (fourcc === 'VP8X') {
+    return { width: buffer.readUIntLE(24, 3) + 1, height: buffer.readUIntLE(27, 3) + 1 };
+  }
+  if (fourcc === 'VP8L') {
+    const bits = buffer.readUInt32LE(21);
+    return { width: (bits & 0x3fff) + 1, height: ((bits >> 14) & 0x3fff) + 1 };
+  }
+  if (fourcc === 'VP8 ') {
+    return { width: buffer.readUInt16LE(26) & 0x3fff, height: buffer.readUInt16LE(28) & 0x3fff };
+  }
+  return null;
+};
+
+const certificateAssets = SAMPLE_GRAPHICS.filter((g) => g.category === 'Certificates');
+check('certificate assets are registered', certificateAssets.length >= 9, `${certificateAssets.length}`);
+check(
+  'certificate asset ids are unique',
+  new Set(certificateAssets.map((g) => g.id)).size === certificateAssets.length,
+);
+
+for (const asset of certificateAssets) {
+  const label = asset.id;
+  const relative = String(asset.src).replace(/^\.\//, '');
+  const file = `public/${relative}`;
+  check(`${label}: ships in public/assets/certificates`, relative.startsWith('assets/certificates/'), relative);
+  check(`${label}: file exists`, existsSync(file), file);
+  if (!existsSync(file)) continue;
+  const bytes = readFileSync(file);
+  const info = relative.endsWith('.png') ? pngInfo(bytes) : webpInfo(bytes);
+  check(`${label}: header parses`, Boolean(info), relative);
+  if (!info) continue;
+  check(
+    `${label}: declared size matches the file`,
+    info.width === asset.width && info.height === asset.height,
+    `file ${info.width}×${info.height} vs declared ${asset.width}×${asset.height}`,
+  );
+  check(`${label}: is at least 1200px wide`, info.width >= 1200, `${info.width}`);
+  check(
+    `${label}: under the weight budget`,
+    statSync(file).size <= 2_500_000,
+    `${Math.round(statSync(file).size / 1024)} kB`,
+  );
+  if (relative.endsWith('.png')) {
+    check(`${label}: PNG carries an alpha channel`, info.hasAlpha === true);
+    check(`${label}: transparent art is page-sized`, asset.insertAs !== 'page' || info.width === 1600);
+  } else {
+    check(`${label}: WebP ground is page-sized`, info.width === 1600 && info.height === 1200);
+    check(`${label}: ground inserts as the page`, asset.insertAs === 'page');
   }
 }
 

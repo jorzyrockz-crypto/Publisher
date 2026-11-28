@@ -9,13 +9,27 @@ export type StockCategory =
   | 'Animals'
   | 'Plants'
   | 'Things'
-  | 'Education';
+  | 'Education'
+  | 'Certificates';
 
 export interface SampleGraphic {
   id: string;
   name: string;
   category: StockCategory;
   src: string;
+  /**
+   * Natural size in pixels, when the asset is a raster file rather than inline SVG. The panel uses
+   * it for the aspect ratio and the insert size — without it every built-in claims 200 × 200, and
+   * a 10:1 divider arrives as a square with a hairline through the middle.
+   */
+  width?: number;
+  height?: number;
+  /**
+   * `'page'` means the asset is a ground: it is placed at 0,0 at the page's own size, filled, and
+   * sent behind the page's content. A certificate background or border that lands as a 220×165
+   * chip in the middle of the sheet has to be resized by hand before it is worth anything.
+   */
+  insertAs?: 'page';
 }
 
 const encodeSvg = (svg: string) =>
@@ -1043,5 +1057,86 @@ export const SAMPLE_GRAPHICS: SampleGraphic[] = [
         <ellipse cx="536" cy="238" rx="58" ry="34" fill="#ffffff" opacity="0.4"/>
       </svg>
     `),
+  },
+  // Certificate stock: grounds and frames drawn for the six certificate templates
+  // (see public/assets/certificates and docs/templates.md).
+  {
+    id: 'cert-bg-parchment-guilloche',
+    name: 'Parchment Guilloché Ground',
+    category: 'Certificates',
+    src: './assets/certificates/cert-bg-parchment-guilloche.webp',
+    width: 1600,
+    height: 1200,
+    insertAs: 'page',
+  },
+  {
+    id: 'cert-bg-modern-blue-geo',
+    name: 'Blue Facet Ground',
+    category: 'Certificates',
+    src: './assets/certificates/cert-bg-modern-blue-geo.webp',
+    width: 1600,
+    height: 1200,
+    insertAs: 'page',
+  },
+  {
+    id: 'cert-bg-k3-pastel-sky',
+    name: 'K-3 Pastel Sky Ground',
+    category: 'Certificates',
+    src: './assets/certificates/cert-bg-k3-pastel-sky.webp',
+    width: 1600,
+    height: 1200,
+    insertAs: 'page',
+  },
+  {
+    id: 'cert-bg-maroon-heritage',
+    name: 'Hablon Heritage Ground',
+    category: 'Certificates',
+    src: './assets/certificates/cert-bg-maroon-heritage.webp',
+    width: 1600,
+    height: 1200,
+    insertAs: 'page',
+  },
+  {
+    id: 'cert-border-royal-gold',
+    name: 'Royal Gold Filigree Border',
+    category: 'Certificates',
+    src: './assets/certificates/cert-border-royal-gold.png',
+    width: 1600,
+    height: 1200,
+    insertAs: 'page',
+  },
+  {
+    id: 'cert-border-k3-crayon-stars',
+    name: 'K-3 Scallop Star Border',
+    category: 'Certificates',
+    src: './assets/certificates/cert-border-k3-crayon-stars.png',
+    width: 1600,
+    height: 1200,
+    insertAs: 'page',
+  },
+  {
+    id: 'cert-border-emerald-modern',
+    name: 'Emerald Bracket Border',
+    category: 'Certificates',
+    src: './assets/certificates/cert-border-emerald-modern.png',
+    width: 1600,
+    height: 1200,
+    insertAs: 'page',
+  },
+  {
+    id: 'cert-line-blue-ribbon',
+    name: 'Blue & Gold Divider',
+    category: 'Certificates',
+    src: './assets/certificates/cert-line-blue-ribbon.png',
+    width: 1200,
+    height: 120,
+  },
+  {
+    id: 'cert-line-k3-stars',
+    name: 'Star Dotted Divider',
+    category: 'Certificates',
+    src: './assets/certificates/cert-line-k3-stars.png',
+    width: 1200,
+    height: 120,
   },
 ];
