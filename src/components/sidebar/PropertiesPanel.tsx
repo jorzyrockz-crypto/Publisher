@@ -22,6 +22,7 @@ import { SHAPE_CATALOG } from '../../utils/shapePaths';
 import { imageFit, panRoom } from '../../utils/imageFrame';
 import { wordArtCurve, wordArtPaint, wordArtPickerOptions } from '../../utils/wordArt';
 import { wordArtFacePatch } from '../../constants/wordArtFonts';
+import { isBoldWeight, toggleBoldWeight } from '../../utils/textWeight';
 import type { WordArtStyle } from '../../types/publisher';
 import { useImageAspect } from '../../hooks/useImageAspect';
 import {
@@ -1603,12 +1604,12 @@ export const PropertiesPanel: React.FC = () => {
                       <button
                         onClick={() =>
                           updateElement(textEl.id, {
-                            fontWeight: textEl.fontWeight === 'bold' ? 'normal' : 'bold',
+                            fontWeight: toggleBoldWeight(textEl.id, textEl.fontWeight),
                           })
                         }
                         title="Bold"
                         className={`py-1 rounded-lg flex items-center justify-center transition ${
-                          textEl.fontWeight === 'bold' || textEl.fontWeight === '800' || textEl.fontWeight === '900'
+                          isBoldWeight(textEl.fontWeight)
                             ? 'bg-white shadow-xs text-[#5c4bb8] font-bold'
                             : 'text-slate-600 hover:bg-white/60'
                         }`}
