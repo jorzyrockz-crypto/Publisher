@@ -101,6 +101,28 @@ at `zIndex: 0` and locked; a frame spans the page width at its slot edge (or the
 side slot, or the whole page, when it is a `fit: 'page'` frame); a sticker arrives at 260px centred. Import is a `.zip` picker; the footer says what a pack is, because a file input with no
 explanation is a puzzle.
 
+### Placing a piece
+
+A piece is *downloaded before it is inserted*, and that is on purpose: the document embeds the
+full-size artwork as a data URL, so the tab closing or the pack being uninstalled cannot take the
+picture with it. Two consequences:
+
+- **There is a wait, so the tile says so.** The clicked tile dims, shows a spinner and *Placing*, and
+  a four-segment pulse runs along its bottom edge. The whole grid ignores a second click while one
+  is in flight, so a slow fetch cannot become two copies of the same sticker.
+- **The wait is usually already over.** Pointing at a tile prefetches and encodes that piece, and the
+  store keeps the last eight encoded pieces (`getAssetDataUrl`'s cache), so hover-then-click lands
+  instantly and placing the same piece twice costs nothing. The largest backdrop in the kit is a
+  378 kB fetch that becomes a 504 kB data URL — ~70 ms on localhost, and the thing that would
+  otherwise look like a dead click on a phone.
+
+A placed piece arrives **as itself**: `objectFit` from its layer, `imageScale` 1, no pan, no rotation,
+no rounded plate, no border, and `isPlaceholder: false`. That last field is what the inspector asks
+before offering **Detach** — it used to ask "does this have a `src`?", which is true of every
+photograph ever inserted, so a sticker that had never been near a placeholder was offered a button to
+detach it from one. Only an element that *started* as an empty picture placeholder can be detached,
+and the detached copy comes out clean: no inherited radius, no inherited crop, `isPlaceholder: false`.
+
 ## The shipped kit
 
 `public/asset-packs/storybook-reading-v1/` — **Story Kit, v1.2.0, 29 pieces, 4.5 MB**, built by

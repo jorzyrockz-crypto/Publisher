@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertCircle, Box, Download, Layers, Package, Search, Trash2 } from 'lucide-react';
+import { AlertCircle, Box, Download, Layers, Loader2, Package, Search, Trash2 } from 'lucide-react';
 import { usePublisher } from '../../context/PublisherContext';
 import {
   AssetPackError,
@@ -46,6 +46,10 @@ export const AssetPackPanel: React.FC<{ embedded?: boolean }> = ({ embedded = fa
   const [query, setQuery] = useState('');
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
+  // Which piece is being fetched and encoded right now. A built-in piece is a real fetch of the
+  // full-size WebP before it can be embedded, and on a first click that is long enough to feel like
+  // nothing happened.
+  const [placingId, setPlacingId] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ kind: 'error' | 'info'; text: string } | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
 
@@ -103,8 +107,9 @@ export const AssetPackPanel: React.FC<{ embedded?: boolean }> = ({ embedded = fa
 
   const place = useCallback(
     async (asset: AssetEntry) => {
-      if (!activePack) return;
+      if (!activePack || placingId) return;
       setNotice(null);
+      setPlacingId(asset.id);
       try {
         const src = await getAssetDataUrl(activePack, asset, 'full');
         if (!src) {
@@ -115,9 +120,22 @@ export const AssetPackPanel: React.FC<{ embedded?: boolean }> = ({ embedded = fa
         const pageH = activePage.height;
         const ratio = asset.width / Math.max(1, asset.height);
         const centred = { x: 0, y: 0 };
+        // A piece of kit arrives as itself: no crop, no zoom, no rounded plate inherited from the
+        // picture placeholder, nothing to "reset" before it can be used.
+        const pristine = {
+          borderRadius: 0,
+          imageScale: 1,
+          imageRotation: 0 as const,
+          panX: 0,
+          panY: 0,
+          maskShape: 'none' as const,
+          borderWidth: 0,
+          isPlaceholder: false,
+        };
 
         if (asset.layer === 'backdrop') {
           addImage(src, {
+            ...pristine,
             name: asset.label,
             ...centred,
             width: pageW,
@@ -135,6 +153,7 @@ export const AssetPackPanel: React.FC<{ embedded?: boolean }> = ({ embedded = fa
           // stretched to the paper rather than fitted to its width. A little stretch is invisible
           // in leaves; a frame inset from the edge is not a frame.
           addImage(src, {
+            ...pristine,
             name: asset.label,
             ...centred,
             width: pageW,
@@ -154,6 +173,7 @@ export const AssetPackPanel: React.FC<{ embedded?: boolean }> = ({ embedded = fa
           const x = asset.slot === 'right' ? Math.max(0, pageW - width) : 0;
           const y = asset.slot === 'bottom' ? Math.max(0, pageH - height) : 0;
           addImage(src, {
+            ...pristine,
             name: asset.label,
             x,
             y,
@@ -172,12 +192,14 @@ export const AssetPackPanel: React.FC<{ embedded?: boolean }> = ({ embedded = fa
         const width = Math.round(ratio >= 1 ? max : max * ratio);
         const height = Math.round(ratio >= 1 ? max / ratio : max);
         addImage(src, {
+          ...pristine,
           name: asset.label,
           x: Math.round((pageW - width) / 2),
           y: Math.round((pageH - height) / 2),
           width,
           height,
           objectFit: 'contain',
+          aspectRatioLocked: false,
           zIndex: 20,
         });
       } catch (err) {
@@ -185,9 +207,24 @@ export const AssetPackPanel: React.FC<{ embedded?: boolean }> = ({ embedded = fa
           kind: 'error',
           text: err instanceof AssetPackError ? err.message : 'That asset could not be placed.',
         });
+      } finally {
+        setPlacingId(null);
       }
     },
-    [activePack, addImage, activePage]
+    [activePack, addImage, activePage, placingId]
+  );
+
+  /**
+   * Fetch-and-encode ahead of the click. The picker's thumbnails are already local; the full-size
+   * piece is not, so a pointer resting on a tile for a moment is the difference between "instant"
+   * and "did my click register?".
+   */
+  const prefetch = useCallback(
+    (asset: AssetEntry) => {
+      if (!activePack) return;
+      void getAssetDataUrl(activePack, asset, 'full').catch(() => undefined);
+    },
+    [activePack]
   );
 
   const onImport = useCallback(
@@ -346,8 +383,13 @@ export const AssetPackPanel: React.FC<{ embedded?: boolean }> = ({ embedded = fa
                   key={asset.id}
                   type="button"
                   onClick={() => void place(asset)}
+                  onPointerEnter={() => prefetch(asset)}
+                  onFocus={() => prefetch(asset)}
+                  aria-busy={placingId === asset.id}
                   title={`${asset.label} · ${asset.width}×${asset.height}`}
-                  className="group flex flex-col overflow-hidden rounded-tile border border-line-soft bg-surface-sunken text-left transition hover:border-accent"
+                  className={`group flex flex-col overflow-hidden rounded-tile border bg-surface-sunken text-left transition hover:border-accent ${
+                    placingId === asset.id ? 'border-accent' : 'border-line-soft'
+                  }`}
                 >
                   <div className="relative flex aspect-square items-center justify-center bg-[repeating-conic-gradient(#e9edf2_0%_25%,#f6f8fa_0%_50%)] bg-[length:14px_14px]">
                     {url ? (
@@ -364,6 +406,28 @@ export const AssetPackPanel: React.FC<{ embedded?: boolean }> = ({ embedded = fa
                     <span className="absolute left-1 top-1 rounded-chip bg-black/55 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white">
                       {asset.layer}
                     </span>
+                    {/* The full-size piece is fetched and base64'd before it can be embedded, so
+                        the tile says so instead of leaving the click looking ignored. */}
+                    {placingId === asset.id && (
+                      <span className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-1 bg-white/70 backdrop-blur-[1px]">
+                        <Loader2 size={13} className="animate-spin text-accent" />
+                        <span className="text-[9px] font-semibold uppercase tracking-wide text-accent">
+                          Placing
+                        </span>
+                        {/* A marching pulse rather than a keyframe: the sheet has no @keyframes to
+                            hand (the WordArt block is generated), and four delayed segments read
+                            as movement without one. */}
+                        <span className="absolute inset-x-0 bottom-0 flex h-0.5 gap-0.5 overflow-hidden">
+                          {[0, 1, 2, 3].map((i) => (
+                            <span
+                              key={i}
+                              className="h-full flex-1 animate-pulse bg-accent"
+                              style={{ animationDelay: `${i * 140}ms` }}
+                            />
+                          ))}
+                        </span>
+                      </span>
+                    )}
                   </div>
                   <span className="truncate px-1.5 py-1 text-[11px] font-medium text-ink group-hover:text-accent">
                     {asset.label}

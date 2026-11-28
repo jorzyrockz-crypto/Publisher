@@ -295,6 +295,7 @@ export async function uninstallAssetPack(packId: string): Promise<void> {
       urlCache.delete(key);
     }
   }
+  forgetPackDataUrls(packId);
 }
 
 /* ------------------------------------------------------------------ resolving artwork */
@@ -357,15 +358,49 @@ export async function getAssetBlob(
  * document that references one exports blank — so anything dropped on the page is copied in as a
  * data URL.
  */
+/**
+ * The last few inserted pieces, already encoded.
+ *
+ * Base64 of a 300kB backdrop is a 400kB string and the fetch in front of it is the slow half of a
+ * click — so a piece that was hovered, or placed once, lands instantly the second time. Bounded: a
+ * picker session should not become a memory leak, and eight pieces is more than one page uses.
+ */
+const dataUrlCache = new Map<string, string>();
+const DATA_URL_CACHE_MAX = 8;
+
+function cacheDataUrl(key: string, value: string): string {
+  dataUrlCache.delete(key);
+  dataUrlCache.set(key, value);
+  while (dataUrlCache.size > DATA_URL_CACHE_MAX) {
+    const oldest = dataUrlCache.keys().next().value;
+    if (oldest === undefined) break;
+    dataUrlCache.delete(oldest);
+  }
+  return value;
+}
+
+/** Drops every encoded piece for a pack — used when it is reinstalled or uninstalled. */
+function forgetPackDataUrls(packId: string): void {
+  for (const key of [...dataUrlCache.keys()]) {
+    if (key.startsWith(`${packId}:`)) dataUrlCache.delete(key);
+  }
+}
+
 export async function getAssetDataUrl(
   pack: PackSummary,
   entry: AssetEntry,
   size: AssetSize = 'full'
 ): Promise<string | null> {
+  const key = `${pack.packId}:${entry.id}:${size}`;
+  const cached = dataUrlCache.get(key);
+  if (cached) {
+    cacheDataUrl(key, cached);
+    return cached;
+  }
   const blob = await getAssetBlob(pack, entry, size);
   if (!blob) return null;
   const type = blob.type || mimeFor(pathFor(entry, size));
-  return `data:${type};base64,${toBase64(await blob.arrayBuffer())}`;
+  return cacheDataUrl(key, `data:${type};base64,${toBase64(await blob.arrayBuffer())}`);
 }
 
 /* ------------------------------------------------------------------ the built-in pack */

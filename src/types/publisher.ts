@@ -284,6 +284,13 @@ export interface ImageElement extends BaseElement {
   stickerGlowColor?: string;
   originalSrc?: string;
   bgRemoved?: boolean;
+  /**
+   * True only for an element that *started life* as an empty picture placeholder. Without it the
+   * sideways test — "has a src" — makes every inserted photograph look like a filled placeholder,
+   * which is why the inspector used to offer **Detach** on a sticker that was never attached to
+   * anything.
+   */
+  isPlaceholder?: boolean;
 }
 
 export interface TableElement extends BaseElement {

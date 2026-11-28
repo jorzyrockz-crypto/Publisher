@@ -2441,6 +2441,8 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         // drawn once the user asks for one in Format → Border.
         borderWidth: 0,
         maskShape: 'none',
+        // Inserted art is not a filled placeholder: no Detach button, no inherited crop.
+        isPlaceholder: false,
         ...options,
       };
       addElement(defaultImg);
@@ -2465,6 +2467,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         aspectRatioLocked: true,
         borderRadius: 8,
         maskShape: 'none',
+        isPlaceholder: true,
         ...options,
       };
       addElement(placeholderImg);
@@ -2523,8 +2526,16 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         zIndex: maxZ + 1,
         borderArt: 'none',
         borderWidth: 0,
+        // A detached picture is a picture, not a plate: the placeholder's rounded corners and its
+        // crop are exactly what a person had to clear by hand after detaching.
+        borderRadius: 0,
         maskShape: 'none',
         objectFit: 'contain',
+        imageScale: 1,
+        imageRotation: 0,
+        panX: 0,
+        panY: 0,
+        isPlaceholder: false,
       };
 
       const updated = currentElements.map((el) =>
@@ -2535,6 +2546,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
               originalSrc: undefined,
               bgRemoved: false,
               name: 'Picture Placeholder',
+              isPlaceholder: true,
             } as PublisherElement)
           : el
       );

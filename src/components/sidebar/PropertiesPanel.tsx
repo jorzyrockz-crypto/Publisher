@@ -271,6 +271,16 @@ export const PropertiesPanel: React.FC = () => {
       ? elementsPool.find((el) => el.id === selectedElementIds[0])
       : null;
 
+  /**
+   * Whether the picture in hand arrived as an empty plate and was filled later. The flag is new, so
+   * documents saved before it fall back to the name the placeholder gives itself — either way this
+   * is the question the inspector should have been asking instead of "does it have a src?".
+   */
+  const selectedImageIsPlaceholder =
+    selectedElement?.type === 'image' &&
+    ((selectedElement as ImageElement).isPlaceholder === true ||
+      (selectedElement as ImageElement).name === 'Picture Placeholder');
+
   const selectionLabel =
     selectedElements.length === 0
       ? 'Page'
@@ -3943,7 +3953,10 @@ export const PropertiesPanel: React.FC = () => {
                     : 'Load Photo into Placeholder...'}
                 </span>
               </button>
-              {(selectedElement as ImageElement).src && (
+              {/* Only an element that started as a placeholder can be detached *from* one. Keying
+                  this on "has a src" offered Detach on every inserted photo and sticker, which read
+                  as though the art had been dropped into a plate it was never near. */}
+              {selectedImageIsPlaceholder && (selectedElement as ImageElement).src && (
                 <div className="grid grid-cols-2 gap-1.5">
                   <button
                     type="button"
@@ -3962,6 +3975,7 @@ export const PropertiesPanel: React.FC = () => {
                         originalSrc: undefined,
                         bgRemoved: false,
                         name: 'Picture Placeholder',
+                        isPlaceholder: true,
                       })
                     }
                     className="py-1.5 px-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-[10.5px] flex items-center justify-center gap-1 transition"
