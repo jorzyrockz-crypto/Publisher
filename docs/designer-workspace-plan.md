@@ -208,3 +208,38 @@ tool feel wrong.
 * D6 — the inspector still leads with page setup when nothing is selected.
 * D4 — no position/spacing in the contextual pill, no overflow menu.
 * D2/D3/D5/D7 — untouched (Phase 2).
+
+## Moving papers on the artboard
+
+A paper is dragged by the pill above its top-left corner. Two things went wrong there and are now
+accounted for:
+
+* **The pill was clipped off the viewport when zoomed out.** It was laid out in unscaled pixels above
+  a paper whose screen offset shrinks with the zoom, so at 20% a paper at y = 80 sat 16 px down and a
+  24 px handle above it started at −6 px — outside the scroll area, unreachable. The handle is now
+  positioned instead of flowed, and rides up over the paper's top edge when there is no room above
+  it, so a paper can always be grabbed.
+* **Papers did not snap.** They do now: edges and centres pull to every other paper's edges and
+  centres (and to the artboard origin), with a violet hairline showing what it snapped to. The pull
+  radius is `8 / zoom` — eight *screen* pixels — for the same reason element snapping is now
+  `6 / zoom`: a fixed radius in page pixels shrinks to nothing as you zoom out (at 20% it was
+  1.2 screen pixels, i.e. it looked broken).
+* **The pasteboard ended at the top-left corner.** Dragging was clamped at x = 20, y = 36, so a
+  paper could never be parked above or left of its starting place — the canvas felt walled in. The
+  clamps are gone; the artboard is drawn from an origin 360 px outside the papers' bounding box, so
+  there is always pasteboard to drag into, and the origin grows as a carried paper approaches it.
+  Growing the origin moves every paper the other way on screen, so the scroll travels with it —
+  otherwise the paper under your cursor would stop dead, which is the same complaint in a new suit.
+* **The handle said too much.** At 20% a paper is a postage stamp and the pill above it — page
+  number, page name and a size badge — is bigger than the paper. Below 45% it collapses to a grip
+  and a number; at any zoom only the **active** paper shows its name, size and menu.
+
+## Which view a document opens in
+
+The default view follows the papers. One paper opens as a fitted single page — that is what people
+open a document to look at. Two or more papers open **Freeform**, because Single view shows one paper
+and quietly hides the others, which reads as "the canvas only has one page".
+
+An explicit choice from the view control wins, per document: pick Single and it stays Single, even
+when you add pages. Choices are remembered per document, so switching tabs restores each one's view.
+The mode is labelled *Freeform* everywhere now, not "Artboard" — the papers are the canvas.

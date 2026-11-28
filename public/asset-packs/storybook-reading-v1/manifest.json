@@ -1,7 +1,7 @@
 {
   "packId": "storybook-reading-v1",
-  "name": "Storybook & Reading Corner",
-  "version": "1.0.0",
+  "name": "Story Kit",
+  "version": "1.4.0",
   "assets": [
     {
       "id": "bg-enchanted-forest",
@@ -34,6 +34,52 @@
       "height": 1200
     },
     {
+      "id": "bg-starlit-night",
+      "label": "Starlit Storybook Night",
+      "layer": "backdrop",
+      "tags": [
+        "night",
+        "moon",
+        "stars",
+        "bedtime"
+      ],
+      "thumb": "thumbs/bg-starlit-night.webp",
+      "full": "full/bg-starlit-night.webp",
+      "width": 896,
+      "height": 1200
+    },
+    {
+      "id": "bg-underwater",
+      "label": "Under the Sea",
+      "layer": "backdrop",
+      "tags": [
+        "sea",
+        "ocean",
+        "water",
+        "fish",
+        "coral"
+      ],
+      "thumb": "thumbs/bg-underwater.webp",
+      "full": "full/bg-underwater.webp",
+      "width": 896,
+      "height": 1200
+    },
+    {
+      "id": "bg-snowy-village",
+      "label": "Snowy Village",
+      "layer": "backdrop",
+      "tags": [
+        "winter",
+        "snow",
+        "holiday",
+        "december"
+      ],
+      "thumb": "thumbs/bg-snowy-village.webp",
+      "full": "full/bg-snowy-village.webp",
+      "width": 896,
+      "height": 1200
+    },
+    {
       "id": "bg-sunny-hilltop",
       "label": "Sunny Hilltop Meadow",
       "layer": "backdrop",
@@ -47,6 +93,54 @@
       "full": "full/bg-sunny-hilltop.webp",
       "width": 896,
       "height": 1200
+    },
+    {
+      "id": "bg-eco-hills",
+      "label": "Tropical Hills & Valley",
+      "layer": "backdrop",
+      "tags": [
+        "eco",
+        "hills",
+        "valley",
+        "nature",
+        "campaign"
+      ],
+      "thumb": "thumbs/bg-eco-hills.webp",
+      "full": "full/bg-eco-hills.webp",
+      "width": 768,
+      "height": 1376
+    },
+    {
+      "id": "bg-fiesta-stage",
+      "label": "Fiesta Night Lights",
+      "layer": "backdrop",
+      "tags": [
+        "fiesta",
+        "night",
+        "bokeh",
+        "award",
+        "celebration"
+      ],
+      "thumb": "thumbs/bg-fiesta-stage.webp",
+      "full": "full/bg-fiesta-stage.webp",
+      "width": 768,
+      "height": 1376
+    },
+    {
+      "id": "bg-mangrove-river",
+      "label": "Mangrove River",
+      "layer": "backdrop",
+      "tags": [
+        "mangrove",
+        "river",
+        "water",
+        "eco",
+        "nature"
+      ],
+      "thumb": "thumbs/bg-mangrove-river.webp",
+      "full": "full/bg-mangrove-river.webp",
+      "width": 827,
+      "height": 1239
     },
     {
       "id": "frame-top-canopy",
@@ -95,6 +189,109 @@
       "full": "full/frame-corner-vines.webp",
       "width": 1024,
       "height": 561
+    },
+    {
+      "id": "frame-side-ivy",
+      "label": "Side Ivy Border",
+      "layer": "frame",
+      "tags": [
+        "ivy",
+        "side",
+        "border",
+        "frame"
+      ],
+      "slot": "left",
+      "thumb": "thumbs/frame-side-ivy.webp",
+      "full": "full/frame-side-ivy.webp",
+      "width": 244,
+      "height": 1024
+    },
+    {
+      "id": "frame-bunting-stars",
+      "label": "Bunting & Star Garland",
+      "layer": "frame",
+      "tags": [
+        "bunting",
+        "flags",
+        "stars",
+        "top",
+        "party"
+      ],
+      "slot": "top",
+      "thumb": "thumbs/frame-bunting-stars.webp",
+      "full": "full/frame-bunting-stars.webp",
+      "width": 1024,
+      "height": 252
+    },
+    {
+      "id": "frame-tropical-leaves",
+      "label": "Tropical Leaf Corners",
+      "layer": "frame",
+      "tags": [
+        "tropical",
+        "leaves",
+        "corner",
+        "frame",
+        "blossom"
+      ],
+      "slot": "corner",
+      "fit": "page",
+      "thumb": "thumbs/frame-tropical-leaves.webp",
+      "full": "full/frame-tropical-leaves.webp",
+      "width": 561,
+      "height": 1024
+    },
+    {
+      "id": "frame-fiesta-bunting",
+      "label": "Fiesta Banderitas",
+      "layer": "frame",
+      "tags": [
+        "bunting",
+        "banderitas",
+        "fiesta",
+        "garland",
+        "top"
+      ],
+      "slot": "top",
+      "thumb": "thumbs/frame-fiesta-bunting.webp",
+      "full": "full/frame-fiesta-bunting.webp",
+      "width": 1024,
+      "height": 387
+    },
+    {
+      "id": "frame-soil-sprouts",
+      "label": "Soil & Seedlings Strip",
+      "layer": "frame",
+      "tags": [
+        "soil",
+        "sprouts",
+        "seedling",
+        "bottom",
+        "eco"
+      ],
+      "slot": "bottom",
+      "thumb": "thumbs/frame-soil-sprouts.webp",
+      "full": "full/frame-soil-sprouts.webp",
+      "width": 1024,
+      "height": 363
+    },
+    {
+      "id": "frame-storybook-border",
+      "label": "Storybook Page Border",
+      "layer": "frame",
+      "tags": [
+        "border",
+        "frame",
+        "storybook",
+        "passport",
+        "page"
+      ],
+      "slot": "corner",
+      "fit": "page",
+      "thumb": "thumbs/frame-storybook-border.webp",
+      "full": "full/frame-storybook-border.webp",
+      "width": 584,
+      "height": 1024
     },
     {
       "id": "sticker-reading-kids",
@@ -155,6 +352,270 @@
       "full": "full/sticker-magic-book.webp",
       "width": 1024,
       "height": 514
+    },
+    {
+      "id": "sticker-sun-cloud",
+      "label": "Smiling Sun & Cloud",
+      "layer": "sticker",
+      "tags": [
+        "sun",
+        "cloud",
+        "weather",
+        "happy"
+      ],
+      "thumb": "thumbs/sticker-sun-cloud.webp",
+      "full": "full/sticker-sun-cloud.webp",
+      "width": 894,
+      "height": 596
+    },
+    {
+      "id": "sticker-wooden-sign",
+      "label": "Reading Corner Sign",
+      "layer": "sticker",
+      "tags": [
+        "sign",
+        "wood",
+        "label",
+        "blank"
+      ],
+      "thumb": "thumbs/sticker-wooden-sign.webp",
+      "full": "full/sticker-wooden-sign.webp",
+      "width": 559,
+      "height": 696
+    },
+    {
+      "id": "sticker-planting-kids",
+      "label": "Planting Together",
+      "layer": "sticker",
+      "tags": [
+        "kids",
+        "students",
+        "planting",
+        "eco",
+        "tree"
+      ],
+      "thumb": "thumbs/sticker-planting-kids.webp",
+      "full": "full/sticker-planting-kids.webp",
+      "width": 1024,
+      "height": 612
+    },
+    {
+      "id": "sticker-nipa-hut",
+      "label": "Bahay Kubo",
+      "layer": "sticker",
+      "tags": [
+        "hut",
+        "bahay kubo",
+        "bamboo",
+        "fiesta",
+        "village"
+      ],
+      "thumb": "thumbs/sticker-nipa-hut.webp",
+      "full": "full/sticker-nipa-hut.webp",
+      "width": 947,
+      "height": 701
+    },
+    {
+      "id": "sticker-wood-plank",
+      "label": "Wooden Signboard",
+      "layer": "sticker",
+      "tags": [
+        "plank",
+        "wood",
+        "sign",
+        "blank",
+        "label"
+      ],
+      "thumb": "thumbs/sticker-wood-plank.webp",
+      "full": "full/sticker-wood-plank.webp",
+      "width": 1024,
+      "height": 380
+    },
+    {
+      "id": "sticker-reading-passport",
+      "label": "Reading Passport",
+      "layer": "sticker",
+      "tags": [
+        "passport",
+        "book",
+        "reading",
+        "award",
+        "blank"
+      ],
+      "thumb": "thumbs/sticker-reading-passport.webp",
+      "full": "full/sticker-reading-passport.webp",
+      "width": 651,
+      "height": 653
+    },
+    {
+      "id": "sticker-big-book-easel",
+      "label": "Big Book on an Easel",
+      "layer": "sticker",
+      "tags": [
+        "big book",
+        "easel",
+        "display",
+        "story"
+      ],
+      "thumb": "thumbs/sticker-big-book-easel.webp",
+      "full": "full/sticker-big-book-easel.webp",
+      "width": 1024,
+      "height": 721
+    },
+    {
+      "id": "sticker-audio-station",
+      "label": "Listening Station",
+      "layer": "sticker",
+      "tags": [
+        "audio",
+        "listening",
+        "headphones",
+        "station"
+      ],
+      "thumb": "thumbs/sticker-audio-station.webp",
+      "full": "full/sticker-audio-station.webp",
+      "width": 895,
+      "height": 724
+    },
+    {
+      "id": "sticker-abc-blocks",
+      "label": "Alphabet Blocks",
+      "layer": "sticker",
+      "tags": [
+        "abc",
+        "blocks",
+        "alphabet",
+        "decodable"
+      ],
+      "thumb": "thumbs/sticker-abc-blocks.webp",
+      "full": "full/sticker-abc-blocks.webp",
+      "width": 737,
+      "height": 623
+    },
+    {
+      "id": "sticker-story-puppet",
+      "label": "Story Puppet",
+      "layer": "sticker",
+      "tags": [
+        "puppet",
+        "props",
+        "drama",
+        "story"
+      ],
+      "thumb": "thumbs/sticker-story-puppet.webp",
+      "full": "full/sticker-story-puppet.webp",
+      "width": 791,
+      "height": 693
+    },
+    {
+      "id": "sticker-return-bin",
+      "label": "Book Return Bin",
+      "layer": "sticker",
+      "tags": [
+        "return",
+        "bin",
+        "box",
+        "library"
+      ],
+      "thumb": "thumbs/sticker-return-bin.webp",
+      "full": "full/sticker-return-bin.webp",
+      "width": 917,
+      "height": 697
+    },
+    {
+      "id": "sticker-popup-book",
+      "label": "Pop-Up Book",
+      "layer": "sticker",
+      "tags": [
+        "pop-up",
+        "tactile",
+        "book",
+        "castle",
+        "genre"
+      ],
+      "thumb": "thumbs/sticker-popup-book.webp",
+      "full": "full/sticker-popup-book.webp",
+      "width": 1024,
+      "height": 533
+    },
+    {
+      "id": "badge-rosette",
+      "label": "Rosette Award",
+      "layer": "badge",
+      "tags": [
+        "award",
+        "rosette",
+        "ribbon",
+        "prize",
+        "blank"
+      ],
+      "thumb": "thumbs/badge-rosette.webp",
+      "full": "full/badge-rosette.webp",
+      "width": 520,
+      "height": 697
+    },
+    {
+      "id": "badge-star-medal",
+      "label": "Star Medal",
+      "layer": "badge",
+      "tags": [
+        "medal",
+        "star",
+        "ribbon",
+        "award"
+      ],
+      "thumb": "thumbs/badge-star-medal.webp",
+      "full": "full/badge-star-medal.webp",
+      "width": 313,
+      "height": 632
+    },
+    {
+      "id": "sticker-gold-laurel",
+      "label": "Gold Laurel Frame",
+      "layer": "badge",
+      "tags": [
+        "laurel",
+        "gold",
+        "award",
+        "wreath",
+        "badge"
+      ],
+      "thumb": "thumbs/sticker-gold-laurel.webp",
+      "full": "full/sticker-gold-laurel.webp",
+      "width": 782,
+      "height": 713
+    },
+    {
+      "id": "sticker-cartoon-boy-reading",
+      "label": "Boy Reading on a Book Stack",
+      "layer": "sticker",
+      "tags": [
+        "kids",
+        "reading",
+        "books",
+        "cartoon",
+        "mascot"
+      ],
+      "thumb": "thumbs/sticker-cartoon-boy-reading.webp",
+      "full": "full/sticker-cartoon-boy-reading.webp",
+      "width": 447,
+      "height": 737
+    },
+    {
+      "id": "sticker-cartoon-girl-reading",
+      "label": "Girl Reading on a Book Stack",
+      "layer": "sticker",
+      "tags": [
+        "kids",
+        "reading",
+        "books",
+        "cartoon",
+        "mascot"
+      ],
+      "thumb": "thumbs/sticker-cartoon-girl-reading.webp",
+      "full": "full/sticker-cartoon-girl-reading.webp",
+      "width": 427,
+      "height": 702
     }
   ]
 }

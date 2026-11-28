@@ -11,6 +11,12 @@ export interface WordArtOption {
   className: string;
   /** Preview needs a dark tile to read (glow styles). */
   dark?: boolean;
+  /**
+   * Added in the current release. The pickers float these to the top and tag them: a catalogue of
+   * fifty-three styles under a 288 px dropdown means a new style that lands in the middle of it is
+   * a style nobody finds.
+   */
+  isNew?: boolean;
 }
 
 export const WORD_ART_STYLES: WordArtOption[] = [
@@ -40,6 +46,21 @@ export const WORD_ART_STYLES: WordArtOption[] = [
   { id: 'sticker-forest', label: 'Fresh Leaf Sticker', className: 'wordart-sticker-forest', dark: true },
   { id: 'sticker-coral', label: 'Warm Coral Sticker', className: 'wordart-sticker-coral' },
   { id: 'sticker-teal', label: 'Deep Teal Sticker', className: 'wordart-sticker-teal', dark: true },
+  // The cartoon-sign lettering: a glossy ramp inside a fat white die-cut, itself inside a second,
+  // darker keyline. Two outlines, because that is what makes a word look printed on a sign rather
+  // than typed on it.
+  {
+    id: 'cartoon-bubble-blue',
+    label: 'Bubble Sign Blue',
+    className: 'wordart-cartoon-bubble-blue',
+    isNew: true,
+  },
+  {
+    id: 'cartoon-bubble-pink',
+    label: 'Bubble Sign Pink',
+    className: 'wordart-cartoon-bubble-pink',
+    isNew: true,
+  },
   // Flat ink on a painted highlight — the brush-swipe and pastel-pill headline.
   { id: 'brush-sunshine', label: 'Sunshine Brush Swipe', className: 'wordart-brush-sunshine' },
   { id: 'brush-blush', label: 'Pastel Blush Ribbon', className: 'wordart-brush-blush' },
@@ -76,6 +97,55 @@ export const WORD_ART_STYLES: WordArtOption[] = [
     className: 'wordart-reading-nook-sage',
   },
   { id: 'storytime-banner', label: 'Storytime Ribbon', className: 'wordart-storytime-banner' },
+  // Reading-corner forms: a school-blue banner, a coral welcome, a gold logbook ribbon.
+  {
+    id: 'champs-basa-blue',
+    label: 'Basa Blue Banner',
+    className: 'wordart-champs-basa-blue',
+    dark: true,
+  },
+  {
+    id: 'champs-kasadya-coral',
+    label: 'Kasadya Coral',
+    className: 'wordart-champs-kasadya-coral',
+  },
+  {
+    id: 'champs-gold-ribbon',
+    label: 'Champs Gold Ribbon',
+    className: 'wordart-champs-gold-ribbon',
+  },
+  // The three level bands, one per shelf colour: cream type with the band's own deep ink as the
+  // edge, so a title still reads when the card is printed in mono.
+  {
+    id: 'champs-level-emergent',
+    label: 'Emergent Green',
+    className: 'wordart-champs-level-emergent',
+    dark: true,
+  },
+  {
+    id: 'champs-level-beginning',
+    label: 'Beginning Blue',
+    className: 'wordart-champs-level-beginning',
+    dark: true,
+  },
+  {
+    id: 'champs-level-transitional',
+    label: 'Transitional Gold',
+    className: 'wordart-champs-level-transitional',
+    dark: true,
+  },
+  {
+    id: 'underwater-bubble',
+    label: 'Underwater Bubble',
+    className: 'wordart-underwater-bubble',
+    dark: true,
+  },
+  {
+    id: 'cultural-hablon',
+    label: 'Hablon Weave',
+    className: 'wordart-cultural-hablon',
+    dark: true,
+  },
   // Portfolios: quiet, trimmed, at 800.
   {
     id: 'portfolio-editorial',
@@ -95,7 +165,11 @@ export function wordArtClassName(style?: WordArtStyle): string {
 
 /** Every style the UI offers, with "none" first. */
 export function wordArtPickerOptions(): WordArtOption[] {
-  return [{ id: 'none', label: 'Standard Text', className: 'text-slate-700' }, ...WORD_ART_STYLES];
+  // New styles first, then the catalogue order. "Standard Text" stays at the very top: it is the
+  // way out of a style, not a style.
+  const fresh = WORD_ART_STYLES.filter((style) => style.isNew);
+  const rest = WORD_ART_STYLES.filter((style) => !style.isNew);
+  return [{ id: 'none', label: 'Standard Text', className: 'text-slate-700' }, ...fresh, ...rest];
 }
 
 /* ------------------------------------------------------------------ *
@@ -161,6 +235,12 @@ export interface WordArtPaint {
    */
   heavyStroke?: boolean;
   shadows: WordArtShadow[];
+  /**
+   * A second keyline, outside the sticker rim: the dark ring that separates a white die-cut from
+   * whatever it is printed on. Painted as a silhouette under the rim, so the visible thickness is
+   * the declared width — the rim covers the inner half, exactly like `heavyStroke`.
+   */
+  outline?: { width: number; color: string };
   /** Marching 3D block, painted behind everything. */
   extrusion?: WordArtExtrusion;
   /** Soft light spills (painted furthest back). */
@@ -177,6 +257,18 @@ export interface WordArtPaint {
    */
   arc?: number;
 }
+
+/** Eight directions, for the ring that stands in for a second keyline in the previews. */
+const RING_OFFSETS: [number, number][] = [
+  [1, 0],
+  [0.7, 0.7],
+  [0, 1],
+  [-0.7, 0.7],
+  [-1, 0],
+  [-0.7, -0.7],
+  [0, -1],
+  [0.7, -0.7],
+];
 
 /** The three passes that make a swipe look painted rather than drawn. */
 export const SWIPE_LAYERS: { dy: number; dh: number; alpha: number; tilt: number }[] = [
@@ -807,6 +899,42 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     heavyStroke: true,
     shadows: [],
   },
+  'cartoon-bubble-blue': {
+    weight: '900',
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#b9e2ff' },
+        { offset: 0.16, color: '#4aa3ff' },
+        { offset: 0.5, color: '#1c72e8' },
+        { offset: 0.84, color: '#0c47a8' },
+        { offset: 1, color: '#082f76' },
+      ],
+    },
+    stroke: { width: 9, color: '#ffffff' },
+    heavyStroke: true,
+    outline: { width: 4, color: '#0b2f6e' },
+    castShadow: { dx: 0, dy: 6, blur: 12, color: 'rgba(9, 38, 94, 0.35)' },
+    shadows: [],
+  },
+  'cartoon-bubble-pink': {
+    weight: '900',
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#ffd1e8' },
+        { offset: 0.16, color: '#ff5fae' },
+        { offset: 0.5, color: '#ea1a84' },
+        { offset: 0.84, color: '#b00a5a' },
+        { offset: 1, color: '#7d0740' },
+      ],
+    },
+    stroke: { width: 9, color: '#ffffff' },
+    heavyStroke: true,
+    outline: { width: 4, color: '#7a0b46' },
+    castShadow: { dx: 0, dy: 6, blur: 12, color: 'rgba(96, 6, 52, 0.35)' },
+    shadows: [],
+  },
   'sticker-teal': {
     weight: '900',
     gradient: {
@@ -1052,10 +1180,12 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     },
     stroke: { width: 6, color: '#fffbeb' },
     heavyStroke: true,
-    castShadow: { dx: 0, dy: 4, blur: 10, color: 'rgba(6, 78, 59, 0.22)' },
+    // Deeper than the other sage tones: the arched header sits over a sunlit window in the nook
+    // poster, and a 0.22 shadow dissolves into that wall instead of lifting the letters off it.
+    castShadow: { dx: 0, dy: 4, blur: 10, color: 'rgba(6, 78, 59, 0.38)' },
     // A reading-corner header wants the gentle smile, and it belongs to the *style*: arch it here
     // and every page that uses it agrees, with the Curve control still free to override.
-    arc: 0.12,
+    arc: 0.11,
     shadows: [],
   },
   'storytime-banner': {
@@ -1071,6 +1201,105 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     backdrop: { type: 'ribbon-banner', color: '#c2410c', paddingX: 36, paddingY: 12 },
     shadows: [],
   },
+  // ---- reading-corner forms ---------------------------------------------------------------
+  // Printed at A4 on a school photocopier: three colours, a cream die-cut so the words survive a
+  // grey machine, and no bloom that a mono print would turn into mud.
+  'champs-basa-blue': {
+    weight: '900',
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#60a5fa' },
+        { offset: 0.5, color: '#2563eb' },
+        { offset: 1, color: '#1e3a8a' },
+      ],
+    },
+    stroke: { width: 4, color: '#eff6ff' },
+    heavyStroke: true,
+    castShadow: { dx: 0, dy: 3, blur: 6, color: 'rgba(30, 58, 138, 0.3)' },
+    shadows: [],
+  },
+  'champs-kasadya-coral': {
+    weight: '900',
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#fb7185' },
+        { offset: 0.55, color: '#e11d48' },
+        { offset: 1, color: '#9f1239' },
+      ],
+    },
+    stroke: { width: 3, color: '#fff1f2' },
+    heavyStroke: true,
+    castShadow: { dx: 0, dy: 2, blur: 5, color: 'rgba(159, 18, 57, 0.26)' },
+    shadows: [],
+  },
+  'champs-gold-ribbon': {
+    weight: '900',
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#fef3c7' },
+        { offset: 0.5, color: '#fbbf24' },
+        { offset: 1, color: '#b45309' },
+      ],
+    },
+    castShadow: { dx: 0, dy: 2, blur: 4, color: 'rgba(24, 24, 27, 0.4)' },
+    backdrop: { type: 'ribbon-banner', color: '#0f766e', paddingX: 34, paddingY: 12 },
+    shadows: [],
+  },
+
+  // No stroke on purpose: these are set at 25px inside a 14 mm band, and an outline at that size
+  // eats the letterform. A two-tone cream keeps the band's colour family without hurting a
+  // five-metre read or a mono photocopy.
+  'champs-level-emergent': {
+    weight: '900',
+    gradient: { angle: 180, stops: [{ offset: 0, color: '#ffffff' }, { offset: 1, color: '#dcfce7' }] },
+    shadows: [],
+  },
+  'champs-level-beginning': {
+    weight: '900',
+    gradient: { angle: 180, stops: [{ offset: 0, color: '#ffffff' }, { offset: 1, color: '#dbeafe' }] },
+    shadows: [],
+  },
+  'champs-level-transitional': {
+    weight: '900',
+    gradient: { angle: 180, stops: [{ offset: 0, color: '#ffffff' }, { offset: 1, color: '#fef3c7' }] },
+    shadows: [],
+  },
+
+  // The reef theme's title and the cultural theme's title, so the tarpapel theme swap can name a
+  // word art per theme instead of a colour per theme.
+  'underwater-bubble': {
+    weight: '900',
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#a5f3fc' },
+        { offset: 0.45, color: '#38bdf8' },
+        { offset: 1, color: '#0369a1' },
+      ],
+    },
+    stroke: { width: 4, color: '#ecfeff' },
+    heavyStroke: true,
+    castShadow: { dx: 0, dy: 3, blur: 8, color: 'rgba(3, 105, 161, 0.35)' },
+    shadows: [],
+  },
+  'cultural-hablon': {
+    weight: '900',
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#fcd34d' },
+        { offset: 0.5, color: '#b45309' },
+        { offset: 1, color: '#7f1d1d' },
+      ],
+    },
+    stroke: { width: 3, color: '#fffbeb' },
+    heavyStroke: true,
+    shadows: [],
+  },
+
   // ---- portfolios ------------------------------------------------------------------------
   // Refined, not shouted: a hairline trim and a soft lift. 800 rather than 900 so a serif or a
   // geometric sans keeps its shapes — the two styles that look wrong at poster weight.
@@ -1130,6 +1359,8 @@ export interface WordArtSpec {
   castShadow?: WordArtShadow;
   /** Extra authored shadows, painted nearest the glyphs. */
   shadows: WordArtShadow[];
+  /** The second keyline outside the rim, if the style has one. */
+  outline?: { width: number; color: string };
   /** A painted highlight behind the letters, if the style asks for one. */
   backdrop?: WordArtBackdrop;
   /**
@@ -1158,6 +1389,7 @@ export function wordArtSpec(style?: WordArtStyle): WordArtSpec | undefined {
     bloom: paint.bloom,
     castShadow: paint.castShadow,
     shadows: paint.shadows,
+    outline: paint.outline,
     backdrop: paint.backdrop,
     arc: paint.arc,
   };
@@ -1200,6 +1432,13 @@ export function buildWordArtCssRule(style: WordArtStyle, className = `wordart-${
     lines.push(`  --wordart-backdrop: ${paint.backdrop.color};`);
   }
   const chain = wordArtShadowChain(paint);
+  if (paint.outline) {
+    // One `-webkit-text-stroke` per element, and the rim already has it. A ring of hairline
+    // drop-shadows is the preview's stand-in for the second keyline; the canvas paints the real
+    // thing (ElementRenderer adds a silhouette layer, wordArtCanvas a pass).
+    const r = Math.max(0.5, paint.outline.width / 2);
+    for (const [dx, dy] of RING_OFFSETS) chain.push({ dx: dx * r, dy: dy * r, blur: 0, color: paint.outline.color });
+  }
   if (chain.length) {
     lines.push('  filter:');
     const shadows = chain.map((s) => `    drop-shadow(${shadowCss(s)})`);
@@ -1414,6 +1653,8 @@ function shadowCss(s: WordArtShadow): string {
  * never on the element box (it would swallow the box fill).
  */
 export interface WordArtCss {
+  /** The second keyline, if the style has one — the renderer paints it as a silhouette layer. */
+  outline?: { width: number; color: string };
   fontWeight?: '800' | '900';
   color?: string;
   /** `linear-gradient(...)` value, already ordered. */
@@ -1447,6 +1688,7 @@ export function wordArtCss(style?: WordArtStyle): WordArtCss {
     css.webkitTextStroke = `${paint.stroke.width}px ${paint.stroke.color}`;
     css.paintOrder = 'stroke fill';
   }
+  if (paint.outline) css.outline = paint.outline;
   // `text-shadow` bleeds through a background-clipped fill and muddies the
   // metal; a drop-shadow filter paints behind the clipped glyphs instead.
   const chain = wordArtShadowChain(paint);

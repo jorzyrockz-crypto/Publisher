@@ -21,6 +21,8 @@ import { ShapePreviewIcon } from '../common/ShapePreviewIcon';
 import { SHAPE_CATALOG } from '../../utils/shapePaths';
 import { imageFit, panRoom } from '../../utils/imageFrame';
 import { wordArtCurve, wordArtPaint, wordArtPickerOptions } from '../../utils/wordArt';
+import { wordArtFacePatch } from '../../constants/wordArtFonts';
+import { isBoldWeight, toggleBoldWeight } from '../../utils/textWeight';
 import type { WordArtStyle } from '../../types/publisher';
 import { useImageAspect } from '../../hooks/useImageAspect';
 import {
@@ -49,7 +51,7 @@ import {
   type SmartRecolorMode,
 } from '../../utils/svgRecolor';
 import { getBackdropColorUnder } from '../../utils/brandRebrand';
-import { countWords, layoutText } from '../../utils/textLayout';
+import { countWords } from '../../utils/textLayout';
 import { TEXT_CURVE_PRESETS, TEXT_EFFECTS, buildTextEffectPainter } from '../../utils/textEffects';
 import { DesignIdeasPanel } from './DesignIdeasPanel';
 import { CollageControlsPanel } from '../canvas/CollageControlsPanel';
@@ -97,6 +99,7 @@ import {
   Eraser,
   Unlink,
 } from 'lucide-react';
+import { textBoxContentHeight } from '../../utils/textBoxGrowth';
 
 /**
  * Pan X / Pan Y for a cropped picture. A picture can only slide on an axis
@@ -232,6 +235,7 @@ export const PropertiesPanel: React.FC = () => {
   const wordArtPickerBtnRef = useRef<HTMLButtonElement>(null);
   const [isShapePickerOpen, setIsShapePickerOpen] = useState(false);
   const [isWordArtPickerOpen, setIsWordArtPickerOpen] = useState(false);
+  const [wordArtQuery, setWordArtQuery] = useState('');
   const [typoTab, setTypoTab] = useState<'character' | 'paragraph' | 'effects'>('character');
 
   const wordArtOptions = wordArtPickerOptions().map((opt) => ({
@@ -239,6 +243,7 @@ export const PropertiesPanel: React.FC = () => {
     label: opt.label,
     cssClass: opt.className,
     dark: opt.dark,
+    isNew: opt.isNew,
     // A backdrop style is the one thing a 36px tile cannot show — the highlight is geometry, not a
     // text effect. Label the kind and show its colour, rather than faking a shape the export would
     // not match.
@@ -270,6 +275,16 @@ export const PropertiesPanel: React.FC = () => {
     selectedElementIds.length === 1
       ? elementsPool.find((el) => el.id === selectedElementIds[0])
       : null;
+
+  /**
+   * Whether the picture in hand arrived as an empty plate and was filled later. The flag is new, so
+   * documents saved before it fall back to the name the placeholder gives itself — either way this
+   * is the question the inspector should have been asking instead of "does it have a src?".
+   */
+  const selectedImageIsPlaceholder =
+    selectedElement?.type === 'image' &&
+    ((selectedElement as ImageElement).isPlaceholder === true ||
+      (selectedElement as ImageElement).name === 'Picture Placeholder');
 
   const selectionLabel =
     selectedElements.length === 0
@@ -1590,12 +1605,12 @@ export const PropertiesPanel: React.FC = () => {
                       <button
                         onClick={() =>
                           updateElement(textEl.id, {
-                            fontWeight: textEl.fontWeight === 'bold' ? 'normal' : 'bold',
+                            fontWeight: toggleBoldWeight(textEl.id, textEl.fontWeight),
                           })
                         }
                         title="Bold"
                         className={`py-1 rounded-lg flex items-center justify-center transition ${
-                          textEl.fontWeight === 'bold' || textEl.fontWeight === '800' || textEl.fontWeight === '900'
+                          isBoldWeight(textEl.fontWeight)
                             ? 'bg-white shadow-xs text-[#5c4bb8] font-bold'
                             : 'text-slate-600 hover:bg-white/60'
                         }`}
@@ -2163,17 +2178,16 @@ export const PropertiesPanel: React.FC = () => {
                             : 'bg-slate-50 border-slate-200 text-slate-600'
                         }`}
                       >
-                        Shrink to fit
+                        Shrink type
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
-                          const measured = layoutText({ ...textEl, autoFit: 'none' });
+                        onClick={() =>
                           updateElement(textEl.id, {
-                            height: Math.max(24, Math.ceil(measured.contentHeight + textEl.padding * 2)),
+                            height: textBoxContentHeight(textEl),
                             autoFit: 'none',
-                          });
-                        }}
+                          })
+                        }
                         className="py-1 rounded-lg text-[10px] font-semibold bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100"
                       >
                         Fit box to text
@@ -2193,7 +2207,9 @@ export const PropertiesPanel: React.FC = () => {
                       />
                     </label>
                     <p className="text-[9.5px] text-slate-400 leading-tight -mt-0.5">
-                      Corner handles scale the type, side handles rewrap it and grow the box.
+                      The box grows to hold whatever you type; “Shrink type” scales the letters
+                      down to the frame instead. Corner handles scale the type, side handles
+                      rewrap it and grow the box.
                     </p>
                     <label className="flex items-center justify-between pt-1 cursor-pointer">
                       <span className="text-[10.5px] text-slate-600 font-medium">
@@ -2435,11 +2451,37 @@ export const PropertiesPanel: React.FC = () => {
                             anchorRef={wordArtPickerBtnRef}
                             className="p-2.5 w-72"
                           >
-                            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1 mb-2">
-                              WordArt Styles ({wordArtOptions.length})
+                            <div className="flex items-center justify-between px-1 mb-1.5">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                WordArt Styles ({wordArtOptions.length})
+                              </span>
+                              {wordArtQuery && (
+                                <button
+                                  type="button"
+                                  onClick={() => setWordArtQuery('')}
+                                  className="text-[10px] font-semibold text-[#6e56cf] hover:underline cursor-pointer"
+                                >
+                                  Clear
+                                </button>
+                              )}
                             </div>
+                            <input
+                              type="search"
+                              value={wordArtQuery}
+                              onChange={(e) => setWordArtQuery(e.target.value)}
+                              placeholder="Search styles — try bubble, gold, sticker…"
+                              className="w-full mb-2 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-[11px] outline-none focus:bg-white focus:ring-2 focus:ring-[#6e56cf]/20 focus:border-[#b3a4f2]"
+                            />
                             <div className="grid grid-cols-2 gap-1.5 max-h-72 overflow-y-auto pr-0.5">
-                              {wordArtOptions.map((opt) => {
+                              {wordArtOptions
+                                .filter((opt) =>
+                                  wordArtQuery.trim()
+                                    ? `${opt.label} ${opt.id}`
+                                        .toLowerCase()
+                                        .includes(wordArtQuery.trim().toLowerCase())
+                                    : true
+                                )
+                                .map((opt) => {
                                 const isCurrent = activeStyleId === opt.id;
                                 return (
                                   <button
@@ -2449,6 +2491,10 @@ export const PropertiesPanel: React.FC = () => {
                                       updateElement(textEl.id, {
                                         isWordArt: opt.id !== 'none',
                                         wordArtStyle: opt.id,
+                                        // A style is a letterform before it is a colour: picking
+                                        // one brings its face with it. Styles with no face leave the
+                                        // document's font alone.
+                                        ...wordArtFacePatch(opt.id),
                                       });
                                       setIsWordArtPickerOpen(false);
                                     }}
@@ -2464,6 +2510,11 @@ export const PropertiesPanel: React.FC = () => {
                                       }`}
                                     >
                                       <span className={opt.cssClass}>Aa</span>
+                                      {opt.isNew && (
+                                        <span className="absolute left-1 top-1 rounded-[3px] bg-[#6e56cf] px-1 text-[7px] font-bold uppercase tracking-wide text-white">
+                                          New
+                                        </span>
+                                      )}
                                       {opt.backdrop && (
                                         <span
                                           className="absolute right-1 top-1 rounded-[3px] px-1 text-[7px] font-bold uppercase tracking-wide text-slate-900/80 border border-black/10"
@@ -2486,6 +2537,16 @@ export const PropertiesPanel: React.FC = () => {
                                 );
                               })}
                             </div>
+                            {wordArtQuery.trim() &&
+                              !wordArtOptions.some((opt) =>
+                                `${opt.label} ${opt.id}`
+                                  .toLowerCase()
+                                  .includes(wordArtQuery.trim().toLowerCase())
+                              ) && (
+                                <p className="px-1 pt-2 text-[10px] text-slate-400">
+                                  Nothing matches “{wordArtQuery}”.
+                                </p>
+                              )}
                           </FloatingDropdown>
                         </>
                       );
@@ -3943,7 +4004,10 @@ export const PropertiesPanel: React.FC = () => {
                     : 'Load Photo into Placeholder...'}
                 </span>
               </button>
-              {(selectedElement as ImageElement).src && (
+              {/* Only an element that started as a placeholder can be detached *from* one. Keying
+                  this on "has a src" offered Detach on every inserted photo and sticker, which read
+                  as though the art had been dropped into a plate it was never near. */}
+              {selectedImageIsPlaceholder && (selectedElement as ImageElement).src && (
                 <div className="grid grid-cols-2 gap-1.5">
                   <button
                     type="button"
@@ -3962,6 +4026,7 @@ export const PropertiesPanel: React.FC = () => {
                         originalSrc: undefined,
                         bgRemoved: false,
                         name: 'Picture Placeholder',
+                        isPlaceholder: true,
                       })
                     }
                     className="py-1.5 px-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-[10.5px] flex items-center justify-center gap-1 transition"

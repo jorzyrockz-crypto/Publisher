@@ -425,7 +425,9 @@ export const PageCanvas: React.FC<PageCanvasProps> = React.memo(({
         primary.height,
         targetPage,
         snapToGuides,
-        true
+        true,
+        // Six screen pixels, so the pull feels the same zoomed out as zoomed in.
+        6 / Math.max(zoom, 0.05)
       );
 
       setActiveAlignGuideH(snap.horizontalGuide);
@@ -595,6 +597,9 @@ export const PageCanvas: React.FC<PageCanvasProps> = React.memo(({
           width: `${targetPage.width}px`,
           height: `${targetPage.height}px`,
           backgroundColor: targetPage.backgroundColor,
+          // Tarpapel sheets carry the whole poster, shifted: trim to the paper or every sheet paints
+          // its neighbours' artwork over itself and the workarea shows four copies of one design.
+          ...(targetPage.clipContent ? { overflow: 'hidden' } : {}),
           ...(() => {
             const patStyle = buildPatternBackgroundStyle(targetPage.backgroundPattern);
             const gradCss = targetPage.backgroundGradient

@@ -16,6 +16,14 @@ export const PAGE_SIZES: PageSizeDefinition[] = [
     category: 'Standard',
   },
   {
+    // The reading-corner forms are printed as a folded A4 spread: one landscape sheet, 297 × 210 mm.
+    name: 'a4-landscape',
+    displayName: 'A4 Landscape (297 × 210 mm)',
+    width: 1123,
+    height: 794,
+    category: 'Standard',
+  },
+  {
     name: 'tabloid',
     displayName: 'Tabloid (11 × 17 in)',
     width: 1056,

@@ -41,6 +41,7 @@ export const QuickAccessToolbar: React.FC = () => {
     setIsEditingMaster,
     setIsMailMergeOpen,
     setIsWordArtModalOpen,
+    setIsTarpapelModalOpen,
     openBackstage,
   } = usePublisher();
 
@@ -102,6 +103,11 @@ export const QuickAccessToolbar: React.FC = () => {
     { label: 'Mail Merge', icon: '✉', action: () => setIsMailMergeOpen(true) },
     { label: 'WordArt Gallery', icon: '✨', action: () => setIsWordArtModalOpen(true) },
     { label: 'Export to PDF', icon: '📄', action: () => exportToPdf(project) },
+    {
+      label: 'Print as Tarpaulin',
+      icon: '🧷',
+      action: () => setIsTarpapelModalOpen(true),
+    },
     { label: 'Keyboard Shortcuts', icon: '?', action: () => openShortcutsModal() },
   ];
 

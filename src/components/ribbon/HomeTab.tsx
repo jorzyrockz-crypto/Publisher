@@ -27,6 +27,7 @@ import {
   Shapes,
   ImagePlus,
 } from 'lucide-react';
+import { isBoldWeight, toggleBoldWeight } from '../../utils/textWeight';
 
 export const HomeTab: React.FC = () => {
   const {
@@ -113,11 +114,14 @@ export const HomeTab: React.FC = () => {
               <button
                 onClick={() =>
                   updateSelectedElements({
-                    fontWeight: selectedTextElement?.fontWeight === 'bold' ? 'normal' : 'bold',
+                    fontWeight: toggleBoldWeight(
+                      selectedTextElement?.id ?? '',
+                      selectedTextElement?.fontWeight
+                    ),
                   })
                 }
                 className={`p-1 rounded-[6px] transition-all cursor-pointer ${
-                  selectedTextElement?.fontWeight === 'bold'
+                  isBoldWeight(selectedTextElement?.fontWeight)
                     ? 'bg-[#efeafd] text-[#5c4bb8] font-bold'
                     : 'text-[#4a5661] hover:text-[#161a22] hover:bg-white/60'
                 }`}

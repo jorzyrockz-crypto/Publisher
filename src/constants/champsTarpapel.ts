@@ -1,0 +1,1289 @@
+/**
+ * Tarpapel — one banner, printed on a grid of A4 sheets and glued together.
+ *
+ * The spec below is authored in the school's own terms: a canvas in millimetres, a tile grid with a
+ * glue overlap, and layers in **normalized coordinates** (0–1 of the assembled canvas). That is the
+ * right unit for the job, because the artwork has to be laid out once and then cut into sheets — and
+ * it is a different job from laying out a page, which is why this module exists instead of a page of
+ * elements typed by hand.
+ *
+ * `tarpapelToProject` turns a spec into **one page the size of the assembled poster** — 410 × 584 mm
+ * for a 2 × 2, not four A4s. That is deliberate. A four-page project opens showing a quarter of the
+ * artwork, which reads as a broken or unfinished template, and its gallery thumbnail is a fragment.
+ * A teacher wants to see the poster, edit the poster, and get sheets when they print; the Tarpaulin
+ * Printer (which tiles any page) is what cuts the sheets, and it already suggests the right grid from
+ * the page size.
+ *
+ * The grid still decides the layout, because the seams are where the type must not go:
+ *
+ * - **No letter may sit on a seam.** The printer duplicates a 10 mm strip along every seam, so type
+ *   there arrives on the wall twice, offset. Every word in these specs is split at the seam instead —
+ *   `TREE OF` either side of it, and so on. The check walks every text box against every band.
+ * - **A4 art cannot hold 871 mm.** A 1024px backdrop stretched across a 3292px canvas prints at
+ *   ~30 dpi. So the backdrop layer is laid as a low-opacity wash (its blur becomes atmosphere), and
+ *   the weight is carried by pieces at native size — frames across the top, stickers, and vector
+ *   word art. Anything placed near full-canvas size is a smudge by definition.
+ */
+
+import type {
+  DocumentProject,
+  ImageElement,
+  Page,
+  PublisherElement,
+  TextElement,
+  WordArtStyle,
+} from '../types/publisher';
+import type { TemplateDefinition } from './templates';
+
+/* ------------------------------------------------------------------ *
+ * Paper
+ * ------------------------------------------------------------------ */
+
+const MM = 3.7795275591; // 96 dpi
+const mm = (v: number) => Math.round(v * MM);
+const PT = 96 / 72; // point → px
+
+const SHEET = {
+  landscape: { width: mm(297), height: mm(210) }, // 1123 × 794
+  portrait: { width: mm(210), height: mm(297) }, // 794 × 1123
+};
+
+const PAPER = '#fbf7ee';
+const INK = '#1f2937';
+
+/** Built-in packs ship under these folders; `resolveAsset` maps the school's ids onto real pieces. */
+const PACK_BASES = {
+  storybook: './asset-packs/storybook-reading-v1/full/',
+  underwater: './asset-packs/champs-underwater-v1/full/',
+  cultural: './asset-packs/champs-cultural-v1/full/',
+} as const;
+
+/**
+ * The spec was written against a `champs-reading-v1` pack that does not exist as a folder — its
+ * pieces live in three packs now. Rather than rewrite the school's ids in the layout (which is what
+ * makes the spec readable), the ids are aliased here, once, in one table.
+ */
+const ASSET_ALIASES: Record<string, { pack: keyof typeof PACK_BASES; id: string }> = {
+  'bg-champs-nook': { pack: 'storybook', id: 'bg-cozy-reading-nook' },
+  'frame-hanging-vines': { pack: 'storybook', id: 'frame-top-canopy' },
+  'frame-top-leaves': { pack: 'storybook', id: 'frame-top-canopy' },
+  'frame-corner-vines': { pack: 'storybook', id: 'frame-corner-vines' },
+  'sticker-champs-trophy': { pack: 'storybook', id: 'badge-star-medal' },
+  'sticker-inclusive-readers': { pack: 'storybook', id: 'sticker-reading-kids' },
+  // Flat-cartoon readers drawn for the banner: bright sticker art, unlike the painted kit.
+  'sticker-cartoon-boy': { pack: 'storybook', id: 'sticker-cartoon-boy-reading' },
+  'sticker-cartoon-girl': { pack: 'storybook', id: 'sticker-cartoon-girl-reading' },
+  'sticker-reading-kids': { pack: 'storybook', id: 'sticker-reading-kids' },
+  'sticker-reading-passport': { pack: 'storybook', id: 'sticker-reading-passport' },
+  'sticker-gold-laurel': { pack: 'storybook', id: 'sticker-gold-laurel' },
+  'bg-enchanted-forest': { pack: 'storybook', id: 'bg-enchanted-forest' },
+  'bg-underwater-cove': { pack: 'underwater', id: 'bg-underwater-cove' },
+  'frame-ocean-top': { pack: 'underwater', id: 'frame-ocean-top' },
+  'frame-coral-bottom': { pack: 'underwater', id: 'frame-coral-bottom' },
+  'sticker-reading-turtle': { pack: 'underwater', id: 'sticker-reading-turtle' },
+  'bg-cultural-nook': { pack: 'cultural', id: 'bg-cultural-nook' },
+  'bg-heritage-tree': { pack: 'cultural', id: 'bg-heritage-tree' },
+  'frame-bamboo-top': { pack: 'cultural', id: 'frame-bamboo-top' },
+  'frame-hablon-border': { pack: 'cultural', id: 'frame-hablon-border' },
+  'frame-cultural-cards': { pack: 'cultural', id: 'frame-cultural-cards' },
+  'sticker-banig-readers': { pack: 'cultural', id: 'sticker-banig-readers' },
+  'sticker-kubo-shelf': { pack: 'cultural', id: 'sticker-kubo-shelf' },
+  'sticker-reading-carabao': { pack: 'cultural', id: 'sticker-reading-carabao' },
+};
+
+/**
+ * Art drawn for the tarpapels themselves rather than borrowed from a kit: on the Tree poster the tree
+ * is not decoration, it is the poster, so it lives with the templates instead of inside a pack.
+ */
+const LOCAL_ART: Record<string, string> = {
+  'tree-of-knowledge': './tarpapel/tree-of-knowledge.webp',
+};
+
+const resolveAsset = (assetId: string): string | null => {
+  const local = LOCAL_ART[assetId];
+  if (local) return local;
+  const alias = ASSET_ALIASES[assetId];
+  if (!alias) return null;
+  return `${PACK_BASES[alias.pack]}${alias.id}.webp`;
+};
+
+/* ------------------------------------------------------------------ *
+ * The spec
+ * ------------------------------------------------------------------ */
+
+export interface TarpapelTiling {
+  paper: 'A4';
+  orientation: 'landscape' | 'portrait';
+  cols: number;
+  rows: number;
+  overlapMm: number;
+  cropMarks: boolean;
+}
+
+interface LayerBase {
+  id: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export interface TarpapelAssetLayer extends LayerBase {
+  type: 'asset';
+  assetId: string;
+  layerRole: 'backdrop' | 'frame' | 'sticker';
+  opacity?: number;
+  locked?: boolean;
+  /**
+   * Repeat the piece side by side, each copy the same width. This is how a 1024px frame covers an
+   * 871 mm banner without being upscaled into a smear: three garlands at native size, not one giant.
+   */
+  repeatX?: number;
+}
+
+/** Flat or gradient fills — the banner's wash, the pills behind type, the footer bar. */
+export interface TarpapelShapeLayer extends LayerBase {
+  type: 'shape';
+  fill: string;
+  fillColor2?: string;
+  gradientAngle?: number;
+  /**
+   * What is drawn in the box. A rectangle with `radius` is the default because it is what a banner is
+   * made of; circles make clouds and a sun, and triangles make the rays of the sunburst behind the
+   * sign. Anything else (stars, ribbons, speech bubbles) would be an asset, not a shape.
+   */
+  shapeType?: 'rectangle' | 'rounded-rect' | 'circle' | 'triangle';
+  /** Degrees clockwise about the shape's centre — how a fan of rays is aimed. */
+  rotation?: number;
+  stroke?: { color: string; width: number };
+  radius?: number;
+  opacity?: number;
+  locked?: boolean;
+}
+
+export interface TarpapelWordArtLayer extends LayerBase {
+  type: 'wordart';
+  text: string;
+  wordArtId: WordArtStyle;
+  fontFamily: string;
+  fontSizePt: number;
+  align: 'left' | 'center' | 'right';
+  arc?: number;
+  editable?: boolean;
+}
+
+export interface TarpapelTextLayer extends LayerBase {
+  type: 'text';
+  text: string;
+  fontFamily: string;
+  fontWeight: TextElement['fontWeight'];
+  fontSizePt: number;
+  color: string;
+  align: 'left' | 'center' | 'right';
+  letterSpacing?: number;
+  editable?: boolean;
+}
+
+export type TarpapelLayer =
+  | TarpapelAssetLayer
+  | TarpapelShapeLayer
+  | TarpapelWordArtLayer
+  | TarpapelTextLayer;
+
+export interface TarpapelTemplate {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  packId: string;
+  thumbnailColor: string;
+  thumbnailGradient: string;
+  tiling: TarpapelTiling;
+  canvas: { widthMm: number; heightMm: number };
+  /** Flat colour behind everything. A backdrop wash sits on top of it at low opacity. */
+  background: string;
+  layers: TarpapelLayer[];
+}
+
+/* ------------------------------------------------------------------ *
+ * 3 × 2 A4 landscape — the main wall banner (871 × 410 mm)
+ * ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------ *
+ * 3 × 2 A4 landscape — the main wall banner (871 × 410 mm)
+ * ------------------------------------------------------------------ */
+
+/**
+ * The banner is drawn the way the poster it replaces was not: as a picture, not a form.
+ *
+ * A wall banner read from a metre away is a sign, so the design is a wooden board hung in a bright
+ * sky — a sunburst behind it, clouds beside it, two of the school's readers perched on the ends of
+ * the board — and the title works as the sign's lettering. Everything that carries the look is
+ * vector: the sky, the fan of rays, the clouds, the board, its grain. Only the two children are
+ * bitmaps, and they are set at ~130 dpi, which is what a 450 px cut-out can honestly hold at
+ * 150 mm tall.
+ *
+ * The seams still rule the type. In a 3 × 2 A4 grid the glue strips fall at x = 0.330–0.341 and
+ * 0.658–0.670, and across the middle at y = 0.488–0.512. So every word lives inside the centre
+ * column — 0.35 to 0.65 of the canvas, 260 mm of paper — and the title stacks on two lines to fit
+ * it: READING above the horizontal strip, CORNER below. The board, the rays and the clouds cross
+ * the seams as freely as they like: they are artwork, and artwork may cross.
+ */
+
+const BANNER_W = mm(871);
+const BANNER_H = mm(410);
+
+/**
+ * One beam of the sunburst: a bar laid along a radius from the middle of the board. A bar, not a
+ * triangle — a triangle tapers to nothing at the centre, which at 3000 px across reads as a
+ * scribble of needles; a bar keeps its weight all the way out, which is what light behind a sign
+ * looks like. The near end is hidden behind the board, so the beam appears to start at the sign.
+ */
+const sunBeam = (
+  id: string,
+  angleDeg: number,
+  length: number,
+  width: number,
+  fill: string,
+  opacity: number
+): TarpapelShapeLayer => {
+  const pivotX = BANNER_W * 0.5;
+  const pivotY = BANNER_H * 0.3;
+  const rad = (angleDeg * Math.PI) / 180;
+  const cx = pivotX + Math.sin(rad) * (length / 2);
+  const cy = pivotY - Math.cos(rad) * (length / 2);
+  return {
+    id,
+    type: 'shape',
+    shapeType: 'rectangle',
+    fill,
+    opacity,
+    rotation: angleDeg,
+    x: (cx - width / 2) / BANNER_W,
+    y: (cy - length / 2) / BANNER_H,
+    w: width / BANNER_W,
+    h: length / BANNER_H,
+  };
+};
+
+/** A cloud is four white circles and a puff — cheaper and crisper than a bitmap of a cloud. */
+const cloud = (id: string, cx: number, cy: number, size: number): TarpapelShapeLayer[] =>
+  [
+    { dx: -0.95, dy: 0.12, r: 0.6 },
+    { dx: -0.1, dy: -0.25, r: 0.85 },
+    { dx: 0.8, dy: 0.06, r: 0.62 },
+    { dx: 0.3, dy: 0.28, r: 0.5 },
+  ].map((puff, i) => {
+    const r = size * puff.r;
+    const x = cx + size * puff.dx - r;
+    const y = cy + size * puff.dy - r;
+    return {
+      id: `${id}-${i + 1}`,
+      type: 'shape' as const,
+      shapeType: 'circle' as const,
+      fill: '#ffffff',
+      opacity: 1,
+      x: x / BANNER_W,
+      y: y / BANNER_H,
+      w: (r * 2) / BANNER_W,
+      h: (r * 2) / BANNER_H,
+    };
+  });
+
+export const CHAMPS_TARPAPEL_BANNER: TarpapelTemplate = {
+  id: 'champs-tarpapel-3x2',
+  name: 'Champs Reading Corner Banner (3×2 Tarpapel)',
+  description:
+    'An 871 × 410 mm wall banner on one page, printed as six A4 landscape sheets and glued: a wooden signboard hung in a bright sky with a fan of sun rays behind it, chunky READING / CORNER lettering on the board — one line above the middle seam, one below — a boy and a girl reading on the ends of the board, the DepEd line on a cream plaque and a Grade & Section hem. Every word keeps clear of the glue strips; the artwork runs straight across them.',
+  category: 'Champs Reading',
+  packId: 'champs-reading-v1',
+  thumbnailColor: '#1d4ed8',
+  thumbnailGradient: 'linear-gradient(135deg, #1d4ed8 0%, #0ea5e9 45%, #f59e0b 100%)',
+  tiling: { paper: 'A4', orientation: 'landscape', cols: 3, rows: 2, overlapMm: 10, cropMarks: true },
+  canvas: { widthMm: 871, heightMm: 410 },
+  background: '#fdfaf2',
+  layers: [
+    // The sky: deeper at the head of the banner, almost white where it meets the foot.
+    {
+      id: 'bg-wash',
+      type: 'shape',
+      fill: '#a9d9f7',
+      fillColor2: '#eef9ff',
+      gradientAngle: 90,
+      x: 0,
+      y: 0,
+      w: 1,
+      h: 1,
+      locked: true,
+    },
+    // A fan of nine rays, alternating wide and narrow, so the burst reads as light and not a wheel.
+    ...[0, 1, 2, 3, 4, 5, 6, 7].map((i) =>
+      sunBeam(
+        `sun-beam-${i + 1}`,
+        -68 + i * 19.4,
+        BANNER_H * 0.78,
+        i % 2 === 0 ? 165 : 110,
+        i % 2 === 0 ? '#ffd77a' : '#ffe7b4',
+        0.9
+      )
+    ),
+    ...cloud('cloud-left', BANNER_W * 0.1, BANNER_H * 0.16, 116),
+    ...cloud('cloud-right', BANNER_W * 0.9, BANNER_H * 0.21, 92),
+    // The board: a shadow under it, the board, a sheen along its top edge, and grain.
+    { id: 'board-shadow', type: 'shape', fill: '#7c3f10', radius: 34, opacity: 0.45, x: 0.216, y: 0.222, w: 0.568, h: 0.62 },
+    {
+      id: 'board',
+      type: 'shape',
+      fill: '#f4a75c',
+      fillColor2: '#d97f2e',
+      gradientAngle: 90,
+      radius: 34,
+      stroke: { color: '#6d3410', width: 14 },
+      x: 0.222,
+      y: 0.202,
+      w: 0.556,
+      h: 0.622,
+    },
+    // A keyline inside the edge: the one line that makes a painted rectangle read as carpentry.
+    { id: 'board-keyline', type: 'shape', fill: 'transparent', radius: 24, stroke: { color: '#8a4a15', width: 5 }, x: 0.238, y: 0.218, w: 0.524, h: 0.59 },
+    { id: 'board-sheen', type: 'shape', fill: '#ffd0a0', radius: 28, opacity: 0.3, x: 0.236, y: 0.212, w: 0.528, h: 0.045 },
+    ...[0.3, 0.395, 0.49, 0.585, 0.68, 0.775].map((y, i) => ({
+      id: `board-grain-${i + 1}`,
+      type: 'shape' as const,
+      fill: '#7c3f10',
+      opacity: 0.18,
+      // The lines stop short of the edges by different amounts: a plank, not ruled paper.
+      x: 0.238 + (i % 3) * 0.012,
+      y,
+      w: 0.524 - (i % 2) * 0.03,
+      h: 0.006,
+    })),
+    // Header plaque: the school line, cream on the sky, inside the centre column.
+    {
+      id: 'header-plaque',
+      type: 'shape',
+      fill: '#fdfaf2',
+      radius: 30,
+      opacity: 0.96,
+      stroke: { color: '#1e3a8a', width: 3 },
+      x: 0.3,
+      y: 0.014,
+      w: 0.4,
+      h: 0.064,
+    },
+    {
+      id: 'header-school',
+      type: 'text',
+      text: 'DEPED REGION VI • SCHOOLS DIVISION OF AKLAN • [SCHOOL NAME]',
+      fontFamily: 'Plus Jakarta Sans',
+      fontWeight: '800',
+      fontSizePt: 15,
+      color: '#1e3a8a',
+      align: 'center',
+      x: 0.35,
+      y: 0.014,
+      w: 0.3,
+      h: 0.064,
+      letterSpacing: 1.1,
+      editable: true,
+    },
+    // Three lines of type on the board — kicker, READING, CORNER — all inside the centre column.
+    {
+      id: 'title-kicker',
+      type: 'wordart',
+      text: 'THE CHAMPS',
+      wordArtId: 'champs-gold-ribbon',
+      fontFamily: 'Fredoka',
+      fontSizePt: 42,
+      align: 'center',
+      x: 0.352,
+      y: 0.243,
+      w: 0.296,
+      h: 0.076,
+      editable: true,
+    },
+    {
+      id: 'title-champs',
+      type: 'wordart',
+      text: 'READING',
+      wordArtId: 'cartoon-bubble-blue',
+      fontFamily: 'Fredoka',
+      fontSizePt: 138,
+      align: 'center',
+      x: 0.35,
+      y: 0.335,
+      w: 0.3,
+      h: 0.15,
+      editable: true,
+    },
+    {
+      id: 'title-reading-corner',
+      type: 'wordart',
+      text: 'CORNER',
+      wordArtId: 'cartoon-bubble-pink',
+      fontFamily: 'Fredoka',
+      fontSizePt: 138,
+      align: 'center',
+      x: 0.352,
+      y: 0.548,
+      w: 0.296,
+      h: 0.15,
+      editable: true,
+    },
+    {
+      id: 'tagline',
+      type: 'text',
+      text: 'Basa Kasadya • Champs Read, Learn, and Excel',
+      fontFamily: 'Plus Jakarta Sans',
+      fontWeight: '800',
+      fontSizePt: 19,
+      color: '#6d3410',
+      align: 'center',
+      x: 0.35,
+      y: 0.722,
+      w: 0.3,
+      h: 0.048,
+      letterSpacing: 1.2,
+      editable: true,
+    },
+    // The readers, perched on the ends of the board, drawn at their own pixels.
+    { id: 'sticker-boy', type: 'asset', assetId: 'sticker-cartoon-boy', layerRole: 'sticker', x: 0.172, y: 0.53, w: 0.108, h: 0.378 },
+    { id: 'sticker-girl', type: 'asset', assetId: 'sticker-cartoon-girl', layerRole: 'sticker', x: 0.72, y: 0.53, w: 0.108, h: 0.378 },
+    // A hem at the foot of the banner, carrying the two blanks a school actually fills in.
+    { id: 'footer-bar', type: 'shape', fill: '#0f766e', x: 0, y: 0.936, w: 1, h: 0.064 },
+    {
+      id: 'footer-section',
+      type: 'text',
+      text: 'Grade & Section: [Grade 1 - Section]  |  Adviser: [Teacher Name]',
+      fontFamily: 'Plus Jakarta Sans',
+      fontWeight: 'bold',
+      fontSizePt: 15,
+      color: '#ffffff',
+      align: 'center',
+      x: 0.35,
+      y: 0.936,
+      w: 0.3,
+      h: 0.064,
+      editable: true,
+    },
+  ],
+};
+
+/* ------------------------------------------------------------------ *
+ * 2 × 2 A4 portrait — the Tree of Knowledge (410 × 584 mm assembled)
+ * ------------------------------------------------------------------ */
+
+/**
+ * A different poster from the word wall, and it should be: teachers print this one enormous and
+ * hang it alone. The tree is the design — nine blank fruit, one per word or per child — and the
+ * template's job is to give it a title band, a subject row and a footer without crowding it.
+ *
+ * The tree art is a cut-out with alpha, so it sits on the wash instead of in a white rectangle, and
+ * it is placed at ~1.3× its own pixels: at 250 mm wide on paper that is ~90 dpi, which is the honest
+ * limit of a painted asset and fine for gouache read from a metre away.
+ */
+export const CHAMPS_TARPAPEL_TREE: TarpapelTemplate = {
+  id: 'champs-tarpapel-tree',
+  name: 'Tree of Knowledge Tarpapel (2×2)',
+  description:
+    'A 410 × 584 mm tree poster on one page, printed as four A4 sheets and glued: a cut-out knowledge tree with nine blank fruit to write words or names on, a hablon/bamboo header split TREE OF / KNOWLEDGE at the seam, four editable subject tags, and a Grade & Section footer. Every word stays clear of the glue strip; made to hang alone.',
+  category: 'Champs Reading',
+  packId: 'champs-reading-v1',
+  thumbnailColor: '#15803d',
+  thumbnailGradient: 'linear-gradient(135deg, #15803d 0%, #65a30d 55%, #fbbf24 100%)',
+  tiling: { paper: 'A4', orientation: 'portrait', cols: 2, rows: 2, overlapMm: 10, cropMarks: true },
+  canvas: { widthMm: 410, heightMm: 584 },
+  background: PAPER,
+  layers: [
+    {
+      id: 'bg-wash',
+      type: 'shape',
+      fill: '#e7f2e3',
+      fillColor2: '#fdfaf2',
+      gradientAngle: 90,
+      x: 0,
+      y: 0,
+      w: 1,
+      h: 1,
+      locked: true,
+    },
+    {
+      id: 'frame-top',
+      type: 'asset',
+      assetId: 'frame-bamboo-top',
+      layerRole: 'frame',
+      x: -0.01,
+      y: 0,
+      w: 1.02,
+      h: 0.075,
+      repeatX: 2,
+    },
+    { id: 'header-pill', type: 'shape', fill: '#fdfaf2', radius: 26, opacity: 0.95, x: 0.03, y: 0.052, w: 0.94, h: 0.1 },
+    // Two words, one per sheet — the seam falls in the gap between them and never through a letter.
+    {
+      id: 'title-champs',
+      type: 'wordart',
+      text: 'TREE OF',
+      wordArtId: 'cultural-hablon',
+      fontFamily: 'Fredoka',
+      fontSizePt: 62,
+      align: 'right',
+      x: 0.045,
+      y: 0.062,
+      w: 0.427,
+      h: 0.094,
+      editable: true,
+    },
+    {
+      id: 'title-champs-2',
+      type: 'wordart',
+      text: 'KNOWLEDGE',
+      wordArtId: 'cultural-hablon',
+      fontFamily: 'Fredoka',
+      fontSizePt: 62,
+      align: 'left',
+      x: 0.528,
+      y: 0.062,
+      w: 0.427,
+      h: 0.094,
+      editable: true,
+    },
+    {
+      id: 'title-reading-corner',
+      type: 'text',
+      text: 'BASA KASADYA',
+      fontFamily: 'Plus Jakarta Sans',
+      fontWeight: '800',
+      fontSizePt: 22,
+      color: '#166534',
+      align: 'right',
+      x: 0.045,
+      y: 0.168,
+      w: 0.427,
+      h: 0.032,
+      letterSpacing: 2.4,
+      editable: true,
+    },
+    {
+      id: 'title-reading-corner-2',
+      type: 'text',
+      text: 'READING CORNER',
+      fontFamily: 'Plus Jakarta Sans',
+      fontWeight: '800',
+      fontSizePt: 22,
+      color: '#166534',
+      align: 'left',
+      x: 0.528,
+      y: 0.168,
+      w: 0.427,
+      h: 0.032,
+      letterSpacing: 2.4,
+      editable: true,
+    },
+    // The poster.
+    {
+      id: 'bg-main',
+      type: 'asset',
+      assetId: 'tree-of-knowledge',
+      layerRole: 'backdrop',
+      x: 0.19,
+      y: 0.198,
+      w: 0.62,
+      h: 0.556,
+    },
+    // Both instruction strips sit in the bottom row and stop short of the seam.
+    { id: 'fruit-pill', type: 'shape', fill: '#ffffff', radius: 20, opacity: 0.92, x: 0.04, y: 0.772, w: 0.43, h: 0.046 },
+    {
+      id: 'fruit-hint',
+      type: 'text',
+      text: 'WRITE A WORD ON EVERY FRUIT',
+      fontFamily: 'Plus Jakarta Sans',
+      fontWeight: 'bold',
+      fontSizePt: 17,
+      color: '#15803d',
+      align: 'center',
+      x: 0.04,
+      y: 0.772,
+      w: 0.43,
+      h: 0.046,
+      letterSpacing: 1.6,
+      editable: true,
+    },
+    { id: 'fruit-pill-2', type: 'shape', fill: '#ffffff', radius: 20, opacity: 0.92, x: 0.53, y: 0.772, w: 0.43, h: 0.046 },
+    {
+      id: 'fruit-hint-2',
+      type: 'text',
+      text: 'THEN DRAW IT AND USE IT',
+      fontFamily: 'Plus Jakarta Sans',
+      fontWeight: 'bold',
+      fontSizePt: 17,
+      color: '#15803d',
+      align: 'center',
+      x: 0.53,
+      y: 0.772,
+      w: 0.43,
+      h: 0.046,
+      letterSpacing: 1.6,
+      editable: true,
+    },
+    // Four subject tags, two a side: the seam runs between MATHEMATICS and SCIENCE.
+    { id: 'tag-1', type: 'shape', fill: '#15803d', radius: 18, x: 0.04, y: 0.84, w: 0.205, h: 0.066 },
+    {
+      id: 'tag-1-text',
+      type: 'text',
+      text: 'READING',
+      fontFamily: 'Plus Jakarta Sans',
+      fontWeight: '800',
+      fontSizePt: 18,
+      color: '#ffffff',
+      align: 'center',
+      x: 0.04,
+      y: 0.84,
+      w: 0.205,
+      h: 0.066,
+      letterSpacing: 1.8,
+      editable: true,
+    },
+    { id: 'tag-2', type: 'shape', fill: '#b45309', radius: 18, x: 0.265, y: 0.84, w: 0.205, h: 0.066 },
+    {
+      id: 'tag-2-text',
+      type: 'text',
+      text: 'MATHEMATICS',
+      fontFamily: 'Plus Jakarta Sans',
+      fontWeight: '800',
+      fontSizePt: 18,
+      color: '#ffffff',
+      align: 'center',
+      x: 0.265,
+      y: 0.84,
+      w: 0.205,
+      h: 0.066,
+      letterSpacing: 1.8,
+      editable: true,
+    },
+    { id: 'tag-3', type: 'shape', fill: '#0f766e', radius: 18, x: 0.53, y: 0.84, w: 0.205, h: 0.066 },
+    {
+      id: 'tag-3-text',
+      type: 'text',
+      text: 'SCIENCE',
+      fontFamily: 'Plus Jakarta Sans',
+      fontWeight: '800',
+      fontSizePt: 18,
+      color: '#ffffff',
+      align: 'center',
+      x: 0.53,
+      y: 0.84,
+      w: 0.205,
+      h: 0.066,
+      letterSpacing: 1.8,
+      editable: true,
+    },
+    { id: 'tag-4', type: 'shape', fill: '#7c2d12', radius: 18, x: 0.755, y: 0.84, w: 0.205, h: 0.066 },
+    {
+      id: 'tag-4-text',
+      type: 'text',
+      text: 'FILIPINO',
+      fontFamily: 'Plus Jakarta Sans',
+      fontWeight: '800',
+      fontSizePt: 18,
+      color: '#ffffff',
+      align: 'center',
+      x: 0.755,
+      y: 0.84,
+      w: 0.205,
+      h: 0.066,
+      letterSpacing: 1.8,
+      editable: true,
+    },
+    { id: 'footer-bar', type: 'shape', fill: '#166534', x: 0, y: 0.912, w: 1, h: 0.06 },
+    {
+      id: 'footer',
+      type: 'text',
+      text: 'GRADE & SECTION: __________',
+      fontFamily: 'Plus Jakarta Sans',
+      fontWeight: 'bold',
+      fontSizePt: 17,
+      color: '#ffffff',
+      align: 'right',
+      x: 0.04,
+      y: 0.912,
+      w: 0.42,
+      h: 0.06,
+      letterSpacing: 1,
+      editable: true,
+    },
+    {
+      id: 'footer-2',
+      type: 'text',
+      text: 'ADVISER: __________',
+      fontFamily: 'Plus Jakarta Sans',
+      fontWeight: 'bold',
+      fontSizePt: 17,
+      color: '#ffffff',
+      align: 'left',
+      x: 0.54,
+      y: 0.912,
+      w: 0.42,
+      h: 0.06,
+      letterSpacing: 1,
+      editable: true,
+    },
+  ],
+};
+
+/* ------------------------------------------------------------------ *
+ * 2 × 2 A4 portrait — the Word Wall (410 × 584 mm assembled)
+ * ------------------------------------------------------------------ */
+
+/**
+ * The other poster. No tree: a word wall is a *furniture* — twenty-four uniform cards at a size a
+ * child can read from a desk, with the seams deliberately landing in the widest gutters so the glue
+ * strips never cross a card.
+ *
+ * Cards are vectors (a coloured plate with a white face inside), not a three-card asset stretched to
+ * fit a grid: at 88 × 60 mm each, a stretched raster would print its own border at the wrong weight,
+ * and the count has to be divisible by four sheets anyway.
+ */
+const CARD_W = 0.2155;
+const CARD_H = 0.0977;
+const CARD_GAP_X = 0.014;
+const CARD_GAP_Y = 0.012;
+const CARD_INSET_X = 5 / 1550;
+const CARD_INSET_Y = 5 / 2208;
+
+/**
+ * 24 cards in four 2 × 3 blocks. Both gutters are centred on 0.5 — the sheet seam — and are 40 mm
+ * wide across and 30 mm down, so the glue strip falls on paper, never on a card.
+ */
+const wordWallCards = (): TarpapelShapeLayer[] => {
+  const blockX = [0.035, 0.52];
+  const blockY = [0.168, 0.515];
+  const accents = [
+    ['#0f766e', '#b45309'],
+    ['#b45309', '#0f766e'],
+  ];
+  const layers: TarpapelShapeLayer[] = [];
+  blockY.forEach((by, rowBlock) => {
+    blockX.forEach((bx, colBlock) => {
+      const accent = accents[rowBlock][colBlock];
+      for (let r = 0; r < 3; r += 1) {
+        for (let c = 0; c < 2; c += 1) {
+          const x = bx + c * (CARD_W + CARD_GAP_X);
+          const y = by + r * (CARD_H + CARD_GAP_Y);
+          const n = rowBlock * 12 + colBlock * 6 + r * 2 + c + 1;
+          layers.push({ id: `card-${n}-plate`, type: 'shape', fill: accent, radius: 14, x, y, w: CARD_W, h: CARD_H });
+          layers.push({
+            id: `card-${n}`,
+            type: 'shape',
+            fill: '#ffffff',
+            radius: 10,
+            x: x + CARD_INSET_X,
+            y: y + CARD_INSET_Y,
+            w: CARD_W - CARD_INSET_X * 2,
+            h: CARD_H - CARD_INSET_Y * 2,
+          });
+        }
+      }
+    });
+  });
+  return layers;
+};
+
+export const CHAMPS_TARPAPEL_WORD_WALL: TarpapelTemplate = {
+  id: 'champs-wordwall-2x2',
+  name: 'Word Wall (2×2 Tarpapel)',
+  description:
+    'A 410 × 584 mm word wall on one page, printed as four A4 sheets and glued: twenty-four blank cards, 83 × 53 mm each, arranged so both glue seams fall in the wide central gutters — no card is ever cut or glued across the middle. Header, subject line and an instruction footer.',
+  category: 'Champs Reading',
+  packId: 'champs-reading-v1',
+  thumbnailColor: '#b45309',
+  thumbnailGradient: 'linear-gradient(135deg, #b45309 0%, #0f766e 55%, #fbbf24 100%)',
+  tiling: { paper: 'A4', orientation: 'portrait', cols: 2, rows: 2, overlapMm: 10, cropMarks: true },
+  canvas: { widthMm: 410, heightMm: 584 },
+  background: PAPER,
+  layers: [
+    {
+      id: 'bg-wash',
+      type: 'shape',
+      fill: '#fdf1d8',
+      fillColor2: '#fbf7ee',
+      gradientAngle: 90,
+      x: 0,
+      y: 0,
+      w: 1,
+      h: 1,
+      locked: true,
+    },
+    {
+      id: 'frame-top',
+      type: 'asset',
+      assetId: 'frame-bamboo-top',
+      layerRole: 'frame',
+      x: -0.01,
+      y: 0,
+      w: 1.02,
+      h: 0.075,
+      repeatX: 2,
+    },
+    { id: 'header-pill', type: 'shape', fill: '#fdfaf2', radius: 26, opacity: 0.95, x: 0.08, y: 0.042, w: 0.84, h: 0.096 },
+    {
+      id: 'title-champs',
+      type: 'wordart',
+      text: 'WORD',
+      wordArtId: 'cultural-hablon',
+      fontFamily: 'Fredoka',
+      fontSizePt: 96,
+      align: 'right',
+      x: 0.06,
+      y: 0.044,
+      w: 0.412,
+      h: 0.09,
+      editable: true,
+    },
+    {
+      id: 'title-champs-2',
+      type: 'wordart',
+      text: 'WALL',
+      wordArtId: 'cultural-hablon',
+      fontFamily: 'Fredoka',
+      fontSizePt: 96,
+      align: 'left',
+      x: 0.528,
+      y: 0.044,
+      w: 0.412,
+      h: 0.09,
+      editable: true,
+    },
+    {
+      id: 'title-reading-corner',
+      type: 'text',
+      text: 'BASA KASADYA   ·   GRADE ___',
+      fontFamily: 'Plus Jakarta Sans',
+      fontWeight: '800',
+      fontSizePt: 20,
+      color: '#7c2d12',
+      align: 'right',
+      x: 0.04,
+      y: 0.132,
+      w: 0.432,
+      h: 0.032,
+      letterSpacing: 1.4,
+      editable: true,
+    },
+    {
+      id: 'title-reading-corner-2',
+      type: 'text',
+      text: 'ADVISER ___',
+      fontFamily: 'Plus Jakarta Sans',
+      fontWeight: '800',
+      fontSizePt: 20,
+      color: '#7c2d12',
+      align: 'left',
+      x: 0.528,
+      y: 0.132,
+      w: 0.432,
+      h: 0.032,
+      letterSpacing: 1.4,
+      editable: true,
+    },
+    ...wordWallCards(),
+    { id: 'footer-bar', type: 'shape', fill: '#7c2d12', x: 0, y: 0.868, w: 1, h: 0.075 },
+    {
+      id: 'footer',
+      type: 'text',
+      text: 'WRITE THE WORD  ·  DRAW IT',
+      fontFamily: 'Plus Jakarta Sans',
+      fontWeight: 'bold',
+      fontSizePt: 17,
+      color: '#ffffff',
+      align: 'right',
+      x: 0.04,
+      y: 0.868,
+      w: 0.432,
+      h: 0.075,
+      letterSpacing: 1.4,
+      editable: true,
+    },
+    {
+      id: 'footer-2',
+      type: 'text',
+      text: 'USE IT IN A SENTENCE',
+      fontFamily: 'Plus Jakarta Sans',
+      fontWeight: 'bold',
+      fontSizePt: 17,
+      color: '#ffffff',
+      align: 'left',
+      x: 0.528,
+      y: 0.868,
+      w: 0.432,
+      h: 0.075,
+      letterSpacing: 1.4,
+      editable: true,
+    },
+  ],
+};
+
+/* ------------------------------------------------------------------ *
+ * Theme swap — four keys, four themes
+ * ------------------------------------------------------------------ */
+
+export interface TarpapelTheme {
+  id: string;
+  label: string;
+  backdrop: string;
+  topFrame: string;
+  titleWordArt: WordArtStyle;
+  subtitleWordArt: WordArtStyle;
+  /** Head → foot colours of the vector wash. A photo cannot hold 871 mm; a gradient can. */
+  wash: [string, string];
+}
+
+/** The four Region VI looks, as the school's table has them — every asset id resolves above. */
+export const TARPAPEL_THEMES: TarpapelTheme[] = [
+  {
+    id: 'champs-default',
+    label: 'Champs Default',
+    backdrop: 'bg-champs-nook',
+    topFrame: 'frame-hanging-vines',
+    titleWordArt: 'champs-basa-blue',
+    subtitleWordArt: 'champs-kasadya-coral',
+    wash: ['#e9f6f0', '#fdfaf2'],
+  },
+  {
+    id: 'forest',
+    label: 'Forest',
+    backdrop: 'bg-enchanted-forest',
+    topFrame: 'frame-top-leaves',
+    titleWordArt: 'reading-nook-sage',
+    subtitleWordArt: 'storybook-crayon',
+    wash: ['#e7f2e3', '#fbf7ee'],
+  },
+  {
+    id: 'underwater',
+    label: 'Underwater',
+    backdrop: 'bg-underwater-cove',
+    topFrame: 'frame-ocean-top',
+    titleWordArt: 'underwater-bubble',
+    subtitleWordArt: 'champs-kasadya-coral',
+    wash: ['#d8f3fb', '#eefaf6'],
+  },
+  {
+    id: 'local-cultural',
+    label: 'Local Cultural',
+    backdrop: 'bg-cultural-nook',
+    topFrame: 'frame-bamboo-top',
+    titleWordArt: 'cultural-hablon',
+    subtitleWordArt: 'eco-champion',
+    wash: ['#fdf1d8', '#fbf7ee'],
+  },
+];
+
+/**
+ * Swaps the four keys and leaves every other layer — copy, sizes, positions — exactly where the
+ * school put it. That is the whole point of naming art by id in the spec.
+ */
+export function withTarpapelTheme(spec: TarpapelTemplate, themeId: string): TarpapelTemplate {
+  const theme = TARPAPEL_THEMES.find((t) => t.id === themeId);
+  if (!theme) return spec;
+  return {
+    ...spec,
+    layers: spec.layers.map((layer) => {
+      if (layer.type === 'shape' && layer.id === 'bg-wash') {
+        return { ...layer, fill: theme.wash[0], fillColor2: theme.wash[1] };
+      }
+      if (layer.type === 'asset' && layer.id === 'bg-main') return { ...layer, assetId: theme.backdrop };
+      if (layer.type === 'asset' && layer.id === 'frame-top') return { ...layer, assetId: theme.topFrame };
+      if (layer.type === 'wordart' && layer.id === 'title-champs') {
+        return { ...layer, wordArtId: theme.titleWordArt };
+      }
+      if (layer.type === 'wordart' && layer.id === 'title-reading-corner') {
+        return { ...layer, wordArtId: theme.subtitleWordArt };
+      }
+      return layer;
+    }),
+  };
+}
+
+/* ------------------------------------------------------------------ *
+ * Canvas → sheets
+ * ------------------------------------------------------------------ */
+
+export interface TarpapelGeometry {
+  canvasWidth: number;
+  canvasHeight: number;
+  sheetWidth: number;
+  sheetHeight: number;
+  overlap: number;
+  /** Sheet origin in canvas px, row-major. */
+  sheets: { col: number; row: number; x: number; y: number }[];
+}
+
+export function tarpapelGeometry(spec: TarpapelTemplate): TarpapelGeometry {
+  const sheet = SHEET[spec.tiling.orientation];
+  const overlap = mm(spec.tiling.overlapMm);
+  const canvasWidth = spec.tiling.cols * sheet.width - (spec.tiling.cols - 1) * overlap;
+  const canvasHeight = spec.tiling.rows * sheet.height - (spec.tiling.rows - 1) * overlap;
+  const sheets: TarpapelGeometry['sheets'] = [];
+  for (let row = 0; row < spec.tiling.rows; row += 1) {
+    for (let col = 0; col < spec.tiling.cols; col += 1) {
+      sheets.push({
+        col,
+        row,
+        x: col * (sheet.width - overlap),
+        y: row * (sheet.height - overlap),
+      });
+    }
+  }
+  return { canvasWidth, canvasHeight, sheetWidth: sheet.width, sheetHeight: sheet.height, overlap, sheets };
+}
+
+/** Every layer in canvas pixels — the geometry a preview or a test wants. */
+export function tarpapelCanvasElements(spec: TarpapelTemplate): PublisherElement[] {
+  const geo = tarpapelGeometry(spec);
+  const out: PublisherElement[] = [];
+  spec.layers.forEach((layer, index) => {
+    const x = layer.x * geo.canvasWidth;
+    const y = layer.y * geo.canvasHeight;
+    const width = layer.w * geo.canvasWidth;
+    const height = layer.h * geo.canvasHeight;
+    const zIndex = index + 1;
+
+    if (layer.type === 'shape') {
+      const element: PublisherElement = {
+        id: `tp-${layer.id}`,
+        type: 'shape',
+        name: layer.id,
+        shapeType: layer.shapeType ?? (layer.radius ? 'rounded-rect' : 'rectangle'),
+        x,
+        y,
+        width,
+        height,
+        rotation: layer.rotation ?? 0,
+        zIndex,
+        fillColor: layer.fill,
+        fillType: layer.fillColor2 ? 'linear-gradient' : 'solid',
+        gradientColor2: layer.fillColor2,
+        gradientAngle: layer.gradientAngle,
+        strokeColor: layer.stroke?.color ?? 'transparent',
+        strokeWidth: layer.stroke?.width ?? 0,
+        cornerRadius: layer.radius,
+        opacity: layer.opacity,
+        locked: layer.locked,
+      };
+      out.push(element);
+      return;
+    }
+
+    if (layer.type === 'asset') {
+      const src = resolveAsset(layer.assetId);
+      if (!src) return;
+      const copies = Math.max(1, layer.repeatX ?? 1);
+      if (copies > 1) {
+        const copyWidth = width / copies;
+        for (let i = 0; i < copies; i += 1) {
+          out.push({
+            id: `tp-${layer.id}-${i + 1}`,
+            type: 'image',
+            name: `${layer.id} ${i + 1}`,
+            src,
+            alt: layer.assetId,
+            x: x + i * copyWidth,
+            y,
+            width: copyWidth,
+            height,
+            rotation: 0,
+            zIndex,
+            objectFit: layer.layerRole === 'backdrop' ? 'fill' : 'contain',
+            opacity: layer.opacity,
+            imageScale: 1,
+            aspectRatioLocked: false,
+            locked: layer.locked,
+          });
+        }
+        return;
+      }
+      const element: ImageElement = {
+        id: `tp-${layer.id}`,
+        type: 'image',
+        name: layer.id,
+        src,
+        alt: layer.assetId,
+        x,
+        y,
+        width,
+        height,
+        rotation: 0,
+        zIndex,
+        // A frame or a sticker keeps its drawing; only the backdrop is stretched to the canvas.
+        objectFit: layer.layerRole === 'backdrop' ? 'fill' : 'contain',
+        opacity: layer.opacity,
+        imageScale: 1,
+        aspectRatioLocked: false,
+        locked: layer.locked,
+      };
+      out.push(element);
+      return;
+    }
+
+    const isWordArt = layer.type === 'wordart';
+    const fontSize = layer.fontSizePt * PT;
+    const element: TextElement = {
+      id: `tp-${layer.id}`,
+      type: 'text',
+      name: layer.id,
+      x,
+      y,
+      width,
+      height,
+      rotation: 0,
+      zIndex,
+      text: layer.text,
+      fontFamily: layer.fontFamily,
+      fontSize,
+      fontWeight: isWordArt ? '900' : layer.fontWeight,
+      fontStyle: 'normal',
+      textDecoration: 'none',
+      letterSpacing: isWordArt ? undefined : layer.letterSpacing,
+      color: isWordArt ? INK : layer.color,
+      textAlign: layer.align,
+      verticalAlign: 'middle',
+      columns: 1,
+      columnGap: 12,
+      // A banner title sits on one line: tight leading keeps the arc from clipping the box.
+      lineHeight: isWordArt ? 1.02 : 1.25,
+      padding: isWordArt ? Math.round(fontSize * 0.12) : 0,
+      isWordArt,
+      wordArtStyle: isWordArt ? layer.wordArtId : undefined,
+      textCurve: isWordArt && layer.arc ? Math.round(layer.arc * 100) : undefined,
+      autoFit: 'none',
+      autoSizeText: true,
+    };
+    out.push(element);
+  });
+  return out;
+}
+
+function seamMarks(
+  geo: TarpapelGeometry,
+  sheet: { col: number; row: number },
+  cols: number
+): PublisherElement[] {
+  const marks: PublisherElement[] = [];
+  const { overlap } = geo;
+  // The glue strip is duplicated artwork; a hairline just inside it tells the hand where to stop.
+  if (sheet.col > 0) {
+    marks.push({
+      id: `tp-seam-l-${sheet.col}-${sheet.row}`,
+      type: 'shape',
+      shapeType: 'rectangle',
+      x: 0,
+      y: 0,
+      width: 1,
+      height: geo.sheetHeight,
+      rotation: 0,
+      zIndex: 9000,
+      fillColor: '#94a3b8',
+      strokeColor: 'transparent',
+      strokeWidth: 0,
+    });
+  }
+  if (sheet.row > 0) {
+    marks.push({
+      id: `tp-seam-t-${sheet.col}-${sheet.row}`,
+      type: 'shape',
+      shapeType: 'rectangle',
+      x: 0,
+      y: 0,
+      width: geo.sheetWidth,
+      height: 1,
+      rotation: 0,
+      zIndex: 9000,
+      fillColor: '#94a3b8',
+      strokeColor: 'transparent',
+      strokeWidth: 0,
+    });
+  }
+  // Sheet label lives in the bottom-left corner, where it is covered by the neighbour or trimmed.
+  const label = `SHEET ${sheet.row * cols + sheet.col + 1} OF ${geo.sheets.length}`;
+  marks.push({
+    id: `tp-label-${sheet.col}-${sheet.row}`,
+    type: 'text',
+    name: label,
+    x: 6,
+    y: geo.sheetHeight - 16,
+    width: 180,
+    height: 11,
+    rotation: 0,
+    zIndex: 9001,
+    text: `${label} · GLUE ${Math.round(overlap / MM)} MM OVERLAP`,
+    fontFamily: 'Inter',
+    fontSize: 7,
+    fontWeight: '600',
+    fontStyle: 'normal',
+    textDecoration: 'none',
+    color: '#94a3b8',
+    textAlign: 'left',
+    verticalAlign: 'top',
+    columns: 1,
+    columnGap: 0,
+    lineHeight: 1.2,
+    padding: 0,
+  });
+  return marks;
+}
+
+/**
+ * The document a template hands the app: **one page, the size of the assembled poster.**
+ *
+ * The pages-per-sheet arrangement this used to build looked like a stack of near-identical
+ * documents in the workarea — every sheet carried the whole canvas, shifted, and without a trim it
+ * painted its neighbours over itself. One page is the honest model: this is a poster, and the
+ * printer is what turns it into four A4s.
+ */
+export function tarpapelToProject(spec: TarpapelTemplate): DocumentProject {
+  const geo = tarpapelGeometry(spec);
+  const name = spec.name.replace(/\s*\(.*\)$/, '');
+
+  const page: Page = {
+    id: `page-${spec.id}`,
+    name,
+    width: geo.canvasWidth,
+    height: geo.canvasHeight,
+    orientation: geo.canvasWidth >= geo.canvasHeight ? 'landscape' : 'portrait',
+    backgroundColor: spec.background,
+    margins: { top: 0, right: 0, bottom: 0, left: 0 },
+    guides: [],
+    elements: tarpapelCanvasElements(spec),
+  };
+
+  return {
+    id: `proj-${spec.id}`,
+    name: `${name}.pub`,
+    pages: [page],
+    activePageIndex: 0,
+    pageSizeName: 'custom',
+    colorScheme: 'ocean-navy',
+    masterPage: { elements: [], showOnAllPages: false },
+  };
+}
+
+/* ------------------------------------------------------------------ *
+ * Registry entries
+ * ------------------------------------------------------------------ */
+
+const definition = (spec: TarpapelTemplate): TemplateDefinition => ({
+  id: spec.id,
+  name: spec.name,
+  description: spec.description,
+  category: 'Champs Reading',
+  thumbnailColor: spec.thumbnailColor,
+  thumbnailGradient: spec.thumbnailGradient,
+  project: tarpapelToProject(spec),
+});
+
+export const CHAMPS_TARPAPEL_TEMPLATES: TemplateDefinition[] = [
+  definition(CHAMPS_TARPAPEL_BANNER),
+  // Two different posters that used to be one: the tree is a poster to hang alone, the word wall is
+  // furniture that twenty-four cards hang on.
+  definition(CHAMPS_TARPAPEL_TREE),
+  definition(CHAMPS_TARPAPEL_WORD_WALL),
+];

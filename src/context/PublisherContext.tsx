@@ -1,5 +1,5 @@
 ﻿import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
-import { TEXT_EFFECT_KEYS, fitTextBoxToEffects } from '../utils/textEffectsFit';
+import { projectTextGeometry } from '../utils/textBoxGrowth';
 import {
   DocumentProject,
   Page,
@@ -50,6 +50,9 @@ import {
   computeTarpapelMetrics,
 } from '../utils/printUtils';
 
+/** The four ways the canvas can present a document. */
+export type ViewMode = 'artboard' | 'single' | 'continuous' | 'spread';
+
 interface PublisherContextType {
   project: DocumentProject;
   activePage: Page;
@@ -71,6 +74,12 @@ interface PublisherContextType {
   /** The storybook asset-pack picker (built-in kit + imported .zip packs). */
   isAssetPackPanelOpen: boolean;
   isCollageModalOpen: boolean;
+  /**
+   * The "print as tarpaulin" door: any design in the workspace, on A4 sheets. Deliberately separate
+   * from the print panel — a teacher tiling a poster is doing a different job from a teacher
+   * printing a letter, and the modal is reachable from the command search as well.
+   */
+  isTarpapelModalOpen: boolean;
   editingCollageState: {
     meta: import('../utils/borderArtStyles').CollageMeta;
     groupId?: string;
@@ -93,7 +102,7 @@ interface PublisherContextType {
   canRedo: boolean;
   isEditingMaster: boolean;
   hasClipboard: boolean;
-  viewMode: 'artboard' | 'single' | 'continuous' | 'spread';
+  viewMode: ViewMode;
   toolMode: 'select' | 'pan';
   isLeftPanelOpen: boolean;
   isRightPanelOpen: boolean;
@@ -136,6 +145,7 @@ interface PublisherContextType {
   setIsStockArtPanelOpen: (open: boolean) => void;
   setIsAssetPackPanelOpen: (open: boolean) => void;
   setIsCollageModalOpen: (open: boolean) => void;
+  setIsTarpapelModalOpen: (open: boolean) => void;
   openCollageEditor: (opts: {
     meta: import('../utils/borderArtStyles').CollageMeta;
     groupId?: string;
@@ -572,11 +582,27 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [selectedElementIds, setSelectedElementIds] = useState<string[]>([]);
   const [copiedElements, setCopiedElements] = useState<PublisherElement[]>([]);
   const [isEditingMaster, setIsEditingMasterState] = useState<boolean>(false);
-  // Single page is the default view: one page, fully fitted, is what people open a
-  // document to look at. Spread/artboard are deliberate choices from the view control.
-  const [viewMode, setViewMode] = useState<'artboard' | 'single' | 'continuous' | 'spread'>(
-    'single'
+  // A one-pager opens as one fitted page. A document with more papers than that opens in Freeform,
+  // because Single view would hide everything but the page you are on — see the effect below.
+  const [viewMode, setViewModeState] = useState<ViewMode>('single');
+  /** View choices the person made themselves, per document. Those are never overridden. */
+  const viewModeChosenRef = useRef<Record<string, ViewMode>>({});
+  const setViewMode = useCallback(
+    (mode: ViewMode) => {
+      viewModeChosenRef.current[project.id] = mode;
+      setViewModeState(mode);
+    },
+    [project.id]
   );
+
+  // The default view follows the papers, not a hard-coded preference: one paper is a page to read,
+  // several papers are a layout to arrange, and Single view would show only one of them. An explicit
+  // choice from the view control sticks for that document.
+  useEffect(() => {
+    const chosen = viewModeChosenRef.current[project.id];
+    const preferred: ViewMode = chosen ?? (project.pages.length > 1 ? 'artboard' : 'single');
+    setViewModeState((current) => (current === preferred ? current : preferred));
+  }, [project.id, project.pages.length]);
   const [toolMode, setToolMode] = useState<'select' | 'pan'>('select');
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
@@ -652,6 +678,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [isWordArtModalOpen, setIsWordArtModalOpen] = useState(false);
   const [isBuildingBlocksModalOpen, setIsBuildingBlocksModalOpen] = useState(false);
   const [isAIImageModalOpen, setIsAIImageModalOpen] = useState(false);
+  const [isTarpapelModalOpen, setIsTarpapelModalOpen] = useState(false);
   const [isStockArtPanelOpen, setIsStockArtPanelOpen] = useState(false);
   const [isAssetPackPanelOpen, setIsAssetPackPanelOpen] = useState(false);
   const [isCollageModalOpen, setIsCollageModalOpenState] = useState(false);
@@ -1715,22 +1742,12 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const commitCurrentElements = useCallback(
     (nextElements: PublisherElement[]) => {
-      // Applying a text style grows the box to hold its paint (see utils/textEffectsFit), so a
-      // shadow, glow or extrusion is not clipped by the box that carries it. Running this at
-      // the one place element writes land means it covers the ribbon, the panels, the WordArt
-      // gallery and the stroke controls alike.
-      const projected = nextElements.map((el) => {
-        if (el.type !== 'text') return el;
-        const before = currentElements.find((prev) => prev.id === el.id) as TextElement | undefined;
-        if (!before) return el;
-        const record = el as unknown as Record<string, unknown>;
-        const previous = before as unknown as Record<string, unknown>;
-        const effectsChanged = TEXT_EFFECT_KEYS.some((key) => record[key] !== previous[key]);
-        if (!effectsChanged) return el;
-        const fit = fitTextBoxToEffects(el);
-        return fit ? ({ ...el, ...fit } as PublisherElement) : el;
-      });
-      nextElements = projected;
+      // Text frames grow to hold their paint and their words — a shadow or a WordArt extrusion is
+      // not clipped by the box that carries it, and a box never cuts off the last line typed into
+      // it. Running at the one place element writes land means the rule covers the ribbon, the
+      // panels, the WordArt gallery, the stroke controls and the caret alike.
+      // See utils/textBoxGrowth.
+      nextElements = projectTextGeometry(nextElements, currentElements);
 
       if (isEditingMaster) {
         const nextMasters = masterPages.map((m) =>
@@ -2388,8 +2405,8 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         columnGap: 12,
         lineHeight: 1.4,
         padding: 8,
-        // Text behaves like type: no clipped words, ever.
-        autoFit: 'shrink',
+        // Text behaves like type: no clipped words, ever. The box grows to hold what is typed
+        // (utils/textBoxGrowth) rather than shrinking the words to fit a frame nobody sized.
         autoSizeText: true,
         ...options,
       };
@@ -2441,6 +2458,8 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         // drawn once the user asks for one in Format → Border.
         borderWidth: 0,
         maskShape: 'none',
+        // Inserted art is not a filled placeholder: no Detach button, no inherited crop.
+        isPlaceholder: false,
         ...options,
       };
       addElement(defaultImg);
@@ -2465,6 +2484,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         aspectRatioLocked: true,
         borderRadius: 8,
         maskShape: 'none',
+        isPlaceholder: true,
         ...options,
       };
       addElement(placeholderImg);
@@ -2523,8 +2543,16 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         zIndex: maxZ + 1,
         borderArt: 'none',
         borderWidth: 0,
+        // A detached picture is a picture, not a plate: the placeholder's rounded corners and its
+        // crop are exactly what a person had to clear by hand after detaching.
+        borderRadius: 0,
         maskShape: 'none',
         objectFit: 'contain',
+        imageScale: 1,
+        imageRotation: 0,
+        panX: 0,
+        panY: 0,
+        isPlaceholder: false,
       };
 
       const updated = currentElements.map((el) =>
@@ -2535,6 +2563,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
               originalSrc: undefined,
               bgRemoved: false,
               name: 'Picture Placeholder',
+              isPlaceholder: true,
             } as PublisherElement)
           : el
       );
@@ -2993,6 +3022,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         isStockArtPanelOpen,
         isAssetPackPanelOpen,
         isCollageModalOpen,
+        isTarpapelModalOpen,
         editingCollageState,
         isBrandBoardModalOpen,
         isBrandKitModalOpen,
@@ -3062,6 +3092,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setIsStockArtPanelOpen,
         setIsAssetPackPanelOpen,
         setIsCollageModalOpen,
+        setIsTarpapelModalOpen,
         openCollageEditor,
         replaceCollageGroup,
         patchCollageMeta,

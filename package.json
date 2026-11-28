@@ -7,9 +7,16 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
+    "check:tarpapel": "node --experimental-strip-types --no-warnings scripts/check-tarpapel.mjs",
+    "check:wordart": "node --experimental-strip-types --no-warnings scripts/check-wordart-fonts.mjs",
+    "check:textbox": "node --experimental-strip-types --no-warnings --import ./scripts/ts-resolve.mjs scripts/check-textbox-growth.mjs",
     "wordart:css": "node --experimental-strip-types --no-warnings scripts/wordart-css.ts",
     "preview": "vite preview",
-    "pack:storybook": "node scripts/build-asset-pack.mjs"
+    "pack:storybook": "node scripts/build-asset-pack.mjs storybook-reading-v1",
+    "pack:underwater": "node scripts/build-asset-pack.mjs champs-underwater-v1",
+    "pack:cultural": "node scripts/build-asset-pack.mjs champs-cultural-v1",
+    "pack:eco": "node scripts/build-asset-pack.mjs eco-fiesta-v1",
+    "pack:all": "node scripts/build-asset-pack.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.5",

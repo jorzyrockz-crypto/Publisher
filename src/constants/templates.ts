@@ -7,6 +7,8 @@ import { getStickerById } from './stickerLibrary';
 import { enhanceProject } from '../utils/templateEnhance';
 import { polishProject } from '../utils/templatePolish';
 import { WORDART_POSTER_TEMPLATES } from './posterWordArtTemplates';
+import { CHAMPS_READING_TEMPLATES } from './champsReadingTemplates';
+import { CHAMPS_TARPAPEL_TEMPLATES } from './champsTarpapel';
 
 export type TemplateCategory =
   | 'Brochure'
@@ -30,6 +32,7 @@ export type TemplateCategory =
   | 'Cover Document'
   | 'Email'
   | 'Narrative Report'
+  | 'Champs Reading'
   | 'Blank';
 
 export interface TemplateDefinition {
@@ -4969,6 +4972,8 @@ export const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
   ...PROGRAM_AND_TARPAPEL_TEMPLATES,
   ...CERTIFICATE_TEMPLATES,
   ...WORDART_POSTER_TEMPLATES,
+  ...CHAMPS_READING_TEMPLATES,
+  ...CHAMPS_TARPAPEL_TEMPLATES,
 ];
 
 /**
@@ -4977,6 +4982,10 @@ export const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
  * new templates pick the pass up automatically.
  */
 export const TEMPLATES: TemplateDefinition[] = TEMPLATE_DEFINITIONS.map((tpl) => {
+  // Forms are exempt. A reading log's rules, column widths and millimetre margins *are* the
+  // design, so neither pass may re-place artwork or re-space the page — `polishPage` would
+  // happily nudge a 15-row table off its printed baseline.
+  if (tpl.category === 'Champs Reading') return tpl;
   const { project } = enhanceProject(tpl.project, tpl.category, tpl.thumbnailColor);
   // Then the design pass: artwork, margins, rhythm and contrast (see utils/templatePolish).
   // The gallery thumbnail renders this project, so what you see is what you get.

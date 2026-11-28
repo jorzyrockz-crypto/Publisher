@@ -64,10 +64,22 @@ export type WordArtStyle =
   | 'fiesta-mosaic'
   | 'parchment-script'
   | 'folklore-wood'
+  // The cartoon bubble sign: gradient face, fat white die-cut border, and a second, darker
+  // keyline outside it — the school-banner lettering in the reference art.
+  | 'cartoon-bubble-blue'
+  | 'cartoon-bubble-pink'
   | 'storybook-crayon'
   | 'fairytale-sparkle'
   | 'reading-nook-sage'
   | 'storytime-banner'
+  | 'champs-basa-blue'
+  | 'champs-kasadya-coral'
+  | 'champs-gold-ribbon'
+  | 'champs-level-emergent'
+  | 'champs-level-beginning'
+  | 'champs-level-transitional'
+  | 'underwater-bubble'
+  | 'cultural-hablon'
   | 'portfolio-editorial'
   | 'portfolio-indigo';
 
@@ -284,6 +296,13 @@ export interface ImageElement extends BaseElement {
   stickerGlowColor?: string;
   originalSrc?: string;
   bgRemoved?: boolean;
+  /**
+   * True only for an element that *started life* as an empty picture placeholder. Without it the
+   * sideways test — "has a src" — makes every inserted photograph look like a filled placeholder,
+   * which is why the inspector used to offer **Detach** on a sticker that was never attached to
+   * anything.
+   */
+  isPlaceholder?: boolean;
 }
 
 export interface TableElement extends BaseElement {
@@ -411,6 +430,13 @@ export interface Page {
   elements: PublisherElement[];
   masterId?: string;
   hideMaster?: boolean;
+  /**
+   * Trim everything outside the paper. Off by default, because on an ordinary document an element
+   * nudged past the edge should stay reachable. On a tarpapel sheet it has to be on: every sheet of
+   * a 2 × 2 poster carries the whole canvas, shifted, and without the trim each sheet draws its
+   * neighbours' artwork over itself — four copies of the poster instead of four quadrants of one.
+   */
+  clipContent?: boolean;
 }
 
 export interface MasterPageDef {

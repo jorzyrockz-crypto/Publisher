@@ -2,6 +2,9 @@ import { DocumentProject, Page, PublisherElement } from '../types/publisher';
 import { renderPageModelToCanvas } from './canvasRenderer';
 
 export type PrintLayoutMode = 'standard' | 'booklet' | 'tarpapel';
+
+/** Big points to millimetres: 1 pt = 25.4/72 mm. Shared by the PDF and the direct-print paths. */
+export const PRINT_PT_TO_MM = 25.4 / 72;
 export type SheetOrientation = 'auto' | 'portrait' | 'landscape';
 
 export interface PrintSettings {
@@ -305,6 +308,123 @@ export function computeTarpapelMetrics(page: Page, settings: PrintSettings): Tar
     effectiveDpi: Math.max(72, Math.min(settings.qualityDpi, minImgDpi)),
     lowResImageCount,
   };
+}
+
+export interface SheetMarkGeometry {
+  lines: Array<{ x1: number; y1: number; x2: number; y2: number }>;
+  labels: Array<{ text: string; x: number; y: number; align?: 'left' | 'right' | 'center' }>;
+}
+
+/**
+ * Corner ticks and sheet labels for one printed sheet, in PDF points.
+ *
+ * Everything here is placed **in the printer margin**, outside the image area, because a mark drawn
+ * inside the art is a mark the teacher has to glue over. Pure geometry, so it can be checked without
+ * a browser: given a page, a margin and a tile's position, say exactly where the ink goes.
+ */
+export function sheetMarkGeometry(
+  pageWpt: number,
+  pageHpt: number,
+  marginPt: number,
+  col: number,
+  row: number,
+  cols: number,
+  rows: number
+): SheetMarkGeometry {
+  const left = marginPt;
+  const top = marginPt;
+  const right = pageWpt - marginPt;
+  const bottom = pageHpt - marginPt;
+  const tick = Math.min(14, marginPt * 0.7);
+  const lines: SheetMarkGeometry['lines'] = [];
+  const labels: SheetMarkGeometry['labels'] = [];
+
+  // No margin, no marks: borderless printing has nowhere to put them.
+  if (marginPt < 7) return { lines, labels };
+
+  const corners: Array<[number, number, number, number]> = [
+    [left, top, -1, -1],
+    [right, top, 1, -1],
+    [left, bottom, -1, 1],
+    [right, bottom, 1, 1],
+  ];
+  for (const [x, y, dx, dy] of corners) {
+    lines.push({ x1: x, y1: y, x2: x + dx * tick, y2: y });
+    lines.push({ x1: x, y1: y, x2: x, y2: y + dy * tick });
+  }
+
+  const index = (row - 1) * cols + col;
+  const total = cols * rows;
+
+  // Top margin: which sheet this is.
+  labels.push({ text: `SHEET ${index} / ${total}`, x: left, y: top - tick * 0.5 });
+  labels.push({ text: `R${row} C${col}`, x: right, y: top - tick * 0.5, align: 'right' });
+
+  // Glue instruction on the edge that tucks under its neighbour.
+  if (col < cols) {
+    labels.push({ text: 'GLUE', x: right, y: bottom + tick * 0.75, align: 'right' });
+  }
+  if (row < rows) {
+    labels.push({ text: 'GLUE', x: left, y: bottom + tick * 0.75 });
+  }
+
+  return { lines, labels };
+}
+
+export interface TarpapelGridSuggestion {
+  cols: number;
+  rows: number;
+  sheets: number;
+  /** Poster width ÷ height at this grid — compare with the design's own aspect. */
+  posterAspect: number;
+  /** Relative shape error: 0 is a perfect fit, 0.06 means the poster is ~6% out of proportion. */
+  aspectError: number;
+  sizeCm: [number, number];
+}
+
+/**
+ * The grid that best matches a design's shape.
+ *
+ * "Any design can be printed as a tarpaulin" only holds if the poster is roughly the design's
+ * aspect — otherwise `contain` pads the sheets with bands and `cover` crops the design. This walks
+ * the plausible grids, scores each by how far its assembled shape is from the page's, and breaks
+ * near-ties toward fewer sheets (less paper, less gluing).
+ */
+export function suggestTarpapelGrid(
+  page: Page,
+  settings: PrintSettings,
+  maxCols = 6,
+  maxRows = 6
+): TarpapelGridSuggestion {
+  const designAspect = Math.max(0.05, page.width) / Math.max(0.05, page.height);
+  let best: TarpapelGridSuggestion | null = null;
+
+  for (let cols = 1; cols <= maxCols; cols += 1) {
+    for (let rows = 1; rows <= maxRows; rows += 1) {
+      if (cols === 1 && rows === 1) continue;
+      const m = computeTarpapelMetrics(page, { ...settings, tarpapelCols: cols, tarpapelRows: rows });
+      const posterAspect = m.totalPosterWIn / Math.max(0.1, m.totalPosterHIn);
+      const candidate: TarpapelGridSuggestion = {
+        cols,
+        rows,
+        sheets: cols * rows,
+        posterAspect,
+        aspectError: Math.abs(Math.log(posterAspect / designAspect)),
+        sizeCm: [Math.round(m.totalPosterWCm), Math.round(m.totalPosterHCm)],
+      };
+      if (!best) {
+        best = candidate;
+        continue;
+      }
+      const closerShape = candidate.aspectError < best.aspectError - 0.02;
+      // Within 2% of the best shape, the smaller poster wins: same look, half the glue.
+      const sameShapeFewerSheets =
+        Math.abs(candidate.aspectError - best.aspectError) <= 0.02 && candidate.sheets < best.sheets;
+      if (closerShape || sameShapeFewerSheets) best = candidate;
+    }
+  }
+
+  return best as TarpapelGridSuggestion;
 }
 
 /**

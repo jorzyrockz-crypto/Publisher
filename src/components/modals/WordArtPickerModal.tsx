@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
 import { WordArtStyle } from '../../types/publisher';
 import { WORD_ART_STYLES } from '../../utils/wordArt';
+import { wordArtFacePatch } from '../../constants/wordArtFonts';
 import {
   TONE_OPTIONS,
   TypeIdea,
@@ -73,12 +74,15 @@ export const WordArtPickerModal: React.FC = () => {
     setSelectedStyle(idea.styleId);
   };
 
-  const styles = WORD_ART_STYLES.map((s) => ({
-    id: s.id,
-    name: s.label,
-    previewClass: s.className,
-    darkBg: s.dark,
-  }));
+  const styles = [...WORD_ART_STYLES]
+    .sort((a, b) => Number(!!b.isNew) - Number(!!a.isNew))
+    .map((s) => ({
+      id: s.id,
+      name: s.label,
+      previewClass: s.className,
+      darkBg: s.dark,
+      isNew: s.isNew,
+    }));
 
   const handleInsert = () => {
     addTextBox({
@@ -87,6 +91,7 @@ export const WordArtPickerModal: React.FC = () => {
       fontWeight: 'bold',
       isWordArt: true,
       wordArtStyle: selectedStyle,
+      ...wordArtFacePatch(selectedStyle),
       width: 440,
       height: 90,
       fontFamily: 'Impact',
@@ -220,6 +225,7 @@ export const WordArtPickerModal: React.FC = () => {
                 <div
                   key={s.id}
                   onClick={() => setSelectedStyle(s.id)}
+                  title={s.isNew ? `${s.name} — new in this release` : s.name}
                   className={`p-3 rounded-2xl border cursor-pointer text-center flex flex-col items-center justify-center h-24 transition-all hover:scale-[1.02] ${
                     s.darkBg ? 'bg-slate-900' : 'bg-slate-50/60'
                   } ${
@@ -231,6 +237,11 @@ export const WordArtPickerModal: React.FC = () => {
                   <span className={`text-xl font-black ${s.previewClass} truncate max-w-full`}>
                     WordArt
                   </span>
+                  {s.isNew && (
+                    <span className="mt-1 rounded bg-indigo-600 px-1 py-0.5 text-[8px] font-bold uppercase tracking-wide text-white">
+                      New
+                    </span>
+                  )}
                   <span
                     className={`text-[10px] font-semibold mt-2 ${
                       s.darkBg ? 'text-slate-300' : 'text-slate-500'

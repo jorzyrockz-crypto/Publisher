@@ -2,10 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
 import { PAGE_SIZES } from '../../constants/pageSizes';
 import { WORD_ART_STYLES } from '../../utils/wordArt';
+import { wordArtFacePatch } from '../../constants/wordArtFonts';
 import { ColorInput } from '../common/ColorInput';
 import { PageThumbnails } from '../sidebar/PageThumbnails';
 import { StockArtPanel } from '../sidebar/StockArtPanel';
-import { AssetPackPanel } from '../sidebar/AssetPackPanel';
+import { SidebarTools } from '../sidebar/SidebarTools';
 import { DesignerBrandPanel } from './DesignerBrandPanel';
 import { DesignerViewPanel } from './DesignerViewPanel';
 import { DesignerSettingsPanel } from './DesignerSettingsPanel';
@@ -39,7 +40,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Images,
-  Package,
+  Wrench,
   Sparkles,
   LayoutGrid,
   RotateCw,
@@ -57,7 +58,7 @@ type DesignerDrawerTab =
   | 'text'
   | 'media'
   | 'stock'
-  | 'packs'
+  | 'tools'
   | 'visuals'
   | 'collage'
   | 'brand'
@@ -210,8 +211,8 @@ export const DesignerToolRail: React.FC = () => {
     { id: 'text', label: 'Text', icon: <Type size={18} /> },
     { id: 'media', label: 'My media', icon: <Upload size={18} /> },
     { id: 'stock', label: 'Stock', icon: <Images size={18} /> },
-    { id: 'packs', label: 'Story kit', icon: <Package size={18} /> },
     { id: 'visuals', label: 'Visuals', icon: <Shapes size={18} /> },
+    { id: 'tools', label: 'Tools', icon: <Wrench size={18} /> },
     { id: 'collage', label: 'Collage', icon: <LayoutGrid size={18} /> },
     { id: 'brand', label: 'Brand', icon: <Palette size={18} /> },
     { id: 'layers', label: 'Layers', icon: <Layers size={18} /> },
@@ -234,7 +235,7 @@ export const DesignerToolRail: React.FC = () => {
         activeDrawer === 'visuals' ||
         activeDrawer === 'collage' ||
         activeDrawer === 'stock' ||
-        activeDrawer === 'packs'
+        activeDrawer === 'tools'
       ? 'w-[296px]'
       : 'w-[268px]';
 
@@ -251,8 +252,8 @@ export const DesignerToolRail: React.FC = () => {
       ? 'Collage'
       : pane === 'stock'
       ? 'Stock art'
-      : pane === 'packs'
-      ? 'Story kit'
+      : pane === 'tools'
+      ? 'Tools'
       : pane === 'brand'
       ? 'Brand Studio'
       : pane === 'view'
@@ -317,7 +318,7 @@ export const DesignerToolRail: React.FC = () => {
             <div
               className={`${drawerWidthClass} h-full bg-white border-r border-[#e5e9ee] flex flex-col overflow-hidden`}
             >
-              {pane !== 'stock' && pane !== 'packs' && (
+              {pane !== 'stock' && (
                 <div className="px-3.5 py-3 border-b border-[#e5e9ee] flex items-center justify-between flex-shrink-0">
                   <div className="flex items-center gap-1.5 min-w-0">
                     {sidePanel && (
@@ -362,10 +363,12 @@ export const DesignerToolRail: React.FC = () => {
                    hides its own drawer header here: the panel brings an inspector-style
                    one, and two stacked titles is noise. */
                 <StockArtPanel embedded />
-              ) : pane === 'packs' ? (
-                /* The storybook kit — backdrops, frames and stickers drawn to be used together,
-                   laid out by layer. Same rule as Stock: the panel carries its own header. */
-                <AssetPackPanel embedded />
+              ) : pane === 'tools' ? (
+                /* Tools launches the jobs that begin with material — collage, tarpaulin, the
+                   storybook kit — and the kit opens in place, inside this drawer. */
+                <div className="flex-1 min-h-0 flex flex-col">
+                  <SidebarTools showLabel={false} />
+                </div>
               ) : pane === 'media' ? (
                 <DesignerMediaPanel
                   uploads={uploads}
@@ -437,7 +440,7 @@ export const DesignerToolRail: React.FC = () => {
                               type="button"
                               onClick={() => setViewMode('artboard')}
                               className={pillToggle(viewMode === 'artboard')}
-                              title="Artboard View"
+                              title="Freeform — every paper on one pasteboard"
                             >
                               <LayoutDashboard size={12} />
                             </button>
@@ -591,7 +594,9 @@ export const DesignerToolRail: React.FC = () => {
                           </button>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
-                          {WORD_ART_STYLES.map((style) => (
+                          {[...WORD_ART_STYLES]
+                            .sort((a, b) => Number(!!b.isNew) - Number(!!a.isNew))
+                            .map((style) => (
                             <button
                               key={style.id}
                               type="button"
@@ -600,6 +605,7 @@ export const DesignerToolRail: React.FC = () => {
                                   updateElement(selectedTextElement.id, {
                                     isWordArt: true,
                                     wordArtStyle: style.id,
+                                    ...wordArtFacePatch(style.id),
                                   });
                                 } else {
                                   addTextBox({
@@ -608,6 +614,7 @@ export const DesignerToolRail: React.FC = () => {
                                     fontWeight: 'bold',
                                     isWordArt: true,
                                     wordArtStyle: style.id,
+                                    ...wordArtFacePatch(style.id),
                                     width: 360,
                                     height: 84,
                                   });
@@ -630,7 +637,7 @@ export const DesignerToolRail: React.FC = () => {
                                   style.dark ? 'text-slate-300' : 'text-[#6a7682]'
                                 }`}
                               >
-                                {style.label}
+                                {style.isNew ? `${style.label} · new` : style.label}
                               </span>
                             </button>
                           ))}

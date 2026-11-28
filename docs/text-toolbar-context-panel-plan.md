@@ -23,9 +23,9 @@ This is the same rule the collage bar already runs on, and it fixes the same sym
 |---|---|---|
 | text colour | `ColorInput` — popover with swatches + hex | **misfiled**: a picker in a pill. Nested. |
 | font family | `<select>` of 8 `QUICK_FONTS` | **misfiled**, and lossy: the app has `SYSTEM_FONTS` + a Google Fonts catalog and this offers neither. Nested. |
-| font size | − / value / + steppers | direct, keep |
-| bold / italic / underline | toggles | direct, keep |
-| alignment | click-to-cycle left → centre → right | direct, keep (and add the panel as the place to pick justify/vertical) |
+| font size | − / value / + steppers | direct, keep — but the value is a field you can type in, not a label |
+| bold / italic / underline | toggles | direct, keep — armed for any heavy weight, not only `'bold'` |
+| alignment | click-to-cycle left → centre → right | **direct, as four buttons**: left, centre, right, justify |
 
 Everything else that text can do — tracking, leading, case, columns, stroke, shadow, effects —
 lives only in the inspector's Typography card today, reachable by opening the inspector and
@@ -292,3 +292,28 @@ rather than like a desktop popover:
 
 The mouse-driven popover keeps the compact size (`SmartPalette size="sm"`); only the panel is
 enlarged. Both read the same palette, so "suggestions" means one thing everywhere.
+
+---
+
+## 3. Correction: the cycle was the wrong mapping
+
+The table above originally kept alignment as a click-to-cycle button, on the grounds that it is one
+control and one known outcome. It is one control and *four* outcomes: the button wears the icon of the
+alignment you are in — three left-aligned rules — so clicking "align left" centres the text. No amount
+of tooltip fixes an icon that promises an action it does not perform.
+
+Alignment is now a four-button group on the bar: left, centre, right, justify, each setting its
+alignment on click and showing which one is in force. `justify` was going to live in the panel; it is
+supported by both layout paths (`textLayout.ts`, and CSS `textAlign` in the renderer), so it belongs
+on the bar with the others.
+
+Two other controls in the same pill were lying about their state, and are fixed with it:
+
+- **Bold.** The union has `'600'`, `'800'` and `'900'` as well as `'bold'`, and styles and templates
+  use them, so a 900 title showed B *off* — and pressing B lightened it to 700. Anything ≥ 600 now
+  reads as bold, and switching bold off remembers the weight so switching it back on returns to 900
+  rather than 700. One rule, in `src/utils/textWeight.ts`, used by the canvas bar, the Designer
+  context bar, the Home ribbon and the Text panel.
+- **Size.** `81` was a value you could nudge but never set. It is now a field: type a number, Enter or
+  blur commits, arrows step by 2, Escape abandons it, clamped to 8–200. A mixed selection shows `—`
+  rather than the first element's size pretending to be everyone's.

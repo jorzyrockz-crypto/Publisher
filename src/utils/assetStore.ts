@@ -16,7 +16,8 @@
 export type AssetLayer = 'backdrop' | 'frame' | 'sticker' | 'badge';
 
 /** Where a frame piece wants to land on a page. Optional: an addition to the published schema. */
-export type FrameSlot = 'top' | 'bottom' | 'corner';
+export type FrameSlot = 'top' | 'bottom' | 'left' | 'right' | 'corner';
+export type FrameFit = 'page';
 
 export interface AssetEntry {
   id: string;
@@ -30,6 +31,13 @@ export interface AssetEntry {
   width: number;
   height: number;
   slot?: FrameSlot;
+  /**
+   * `page` means the piece was drawn *as* a page — corner clusters that must land on the page's own
+   * corners, whatever the page's proportions. Placed stretched to the page bounds rather than
+   * fitted to the width, because a frame that leaves the backdrop showing at the sides is not a
+   * frame. Optional like `slot`; anything else is dropped.
+   */
+  fit?: FrameFit;
 }
 
 export interface AssetPackManifest {
@@ -56,11 +64,34 @@ const DB_VERSION = 1;
 const PACKS = 'packs';
 const BLOBS = 'blobs';
 
-/** The kit that ships with the app, built by `npm run pack:storybook`. */
+/**
+ * Kits that ship with the app, in the order the picker offers them. Each is a folder under
+ * `public/asset-packs/` written by `npm run pack:<name>`, so a new kit is a row here plus a build —
+ * never a second code path. A folder that is missing from a build is skipped quietly: a teacher on
+ * a trimmed deploy should get fewer packs, not an error.
+ */
+export const BUILTIN_PACKS: { packId: string; baseUrl: string }[] = [
+  { packId: 'storybook-reading-v1', baseUrl: './asset-packs/storybook-reading-v1/' },
+  { packId: 'champs-underwater-v1', baseUrl: './asset-packs/champs-underwater-v1/' },
+  { packId: 'champs-cultural-v1', baseUrl: './asset-packs/champs-cultural-v1/' },
+];
+
+/** The starter kit — the one every other read path falls back to. */
 export const BUILTIN_PACK_BASE = './asset-packs/storybook-reading-v1/';
 
+/**
+ * The kit we hand out as a `.zip`, built by `npm run pack:eco`. Its ten pieces are *also* in the Story
+ * Kit, so nobody has to install it to use them — it exists to be a file: the sample you open to see
+ * what a pack is, and the thing the import route is tested against. The panel offers it as a download
+ * link, not as an install button, precisely because installing what is already on the shelf is busywork.
+ */
+export const FEATURED_PACK_ZIP = './asset-packs/eco-fiesta-v1.zip';
+export const FEATURED_PACK_ID = 'eco-fiesta-v1';
+export const FEATURED_PACK_NAME = 'Eco-Campaign & Fiesta Awards';
+
 const LAYERS: AssetLayer[] = ['backdrop', 'frame', 'sticker', 'badge'];
-const SLOTS: FrameSlot[] = ['top', 'bottom', 'corner'];
+const SLOTS: FrameSlot[] = ['top', 'bottom', 'left', 'right', 'corner'];
+const FITS: FrameFit[] = ['page'];
 
 const urlCache = new Map<string, string>();
 
@@ -130,6 +161,9 @@ export function parseManifest(raw: unknown): AssetPackManifest {
     const slot = typeof a.slot === 'string' && SLOTS.includes(a.slot as FrameSlot)
       ? (a.slot as FrameSlot)
       : undefined;
+    const fit = typeof a.fit === 'string' && FITS.includes(a.fit as FrameFit)
+      ? (a.fit as FrameFit)
+      : undefined;
 
     return {
       id,
@@ -141,6 +175,7 @@ export function parseManifest(raw: unknown): AssetPackManifest {
       width: asNumber(a.width, `assets[${index}].width`),
       height: asNumber(a.height, `assets[${index}].height`),
       ...(slot ? { slot } : {}),
+      ...(fit ? { fit } : {}),
     };
   });
 
@@ -273,6 +308,7 @@ export async function uninstallAssetPack(packId: string): Promise<void> {
       urlCache.delete(key);
     }
   }
+  forgetPackDataUrls(packId);
 }
 
 /* ------------------------------------------------------------------ resolving artwork */
@@ -335,38 +371,81 @@ export async function getAssetBlob(
  * document that references one exports blank — so anything dropped on the page is copied in as a
  * data URL.
  */
+/**
+ * The last few inserted pieces, already encoded.
+ *
+ * Base64 of a 300kB backdrop is a 400kB string and the fetch in front of it is the slow half of a
+ * click — so a piece that was hovered, or placed once, lands instantly the second time. Bounded: a
+ * picker session should not become a memory leak, and eight pieces is more than one page uses.
+ */
+const dataUrlCache = new Map<string, string>();
+const DATA_URL_CACHE_MAX = 8;
+
+function cacheDataUrl(key: string, value: string): string {
+  dataUrlCache.delete(key);
+  dataUrlCache.set(key, value);
+  while (dataUrlCache.size > DATA_URL_CACHE_MAX) {
+    const oldest = dataUrlCache.keys().next().value;
+    if (oldest === undefined) break;
+    dataUrlCache.delete(oldest);
+  }
+  return value;
+}
+
+/** Drops every encoded piece for a pack — used when it is reinstalled or uninstalled. */
+function forgetPackDataUrls(packId: string): void {
+  for (const key of [...dataUrlCache.keys()]) {
+    if (key.startsWith(`${packId}:`)) dataUrlCache.delete(key);
+  }
+}
+
 export async function getAssetDataUrl(
   pack: PackSummary,
   entry: AssetEntry,
   size: AssetSize = 'full'
 ): Promise<string | null> {
+  const key = `${pack.packId}:${entry.id}:${size}`;
+  const cached = dataUrlCache.get(key);
+  if (cached) {
+    cacheDataUrl(key, cached);
+    return cached;
+  }
   const blob = await getAssetBlob(pack, entry, size);
   if (!blob) return null;
   const type = blob.type || mimeFor(pathFor(entry, size));
-  return `data:${type};base64,${toBase64(await blob.arrayBuffer())}`;
+  return cacheDataUrl(key, `data:${type};base64,${toBase64(await blob.arrayBuffer())}`);
 }
 
 /* ------------------------------------------------------------------ the built-in pack */
 
-export async function fetchBuiltinPack(): Promise<PackSummary | null> {
-  try {
-    const res = await fetch(`${BUILTIN_PACK_BASE}manifest.json`, { cache: 'no-cache' });
-    if (!res.ok) return null;
-    const manifest = parseManifest(await res.json());
-    return { ...manifest, source: 'builtin', baseUrl: BUILTIN_PACK_BASE };
-  } catch {
-    // A build without the folder is a build without the starter kit, not an error the user caused.
-    return null;
-  }
+export async function fetchBuiltinPacks(): Promise<PackSummary[]> {
+  const packs = await Promise.all(
+    BUILTIN_PACKS.map(async ({ baseUrl }): Promise<PackSummary | null> => {
+      try {
+        const res = await fetch(`${baseUrl}manifest.json`, { cache: 'no-cache' });
+        if (!res.ok) return null;
+        const manifest = parseManifest(await res.json());
+        return { ...manifest, source: 'builtin', baseUrl };
+      } catch {
+        return null;
+      }
+    })
+  );
+  return packs.filter((pack): pack is PackSummary => pack !== null);
 }
 
-/** The built-in kit first, then everything the user imported. */
+/** The starter kit on its own, for callers that only need the first pack. */
+export async function fetchBuiltinPack(): Promise<PackSummary | null> {
+  return (await fetchBuiltinPacks())[0] ?? null;
+}
+
+/** The built-in kits first, then everything the user imported. */
 export async function listAssetPacks(): Promise<PackSummary[]> {
   const [builtin, installed] = await Promise.all([
-    fetchBuiltinPack(),
+    fetchBuiltinPacks(),
     listInstalledPacks().catch(() => [] as PackSummary[]),
   ]);
-  return builtin ? [builtin, ...installed] : installed;
+  return [...builtin, ...installed];
 }
 
 /* ------------------------------------------------------------------ zip import */

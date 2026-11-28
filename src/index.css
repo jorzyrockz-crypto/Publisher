@@ -442,6 +442,46 @@
     drop-shadow(0px 4px 10px rgba(19, 78, 74, 0.25));
 }
 
+.wordart-cartoon-bubble-blue {
+  font-weight: 900;
+  background: linear-gradient(180deg, #b9e2ff 0%, #4aa3ff 16%, #1c72e8 50%, #0c47a8 84%, #082f76 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 18px #ffffff;
+  paint-order: stroke fill;
+  filter:
+    drop-shadow(0px 0px 2px #ffffff)
+    drop-shadow(0px 6px 12px rgba(9, 38, 94, 0.35))
+    drop-shadow(2px 0px 0px #0b2f6e)
+    drop-shadow(1.4px 1.4px 0px #0b2f6e)
+    drop-shadow(0px 2px 0px #0b2f6e)
+    drop-shadow(-1.4px 1.4px 0px #0b2f6e)
+    drop-shadow(-2px 0px 0px #0b2f6e)
+    drop-shadow(-1.4px -1.4px 0px #0b2f6e)
+    drop-shadow(0px -2px 0px #0b2f6e)
+    drop-shadow(1.4px -1.4px 0px #0b2f6e);
+}
+
+.wordart-cartoon-bubble-pink {
+  font-weight: 900;
+  background: linear-gradient(180deg, #ffd1e8 0%, #ff5fae 16%, #ea1a84 50%, #b00a5a 84%, #7d0740 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 18px #ffffff;
+  paint-order: stroke fill;
+  filter:
+    drop-shadow(0px 0px 2px #ffffff)
+    drop-shadow(0px 6px 12px rgba(96, 6, 52, 0.35))
+    drop-shadow(2px 0px 0px #7a0b46)
+    drop-shadow(1.4px 1.4px 0px #7a0b46)
+    drop-shadow(0px 2px 0px #7a0b46)
+    drop-shadow(-1.4px 1.4px 0px #7a0b46)
+    drop-shadow(-2px 0px 0px #7a0b46)
+    drop-shadow(-1.4px -1.4px 0px #7a0b46)
+    drop-shadow(0px -2px 0px #7a0b46)
+    drop-shadow(1.4px -1.4px 0px #7a0b46);
+}
+
 .wordart-brush-sunshine {
   font-weight: 900;
   background: linear-gradient(180deg, #1e3a8a 0%, #0f172a 100%);
@@ -609,7 +649,7 @@
   paint-order: stroke fill;
   filter:
     drop-shadow(0px 0px 2px #fffbeb)
-    drop-shadow(0px 4px 10px rgba(6, 78, 59, 0.22));
+    drop-shadow(0px 4px 10px rgba(6, 78, 59, 0.38));
 }
 
 .wordart-storytime-banner {
@@ -620,6 +660,81 @@
   --wordart-backdrop: #c2410c;
   filter:
     drop-shadow(0px 2px 4px rgba(67, 20, 7, 0.45));
+}
+
+.wordart-champs-basa-blue {
+  font-weight: 900;
+  background: linear-gradient(180deg, #60a5fa 0%, #2563eb 50%, #1e3a8a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 8px #eff6ff;
+  paint-order: stroke fill;
+  filter:
+    drop-shadow(0px 0px 2px #eff6ff)
+    drop-shadow(0px 3px 6px rgba(30, 58, 138, 0.3));
+}
+
+.wordart-champs-kasadya-coral {
+  font-weight: 900;
+  background: linear-gradient(180deg, #fb7185 0%, #e11d48 55%, #9f1239 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 6px #fff1f2;
+  paint-order: stroke fill;
+  filter:
+    drop-shadow(0px 2px 5px rgba(159, 18, 57, 0.26));
+}
+
+.wordart-champs-gold-ribbon {
+  font-weight: 900;
+  background: linear-gradient(180deg, #fef3c7 0%, #fbbf24 50%, #b45309 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  --wordart-backdrop: #0f766e;
+  filter:
+    drop-shadow(0px 2px 4px rgba(24, 24, 27, 0.4));
+}
+
+.wordart-champs-level-emergent {
+  font-weight: 900;
+  background: linear-gradient(180deg, #ffffff 0%, #dcfce7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.wordart-champs-level-beginning {
+  font-weight: 900;
+  background: linear-gradient(180deg, #ffffff 0%, #dbeafe 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.wordart-champs-level-transitional {
+  font-weight: 900;
+  background: linear-gradient(180deg, #ffffff 0%, #fef3c7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.wordart-underwater-bubble {
+  font-weight: 900;
+  background: linear-gradient(180deg, #a5f3fc 0%, #38bdf8 45%, #0369a1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 8px #ecfeff;
+  paint-order: stroke fill;
+  filter:
+    drop-shadow(0px 0px 2px #ecfeff)
+    drop-shadow(0px 3px 8px rgba(3, 105, 161, 0.35));
+}
+
+.wordart-cultural-hablon {
+  font-weight: 900;
+  background: linear-gradient(180deg, #fcd34d 0%, #b45309 50%, #7f1d1d 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 6px #fffbeb;
+  paint-order: stroke fill;
 }
 
 .wordart-portfolio-editorial {
@@ -924,6 +1039,53 @@ html.dark .text-\[\#6e56cf\]:not([data-paper-canvas="true"] *) {
 
 html.dark .text-amber-950 {
   color: #fcd34d !important;
+}
+
+/* Tools banners — clay art on two grounds.
+   The pictures carry their own light, so dark mode swaps the render rather than filtering it: a
+   pastel clay object lit for daylight, inverted, reads as a photograph of a ghost. The card takes
+   the night ground the renders were lit against, and only the type changes hue. */
+.sp-tool-banner {
+  background-color: #fbf8f3;
+}
+html.dark .sp-tool-banner {
+  /* Neutral-warm dark: the night renders were lit against #1b1b22, and the chrome's blue-dark
+     surface would show as a cool rectangle behind every picture. */
+  background-color: #1c1d24 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+html.dark .sp-tool-banner[data-tone='violet'] {
+  border-color: #332a55 !important;
+}
+html.dark .sp-tool-banner[data-tone='violet']:hover {
+  border-color: #5b46a8 !important;
+  box-shadow: 0 6px 18px -6px rgba(124, 98, 230, 0.5);
+}
+html.dark .sp-tool-banner[data-tone='amber'] {
+  border-color: #4a3a1f !important;
+}
+html.dark .sp-tool-banner[data-tone='amber']:hover {
+  border-color: #8a6425 !important;
+  box-shadow: 0 6px 18px -6px rgba(214, 158, 60, 0.45);
+}
+html.dark .sp-tool-banner[data-tone='teal'] {
+  border-color: #1f4440 !important;
+}
+html.dark .sp-tool-banner[data-tone='teal']:hover {
+  border-color: #2f7169 !important;
+  box-shadow: 0 6px 18px -6px rgba(45, 160, 148, 0.45);
+}
+html.dark .sp-tool-banner[data-tone='violet'] .sp-tool-banner__title {
+  color: #c9bcfd;
+}
+html.dark .sp-tool-banner[data-tone='amber'] .sp-tool-banner__title {
+  color: #ecc78a;
+}
+html.dark .sp-tool-banner[data-tone='teal'] .sp-tool-banner__title {
+  color: #8fdcd2;
+}
+html.dark .sp-tool-banner__hint {
+  color: #8b96a3;
 }
 
 /* Inputs & selects in chrome */

@@ -1,0 +1,150 @@
+{
+  "packId": "champs-underwater-v1",
+  "name": "Underwater Reading Reef",
+  "version": "1.0.0",
+  "assets": [
+    {
+      "id": "bg-underwater-cove",
+      "label": "Sunlit Coral Cove",
+      "layer": "backdrop",
+      "tags": [
+        "underwater",
+        "ocean",
+        "coral",
+        "sunbeam",
+        "cover"
+      ],
+      "thumb": "thumbs/bg-underwater-cove.webp",
+      "full": "full/bg-underwater-cove.webp",
+      "width": 896,
+      "height": 1200
+    },
+    {
+      "id": "bg-coral-word-wall",
+      "label": "Coral Word Wall",
+      "layer": "backdrop",
+      "tags": [
+        "coral",
+        "word wall",
+        "vocabulary",
+        "ocean"
+      ],
+      "thumb": "thumbs/bg-coral-word-wall.webp",
+      "full": "full/bg-coral-word-wall.webp",
+      "width": 896,
+      "height": 1200
+    },
+    {
+      "id": "frame-ocean-top",
+      "label": "Bubbles & Kelp Arch",
+      "layer": "frame",
+      "tags": [
+        "bubbles",
+        "kelp",
+        "arch",
+        "top",
+        "frame",
+        "ocean"
+      ],
+      "slot": "top",
+      "thumb": "thumbs/frame-ocean-top.webp",
+      "full": "full/frame-ocean-top.webp",
+      "width": 1024,
+      "height": 316
+    },
+    {
+      "id": "frame-coral-bottom",
+      "label": "Sandy Reef Strip",
+      "layer": "frame",
+      "tags": [
+        "sand",
+        "coral",
+        "shell",
+        "bottom",
+        "frame",
+        "reef"
+      ],
+      "slot": "bottom",
+      "thumb": "thumbs/frame-coral-bottom.webp",
+      "full": "full/frame-coral-bottom.webp",
+      "width": 1024,
+      "height": 226
+    },
+    {
+      "id": "sticker-reading-turtle",
+      "label": "Reading Sea Turtle",
+      "layer": "sticker",
+      "tags": [
+        "turtle",
+        "book",
+        "reading",
+        "ocean"
+      ],
+      "thumb": "thumbs/sticker-reading-turtle.webp",
+      "full": "full/sticker-reading-turtle.webp",
+      "width": 556,
+      "height": 631
+    },
+    {
+      "id": "sticker-book-whale",
+      "label": "Book-Balancing Baby Whale",
+      "layer": "sticker",
+      "tags": [
+        "whale",
+        "books",
+        "sea",
+        "sparkle"
+      ],
+      "thumb": "thumbs/sticker-book-whale.webp",
+      "full": "full/sticker-book-whale.webp",
+      "width": 546,
+      "height": 675
+    },
+    {
+      "id": "sticker-octopus-audio",
+      "label": "Underwater Audio Station",
+      "layer": "sticker",
+      "tags": [
+        "octopus",
+        "audio",
+        "headphones",
+        "listening"
+      ],
+      "thumb": "thumbs/sticker-octopus-audio.webp",
+      "full": "full/sticker-octopus-audio.webp",
+      "width": 693,
+      "height": 645
+    },
+    {
+      "id": "sticker-kids-sub",
+      "label": "Reading Submarine",
+      "layer": "sticker",
+      "tags": [
+        "children",
+        "submarine",
+        "filipino",
+        "reading"
+      ],
+      "thumb": "thumbs/sticker-kids-sub.webp",
+      "full": "full/sticker-kids-sub.webp",
+      "width": 951,
+      "height": 694
+    },
+    {
+      "id": "frame-bubble-cards",
+      "label": "Bubble & Shell Word Cards",
+      "layer": "sticker",
+      "tags": [
+        "word card",
+        "bubble",
+        "shell",
+        "vocabulary",
+        "blank"
+      ],
+      "thumb": "thumbs/frame-bubble-cards.webp",
+      "full": "full/frame-bubble-cards.webp",
+      "width": 1024,
+      "height": 348
+    }
+  ]
+}
