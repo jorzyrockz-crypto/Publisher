@@ -30,7 +30,6 @@ import {
   wordArtOutlineStrokeCss,
   wordArtBackdropLayers,
   wordArtCss,
-  wordArtCurve,
   wordArtGlints,
 } from '../../utils/wordArt';
 import { useImageAspect } from '../../hooks/useImageAspect';
@@ -161,16 +160,10 @@ const TextRenderer: React.FC<{
     [element, resolvedText]
   );
 
-  // A style can carry an arc (0.15 = a gentle smile); the element's own Curve control still wins.
-  const layoutForCurve = useMemo(() => {
-    const styleCurve = layoutElement.isWordArt
-      ? wordArtCurve(layoutElement.wordArtStyle, layoutElement.textCurve)
-      : (layoutElement.textCurve ?? 0);
-    return styleCurve === (layoutElement.textCurve ?? 0)
-      ? layoutElement
-      : { ...layoutElement, textCurve: styleCurve };
-  }, [layoutElement]);
-  const layout = useMemo(() => layoutText(layoutForCurve), [layoutForCurve]);
+  // A style can carry an arc (0.15 = a gentle smile); the element's own Curve control still wins,
+  // and a style's arc only applies while the type is one line — `layoutText` resolves all of that
+  // through `resolveTextCurve`, so there is nothing to pre-compute here.
+  const layout = useMemo(() => layoutText(layoutElement), [layoutElement]);
   const offset = useMemo(() => verticalOffset(layout, layoutElement), [layout, layoutElement]);
 
   // Keyboard input is captured on every keystroke so nothing is lost if the

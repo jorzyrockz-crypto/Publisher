@@ -144,11 +144,30 @@ reproduce from a box.)
 ### Arched type, from the style or from the element
 
 `WordArtPaint.arc` (and therefore `WordArtSpec.arc`) is an arc on the Curve slider's scale, ÷100:
-`0.15` is the gentle upward smile a banner header wants, `-0.15` the trough. `wordArtCurve(style,
-elementCurve)` resolves it — **the element's own `textCurve` always wins**, so a template can arch
-one line without forking the style, and nobody has to learn a second control. Both painters lay the
-text out through that resolved value, so a style-carried arc arches in the editor and in the export.
-`brush-blush` ships with `arc: 0.12`; the wellness-week HEALTH line keeps its explicit `textCurve: 14`.
+`0.15` is the gentle upward smile a banner header wants, `-0.15` the trough. `wordArtStyleArc(style)`
+is that style's opinion on its own — and `resolveTextCurve(element)` in `textLayout` is the only
+thing that decides whether it is painted:
+
+1. **The element's own `textCurve` always wins.** A template can arch one line without forking the
+   style, and nobody has to learn a second control.
+2. **A style's arc is a one-line gesture.** If the headline wraps, or carries a `\n`, the arc is not
+   applied and the block keeps its wrapping. Before that rule existed, `reading-nook-sage` and the
+   bubble signs hauled every word of a two-line title onto one circle and flattened it into a single
+   overflowing row — the words meant for line three ended up on the ends of the arch.
+
+`layoutText` resolves the curve internally, so the editor, the export, the properties panel's Curve
+readout and text-box growth all answer the same question the same way. `brush-blush` ships with
+`arc: 0.12`; the wellness-week HEALTH line keeps its explicit `textCurve: 14`.
+
+### A curved block keeps its lines
+
+When the arc *is* applied to more than one line — an explicit curve, or a template that arcs a
+kicker above a wrapped sub-line — `buildCurveLayout` no longer joins the lines into one string.
+Explicit `\n` is a line, anything wider than the frame wraps at a space using the same measurement
+the flat layout uses, and each line is placed on its own arc one `lineHeight` below the one above,
+covering the share of the sweep its width earns. The widest line takes the whole bend, a shorter one
+sits centred on less of it, and `contentHeight` grows by a line-height per row so auto-fit and
+text-box growth still see the real height. Nothing is ever re-flowed onto a single row.
 
 ## Eco campaign: pine, gold, wood and ribbon
 
@@ -426,8 +445,9 @@ no-op).
 already understood it. What did not work was the *combination*: `renderWordArtCanvas` walked
 `layout.lines`, and a curved element has no lines — the arc replaces them. A curved WordArt word
 therefore painted nothing into an export while looking fine in the editor. The painter now treats
-the curve as a single pseudo-line. The wellness-week template uses `textCurve: 14` on HEALTH, so the
-case is exercised by a shipped template, not only by a test.
+the curve as a single pseudo-line whose glyphs each carry their own position and rotation, which is
+also why a multi-row arc exports as correctly as it renders. The wellness-week template uses
+`textCurve: 14` on HEALTH, so the case is exercised by a shipped template, not only by a test.
 
 ### The arched header's rim, re-examined
 
@@ -536,6 +556,7 @@ the browser fell back to a system face and the styles looked broken rather than 
 | `npm run wordart:css -- --check` | `src/index.css` matches what `buildWordArtCssRule` generates |
 | `npm run check:wordart` | every styled face names a real style and a font the app can load |
 | `npm run check:wordart-parity` | the sheet, the DOM and the canvas agree: em rims, ring before blur, no rim haze, strokes in their own colour, canvas rim scaling with the type |
+| `npm run check:wordart-curve` | a style's `arc` is only painted on one line, an explicit curve survives a break, and a curved block keeps its rows one line-height apart with every letter in place |
 
 ### Extrusion: the CSS list is a chain, not a list of offsets
 
@@ -576,7 +597,7 @@ first attempt:
 | keyline | 4 px navy / wine | 3.5 px `#18181b` | the outer line on a printed sign is ink, not a tint of the fill; a tint reads as a soft edge at banner size |
 | ramp | 5 stops, pale sky → navy | 4 stops, `#7dd3fc`→`#38bdf8`→`#0284c7`→`#1d4ed8` | bright top, royal foot — a sign lit from above, not a metal |
 | depth | none | 2-step `#18181b` lip at 1.5 px + cast shadow `0 5 8` | the thickness of a sticker, not a 3D block |
-| arc | flat | 0.08 | the classroom-banner smile, owned by the style so a template gets it free (an element's `textCurve` still overrides) |
+| arc | flat | 0.08 | the classroom-banner smile, owned by the style so a template gets it free — on a single line only; a wrapped headline stays flat, and an element's `textCurve` still overrides |
 
 The lip is two drop-shadows of *one step* each, which the CSS chain compounds into 1.5 px and 3.0 px —
 the same depth the canvas paints, for the same reason the extrusion fix exists.

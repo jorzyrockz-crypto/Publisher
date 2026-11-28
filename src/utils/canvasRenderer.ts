@@ -24,7 +24,7 @@ import {
 import { buildTextEffectPainter } from './textEffects';
 import { elementClipPath } from './shapeClip';
 import { imageContentRect, imageFit } from './imageFrame';
-import { wordArtCurve, wordArtPaint, wordArtShadowChain, wordArtSpec } from './wordArt';
+import { wordArtPaint, wordArtShadowChain, wordArtSpec } from './wordArt';
 import { renderWordArtCanvas } from './wordArtCanvas';
 import type { WordArtPass } from './wordArtCanvas';
 
@@ -138,12 +138,10 @@ function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
     }
   }
 
-  // A WordArt style can carry an arc (0.15 = a gentle smile). The element's own Curve control still
-  // wins, so a template can arch one line without touching the style.
-  const styleCurve = el.isWordArt ? wordArtCurve(el.wordArtStyle, el.textCurve) : (el.textCurve ?? 0);
-  const layout = layoutText(
-    styleCurve === (el.textCurve ?? 0) ? el : { ...el, textCurve: styleCurve }
-  );
+  // A WordArt style can carry an arc (0.15 = a gentle smile); the element's own Curve control wins,
+  // and the style's arc is held back for anything but a single line. `layoutText` resolves it, so
+  // the export and the editor cannot disagree about which of those applies.
+  const layout = layoutText(el);
   const paint = buildTextEffectPainter(el);
   // WordArt styles carry their own fill, stroke, shadow stack and weight, so
   // the exported text looks like the canvas instead of falling back to el.color.

@@ -1436,7 +1436,8 @@ export interface WordArtSpec {
   /**
    * Style-level arc, in the same units as the Curve control (0–100) divided by 100: `0.15` is the
    * gentle upward smile a banner header wants, `-0.15` the trough. An element's own `textCurve`
-   * always wins — see `wordArtCurve`.
+   * always wins, and a wrapped or line-broken headline does not take the style's arc at all — see
+   * `resolveTextCurve` in `textLayout`.
    */
   arc?: number;
   /** The face the style was drawn for — see `wordArtDefaultFont`. */
@@ -1843,9 +1844,18 @@ export function wordArtCarriesContrast(style?: WordArtStyle): boolean {
   return Math.max(...stops) - Math.min(...stops) >= 0.55;
 }
 
-/** The curve to lay this element out with: the element's own, else the style's `arc`. */
-export function wordArtCurve(style: WordArtStyle | undefined, elementCurve?: number): number {
-  if (elementCurve !== undefined && elementCurve !== 0) return elementCurve;
+/**
+ * The arc a style carries, on the Curve control's scale (0–100), or 0.
+ *
+ * `WordArtPaint.arc` is on that same scale ÷100 — `0.15` is the gentle upward smile a banner header
+ * wants — so it is multiplied back up here, and rounded to zero when it is too small to matter but
+ * would still flip `layoutText` into its curved branch.
+ *
+ * This is only the *style's* opinion. Whether it gets painted is `resolveTextCurve`'s call (in
+ * `textLayout`): an arc is a one-line gesture, and a wrapped or line-broken headline does not take
+ * it. The element's own `textCurve` always wins over this.
+ */
+export function wordArtStyleArc(style: WordArtStyle | undefined): number {
   const arc = wordArtPaint(style)?.arc ?? 0;
   return Math.abs(arc) < 0.001 ? 0 : arc * 100;
 }
