@@ -14,6 +14,7 @@
  *   npm run check:certs
  */
 import { existsSync, readFileSync, statSync } from 'node:fs';
+import { inflateSync } from 'node:zlib';
 import { createServer } from 'vite';
 
 const server = await createServer({
@@ -555,6 +556,130 @@ const webpInfo = (buffer) => {
   return null;
 };
 
+/**
+ * A real read of the pixels. A header tells you a file is 1600×1200 RGBA; it cannot tell you whether
+ * the middle is actually transparent or whether the silhouette steps from opaque to clear in one
+ * pixel (which is what makes a cut-out look saw-toothed on a dark page). Only 8-bit RGBA without
+ * interlacing is supported, which is every file this folder ships.
+ */
+const readRgba8 = (file) => {
+  const buffer = readFileSync(file);
+  if (pngInfo(buffer) === null) return null;
+  const width = buffer.readUInt32BE(16);
+  const height = buffer.readUInt32BE(20);
+  const depth = buffer[24];
+  const colorType = buffer[25];
+  const interlace = buffer[28];
+  if (depth !== 8 || colorType !== 6 || interlace !== 0) return null;
+
+  const idat = [];
+  let offset = 8;
+  while (offset + 8 <= buffer.length) {
+    const length = buffer.readUInt32BE(offset);
+    const type = buffer.toString('latin1', offset + 4, offset + 8);
+    if (type === 'IDAT') idat.push(buffer.subarray(offset + 8, offset + 8 + length));
+    if (type === 'IEND') break;
+    offset += length + 12;
+  }
+
+  const raw = inflateSync(Buffer.concat(idat));
+  const bpp = 4;
+  const stride = width * bpp;
+  const data = Buffer.alloc(stride * height);
+  let previous = Buffer.alloc(stride);
+  for (let y = 0; y < height; y += 1) {
+    const filter = raw[y * (stride + 1)];
+    const line = raw.subarray(y * (stride + 1) + 1, (y + 1) * (stride + 1));
+    const row = data.subarray(y * stride, (y + 1) * stride);
+    line.copy(row);
+    for (let x = 0; x < stride; x += 1) {
+      const left = x >= bpp ? row[x - bpp] : 0;
+      const up = previous[x];
+      const upLeft = x >= bpp ? previous[x - bpp] : 0;
+      if (filter === 0) continue;
+      if (filter === 1) row[x] = (row[x] + left) & 0xff;
+      else if (filter === 2) row[x] = (row[x] + up) & 0xff;
+      else if (filter === 3) row[x] = (row[x] + ((left + up) >> 1)) & 0xff;
+      else if (filter === 4) {
+        const p = left + up - upLeft;
+        const pa = Math.abs(p - left);
+        const pb = Math.abs(p - up);
+        const pc = Math.abs(p - upLeft);
+        row[x] = (row[x] + (pa <= pb && pa <= pc ? left : pb <= pc ? up : upLeft)) & 0xff;
+      } else return null;
+    }
+    previous = row;
+  }
+  return { width, height, data };
+};
+
+/**
+ * The three things a transparent asset has to get right, whichever kind it is.
+ * `kind` decides the extra promise: a frame owes you a hollow middle, a sticker owes you a clean
+ * canvas edge (`kind: 'sticker'`), a rule is allowed to run off the sides.
+ */
+const checkCutout = (label, file, kind) => {
+  const image = readRgba8(file);
+  check(`${label}: pixels decode`, Boolean(image), file);
+  if (!image) return;
+
+  const { width, height, data } = image;
+  let partial = 0;
+  let hard = 0;
+  let paper = 0;
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const i = (y * width + x) * 4;
+      const alpha = data[i + 3];
+      if (alpha > 0 && alpha < 255) partial += 1;
+      if (kind === 'frame' && alpha > 200) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        if (Math.min(r, g, b) > 230 && Math.max(r, g, b) - Math.min(r, g, b) < 26) paper += 1;
+      }
+      // a silhouette that goes 255 → 0 with nothing between is a jagged edge
+      if (alpha === 255) {
+        if (x + 1 < width && data[i + 7] === 0) hard += 1;
+        if (y + 1 < height && data[i + width * 4 + 3] === 0) hard += 1;
+      } else if (alpha === 0) {
+        if (x + 1 < width && data[i + 7] === 255) hard += 1;
+        if (y + 1 < height && data[i + width * 4 + 3] === 255) hard += 1;
+      }
+    }
+  }
+
+  const area = width * height;
+  check(`${label}: the cut-out has soft pixels`, partial > area * 0.001, `${partial}`);
+  check(`${label}: the silhouette is anti-aliased`, hard === 0, `${hard} hard 255↔0 steps`);
+
+  if (kind === 'frame') {
+    let interiorMax = 0;
+    for (let y = Math.round(height * 0.3); y < Math.round(height * 0.7); y += 1) {
+      for (let x = Math.round(width * 0.3); x < Math.round(width * 0.7); x += 1) {
+        interiorMax = Math.max(interiorMax, data[(y * width + x) * 4 + 3]);
+      }
+    }
+    check(`${label}: the middle is hollow so the paper shows through`, interiorMax === 0, `max alpha ${interiorMax}`);
+    check(`${label}: no sheet of white paper is left behind`, paper <= area * 0.001, `${paper} px`);
+  }
+
+  if (kind === 'sticker') {
+    let edgeMax = 0;
+    for (let x = 0; x < width; x += 1) {
+      for (const y of [0, 1, height - 2, height - 1]) {
+        edgeMax = Math.max(edgeMax, data[(y * width + x) * 4 + 3]);
+      }
+    }
+    for (let y = 0; y < height; y += 1) {
+      for (const x of [0, 1, width - 2, width - 1]) {
+        edgeMax = Math.max(edgeMax, data[(y * width + x) * 4 + 3]);
+      }
+    }
+    check(`${label}: the canvas edge is clean, not a white frame`, edgeMax === 0, `max alpha ${edgeMax}`);
+  }
+};
+
 const certificateAssets = SAMPLE_GRAPHICS.filter((g) => g.category === 'Certificates');
 check('certificate assets are registered', certificateAssets.length >= 10, `${certificateAssets.length}`);
 check(
@@ -587,6 +712,7 @@ for (const asset of certificateAssets) {
   if (relative.endsWith('.png')) {
     check(`${label}: PNG carries an alpha channel`, info.hasAlpha === true);
     check(`${label}: transparent art is page-sized`, asset.insertAs !== 'page' || info.width === 1600);
+    checkCutout(label, file, label.startsWith('cert-border-') ? 'frame' : 'rule');
   } else {
     check(`${label}: WebP ground is page-sized`, info.width === 1600 && info.height === 1200);
     check(`${label}: ground inserts as the page`, asset.insertAs === 'page');
@@ -628,6 +754,7 @@ for (const sticker of certificateStickers) {
     statSync(file).size <= 400_000,
     `${Math.round(statSync(file).size / 1024)} kB`,
   );
+  checkCutout(label, file, 'sticker');
   check(`${label}: svg wrapper embeds the drawn file`, sticker.svg.includes(relative));
   check(`${label}: svg wrapper is a self-contained document`, sticker.svg.startsWith('<svg xmlns='));
   // `stickerUri()` in certificateTemplates.ts reaches a seal by id alone; this is that lookup.

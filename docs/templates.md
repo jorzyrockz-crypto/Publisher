@@ -332,13 +332,20 @@ past the bottom margin is not spread at all.
 - Every page was rasterised (Pillow, DejaVu) and inspected page by page: the veils, the composed
   posters and invitations, and the pages the guard left alone all read correctly. The renderer
   lives outside the repo (it is a probe, not product code).
-- `npm run check:certs` — 1097 assertions over the six certificates and their art: family is one the app loads,
+- `npm run check:certs` — 1141 assertions over the six certificates and their art: family is one the app loads,
   no typed-in signature, a rule at 1.5px under every name, the requested WordArt style and face on
   every title, logo slots still empty, QR blocks holding a URL, every non-WordArt colour clearing
   4.5:1 (3:1 at display sizes) against the shape actually behind it, and both pipeline stages
   leaving the geometry and the palette untouched; and, for every registered certificate asset, that
   the file exists, is the size it declares, is under the weight budget, and carries alpha where it
-  must.
+  must. The transparent pieces are also read pixel by pixel (`readRgba8`, a 60-line PNG decoder in
+  the script, because a header cannot describe alpha): every silhouette must step from opaque to
+  clear through a half-covered pixel — zero `255 ↔ 0` jump — or a cut-out looks saw-toothed on a dark
+  page; a frame's middle third must be alpha 0 all the way across, so the parchment shows through
+  rather than a remembered white; a frame may keep no more than 0.1% of its area as opaque white
+  paper; and a seal or sticker must leave its canvas edge untouched, because an opaque border there
+  is the white rectangle the matte used to leave behind. Break any of those four and the run fails
+  by name — which was checked by doctoring a frame until it did.
 
 ## The seam rule
 
