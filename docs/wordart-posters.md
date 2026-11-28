@@ -585,17 +585,20 @@ Sample render (ImageMagick approximation, real Fredoka, 168 pt): `.arena/banner/
 
 ### Layer order in the DOM painter
 
-Three things the DOM has to get right that the canvas gets right by construction:
+Six things the DOM has to get right that the canvas gets right by construction:
 
 | layer | rule |
 |---|---|
-| the drop-shadow chain | one `filter` over **both** the keyline silhouette and the face. A `drop-shadow` paints behind the element it is applied to, so a filter on the face alone puts the cast shadow and the extrusion copies *over* the dark keyline drawn underneath — the sign loses its outer line wherever the shadow crosses it. |
+| the drop-shadow chain | one `filter` over **every** glyph layer — keyline, rim and face. A `drop-shadow` paints behind the element it is applied to, so a filter on the face alone puts the cast shadow and the extrusion copies *over* the dark keyline drawn underneath — the sign loses its outer line wherever the shadow crosses it. |
 | the keyline stroke | `wordArtOutlineStrokeCss(style)`, never `strokeWidth + outline.width`. That was the half-rim arithmetic, and a full rim simply covers it. |
-| the fat rim | a stroke on `-webkit-background-clip: text` is painted *over* the gradient in Chromium and WebKit, and `paint-order: stroke fill` does not apply to a clipped background — so a 0.167em rim erases the face. When `rimNeedsOwnLayer(paint)` (a `heavyStroke` style, or a rim ≥ 3, over a gradient) the rim becomes the element's own silhouette — stroke plus a fill in the rim colour — and the gradient moves up to an `::after` copy of the same letters at `z-index: 1`, so it covers the rim's inner half and nothing else. A `::before` at `z-index: -1` cannot do the job: an element's background paints *before* its negative-z-index children. `wordArtCss(style).rimStroke` gives the renderer the same split as a third layer between keyline and face, and every preview span that uses a style therefore needs `data-text` — `Aa` in the panel, `WordArt` in the gallery. |
-| clipping | `overflow: visible` on the glyph container **and** on each run span when the element is WordArt. A run's box is one line tall and a fat rim is taller than that; the sign was being sliced at the frame on exactly the styles that need the room. Plain text still clips, so nothing bleeds onto the page. |
+| round joins | the keyline and the rim are **SVG `<text>`** with `stroke-linejoin="round"` / `stroke-linecap="round"`, not `-webkit-text-stroke`. A text stroke joins glyph corners with a miter and CSS cannot change it, so a thick rim grew a dagger off every sharp point — the top of the N in the coral sticker, the apex of the A in the bubble sign. `ctx.lineJoin = 'round'` has always been what the exporter does, so here the DOM follows the canvas rather than the reverse. |
+| the silhouette baseline | SVG anchors text on its *baseline*; the run spans are flex boxes with the em box *centred* in `line.height`. `runBaseline()` asks the font for `fontBoundingBoxAscent`/`-Descent` — the metrics CSS line layout is built from — and returns `(lineHeight − size)/2 + (size + ascent − descent)/2`. Curved glyphs drop the first term: their box is centred on the glyph. Without it the rim is fat on one side and thin on the other. |
+| the fat rim | a stroke on `-webkit-background-clip: text` is painted *over* the gradient in Chromium and WebKit, and `paint-order: stroke fill` does not apply to a clipped background — so a 0.167em rim erases the face. When `rimNeedsOwnLayer(paint)` (a `heavyStroke` style, or a rim ≥ 3, over a gradient) the rim becomes a silhouette *layer* between keyline and face. In the editor it is the SVG rim layer; in the stylesheet the element's own text is the silhouette and the gradient moves up to an `::after` copy at `z-index: 1` — a `::before` at `z-index: -1` cannot do the job, because an element's background paints *before* its negative-z-index children. Every preview span that uses a style therefore needs `data-text` — `Aa` in the panel, `WordArt` in the gallery. |
+| overhangs | `-webkit-background-clip: text` paints inside the element's **border box**, so an italic overhang or a script swash that leaves it loses its fill — the final R in Bangers italic, the tail of Pacifico, every Kaushan Script descender. WordArt runs carry `padding-inline: 0.2em` with `margin-inline: -0.2em`, so the box grows and the glyphs do not move; `gradientStyle()` gives the `0.2em` back to `background-position`, because `background-origin` is the padding box. Curved glyph spans take the padding *without* the margin: they are centred by `translate(-50%, -50%)`, which would move them by the padding. |
+| clipping | `overflow: visible` on the glyph container when the element is WordArt. Run spans no longer clip at all — a run's box is one line tall and type leans out of it — except a space, which keeps its fixed width. Plain text is still clipped by the element's own frame, so nothing bleeds onto the page. |
 
-The rim layer goes between the keyline and the face: keyline first, then the rim silhouette, then
-the gradient — back to front, the same order the canvas painter uses.
+Back to front the painter is keyline → rim → face, the order the canvas painter uses.
 
-`npm run check:wordart-parity` asserts the first three structurally (it reads the renderer's source,
-because there is no DOM in the check environment) and both overflow opt-outs.
+`npm run check:wordart-parity` asserts all of it structurally (it reads the renderer's source,
+because there is no DOM in the check environment), including the round joins, the measured
+baselines and the padding/position pair that keeps an overhang inside its own gradient.

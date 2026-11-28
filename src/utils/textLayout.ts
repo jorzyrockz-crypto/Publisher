@@ -104,6 +104,41 @@ export function measureTextWidth(text: string, font: string): number {
   return width;
 }
 
+/**
+ * Ascent and descent of a CSS font string, in px.
+ *
+ * A stroked WordArt silhouette drawn as SVG `<text>` anchors on its *baseline*, while the DOM
+ * lists its runs as flex boxes with the em box centred — so the two only line up if the painter
+ * knows where the browser put the baseline. `fontBoundingBoxAscent` / `-Descent` are the font's own
+ * metrics, the ones CSS line layout is built from, so the answer is the browser's own.
+ */
+export function fontVerticalMetrics(font: string): { ascent: number; descent: number } {
+  const ctx = getMeasureCtx();
+  if (ctx) {
+    ctx.font = font;
+    const metrics = ctx.measureText('Hxg');
+    const ascent = metrics.fontBoundingBoxAscent;
+    const descent = metrics.fontBoundingBoxDescent;
+    if (Number.isFinite(ascent) && ascent > 0 && Number.isFinite(descent)) return { ascent, descent };
+  }
+  // Headless / very old engines: the usual 0.8 / 0.2 split is within a pixel of most faces.
+  const size = Number(/(\d+(?:\.\d+)?)px/.exec(font)?.[1] || 16);
+  return { ascent: size * 0.8, descent: size * 0.2 };
+}
+
+/**
+ * Baseline of one glyph box, in px from the top of that box.
+ *
+ * Both painters set `line-height: 1` and centre the em box in a box of `lineHeight`: the
+ * half-leading is `(lineHeight - size) / 2`, and within the line box the baseline sits at
+ * `(size + ascent - descent) / 2`. Pass `lineHeight === size` for a bare glyph span (curved text,
+ * where the box is centred on the glyph).
+ */
+export function runBaseline(font: string, size: number, lineHeight = size): number {
+  const { ascent, descent } = fontVerticalMetrics(font);
+  return (lineHeight - size) / 2 + (size + ascent - descent) / 2;
+}
+
 export function buildFontString(
   el: Pick<TextElement, 'fontFamily' | 'fontWeight' | 'fontStyle'> & {
     isWordArt?: boolean;

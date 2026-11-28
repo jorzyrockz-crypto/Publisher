@@ -341,21 +341,77 @@ check('the bubble sign carries its own arc', (bubble.arc ?? 0) > 0, String(bubbl
 //    invisible in a unit test that does not build a tree.
 const renderer = readFileSync('src/components/canvas/ElementRenderer.tsx', 'utf8');
 const filterAt = renderer.indexOf('...(waFilter ? { filter: waFilter } : {})');
-const outlineAt = renderer.indexOf("renderGlyphs(waCss.outline.color, 'outline', true, 'outline')");
-const rimLayerAt = renderer.indexOf("renderGlyphs(waCss.rimStroke.color, 'rim', true, 'rim')");
+const strokeLayerAt = renderer.indexOf('{strokeLayers.map((layer) => renderStrokedLayer(layer))}');
 const baseAt = renderer.indexOf("renderGlyphs(baseColor, 'base', true)");
-check('the DOM filter wrapper opens before the keyline layer', filterAt !== -1 && filterAt < outlineAt, `${filterAt} vs ${outlineAt}`);
-check('the keyline is painted under the face', outlineAt !== -1 && outlineAt < baseAt, `${outlineAt} vs ${baseAt}`);
-check('the rim layer sits between the keyline and the face', rimLayerAt !== -1 && outlineAt < rimLayerAt && rimLayerAt < baseAt, `${outlineAt} < ${rimLayerAt} < ${baseAt}`);
 check(
-  'word art is not clipped by its own box',
-  (renderer.match(/overflow: element\.isWordArt \? 'visible' : 'hidden'/g) ?? []).length >= 2,
-  'expected the view and both run spans to opt out of clipping'
+  'the DOM filter wrapper opens before the silhouettes',
+  filterAt !== -1 && filterAt < strokeLayerAt,
+  `${filterAt} vs ${strokeLayerAt}`
+);
+check('the silhouettes are painted under the face', strokeLayerAt !== -1 && strokeLayerAt < baseAt, `${strokeLayerAt} vs ${baseAt}`);
+check(
+  'the keyline is declared before the rim',
+  renderer.indexOf("key: 'outline'") !== -1 && renderer.indexOf("key: 'outline'") < renderer.indexOf("key: 'rim'"),
+  `${renderer.indexOf("key: 'outline'")} vs ${renderer.indexOf("key: 'rim'")}`
 );
 check(
   'the DOM keyline stroke comes from the shared helper',
   renderer.includes('wordArtOutlineStrokeCss(element.wordArtStyle)') &&
     !renderer.includes('paint.strokeWidth || 0) + waCss.outline.width')
+);
+
+// A text stroke cannot round its joins, so the silhouette layers are SVG text with `round`
+// geometry — the same `lineJoin`/`lineCap` the canvas painter sets. A miter leaves a spike
+// standing off every sharp corner of a thick rim.
+check(
+  'the stroked silhouettes round their joins',
+  /strokeLinejoin: 'round'/.test(renderer) && /strokeLinecap: 'round'/.test(renderer),
+  'expected strokeLinejoin/strokeLinecap round on the silhouette text'
+);
+check(
+  'the silhouettes are SVG text, not text-stroke spans',
+  renderer.includes('<text') && renderer.includes('strokeWidth={widthEm * run.fontSize}'),
+  'expected <text> nodes stroked from the shared em width'
+);
+check(
+  'the silhouette baseline comes from the shared font metrics',
+  (renderer.match(/runBaseline\(buildFontString\(/g) ?? []).length === 2,
+  'expected both the run and the curved-glyph baselines to be measured'
+);
+
+// Overhangs: the run's own background box has to be wider than its letters, and the glyphs must
+// not move while it grows.
+check(
+  'word art runs carry overhang padding',
+  renderer.includes('paddingInline: `${RUN_PAD_EM}em`') &&
+    renderer.includes('marginInline: `-${RUN_PAD_EM}em`'),
+  'expected padding-inline with a cancelling margin-inline'
+);
+check(
+  'the gradient compensates for that padding',
+  renderer.includes('box.x - x + padX') && renderer.includes('boxes[lineIndex] ?? boxes[0], runPad'),
+  'background-origin is the padding box; the position has to give the padding back'
+);
+// A curved glyph span is centred by `translate(-50%, -50%)`, so a negative margin would shift the
+// glyph by the padding while its SVG silhouette stayed put. Padding alone keeps the centre.
+const curveBranchStart = renderer.indexOf('if (layout.curve) {');
+const curveBranch = curveBranchStart === -1
+  ? ''
+  : renderer.slice(curveBranchStart, renderer.indexOf('return layout.lines.map', curveBranchStart));
+check(
+  'curved glyphs pad without a cancelling margin',
+  curveBranch.includes('paddingInline') && !curveBranch.includes('marginInline'),
+  'a translate(-50%) span would move by the padding'
+);
+check(
+  'a space run still clips its fixed width',
+  renderer.includes("overflow: isSpace ? 'hidden' : undefined"),
+  'spaces keep their box; type does not get clipped at all'
+);
+check(
+  'word art is not clipped by its own frame',
+  renderer.includes("overflow: element.isWordArt ? 'visible' : 'hidden'"),
+  'expected the view box to opt out of clipping for word art'
 );
 
 console.log(failures === 0 ? 'ALL CHECKS PASSED' : `${failures} FAILURES`);

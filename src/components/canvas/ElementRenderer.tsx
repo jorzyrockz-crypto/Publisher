@@ -14,7 +14,14 @@ import { Scissors, Quote, Award, QrCode, ImagePlus, Upload } from 'lucide-react'
 import { buildWavyRectPath } from '../../utils/shapePaths';
 import { buildShapePatternDataUri } from '../../utils/patternGenerator';
 import { PATTERN_CATALOG } from '../../utils/patternGenerator';
-import { curveGlyphBox, layoutText, lineGlyphBoxes, verticalOffset } from '../../utils/textLayout';
+import {
+  buildFontString,
+  curveGlyphBox,
+  layoutText,
+  lineGlyphBoxes,
+  runBaseline,
+  verticalOffset,
+} from '../../utils/textLayout';
 import type { GlyphBox } from '../../utils/textLayout';
 import { buildTextEffectPainter } from '../../utils/textEffects';
 import { imageContentRect, imageFit, imageMaskClip } from '../../utils/imageFrame';
@@ -339,31 +346,31 @@ const TextRenderer: React.FC<{
   // silhouette has to clear the whole rim or the dark keyline is hidden under it, and both have to
   // grow with the type.
   const outlineKeyline = wordArtOutlineStrokeCss(element.wordArtStyle);
-  const outlineStyle: React.CSSProperties = waCss.outline && outlineKeyline
-    ? {
-        WebkitTextStroke: outlineKeyline,
-        paintOrder: 'stroke fill',
-        color: waCss.outline.color,
-      }
-    : {};
 
   /**
-   * The rim when it is too fat to sit on the letters.
+   * The keyline and the rim are drawn as SVG, not as `-webkit-text-stroke`.
    *
-   * Chromium and WebKit paint `-webkit-text-stroke` over the text *fill* — and a
-   * `-webkit-background-clip: text` gradient is a background, not a fill, so `paint-order` cannot
-   * rescue it: a 6 px rim swallows the gradient face entirely and the word reads as a white blob.
-   * The rim is painted instead as a silhouette copy of the glyphs, under the face, which is where
-   * the canvas painter has always put it.
+   * `-webkit-text-stroke` joins glyph corners with a *miter* and there is no CSS property to round
+   * it, so a thick rim grows a spike off every sharp point — the top of the N in the coral sticker
+   * was a hairline dagger, and the A of the bubble sign had one too. SVG `stroke-linejoin` is
+   * geometry, so it actually rounds; the canvas painter has always set `ctx.lineJoin = 'round'`,
+   * and this is the DOM catching up with the exporter. Only the silhouettes move to SVG — the
+   * gradient face stays DOM text, which is what `wordArtCss` is written for.
    */
-  const rimStyle: React.CSSProperties = waCss.rimStroke
-    ? {
-        WebkitTextStroke: waCss.rimStroke.css,
-        paintOrder: 'stroke fill',
-        color: waCss.rimStroke.color,
-      }
-    : {};
+  const strokeLayers: { key: string; color: string; stroke: string }[] = [];
+  if (waCss.outline && outlineKeyline) {
+    strokeLayers.push({ key: 'outline', color: waCss.outline.color, stroke: outlineKeyline });
+  }
+  if (waCss.rimStroke) {
+    strokeLayers.push({ key: 'rim', color: waCss.rimStroke.color, stroke: waCss.rimStroke.css });
+  }
 
+  /**
+   * The stroke the *face* carries itself, for the styles whose rim is thin enough to stay on the
+   * letters. A rim too fat for that (`waCss.rimStroke` — see `rimNeedsOwnLayer`) is a silhouette
+   * layer instead, because Chromium and WebKit paint `-webkit-text-stroke` over a
+   * `background-clip: text` gradient and the face would be swallowed.
+   */
   const strokeStyle: React.CSSProperties = waCss.rimStroke
     ? {}
     : waCss.webkitTextStroke
@@ -401,12 +408,16 @@ const TextRenderer: React.FC<{
 
   // The gradient is clipped to the line's glyph box, exactly like the exporter
   // measures it, so a horizon stop lands at the same height in both.
-  const gradientStyle = (x: number, y: number, box: GlyphBox): React.CSSProperties =>
+  //
+  // `padX` is the horizontal padding a WordArt run carries so a swash can paint inside its own
+  // background box (see `runPad` below): `background-origin` is the *padding* box, so the image
+  // origin moves left with the box and the position has to move back by the same amount.
+  const gradientStyle = (x: number, y: number, box: GlyphBox, padX = 0): React.CSSProperties =>
     gradientCss
       ? {
           backgroundImage: gradientCss,
           backgroundSize: `${Math.max(1, box.width)}px ${Math.max(1, box.height)}px`,
-          backgroundPosition: `${box.x - x}px ${box.y - y}px`,
+          backgroundPosition: `${box.x - x + padX}px ${box.y - y}px`,
           WebkitBackgroundClip: 'text',
           backgroundClip: 'text',
           color: 'transparent',
@@ -414,17 +425,20 @@ const TextRenderer: React.FC<{
       : {};
 
   /**
-   * `layer` decides what a glyph copy is *for*: the face carries the gradient and the shadow, and
-   * the two silhouettes carry nothing but their own stroke and fill.
+   * A WordArt run is given a little horizontal padding so its own background box is wider than its
+   * letters. `-webkit-background-clip: text` paints the gradient inside the *border box*, so a
+   * script swash or an italic overhang that leaves that box loses its fill and reads as a slice
+   * through the last letter — the R in Bangers italic, the tail of Pacifico. A negative margin of
+   * the same size puts the box back exactly where it was, so the glyphs do not move.
    */
-  const renderGlyphs = (
-    color: string,
-    prefix: string,
-    withEffects: boolean,
-    layer: 'face' | 'outline' | 'rim' = 'face'
-  ) => {
-    const isFace = layer === 'face';
-    const layerStyle = layer === 'outline' ? outlineStyle : layer === 'rim' ? rimStyle : strokeStyle;
+  const RUN_PAD_EM = 0.2;
+
+  /**
+   * The face — and the glitch slices, which are copies of it. The keyline and the rim are not
+   * rendered here: they are SVG stroke layers (`renderStrokedLayer`), because a text stroke cannot
+   * round its joins.
+   */
+  const renderGlyphs = (color: string, prefix: string, withEffects: boolean) => {
     if (layout.curve) {
       return layout.curve.chars.map((char, index) =>
         char.text.trim() ? (
@@ -439,9 +453,14 @@ const TextRenderer: React.FC<{
               lineHeight: 1,
               whiteSpace: 'pre',
               color,
-              ...(withEffects && isFace ? gradientStyle(char.x, offset + char.y, boxes[0]) : {}),
-              ...(withEffects ? layerStyle : {}),
-              textShadow: withEffects && isFace ? glyphShadow : undefined,
+              // Padding only, no negative margin: this span is centred by `translate(-50%)`, which
+              // would move by the padding and put the glyph off its own rim.
+              ...(element.isWordArt
+                ? { paddingInline: `${RUN_PAD_EM}em` }
+                : {}),
+              ...(withEffects ? gradientStyle(char.x, offset + char.y, boxes[0]) : {}),
+              ...(withEffects ? strokeStyle : {}),
+              textShadow: withEffects ? glyphShadow : undefined,
             }}
           >
             {char.text}
@@ -454,6 +473,7 @@ const TextRenderer: React.FC<{
       line.runs.map((run, runIndex) => {
         if (!run.text) return null;
         const isSpace = run.kind === 'space';
+        const runPad = element.isWordArt && !isSpace ? RUN_PAD_EM * run.fontSize : 0;
         const highlight =
           withEffects && element.highlightColor && run.kind !== 'marker'
             ? element.highlightColor
@@ -472,17 +492,23 @@ const TextRenderer: React.FC<{
               lineHeight: 1,
               letterSpacing: element.letterSpacing ? `${element.letterSpacing}px` : undefined,
               color: isSpace ? 'transparent' : color,
-              ...(withEffects && isFace && !isSpace
-                ? gradientStyle(run.x, offset + line.textTop, boxes[lineIndex] ?? boxes[0])
+              // Room for the overhang, pulled back by the same amount: the box grows, the glyphs
+              // stay on their measured x, and the gradient's origin is corrected in `gradientStyle`.
+              ...(runPad
+                ? { paddingInline: `${RUN_PAD_EM}em`, marginInline: `-${RUN_PAD_EM}em` }
                 : {}),
-              ...(withEffects ? layerStyle : {}),
-              textShadow: withEffects && isFace ? glyphShadow : undefined,
+              ...(withEffects && !isSpace
+                ? gradientStyle(run.x, offset + line.textTop, boxes[lineIndex] ?? boxes[0], runPad)
+                : {}),
+              ...(withEffects ? strokeStyle : {}),
+              textShadow: withEffects ? glyphShadow : undefined,
               backgroundColor: highlight,
               textDecoration: element.textDecoration,
               width: isSpace ? run.width : undefined,
-              // Same rule one level down: a run's own box is as tall as its line, and a fat rim is
-              // taller than that. Word art is not clipped here either.
-              overflow: element.isWordArt ? 'visible' : 'hidden',
+              // Nothing is clipped here any more: a run's box is one line tall and the type leans
+              // out of it, and the element's own frame (the `viewRef` box) is the thing that keeps
+              // plain text off the page. A space still clips its fixed width.
+              overflow: isSpace ? 'hidden' : undefined,
               whiteSpace: 'pre',
             }}
           >
@@ -490,6 +516,97 @@ const TextRenderer: React.FC<{
           </span>
         );
       })
+    );
+  };
+
+  /**
+   * One stroked layer — the dark keyline, the white rim — as SVG `<text>`.
+   *
+   * The em width is the stylesheet's and the canvas painter's (`"0.167em #ffffff"`), turned into px
+   * at this run's own type size — exactly what that em resolves to on a text stroke.
+   * Font family, weight, slant, kerning and ligatures are inherited from the `viewRef` box, so the
+   * only thing set here is the size the run is painted at.
+   *
+   * Baselines come from `runBaseline`, which asks the font for the metrics CSS lays the run's flex
+   * box out with — otherwise the silhouette would sit a few pixels off its own letters and the rim
+   * would be fat on one side and thin on the other.
+   */
+  const renderStrokedLayer = (layer: { key: string; color: string; stroke: string }) => {
+    const [widthPart, ...colorParts] = layer.stroke.trim().split(' ');
+    const widthEm = Number.parseFloat(widthPart) || 0;
+    const strokeColor = colorParts.join(' ') || layer.color;
+    const common = {
+      fill: layer.color,
+      stroke: strokeColor,
+      strokeLinejoin: 'round' as const,
+      strokeLinecap: 'round' as const,
+    };
+    // Exactly the properties the face's run spans carry, so the silhouette is the same shape: font
+    // family, weight, slant, kerning and ligatures are inherited from `viewRef`, and `wordSpacing`
+    // is deliberately absent because the run spans do not set it either.
+    const textStyle = (size: number): React.CSSProperties => ({
+      fontSize: `${size}px`,
+      letterSpacing: element.letterSpacing ? `${element.letterSpacing}px` : undefined,
+      whiteSpace: 'pre',
+    });
+    const glyphs = layout.curve
+      ? layout.curve.chars.map((char, index) =>
+          char.text.trim() ? (
+            <text
+              key={`${layer.key}-c${index}`}
+              x={char.x}
+              // The span is centred on the glyph, so the baseline is the glyph centre plus the
+              // half-leading the flex box adds — the em box is centred, not top-aligned.
+              y={
+                offset +
+                char.y +
+                runBaseline(buildFontString(element, char.fontSize), char.fontSize) -
+                char.fontSize / 2
+              }
+              textAnchor="middle"
+              transform={`rotate(${char.angle} ${char.x} ${offset + char.y})`}
+              strokeWidth={widthEm * char.fontSize}
+              style={textStyle(char.fontSize)}
+              {...common}
+            >
+              {char.text}
+            </text>
+          ) : null
+        )
+      : layout.lines.map((line, lineIndex) =>
+          line.runs.map((run, runIndex) => {
+            if (!run.text || run.kind === 'space') return null;
+            return (
+              <text
+                key={`${layer.key}-${lineIndex}-${runIndex}`}
+                x={run.x}
+                y={
+                  offset +
+                  line.textTop +
+                  run.baselineShift +
+                  runBaseline(buildFontString(element, run.fontSize), run.fontSize, line.height)
+                }
+                strokeWidth={widthEm * run.fontSize}
+                style={textStyle(run.fontSize)}
+                {...common}
+              >
+                {run.text}
+              </text>
+            );
+          })
+        );
+
+    return (
+      <svg
+        key={`wa-${layer.key}`}
+        aria-hidden="true"
+        viewBox={`0 0 ${element.width} ${element.height}`}
+        width={element.width}
+        height={element.height}
+        style={{ position: 'absolute', inset: 0, overflow: 'visible', pointerEvents: 'none' }}
+      >
+        {glyphs}
+      </svg>
     );
   };
 
@@ -639,19 +756,10 @@ const TextRenderer: React.FC<{
           ...(waFilter ? { filter: waFilter } : {}),
         }}
       >
-        {/* The keyline, under everything: the glyphs stroked in the dark ink and filled with it, so
-            only a ring shows once the rim and the face are painted over the top. */}
-        {waCss.outline && (
-          <div style={{ position: 'absolute', inset: 0 }}>
-            {renderGlyphs(waCss.outline.color, 'outline', true, 'outline')}
-          </div>
-        )}
-        {/* The rim, when it is a layer rather than a stroke: solid silhouette under the face. */}
-        {waCss.rimStroke && (
-          <div style={{ position: 'absolute', inset: 0 }}>
-            {renderGlyphs(waCss.rimStroke.color, 'rim', true, 'rim')}
-          </div>
-        )}
+        {/* The keyline under everything, then the rim: both stroked in SVG so their joins round
+            off instead of spiking, and both filled in their own colour so only a band shows once
+            the layers above are painted over them. */}
+        {strokeLayers.map((layer) => renderStrokedLayer(layer))}
         <div style={{ position: 'absolute', inset: 0, color: baseColor }}>
           {renderGlyphs(baseColor, 'base', true)}
         </div>
