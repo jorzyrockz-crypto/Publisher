@@ -20,10 +20,12 @@ import { buildTextEffectPainter } from '../../utils/textEffects';
 import { imageContentRect, imageFit, imageMaskClip } from '../../utils/imageFrame';
 import {
   glintStarPath,
+  outlineStrokeCss,
   wordArtBackdropLayers,
   wordArtCss,
   wordArtCurve,
   wordArtGlints,
+  wordArtPaint,
 } from '../../utils/wordArt';
 import { useImageAspect } from '../../hooks/useImageAspect';
 import { elementClipPath } from '../../utils/shapeClip';
@@ -334,9 +336,12 @@ const TextRenderer: React.FC<{
    * rim, filled in the same dark ink, then covered by the real glyphs. The rim's outer edge sits at
    * `strokeWidth`, so the keyline clears it by exactly its own width.
    */
-  const outlineStyle: React.CSSProperties = waCss.outline
+  // Rim + ring, in em, from the same helper the stylesheet uses: the silhouette has to clear the
+  // whole rim or the dark keyline is simply hidden under it, and both have to grow with the type.
+  const outlineKeyline = outlineStrokeCss(wordArtPaint(element.wordArtStyle));
+  const outlineStyle: React.CSSProperties = waCss.outline && outlineKeyline
     ? {
-        WebkitTextStroke: `${(paint.strokeWidth || 0) + waCss.outline.width}px ${waCss.outline.color}`,
+        WebkitTextStroke: outlineKeyline,
         paintOrder: 'stroke fill',
         color: waCss.outline.color,
       }

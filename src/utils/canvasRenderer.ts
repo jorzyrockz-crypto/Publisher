@@ -320,6 +320,7 @@ function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
           box,
         },
         {
+          fontSize: layout.fontSize,
           paint: (pass: WordArtPass) =>
             drawUnits({
               units: lineUnits,

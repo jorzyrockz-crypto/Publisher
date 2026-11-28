@@ -36,7 +36,9 @@ under the rim:
   the keyline colour, painted before the real glyphs. The rim covers the inner half, so exactly
   `outline.width` of dark shows.
 - **Canvas** (`wordArtCanvas`): one extra pass — a filled *and* stroked silhouette — before the rim.
-  Same arithmetic, so the export matches the editor.
+  Same arithmetic, so the export matches the editor. Each pass now sets its own `strokeStyle`:
+  `strokeText` reads that, not `fillStyle`, and nothing was setting it, so every rim and keyline in
+  the default painter was stroked in the context's leftover colour — black.
 - **Preview tiles** (`buildWordArtCssRule`): a ring of hairline drop-shadows in the keyline colour,
   because the `.wordart-*` class is a single element and cannot stack a silhouette. The tiles are a
   stand-in; the canvas is the truth.
@@ -48,6 +50,31 @@ inner half under the fill — so a declared 6px border reads as 3px. A poster bo
 outline; it is the thing that keeps the word legible on a photograph. `heavyStroke: true` makes both
 renderers double the declared width (`wordArtRimWidth`), so `stroke.width: 6` means six pixels of
 white, on screen and in the PDF alike.
+
+### The rim is measured in `em`, not pixels
+
+A pixel rim is only right at one type size. The same 18 px die-cut swallows the letter in a 20 px
+gallery tile and disappears on a 138 px tarpaulin title — which is what happened, because the
+stylesheet painted the heavy width while the DOM painted half of it, at whatever size the box
+happened to be.
+
+`strokeCss(paint)` writes the rim as a fraction of the type, against the **72 px** reference the
+paint specs are authored at: `wordArtRimWidth` 18 → `0.25em`. At 72 px that is the 18 px it always
+was; at 138 px it is 34.5 px, and because `paint-order` hides the inner half the *visible* rim stays
+one eighth of the em at every size. The same function feeds the stylesheet, the DOM's inline style
+and — through `options.fontSize` — the canvas painter, so an export cannot disagree with the editor
+about how thick the border is. `outlineStrokeCss` does the same for the keyline silhouette, which has
+to clear the whole rim (rim + ring) or it is hidden underneath it.
+
+Two consequences worth knowing:
+
+- the preview tiles' keyline ring is written in `em` too, since `drop-shadow()` takes any length and
+  the ring is offset from the rim's outer edge — a 2 px ring around a 0.25 em rim is only correct at
+  one size;
+- the old `blur: 2` shadow in the stroke colour is gone. It was meant to round the mitered corners of
+  a fat border, but a `drop-shadow` blur on a clipped element blurs the whole silhouette: every thick
+  rim carried an eighth-of-an-em halo that read as an upscaled image. The canvas rounds its joins
+  properly with `ctx.lineJoin = 'round'`; the blur was never parity, only haze.
 
 ### Round joins, without a property that exists
 
@@ -480,3 +507,11 @@ Two rules, and `npm run check:wordart` enforces both:
   `Bangers` were being asked for by sticker and comic styles while the catalogue had never offered
   them, so the browser fell back to a system face and the styles looked broken rather than
   misconfigured. Both are catalogued now.
+
+## Checks
+
+| command | what it holds |
+|---|---|
+| `npm run wordart:css -- --check` | `src/index.css` matches what `buildWordArtCssRule` generates |
+| `npm run check:wordart` | every styled face names a real style and a font the app can load |
+| `npm run check:wordart-parity` | the sheet, the DOM and the canvas agree: em rims, ring before blur, no rim haze, strokes in their own colour, canvas rim scaling with the type |

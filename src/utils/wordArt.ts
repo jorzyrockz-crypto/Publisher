@@ -1420,8 +1420,7 @@ export function buildWordArtCssRule(style: WordArtStyle, className = `wordart-${
     lines.push(`  color: ${paint.fill};`);
   }
   if (paint.stroke) {
-    const rim = paint.heavyStroke ? paint.stroke.width * 2 : paint.stroke.width;
-    lines.push(`  -webkit-text-stroke: ${rim}px ${paint.stroke.color};`);
+    lines.push(`  -webkit-text-stroke: ${strokeCss(paint)};`);
     // Canvas paints the outline behind the fill; without this the DOM paints it
     // on top and the two renderers disagree about how thick the letters look.
     lines.push('  paint-order: stroke fill;');
@@ -1431,19 +1430,27 @@ export function buildWordArtCssRule(style: WordArtStyle, className = `wordart-${
     // colour so a preview tile shows the highlight without mounting the SVG.
     lines.push(`  --wordart-backdrop: ${paint.backdrop.color};`);
   }
-  const chain = wordArtShadowChain(paint);
+  // The keyline ring goes down first. CSS applies drop-shadow filters in list order, each to the
+  // output of the last, so a hairline ring listed *after* a blurred cast shadow gets stamped around
+  // the blur instead of around the letters — a dark fringe floating in the shadow. First in the
+  // list means the ring hugs the glyphs and the blur is added outside it.
+  const filters: string[] = [];
   if (paint.outline) {
     // One `-webkit-text-stroke` per element, and the rim already has it. A ring of hairline
     // drop-shadows is the preview's stand-in for the second keyline; the canvas paints the real
     // thing (ElementRenderer adds a silhouette layer, wordArtCanvas a pass).
-    const r = Math.max(0.5, paint.outline.width / 2);
-    for (const [dx, dy] of RING_OFFSETS) chain.push({ dx: dx * r, dy: dy * r, blur: 0, color: paint.outline.color });
+    //
+    // In em, like the rim it clears: the filter runs on the *painted* glyphs, so the ring is offset
+    // from the white rim's outer edge. A 2 px offset around an 0.25 em rim is a 2 px keyline on a
+    // 72 px letter and a hairline on a 138 px one; `drop-shadow()` takes any length, em included.
+    const ringEm = Math.max(0.5, paint.outline.width / 2) / 72;
+    const asEm = (value: number) => `${Math.round(value * 1000) / 1000}em`;
+    for (const [dx, dy] of RING_OFFSETS) {
+      filters.push(`drop-shadow(${asEm(dx * ringEm)} ${asEm(dy * ringEm)} 0 ${paint.outline.color})`);
+    }
   }
-  if (chain.length) {
-    lines.push('  filter:');
-    const shadows = chain.map((s) => `    drop-shadow(${shadowCss(s)})`);
-    lines[lines.length - 1] = `  filter:\n${shadows.join('\n')};`;
-  }
+  for (const shadow of wordArtShadowChain(paint)) filters.push(`drop-shadow(${shadowCss(shadow)})`);
+  if (filters.length) lines.push(`  filter:\n${filters.map((f) => `    ${f}`).join('\n')};`);
   return `.${className} {\n${lines.join('\n')}\n}`;
 }
 
@@ -1545,6 +1552,39 @@ export function wordArtRimWidth(spec?: Pick<WordArtPaint, 'stroke' | 'heavyStrok
   return spec.heavyStroke ? spec.stroke.width * 2 : spec.stroke.width;
 }
 
+/**
+ * A WordArt width as `em`, measured against the 72 px reference the paint specs are authored at.
+ *
+ * Every rim in this file is a number of pixels — 9 px of white die-cut, 18 px once the border is
+ * heavy — but a *pixel* rim is only correct at one type size. In a 20 px gallery tile it swallows
+ * the letter, and on a 138 px tarpaulin title it is a hairline that disappears in the print. An
+ * `em` rim is the same fraction of the letter at every size, which is what a die-cut sticker
+ * actually is.
+ *
+ * Three decimals, because 4 px / 72 px is 0.056 em and the stylesheet is checked into the repo.
+ */
+export function wordArtEmSize(px: number): string {
+  return `${Math.round((px / 72) * 1000) / 1000}em`;
+}
+
+/** The rim as a CSS `-webkit-text-stroke` value: width in em, then the colour. */
+export function strokeCss(paint: WordArtPaint): string {
+  if (!paint.stroke) return '';
+  return `${wordArtEmSize(wordArtRimWidth(paint))} ${paint.stroke.color}`;
+}
+
+/**
+ * The keyline silhouette's stroke — the rim plus the ring's own width, in em.
+ *
+ * The DOM draws the second keyline as a stroked copy of the glyphs *under* the rim, so its stroke
+ * has to clear the rim completely or the dark ring is hidden by the white one. That is rim + ring,
+ * not the rim alone, and both parts scale with the type like everything else here.
+ */
+export function outlineStrokeCss(paint?: WordArtPaint): string {
+  if (!paint?.outline) return '';
+  return `${wordArtEmSize(wordArtRimWidth(paint) + paint.outline.width)} ${paint.outline.color}`;
+}
+
 export function wordArtShadowChain(paint?: WordArtPaint): WordArtShadow[] {
   if (!paint) return [];
   const chain: WordArtShadow[] = [];
@@ -1561,13 +1601,12 @@ export function wordArtShadowChain(paint?: WordArtPaint): WordArtShadow[] {
     }
   }
   chain.push(...paint.shadows);
-  // A fat border drawn with sharp joins spikes at the corners of A, M and W. CSS text stroke has no
-  // `stroke-linejoin` to fix it (that property is SVG-only), and the canvas already rounds its
-  // joins — so the fix both renderers can share is a blurred copy of the fill in the border colour,
-  // painted just under the border. It rounds the outer edge the same way on screen and in export.
-  if (paint.stroke && paint.stroke.width >= 4) {
-    chain.push({ dx: 0, dy: 0, blur: 2, color: paint.stroke.color });
-  }
+  // No blurred stand-in for the rim's mitered corners. It was added to round the spiky joins of a
+  // fat stroke, but `drop-shadow(blur)` on a text-clipped element blurs the *whole* silhouette — the
+  // letters pick up a soft halo an eighth of an em wide, which reads as a badly upscaled image on
+  // every thick sticker rim. The corner spike is a miter problem with no CSS stroke property to fix
+  // it; the rim colour softened everything else instead. The canvas rounds its joins properly
+  // (`ctx.lineJoin = 'round'`), so this was never parity — only a blur.
   if (paint.castShadow) chain.push(paint.castShadow);
   for (const bloom of paint.bloom ?? []) {
     chain.push({ dx: 0, dy: 0, blur: bloom.blur, color: bloom.color });
@@ -1685,7 +1724,10 @@ export function wordArtCss(style?: WordArtStyle): WordArtCss {
     css.textFillTransparent = true;
   }
   if (paint.stroke) {
-    css.webkitTextStroke = `${paint.stroke.width}px ${paint.stroke.color}`;
+    // `wordArtRimWidth`, not `stroke.width`: a heavy border is painted at twice the authored width,
+    // and the editor was rendering half of what the stylesheet asks for — which is why a bubble sign
+    // looked thinner on the page than in the tile you picked it from.
+    css.webkitTextStroke = strokeCss(paint);
     css.paintOrder = 'stroke fill';
   }
   if (paint.outline) css.outline = paint.outline;

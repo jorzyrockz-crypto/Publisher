@@ -1,6 +1,6 @@
 import type { TextElement } from '../types/publisher';
 import { buildTextEffectPainter } from './textEffects';
-import { wordArtPaint, wordArtShadowChain } from './wordArt';
+import { wordArtPaint, wordArtRimWidth, wordArtShadowChain } from './wordArt';
 
 /**
  * Text effects draw outside the glyphs: a shadow lands a few pixels below the baseline, a glow
@@ -61,7 +61,15 @@ export function textEffectBleed(el: TextElement): number {
       const cast = wordArt.castShadow;
       consider(Math.hypot(cast.dx || 0, cast.dy || 0) + (cast.blur || 0) * 1.5);
     }
-    if (wordArt.stroke) consider(wordArt.stroke.width * 0.5 + 1);
+    // The rim and its keyline are written in `em` (see strokeCss), so how far they reach outside the
+    // glyphs depends on the type size: 17 px of die-cut on a 138 px title, 2 px on a gallery-sized
+    // one. Counting the authored pixel width instead under-inset a big title and let the box clip the
+    // very border that makes the style legible.
+    if (wordArt.stroke) {
+      const emScale = (el.fontSize || 72) / 72;
+      const reach = wordArtRimWidth(wordArt) * 0.5 + (wordArt.outline?.width ?? 0);
+      consider(reach * emScale);
+    }
   }
 
   // Nothing to do for plain text; a couple of pixels of slack for antialiasing once we do have
