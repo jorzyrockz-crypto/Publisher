@@ -31,6 +31,8 @@ import {
   Ungroup,
   Edit3,
   Search,
+  LayoutGrid,
+  Printer,
 } from 'lucide-react';
 import { PublisherElement, Page } from '../../types/publisher';
 import { ElementRenderer } from '../canvas/ElementRenderer';
@@ -38,6 +40,7 @@ import { buildPatternBackgroundStyle } from '../../utils/patternGenerator';
 import { MASTER_PAGE_PRESETS } from '../../constants/masterPresets';
 import { buildBookletSheets } from '../../utils/printUtils';
 import { useResizablePanel, useWindowWidth } from '../../hooks/useResizablePanel';
+import { SidebarTools } from './SidebarTools';
 
 const MemoThumbnailElements = React.memo(
   ({
@@ -81,7 +84,12 @@ const MemoThumbnailElements = React.memo(
   )
 );
 
-export const PageThumbnails: React.FC = () => {
+interface PageThumbnailsProps {
+  /** The Designer drawer already owns a tool rail; the sidebar Tools block is a publisher affordance. */
+  showTools?: boolean;
+}
+
+export const PageThumbnails: React.FC<PageThumbnailsProps> = ({ showTools = true }) => {
   const {
     project,
     workspaceMode,
@@ -89,6 +97,8 @@ export const PageThumbnails: React.FC = () => {
     selectedElementIds,
     isLeftPanelOpen,
     setIsLeftPanelOpen,
+    setIsCollageModalOpen,
+    setIsTarpapelModalOpen,
     isEditingMaster,
     setIsEditingMaster,
     toggleMasterPageVisibility,
@@ -243,6 +253,23 @@ export const PageThumbnails: React.FC = () => {
         >
           <PanelLeftOpen size={15} />
         </button>
+        <div className="w-5 h-[1px] bg-[#e5e9ee]" />
+        <button
+          onClick={() => setIsCollageModalOpen(true)}
+          className="w-7 h-7 rounded-[8px] flex items-center justify-center text-[#5c4bb8] hover:bg-[#f4f2ff] transition cursor-pointer"
+          title="Collage Maker"
+          aria-label="Collage Maker"
+        >
+          <LayoutGrid size={15} />
+        </button>
+        <button
+          onClick={() => setIsTarpapelModalOpen(true)}
+          className="w-7 h-7 rounded-[8px] flex items-center justify-center text-[#a5691a] hover:bg-[#fffaf1] transition cursor-pointer"
+          title="Tarpaulin Printer"
+          aria-label="Tarpaulin Printer"
+        >
+          <Printer size={15} />
+        </button>
         <div
           onClick={() => setIsLeftPanelOpen(true)}
           className="text-[10px] font-bold tracking-[0.09em] text-[#6a7682] uppercase cursor-pointer hover:text-[#5c4bb8] transition"
@@ -270,6 +297,9 @@ export const PageThumbnails: React.FC = () => {
           isResizing ? 'bg-[#6e56cf]' : 'hover:bg-[#6e56cf]/50'
         }`}
       />
+      {/* Tools: the two jobs that begin with existing material, not a blank page */}
+      {showTools && <SidebarTools compact={panelWidth < 200} />}
+
       {/* Segmented Header Tabs: Pages | Layers */}
       <div className="px-3 py-2.5 border-b border-[#e5e9ee] bg-white flex items-center gap-1.5">
         <div className="flex-1 grid grid-cols-2 bg-[#f3f5f7] p-0.5 rounded-[8px]">
