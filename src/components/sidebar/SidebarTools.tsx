@@ -17,9 +17,13 @@ type Tone = 'violet' | 'amber' | 'teal';
 interface ToolBannerProps {
   title: string;
   hint: string;
-  /** Clay render for the banner's right edge: the object, not an icon of the object. */
+  /**
+   * Clay render base name. Each tool ships two grounds — daylight and night — so the picture keeps
+   * its own lighting instead of being filtered, tinted or inverted to fake a dark theme.
+   */
   art: string;
   tone: Tone;
+  theme: 'light' | 'dark';
   compact?: boolean;
   onClick: () => void;
 }
@@ -55,39 +59,48 @@ const ToolBanner: React.FC<ToolBannerProps> = ({
   hint,
   art,
   tone,
+  theme,
   compact = false,
   onClick,
 }) => {
   const t = TONES[tone];
   const artWidth = compact ? 58 : 84;
+  const src = `./tool-art/${art}-clay${theme === 'dark' ? '-dark' : ''}.webp`;
   return (
     <button
       type="button"
       onClick={onClick}
       title={hint}
-      className={`group relative w-full h-[72px] rounded-[12px] overflow-hidden border bg-[#fbf8f3] text-left transition-all duration-150 cursor-pointer ${t.border} ${t.hover} ${t.glow}`}
+      data-tone={tone}
+      className={`sp-tool-banner group relative w-full h-[72px] rounded-[12px] overflow-hidden border text-left transition-all duration-150 cursor-pointer ${t.border} ${t.hover} ${t.glow}`}
     >
       <img
-        src={art}
+        src={src}
         alt=""
         aria-hidden="true"
         loading="lazy"
         decoding="async"
-        className="absolute right-0 top-0 h-full object-cover object-center transition-transform duration-200 group-hover:scale-[1.06]"
+        className="sp-tool-banner__art absolute right-0 top-0 h-full object-cover object-center transition-transform duration-200 group-hover:scale-[1.06]"
         style={{
           width: `${artWidth}px`,
-          maskImage: 'linear-gradient(to right, transparent 0%, black 34%)',
-          WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 34%)',
+          // The fade runs past the halfway mark: a shorter one leaves a visible edge where the
+          // render's own ground meets the card's, which shows worst on the night renders.
+          maskImage: 'linear-gradient(to right, transparent 0%, black 55%)',
+          WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 55%)',
         }}
       />
       <span
         className="relative flex h-full flex-col justify-center gap-0.5 pl-3 pr-2"
         style={{ paddingRight: `${artWidth - 10}px` }}
       >
-        <span className={`block text-[11.5px] font-bold leading-tight truncate ${t.title}`}>
+        <span
+          className={`sp-tool-banner__title block text-[11.5px] font-bold leading-tight truncate ${t.title}`}
+        >
           {title}
         </span>
-        <span className="block text-[9.5px] leading-tight text-[#8a94a0] truncate">{hint}</span>
+        <span className="sp-tool-banner__hint block text-[9.5px] leading-tight text-[#8a94a0] truncate">
+          {hint}
+        </span>
       </span>
     </button>
   );
@@ -109,7 +122,7 @@ export const SidebarTools: React.FC<SidebarToolsProps> = ({
   showLabel = true,
   onImmersiveChange,
 }) => {
-  const { setIsCollageModalOpen, setIsTarpapelModalOpen } = usePublisher();
+  const { setIsCollageModalOpen, setIsTarpapelModalOpen, theme } = usePublisher();
   const [view, setView] = useState<'tools' | 'storykit'>('tools');
 
   useEffect(() => {
@@ -145,7 +158,8 @@ export const SidebarTools: React.FC<SidebarToolsProps> = ({
         <ToolBanner
           title="Collage Maker"
           hint={compact ? 'Photo grid' : 'Photos into a grid'}
-          art="./tool-art/collage-clay.webp"
+          art="collage"
+          theme={theme}
           tone="violet"
           compact={compact}
           onClick={() => setIsCollageModalOpen(true)}
@@ -153,7 +167,8 @@ export const SidebarTools: React.FC<SidebarToolsProps> = ({
         <ToolBanner
           title="Tarpaulin Printer"
           hint={compact ? 'A4 sheets' : 'Any design, on A4 sheets'}
-          art="./tool-art/tarpapel-clay.webp"
+          art="tarpapel"
+          theme={theme}
           tone="amber"
           compact={compact}
           onClick={() => setIsTarpapelModalOpen(true)}
@@ -161,7 +176,8 @@ export const SidebarTools: React.FC<SidebarToolsProps> = ({
         <ToolBanner
           title="Story Kit"
           hint={compact ? 'Art packs' : 'Backdrops, frames, stickers'}
-          art="./tool-art/storykit-clay.webp"
+          art="storykit"
+          theme={theme}
           tone="teal"
           compact={compact}
           onClick={() => setView('storykit')}

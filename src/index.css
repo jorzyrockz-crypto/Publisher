@@ -1001,6 +1001,53 @@ html.dark .text-amber-950 {
   color: #fcd34d !important;
 }
 
+/* Tools banners — clay art on two grounds.
+   The pictures carry their own light, so dark mode swaps the render rather than filtering it: a
+   pastel clay object lit for daylight, inverted, reads as a photograph of a ghost. The card takes
+   the night ground the renders were lit against, and only the type changes hue. */
+.sp-tool-banner {
+  background-color: #fbf8f3;
+}
+html.dark .sp-tool-banner {
+  /* Neutral-warm dark: the night renders were lit against #1b1b22, and the chrome's blue-dark
+     surface would show as a cool rectangle behind every picture. */
+  background-color: #1c1d24 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+html.dark .sp-tool-banner[data-tone='violet'] {
+  border-color: #332a55 !important;
+}
+html.dark .sp-tool-banner[data-tone='violet']:hover {
+  border-color: #5b46a8 !important;
+  box-shadow: 0 6px 18px -6px rgba(124, 98, 230, 0.5);
+}
+html.dark .sp-tool-banner[data-tone='amber'] {
+  border-color: #4a3a1f !important;
+}
+html.dark .sp-tool-banner[data-tone='amber']:hover {
+  border-color: #8a6425 !important;
+  box-shadow: 0 6px 18px -6px rgba(214, 158, 60, 0.45);
+}
+html.dark .sp-tool-banner[data-tone='teal'] {
+  border-color: #1f4440 !important;
+}
+html.dark .sp-tool-banner[data-tone='teal']:hover {
+  border-color: #2f7169 !important;
+  box-shadow: 0 6px 18px -6px rgba(45, 160, 148, 0.45);
+}
+html.dark .sp-tool-banner[data-tone='violet'] .sp-tool-banner__title {
+  color: #c9bcfd;
+}
+html.dark .sp-tool-banner[data-tone='amber'] .sp-tool-banner__title {
+  color: #ecc78a;
+}
+html.dark .sp-tool-banner[data-tone='teal'] .sp-tool-banner__title {
+  color: #8fdcd2;
+}
+html.dark .sp-tool-banner__hint {
+  color: #8b96a3;
+}
+
 /* Inputs & selects in chrome */
 html.dark input:not([type='color']):not([type='range']),
 html.dark select,
