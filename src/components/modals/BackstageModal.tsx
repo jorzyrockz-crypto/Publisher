@@ -362,7 +362,7 @@ export const BackstageModal: React.FC = () => {
             { label: 'Marketing & Flyers', categories: ['Brochure', 'Flyer', 'Poster', 'Postcard'] },
             { label: 'Cards, Menus & Invitations', categories: ['Menu', 'Invitation', 'Business Card'] },
             { label: 'Publications & Resumes', categories: ['Newsletter', 'Resume', 'Certificate'] },
-            { label: 'Reading Corner Forms', categories: ['Champs Reading'] },
+            { label: 'Reading Corner', categories: ['Champs Reading'] },
             { label: 'Blank Canvas', categories: ['Blank'] },
           ];
 

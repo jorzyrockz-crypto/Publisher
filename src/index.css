@@ -676,6 +676,27 @@
   -webkit-text-fill-color: transparent;
 }
 
+.wordart-underwater-bubble {
+  font-weight: 900;
+  background: linear-gradient(180deg, #a5f3fc 0%, #38bdf8 45%, #0369a1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 8px #ecfeff;
+  paint-order: stroke fill;
+  filter:
+    drop-shadow(0px 0px 2px #ecfeff)
+    drop-shadow(0px 3px 8px rgba(3, 105, 161, 0.35));
+}
+
+.wordart-cultural-hablon {
+  font-weight: 900;
+  background: linear-gradient(180deg, #fcd34d 0%, #b45309 50%, #7f1d1d 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 6px #fffbeb;
+  paint-order: stroke fill;
+}
+
 .wordart-portfolio-editorial {
   font-weight: 800;
   background: linear-gradient(165deg, #475569 0%, #1e293b 45%, #0f172a 100%);

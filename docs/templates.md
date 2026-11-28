@@ -134,6 +134,48 @@ The colour-coded cards ship as the templates that fill them: the eight genre ico
 blocks, pop-up book, audio station, puppets, return bin, local tales, storybooks) are pieces in the
 built-in Story Kit, so a teacher who renames a bin can swap the picture with art already on the shelf.
 
+## 6. Tarpapel: one banner, six sheets
+
+A tarpapel is not a big page. It is a canvas measured in millimetres, printed on a grid of A4 sheets
+and glued together, and the app prints sheets, not canvases. `src/constants/champsTarpapel.ts` holds
+both halves of that gap:
+
+- **the spec**, authored the way the school writes it — a canvas in mm, a tile grid with a 10 mm glue
+  overlap, and every layer in normalized 0–1 coordinates, so the layout survives any tile count;
+- **`tarpapelToProject`**, which turns that into the document the app already knows how to print:
+  **one page per sheet**, each A4, each showing its own window of the canvas.
+
+Two templates ship from it:
+
+| template | tiling | assembled | what it is |
+|---|---|---|---|
+| `champs-tarpapel-3x2` — Champs Reading Corner Banner | 3 × 2 A4 landscape | 871 × 410 mm | DepEd header strip, three lapped garlands, THE CHAMPS / READING CORNER word art, gold Basa Kasadya ribbon, both side badges in their own column |
+| `champs-wordwall-2x2` — Tree of Knowledge Word Wall | 2 × 2 A4 portrait | 396 × 567 mm | hablon header, eighteen blank abaca word cards at native size, the Heritage Tree as a mounted print, instruction bar |
+
+Four things the code knows that a hand-typed page would get wrong:
+
+- **A seam is not a cut.** Neighbouring sheets print identical pixels along their overlap, because
+  both show the same window of the same canvas. That is why a letter may cross a seam: sheet 2 covers
+  x ≤ 1123 mm-px and sheet 3 covers 1085–2208, and the 38 px they share is duplicated artwork.
+- **A4 art cannot hold 871 mm.** A 1024 px backdrop stretched across 3293 px prints at ~30 dpi, so the
+  banner's background is a **vector wash** (a two-stop gradient shape) and its weight is carried by
+  pieces at native size: the garland is repeated three times at ~1100 px, not stretched to 3293.
+- **White type needs a bar.** The footer line is white, so it gets a teal bar; the navy header gets a
+  cream pill so it can sit over leaves.
+- **The glue strip is the margin.** Seam hairlines and the `SHEET n OF 6 · GLUE 10 MM OVERLAP` label
+  sit inside the 10 mm strip that the neighbouring sheet covers, so they vanish in the assembly.
+
+**Theme swap.** Every visual layer names its art by id, so `withTarpapelTheme(spec, 'underwater')`
+swaps four keys — wash colours, top frame, and both title word-art styles — and moves nothing else.
+The four looks are Champs Default, Forest, Underwater and Local Cultural, one row each in
+`TARPAPEL_THEMES`. Three of the word-art styles they name (`champs-basa-blue`, `-kasadya-coral`,
+`-gold-ribbon`) shipped with the forms; `underwater-bubble` and `cultural-hablon` were added for this.
+
+**Asset ids.** The school's spec names a `champs-reading-v1` pack that does not exist as a folder — the
+pieces live across three packs. Rather than rewrite their layout, `ASSET_ALIASES` maps each id once
+(`bg-champs-nook` → the Story Kit's `bg-cozy-reading-nook`, `frame-hanging-vines` → `frame-top-canopy`,
+`sticker-champs-trophy` → `badge-star-medal`, and so on).
+
 ## Before / after
 
 Measured with `scoreLayout` over all 72 pages of the 63 templates, same scorer both sides:

@@ -74,6 +74,8 @@ export type WordArtStyle =
   | 'champs-level-emergent'
   | 'champs-level-beginning'
   | 'champs-level-transitional'
+  | 'underwater-bubble'
+  | 'cultural-hablon'
   | 'portfolio-editorial'
   | 'portfolio-indigo';
 

@@ -113,6 +113,18 @@ export const WORD_ART_STYLES: WordArtOption[] = [
     className: 'wordart-champs-level-transitional',
     dark: true,
   },
+  {
+    id: 'underwater-bubble',
+    label: 'Underwater Bubble',
+    className: 'wordart-underwater-bubble',
+    dark: true,
+  },
+  {
+    id: 'cultural-hablon',
+    label: 'Hablon Weave',
+    className: 'wordart-cultural-hablon',
+    dark: true,
+  },
   // Portfolios: quiet, trimmed, at 800.
   {
     id: 'portfolio-editorial',
@@ -1174,6 +1186,38 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   'champs-level-transitional': {
     weight: '900',
     gradient: { angle: 180, stops: [{ offset: 0, color: '#ffffff' }, { offset: 1, color: '#fef3c7' }] },
+    shadows: [],
+  },
+
+  // The reef theme's title and the cultural theme's title, so the tarpapel theme swap can name a
+  // word art per theme instead of a colour per theme.
+  'underwater-bubble': {
+    weight: '900',
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#a5f3fc' },
+        { offset: 0.45, color: '#38bdf8' },
+        { offset: 1, color: '#0369a1' },
+      ],
+    },
+    stroke: { width: 4, color: '#ecfeff' },
+    heavyStroke: true,
+    castShadow: { dx: 0, dy: 3, blur: 8, color: 'rgba(3, 105, 161, 0.35)' },
+    shadows: [],
+  },
+  'cultural-hablon': {
+    weight: '900',
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#fcd34d' },
+        { offset: 0.5, color: '#b45309' },
+        { offset: 1, color: '#7f1d1d' },
+      ],
+    },
+    stroke: { width: 3, color: '#fffbeb' },
+    heavyStroke: true,
     shadows: [],
   },
 

@@ -8,6 +8,7 @@ import { enhanceProject } from '../utils/templateEnhance';
 import { polishProject } from '../utils/templatePolish';
 import { WORDART_POSTER_TEMPLATES } from './posterWordArtTemplates';
 import { CHAMPS_READING_TEMPLATES } from './champsReadingTemplates';
+import { CHAMPS_TARPAPEL_TEMPLATES } from './champsTarpapel';
 
 export type TemplateCategory =
   | 'Brochure'
@@ -4972,6 +4973,7 @@ export const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
   ...CERTIFICATE_TEMPLATES,
   ...WORDART_POSTER_TEMPLATES,
   ...CHAMPS_READING_TEMPLATES,
+  ...CHAMPS_TARPAPEL_TEMPLATES,
 ];
 
 /**
