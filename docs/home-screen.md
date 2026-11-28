@@ -61,9 +61,10 @@ Toolbar — the brand emblem next to it goes Home instead.
 
 `BackstageSection` therefore dropped `'new'`. File is about the document you already have.
 
-Everything in the rail is written against the tokens (`bg-surface`, `border-line`, `text-ink`,
-`bg-accent`, `bg-accent-soft`…), so `html.dark` restyles it by redefining the variables — no
-second set of selectors, and no white card glowing on a dark ground.
+Everything in the rail is written against the tokens (`border-line`, `text-ink`, `bg-accent`,
+`bg-accent-soft`…), so `html.dark` restyles it by redefining the variables — no second set of
+selectors, and no white card glowing on a dark ground. Its own surface is now glass (§9): the rail
+is `home-glass home-glass-strong` rather than `bg-surface`.
 
 ---
 
@@ -241,9 +242,66 @@ seam gets cut and doubled.
 - `loadTemplate`'s font preload — it now also sets `view = 'editor'`, which is the only change;
 - Save / Print / Export themselves, and the File menu's sections for them.
 
-## 9. Checks
+## 9. Glass
 
-`npm run check:home` (488 assertions over the pure parts, through Vite's module graph):
+Frosted chrome over colour. Three things had to exist before any `backdrop-filter` was worth
+writing:
+
+1. **Something to blur.** `.home-blooms` lays four very soft blooms (violet top-left, apricot
+   top-right, teal bottom-left, a trace of rose) on the *root*, under the rail and the scroll area.
+   A translucent bar over a flat grey is a grey bar.
+2. **Something moving behind it.** The top bar floats over the scroll area (`absolute inset-x-0
+   top-0 z-20`) and the gallery carries `pt-14` to match, so thumbnails slide *under* the bar. That
+   passing row is the effect.
+3. **A static backdrop for the blur.** The blooms live outside the scroll box, so the colour behind
+   the chrome does not shift as you scroll — the blur samples a settled page, not a moving one.
+
+### What is glass, and what is not
+
+| surface | glass | why |
+|---|---|---|
+| top bar | yes, `--sp-glass` (68%) | carries one title and a pill |
+| nav rail | yes, `--sp-glass-strong` (82%) | a column of 12 px labels; it buys more alpha |
+| search field | yes, strong | sits over the hero's bloom, and reads as glass only at high alpha |
+| six shortcut cards | yes, 12 px blur + their tone as a 7–17% *wash* | the card's pastel is a wash over the frost, not an opaque ground |
+| template cards | **no** | 73 blurred layers while scrolling is the one thing that stutters a school laptop, and blur pulls colour out from under the artwork — they should read as paper |
+| template sheet badge | yes, strong | it sits over artwork, so frost is what makes it legible |
+| Create a Design, Resume pill | **no** | the primary actions keep their weight; a translucent primary button is a hint, not a button |
+| editor, modals, backstage | **no** | never — Home-scoped classes only |
+
+### Tokens
+
+`--sp-glass`, `--sp-glass-strong`, `--sp-glass-line`, `--sp-glass-spec`, `--sp-glass-blur`, and one
+class `.home-glass` that applies colour-mix + blur + saturate(1.4) + a 1 px specular top edge. The
+hairline is the ink at 9%, so it darkens over white and brightens over the blooms without being
+restated per surface. Dark mode flips the specular to white at 10% and drops the alpha to 58 / 74%.
+
+**The alphas are a contrast budget, not a taste.** Measured over the brightest bloom, at the worst
+case for each label: light chrome keeps `ink-muted` at 5.5:1 (bar) and 5.6:1 (rail); the six card
+titles land 5.5–7.7:1 and their subtitles 4.7–5.5:1; on dark, 5.7–5.9:1 for chrome and 7.0–8.2:1 /
+5.5–6.7:1 for cards. The search field's placeholder moved from `--sp-ink-placeholder` to
+`--sp-ink-muted` for exactly this reason: at 82% glass the lighter token lands at 4.47:1.
+
+### Escape hatches
+
+`@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)))` and
+`@media (prefers-reduced-transparency: reduce)` both return the pre-glass opaque surfaces. Frost is
+decoration; readable chrome is not. `check:home` asserts both blocks still exist, and that the two
+light alphas have not drifted out of their budget.
+
+### Pitfalls hit while building it
+
+- an absolutely-positioned bloom layer paints *above* static siblings, so the rail needs
+  `relative z-10` or the blooms wash its labels;
+- `overflow-x: auto` on the shortcut strip clips on both axes, so the strip carries vertical padding
+  of its own (offset with a negative margin) — otherwise every lifted card loses its top edge;
+- `backdrop-filter` cannot be animated cheaply: the hover motion is `transform` + `box-shadow` only.
+
+---
+
+## 10. Checks
+
+`npm run check:home` (493 assertions over the pure parts, through Vite's module graph):
 
 - every template belongs to exactly one group, and the group counts add up to the catalogue;
 - every card can name its sheet and its subtitle;
@@ -255,7 +313,8 @@ seam gets cut and doubled.
   strip;
 - custom sizes clamp to 200–4000 px and round;
 - each of the six shortcut cards opens something that exists, ships artwork under 40 kB, wears a
-  tone the stylesheet defines, and keeps its subtitle to one line on a 200 px card.
+  tone the stylesheet defines, and keeps its subtitle to one line on a 200 px card;
+- the glass keeps its two opaque escape hatches, its `-webkit-` prefix and its contrast budget.
 
 Navigation and rendering were walked end to end in a jsdom harness during development: landing on
 Home, live filtering, the Templates destination, template → editor, chip → editor, Resume Editing,
@@ -264,7 +323,7 @@ which must land in the editor on the document they name (a tarpapel, a square po
 blank A4). That harness needs jsdom, which this
 repo does not depend on, so it is not committed; `check:home` covers everything below it.
 
-## 10. Known limits
+## 11. Known limits
 
 - Returning from Home re-fits the artboard. The zoom and pan a user set by hand live in the context
   and survive, but `CanvasArea`'s fit-on-mount wins on the way back in single view.

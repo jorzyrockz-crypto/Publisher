@@ -42,7 +42,7 @@ export const TemplateCard: React.FC<{
             <span className="block h-[152px] w-[112px] animate-pulse rounded-chip bg-line-soft" />
           )}
 
-          <span className="absolute left-2.5 top-2.5 rounded-full border border-line bg-surface/90 px-2 py-0.5 text-2xs font-semibold text-ink-secondary backdrop-blur-[2px]">
+          <span className="home-glass home-glass-strong absolute left-2.5 top-2.5 rounded-full border px-2 py-0.5 text-2xs font-semibold text-ink-secondary">
             {templateSizeLabel(template)}
           </span>
 

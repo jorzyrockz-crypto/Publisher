@@ -12,7 +12,7 @@
  *
  *   npm run check:home
  */
-import { existsSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { createServer } from 'vite';
 
 const server = await createServer({
@@ -258,6 +258,33 @@ const ok = (cond, msg, extra = '') => {
       ok(false, `${where}: the card has no action`);
     }
   }
+}
+
+/* 11. the glass degrades instead of disappearing */
+{
+  const css = readFileSync('src/index.css', 'utf8');
+
+  // Frost is decoration; readable chrome is not. Both escape hatches have to be
+  // in the stylesheet, not remembered for later.
+  ok(
+    css.includes('@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)))'),
+    'the glass has no opaque fallback for engines without backdrop-filter'
+  );
+  ok(
+    css.includes('@media (prefers-reduced-transparency: reduce)'),
+    'the glass ignores prefers-reduced-transparency'
+  );
+  ok(
+    css.includes('-webkit-backdrop-filter: blur(var(--sp-glass-blur))'),
+    'the glass is missing its -webkit- prefix (Safari)'
+  );
+
+  // The two alphas are the point at which labels clear 4.5:1 over the blooms.
+  // Raising the transparency past them is a contrast bug, not a style choice.
+  ok(/--sp-glass: color-mix\(in srgb, var\(--sp-surface\) (6[5-9]|7[0-5])%/.test(css),
+    'the light glass alpha left its contrast budget');
+  ok(/--sp-glass-strong: color-mix\(in srgb, var\(--sp-surface\) (7[6-9]|8[0-9])%/.test(css),
+    'the strong light glass alpha left its contrast budget');
 }
 
 console.log(`${total} assertions`);

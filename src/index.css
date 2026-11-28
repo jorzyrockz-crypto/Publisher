@@ -33,9 +33,10 @@
   --sp-surface-sunken: #f8fafb;
   --sp-canvas: #edf0f3;
 
-  /* Glass (Home chrome only). `--sp-glass` is the floor at which 11px
-     `--sp-ink-muted` still clears 4.5:1 over the brightest bloom behind it —
-     the alphas are a contrast budget, not a taste. */
+  /* Glass (Home chrome only). The two alphas are a contrast budget, not a
+     taste: measured over the brightest bloom behind them, 68% keeps 11px
+     `--sp-ink-muted` at 5.5:1 and 82% keeps the rail at 5.6:1. Go lower and the
+     chrome starts winning arguments with its own labels. */
   --sp-glass: color-mix(in srgb, var(--sp-surface) 68%, transparent);
   --sp-glass-strong: color-mix(in srgb, var(--sp-surface) 82%, transparent);
   --sp-glass-line: color-mix(in srgb, var(--sp-ink) 9%, transparent);
@@ -1868,12 +1869,21 @@ html.dark .home-paper-shadow {
   --sp-tone-sub: #6f6193;
   --sp-tone-line: #e4d9fb;
   --sp-tone-line-hover: #d3c2f6;
-  --sp-tone-tint-a: color-mix(in srgb, var(--sp-tone-glow) 5%, var(--sp-surface));
-  --sp-tone-tint-b: color-mix(in srgb, var(--sp-tone-glow) 12%, var(--sp-surface));
+  /* The tone is a *wash* over the glass, not an opaque ground: the bloom behind
+     the card tints it, the card's own pastel sits on top, and the specular edge
+     catches the light. Opaque cards next to frosted chrome read as paper next
+     to plastic, which is the one thing this screen is meant to avoid. */
+  --sp-tone-tint-a: color-mix(in srgb, var(--sp-tone-glow) 7%, transparent);
+  --sp-tone-tint-b: color-mix(in srgb, var(--sp-tone-glow) 17%, transparent);
 
   border: 1px solid var(--sp-tone-line);
+  background-color: var(--sp-glass-strong);
   background-image: linear-gradient(150deg, var(--sp-tone-tint-a), var(--sp-tone-tint-b));
-  box-shadow: inset 0 1px 0 #ffffffb3;
+  -webkit-backdrop-filter: blur(12px) saturate(1.35);
+  backdrop-filter: blur(12px) saturate(1.35);
+  box-shadow:
+    inset 0 1px 0 var(--sp-glass-spec),
+    0 1px 3px #161a220f;
   transition:
     transform 160ms ease,
     box-shadow 160ms ease,
@@ -1931,11 +1941,13 @@ html.dark .home-paper-shadow {
 /* Dark: the same four per tone, mixed *into* the dark surface so a card is a lit
    object on the page rather than a lamp. */
 html.dark .home-shortcut {
-  --sp-tone-tint-a: color-mix(in srgb, var(--sp-tone-glow) 10%, var(--sp-surface));
-  --sp-tone-tint-b: color-mix(in srgb, var(--sp-tone-glow) 18%, var(--sp-surface));
+  --sp-tone-tint-a: color-mix(in srgb, var(--sp-tone-glow) 12%, transparent);
+  --sp-tone-tint-b: color-mix(in srgb, var(--sp-tone-glow) 24%, transparent);
   --sp-tone-line: color-mix(in srgb, var(--sp-tone-glow) 26%, transparent);
   --sp-tone-line-hover: color-mix(in srgb, var(--sp-tone-glow) 42%, transparent);
-  box-shadow: inset 0 1px 0 #ffffff14;
+  box-shadow:
+    inset 0 1px 0 var(--sp-glass-spec),
+    0 1px 3px #00000040;
 }
 
 html.dark .home-shortcut[data-tone='violet'] {
@@ -2005,6 +2017,12 @@ html.dark .home-shortcut:hover {
 
 html.dark .home-shortcut-art {
   filter: drop-shadow(0 6px 10px #00000066);
+}
+
+html.dark .home-shortcut:hover {
+  box-shadow:
+    0 8px 20px #00000059,
+    inset 0 1px 0 var(--sp-glass-spec);
 }
 
 /* A lift is motion. People who asked for less of it still get the border and
@@ -2124,12 +2142,21 @@ html.dark .home-blooms {
   --sp-tone-sub: #6f6193;
   --sp-tone-line: #e4d9fb;
   --sp-tone-line-hover: #d3c2f6;
-  --sp-tone-tint-a: color-mix(in srgb, var(--sp-tone-glow) 5%, var(--sp-surface));
-  --sp-tone-tint-b: color-mix(in srgb, var(--sp-tone-glow) 12%, var(--sp-surface));
+  /* The tone is a *wash* over the glass, not an opaque ground: the bloom behind
+     the card tints it, the card's own pastel sits on top, and the specular edge
+     catches the light. Opaque cards next to frosted chrome read as paper next
+     to plastic, which is the one thing this screen is meant to avoid. */
+  --sp-tone-tint-a: color-mix(in srgb, var(--sp-tone-glow) 7%, transparent);
+  --sp-tone-tint-b: color-mix(in srgb, var(--sp-tone-glow) 17%, transparent);
 
   border: 1px solid var(--sp-tone-line);
+  background-color: var(--sp-glass-strong);
   background-image: linear-gradient(150deg, var(--sp-tone-tint-a), var(--sp-tone-tint-b));
-  box-shadow: inset 0 1px 0 #ffffffb3;
+  -webkit-backdrop-filter: blur(12px) saturate(1.35);
+  backdrop-filter: blur(12px) saturate(1.35);
+  box-shadow:
+    inset 0 1px 0 var(--sp-glass-spec),
+    0 1px 3px #161a220f;
   transition:
     transform 160ms ease,
     box-shadow 160ms ease,
@@ -2187,11 +2214,13 @@ html.dark .home-blooms {
 /* Dark: the same four per tone, mixed *into* the dark surface so a card is a lit
    object on the page rather than a lamp. */
 html.dark .home-shortcut {
-  --sp-tone-tint-a: color-mix(in srgb, var(--sp-tone-glow) 10%, var(--sp-surface));
-  --sp-tone-tint-b: color-mix(in srgb, var(--sp-tone-glow) 18%, var(--sp-surface));
+  --sp-tone-tint-a: color-mix(in srgb, var(--sp-tone-glow) 12%, transparent);
+  --sp-tone-tint-b: color-mix(in srgb, var(--sp-tone-glow) 24%, transparent);
   --sp-tone-line: color-mix(in srgb, var(--sp-tone-glow) 26%, transparent);
   --sp-tone-line-hover: color-mix(in srgb, var(--sp-tone-glow) 42%, transparent);
-  box-shadow: inset 0 1px 0 #ffffff14;
+  box-shadow:
+    inset 0 1px 0 var(--sp-glass-spec),
+    0 1px 3px #00000040;
 }
 
 html.dark .home-shortcut[data-tone='violet'] {
@@ -2261,6 +2290,12 @@ html.dark .home-shortcut:hover {
 
 html.dark .home-shortcut-art {
   filter: drop-shadow(0 6px 10px #00000066);
+}
+
+html.dark .home-shortcut:hover {
+  box-shadow:
+    0 8px 20px #00000059,
+    inset 0 1px 0 var(--sp-glass-spec);
 }
 
 /* A lift is motion. People who asked for less of it still get the border and

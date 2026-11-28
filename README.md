@@ -10,6 +10,7 @@ An authentic, modern, desktop-grade clone of **Microsoft Publisher** built with 
 
 ### 0. Home Screen (default view)
 - **The app opens on Home, not on a blank page**: a navigation rail, a search-first hero, a Recent Designs strip and a visual template grid. See `docs/home-screen.md`.
+- **Frosted chrome**: the top bar and rail are glass over four soft pastel blooms, and the gallery slides under the bar — with opaque fallbacks for engines without `backdrop-filter` and for `prefers-reduced-transparency`.
 - **Six pastel shortcut cards** in the hero — Tarpapel (3×2), Reading Corner, A4 Poster, Photo Collage, Social Media, Blank Canvas — each with its own clay-rendered illustration, its own tint, hairline and coloured title, in light and dark.
 - **Create a Design** popover: Blank A4, Tarpapel 3×2, Landscape Banner or a custom size — a tarpapel canvas arrives with its 3 × 2 print grid already set.
 - **Recent Designs**: every save keeps a copy in IndexedDB (with a page-1 thumbnail) so it can be reopened from the strip or from My Projects.

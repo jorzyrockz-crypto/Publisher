@@ -37,7 +37,7 @@ export const HomeHero: React.FC<{
             onChange={(event) => onQueryChange(event.target.value)}
             placeholder={`Search ${TEMPLATES.length} templates, tarpapel, reading corner, collages...`}
             aria-label="Search templates"
-            className="w-full rounded-full border border-line bg-surface py-2.5 pl-11 pr-10 text-body text-ink shadow-sm outline-none transition-shadow placeholder:text-ink-placeholder focus:border-accent-focus focus:ring-2 focus:ring-accent-focus/25 [&::-webkit-search-cancel-button]:hidden"
+            className="home-glass home-glass-strong w-full rounded-full border py-2.5 pl-11 pr-10 text-body text-ink outline-none transition-shadow placeholder:text-ink-muted focus:border-accent-focus focus:ring-2 focus:ring-accent-focus/25 [&::-webkit-search-cancel-button]:hidden"
           />
           {query && (
             <button
