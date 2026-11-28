@@ -1,4 +1,4 @@
-import { glintStarPoints, lerpHex, wordArtGlints } from './wordArt';
+import { glintStarPoints, lerpHex, wordArtBackdrop, wordArtGlints, wordArtRimWidth } from './wordArt';
 import type { WordArtGlint, WordArtSpec } from './wordArt';
 
 /**
@@ -154,7 +154,31 @@ export function renderWordArtCanvas(
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
 
-  const rimWidth = spec.stroke ? spec.stroke.width * RIM_MULTIPLIER * scale : 0;
+  // 0. The painted highlight goes down first — under every shadow, because it is ink on the page,
+  // not part of the lettering. Path2D is used when the environment has it so the outline matches
+  // the SVG the DOM paints; the fallback keeps old browsers and node from throwing.
+  const backdrop = wordArtBackdrop(spec.id);
+  if (backdrop) {
+    const { box } = line;
+    const band = {
+      x: box.x,
+      y: box.y + box.height * backdrop.top,
+      width: box.width,
+      height: box.height * (backdrop.bottom - backdrop.top),
+    };
+    ctx.save();
+    ctx.fillStyle = backdrop.fill;
+    ctx.translate(band.x, band.y);
+    ctx.scale(band.width / 100, band.height / 100);
+    if (typeof Path2D === 'function') {
+      ctx.fill(new Path2D(backdrop.path));
+    } else {
+      ctx.fillRect(0, 0, 100, 100);
+    }
+    ctx.restore();
+  }
+
+  const rimWidth = wordArtRimWidth(spec) * RIM_MULTIPLIER * scale;
   const gradient = createAngledGradient(ctx, spec, line.box);
 
   // 1. Light behind the letters, furthest first: the bloom, then the long cast

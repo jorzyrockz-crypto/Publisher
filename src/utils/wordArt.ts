@@ -34,6 +34,15 @@ export const WORD_ART_STYLES: WordArtOption[] = [
   { id: 'cyber-acid', label: 'Cyberpunk Acid', className: 'wordart-cyber-acid', dark: true },
   { id: 'obsidian-gold', label: 'Obsidian & Gold Foil', className: 'wordart-obsidian-gold' },
   { id: 'candy-gloss', label: 'Candy 3D Gloss', className: 'wordart-candy-gloss' },
+  // Poster stickers — the tarpapel / school-event look: a cheerful ramp inside a fat white
+  // die-cut border with a paper-lift shadow, so the word survives a busy photo behind it.
+  { id: 'sticker-royal', label: 'Royal Sticker Pop', className: 'wordart-sticker-royal', dark: true },
+  { id: 'sticker-forest', label: 'Fresh Leaf Sticker', className: 'wordart-sticker-forest', dark: true },
+  { id: 'sticker-coral', label: 'Warm Coral Sticker', className: 'wordart-sticker-coral' },
+  { id: 'sticker-teal', label: 'Deep Teal Sticker', className: 'wordart-sticker-teal', dark: true },
+  // Flat ink on a painted highlight — the brush-swipe and pastel-pill headline.
+  { id: 'brush-highlight', label: 'Painted Brush Highlight', className: 'wordart-brush-highlight' },
+  { id: 'pill-highlight', label: 'Pastel Pill Highlight', className: 'wordart-pill-highlight' },
 ];
 
 const BY_ID = new Map<string, WordArtOption>(WORD_ART_STYLES.map((s) => [s.id, s]));
@@ -81,6 +90,12 @@ export interface WordArtExtrusion {
   endColor: string;
 }
 
+/**
+ * A painted highlight behind the letters: the rough yellow brush swipe, or a pastel pill.
+ * Both are geometry, not a background image, so the DOM and the canvas can share one path.
+ */
+export type WordArtBackdrop = 'yellow-brush' | 'pastel-pill';
+
 export interface WordArtPaint {
   /** The style forces a heavier weight than the document's. */
   weight: '800' | '900';
@@ -89,6 +104,12 @@ export interface WordArtPaint {
   fill?: string;
   gradient?: WordArtGradient;
   stroke?: { width: number; color: string };
+  /**
+   * A poster border: the declared width is the width you *see*, not the width of a centred
+   * stroke. Both renderers double it and hide the inner half under the fill, so a 6px sticker
+   * border reads as 6px of white instead of 3.
+   */
+  heavyStroke?: boolean;
   shadows: WordArtShadow[];
   /** Marching 3D block, painted behind everything. */
   extrusion?: WordArtExtrusion;
@@ -98,6 +119,42 @@ export interface WordArtPaint {
   castShadow?: WordArtShadow;
   /** A pass of sparkles over the finished letters. */
   glints?: boolean;
+  /** A painted highlight, drawn furthest back — behind every shadow. */
+  backdrop?: WordArtBackdrop;
+}
+
+/**
+ * Backdrop geometry, in a 100×100 box stretched over the line box.
+ *
+ * A brush swipe is a band with a ragged top and two dry tails; a pill is a soft rounded bar. They
+ * are *paths*, not images, which is the only way the DOM (SVG) and the exporter (Path2D) can paint
+ * the identical highlight — a data-URI background in CSS and a hand-rolled rectangle on canvas
+ * would disagree the first time the box changed shape.
+ */
+export const WORD_ART_BACKDROPS: Record<
+  WordArtBackdrop,
+  { fill: string; path: string; /** vertical band inside the box, 0–1 */ top: number; bottom: number }
+> = {
+  'yellow-brush': {
+    fill: '#fde047',
+    // Ragged top edge, a belly, and a thin dry tail at the right — the "painted over the print" look.
+    path: 'M1.5 46 C12 40.5 26 44 38.5 41.5 C52 38.8 64 43 76 40.6 C86 38.7 93 41.4 98 39.6 L98.6 55 C90 61 80 57.5 70 60.5 C56 64.6 44 60.4 32 63.4 C21 66 11 62.6 2 66.4 L1.5 46 Z',
+    top: 0.32,
+    bottom: 0.72,
+  },
+  'pastel-pill': {
+    fill: '#e0e7ff',
+    // A rounded bar with a slight tilt, drawn as a path so both renderers agree on the corners.
+    path: 'M6 30 C6 24.5 10.5 20 16 20 L84 16.5 C89.5 16.2 94 20.6 94.3 26 L95.2 62 C95.4 67.5 91 72 85.5 72.3 L17 76.5 C11.5 76.8 7 72.4 6.8 67 L6 30 Z',
+    top: 0.14,
+    bottom: 0.66,
+  },
+};
+
+/** The backdrop for a style, ready for either renderer. */
+export function wordArtBackdrop(style?: WordArtStyle) {
+  const backdrop = wordArtPaint(style)?.backdrop;
+  return backdrop ? { id: backdrop, ...WORD_ART_BACKDROPS[backdrop] } : undefined;
 }
 
 const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
@@ -394,6 +451,83 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     castShadow: { dx: 0, dy: 8, blur: 12, color: 'rgba(76, 5, 25, 0.4)' },
     shadows: [],
   },
+  // ---- poster stickers ------------------------------------------------------------------
+  // Three bright stops on a vertical ramp, a fat white border and a soft paper-lift shadow.
+  // No horizon break and no chrome: these are meant to be read from across a school yard.
+  'sticker-royal': {
+    weight: '900',
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#38bdf8' },
+        { offset: 0.45, color: '#2563eb' },
+        { offset: 1, color: '#1e3a8a' },
+      ],
+    },
+    stroke: { width: 6, color: '#ffffff' },
+    castShadow: { dx: 0, dy: 4, blur: 10, color: 'rgba(15, 23, 42, 0.28)' },
+    heavyStroke: true,
+    shadows: [],
+  },
+  'sticker-forest': {
+    weight: '900',
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#4ade80' },
+        { offset: 0.5, color: '#16a34a' },
+        { offset: 1, color: '#14532d' },
+      ],
+    },
+    stroke: { width: 7, color: '#ffffff' },
+    castShadow: { dx: 0, dy: 5, blur: 12, color: 'rgba(20, 83, 45, 0.28)' },
+    heavyStroke: true,
+    shadows: [],
+  },
+  'sticker-coral': {
+    weight: '900',
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#fbbf24' },
+        { offset: 0.42, color: '#f97316' },
+        { offset: 1, color: '#dc2626' },
+      ],
+    },
+    stroke: { width: 7, color: '#ffffff' },
+    castShadow: { dx: 0, dy: 5, blur: 12, color: 'rgba(153, 27, 27, 0.28)' },
+    heavyStroke: true,
+    shadows: [],
+  },
+  'sticker-teal': {
+    weight: '900',
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#2dd4bf' },
+        { offset: 0.55, color: '#0f766e' },
+        { offset: 1, color: '#134e4a' },
+      ],
+    },
+    stroke: { width: 6, color: '#ffffff' },
+    castShadow: { dx: 0, dy: 4, blur: 10, color: 'rgba(19, 78, 74, 0.25)' },
+    heavyStroke: true,
+    shadows: [],
+  },
+  // Navy ink on a yellow paint swipe: the highlight does the shouting, the type stays calm.
+  'brush-highlight': {
+    weight: '900',
+    fill: '#0f172a',
+    backdrop: 'yellow-brush',
+    shadows: [],
+  },
+  // The quieter sibling: indigo ink on a pastel pill, for agendas and quote cards.
+  'pill-highlight': {
+    weight: '900',
+    fill: '#1e1b4b',
+    backdrop: 'pastel-pill',
+    shadows: [],
+  },
 };
 
 /** Paint instructions for a style, or undefined for plain text. */
@@ -416,11 +550,14 @@ export interface WordArtSpec {
   italic?: boolean;
   glints?: boolean;
   stroke?: { width: number; color: string };
+  heavyStroke?: boolean;
   extrusion?: WordArtExtrusion;
   bloom?: { blur: number; color: string }[];
   castShadow?: WordArtShadow;
   /** Extra authored shadows, painted nearest the glyphs. */
   shadows: WordArtShadow[];
+  /** A painted highlight behind the letters, if the style asks for one. */
+  backdrop?: WordArtBackdrop;
 }
 
 export function wordArtSpec(style?: WordArtStyle): WordArtSpec | undefined {
@@ -436,10 +573,12 @@ export function wordArtSpec(style?: WordArtStyle): WordArtSpec | undefined {
     italic: paint.italic,
     glints: paint.glints,
     stroke: paint.stroke,
+    heavyStroke: paint.heavyStroke,
     extrusion: paint.extrusion,
     bloom: paint.bloom,
     castShadow: paint.castShadow,
     shadows: paint.shadows,
+    backdrop: paint.backdrop,
   };
 }
 
@@ -468,10 +607,16 @@ export function buildWordArtCssRule(style: WordArtStyle, className = `wordart-${
     lines.push(`  color: ${paint.fill};`);
   }
   if (paint.stroke) {
-    lines.push(`  -webkit-text-stroke: ${paint.stroke.width}px ${paint.stroke.color};`);
+    const rim = paint.heavyStroke ? paint.stroke.width * 2 : paint.stroke.width;
+    lines.push(`  -webkit-text-stroke: ${rim}px ${paint.stroke.color};`);
     // Canvas paints the outline behind the fill; without this the DOM paints it
     // on top and the two renderers disagree about how thick the letters look.
     lines.push('  paint-order: stroke fill;');
+  }
+  if (paint.backdrop) {
+    // The DOM paints the swipe as an SVG layer (see ElementRenderer); the class only carries the
+    // colour so a preview tile shows the highlight without mounting the SVG.
+    lines.push(`  --wordart-backdrop: ${WORD_ART_BACKDROPS[paint.backdrop].fill};`);
   }
   const chain = wordArtShadowChain(paint);
   if (chain.length) {
@@ -574,6 +719,12 @@ const round2 = (value: number) => Math.round(value * 100) / 100;
  * lists its drop-shadows in, and the order the exporter walks backwards.
  * Extrusion copies, hand-authored shadows, the cast shadow, then the bloom.
  */
+/** The stroke width to actually paint: doubled when the border is meant to be seen at full width. */
+export function wordArtRimWidth(spec?: Pick<WordArtPaint, 'stroke' | 'heavyStroke'>): number {
+  if (!spec?.stroke) return 0;
+  return spec.heavyStroke ? spec.stroke.width * 2 : spec.stroke.width;
+}
+
 export function wordArtShadowChain(paint?: WordArtPaint): WordArtShadow[] {
   if (!paint) return [];
   const chain: WordArtShadow[] = [];
@@ -590,11 +741,35 @@ export function wordArtShadowChain(paint?: WordArtPaint): WordArtShadow[] {
     }
   }
   chain.push(...paint.shadows);
+  // A fat border drawn with sharp joins spikes at the corners of A, M and W. CSS text stroke has no
+  // `stroke-linejoin` to fix it (that property is SVG-only), and the canvas already rounds its
+  // joins — so the fix both renderers can share is a blurred copy of the fill in the border colour,
+  // painted just under the border. It rounds the outer edge the same way on screen and in export.
+  if (paint.stroke && paint.stroke.width >= 4) {
+    chain.push({ dx: 0, dy: 0, blur: 2, color: paint.stroke.color });
+  }
   if (paint.castShadow) chain.push(paint.castShadow);
   for (const bloom of paint.bloom ?? []) {
     chain.push({ dx: 0, dy: 0, blur: bloom.blur, color: bloom.color });
   }
   return chain;
+}
+
+/**
+ * True when the style carries its own legibility: a fat, near-white die-cut border means the
+ * letters read on a dark photo, a pale page and a mid-tone collage alike. Such a style must not be
+ * "corrected" for low contrast against the page — the border is the correction.
+ */
+export function wordArtSelfContained(style?: WordArtStyle): boolean {
+  const paint = wordArtPaint(style);
+  if (!paint?.stroke) return false;
+  const lum = (() => {
+    const hex = paint.stroke.color.replace('#', '');
+    if (hex.length !== 6) return 0;
+    const [r, g, b] = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  })();
+  return paint.stroke.width >= 4 && lum > 0.8;
 }
 
 /** True when the style only looks right in italic. */

@@ -7,7 +7,7 @@ import type {
   TextElement,
 } from '../types/publisher';
 import type { TemplateCategory } from '../constants/templates';
-import { WORD_ART_STYLES, wordArtPaint } from './wordArt';
+import { WORD_ART_STYLES, wordArtPaint, wordArtSelfContained } from './wordArt';
 import type { WordArtStyle } from '../types/publisher';
 
 /**
@@ -358,7 +358,14 @@ function enhanceText(el: TextElement, page: Page, category: TemplateCategory, ta
     // An authored style that vanishes into its background is a bug, not a
     // choice (pink retro on a coral band) — repaint it with something that reads.
     const bgLum = hexLuminance(effectiveBackground(el, page));
-    if (el.wordArtStyle && el.wordArtStyle !== 'none' && contrastScore(el.wordArtStyle, bgLum) < MIN_CONTRAST) {
+    // A sticker border carries its own contrast: repainting a die-cut style because its *fill*
+    // scores low against the page is exactly the wrong correction.
+    if (
+      el.wordArtStyle &&
+      el.wordArtStyle !== 'none' &&
+      !wordArtSelfContained(el.wordArtStyle) &&
+      contrastScore(el.wordArtStyle, bgLum) < MIN_CONTRAST
+    ) {
       const better = wordArtChoice(el, category, page);
       if (better && better !== el.wordArtStyle) {
         el.wordArtStyle = better;

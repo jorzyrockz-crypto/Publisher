@@ -6,6 +6,7 @@ import { SAMPLE_GRAPHICS } from './sampleGraphics';
 import { getStickerById } from './stickerLibrary';
 import { enhanceProject } from '../utils/templateEnhance';
 import { polishProject } from '../utils/templatePolish';
+import { WORDART_POSTER_TEMPLATES } from './posterWordArtTemplates';
 
 export type TemplateCategory =
   | 'Brochure'
@@ -4967,6 +4968,7 @@ export const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
   ...COLLAGE_AND_WEB_TEMPLATES,
   ...PROGRAM_AND_TARPAPEL_TEMPLATES,
   ...CERTIFICATE_TEMPLATES,
+  ...WORDART_POSTER_TEMPLATES,
 ];
 
 /**

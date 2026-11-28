@@ -127,16 +127,31 @@ function scoreRhythm(elements: PublisherElement[]): number {
 
 /** One clear first thing to read. */
 function scoreHierarchy(elements: PublisherElement[]): number {
-  const sizes = elements
-    .filter((el): el is TextElement => el.type === 'text')
-    .map((el) => el.fontSize)
-    .sort((a, b) => b - a);
-  if (sizes.length === 0) return 0.6;
+  const texts = elements.filter((el): el is TextElement => el.type === 'text');
+  if (texts.length === 0) return 0.6;
+
+  // Display type (WordArt) is a lockup, not a hierarchy: four sticker words at the same size are
+  // one shout, and measuring them against each other would call every poster flat. What matters
+  // there is that the body copy is clearly smaller than the shout.
+  const isDisplay = (el: TextElement) => Boolean((el as { isWordArt?: boolean }).isWordArt);
+  const display = texts.filter(isDisplay);
+  const body = texts.filter((el) => !isDisplay(el));
+  const ratioScore = (ratio: number) => {
+    if (ratio >= 1.5 && ratio <= 3.2) return 1;
+    if (ratio > 3.2) return clamp01(1 - (ratio - 3.2) / 4);
+    return clamp01(0.45 + (ratio - 1) * 1.0); // 1.0x is flat, 1.5x is good
+  };
+
+  if (display.length > 0) {
+    const shout = Math.max(...display.map((el) => el.fontSize));
+    const next = body.length ? Math.max(...body.map((el) => el.fontSize)) : 0;
+    if (!next) return 0.9;
+    return ratioScore(shout / Math.max(1, next));
+  }
+
+  const sizes = texts.map((el) => el.fontSize).sort((a, b) => b - a);
   if (sizes.length === 1) return 0.75;
-  const ratio = sizes[0] / Math.max(1, sizes[1]);
-  if (ratio >= 1.5 && ratio <= 3.2) return 1;
-  if (ratio > 3.2) return clamp01(1 - (ratio - 3.2) / 4);
-  return clamp01(0.45 + (ratio - 1) * 1.0); // 1.0x is flat, 1.5x is good
+  return ratioScore(sizes[0] / Math.max(1, sizes[1]));
 }
 
 /** Room to breathe: 45–70% of the page covered is the comfortable band for print. */

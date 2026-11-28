@@ -283,15 +283,26 @@ function drawTextElement(ctx: CanvasRenderingContext2D, el: TextElement) {
     const boxes = layout.curve
       ? [{ x: 0, y: top, width, height }]
       : lineGlyphBoxes(layout, top);
-    layout.lines.forEach((line, lineIndex) => {
-      const box = boxes[lineIndex] ?? boxes[0];
-      const lineUnits = units.filter((unit) => unit.lineIndex === lineIndex);
+    // Curved text has no `lines` — the arc replaces them — so the WordArt painter walks the
+    // curve as a single pseudo-line. Reading `layout.lines` here is what used to make a curved
+    // WordArt word disappear from the export entirely.
+    const lineEntries = layout.curve
+      ? [{ text: layout.curve.chars.map((char) => char.text).join(''), box: boxes[0] }]
+      : layout.lines.map((line, index) => ({
+          text: line.runs.map((run) => run.text).join(''),
+          box: boxes[index] ?? boxes[0],
+        }));
+
+    lineEntries.forEach(({ text: lineText, box }, lineIndex) => {
+      const lineUnits = units.filter(
+        (unit) => unit.lineIndex === (layout.curve ? 0 : lineIndex)
+      );
       if (!lineUnits.length) return;
       renderWordArtCanvas(
         ctx,
         spec,
         {
-          text: line.runs.map((run) => run.text).join(''),
+          text: lineText,
           x: 0,
           y: 0,
           box,

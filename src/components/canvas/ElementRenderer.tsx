@@ -18,7 +18,7 @@ import { layoutText, lineGlyphBoxes, verticalOffset } from '../../utils/textLayo
 import type { GlyphBox } from '../../utils/textLayout';
 import { buildTextEffectPainter } from '../../utils/textEffects';
 import { imageContentRect, imageFit, imageMaskClip } from '../../utils/imageFrame';
-import { glintStarPath, wordArtCss, wordArtGlints } from '../../utils/wordArt';
+import { glintStarPath, wordArtBackdrop, wordArtCss, wordArtGlints } from '../../utils/wordArt';
 import { useImageAspect } from '../../hooks/useImageAspect';
 import { elementClipPath } from '../../utils/shapeClip';
 
@@ -207,6 +207,9 @@ const TextRenderer: React.FC<{
   // WordArt is painted from the same spec the exporter uses; the CSS classes
   // are only for the gallery previews.
   const waCss = wordArtCss(element.isWordArt ? element.wordArtStyle : undefined);
+  // The painted highlight: one SVG per line box, behind every glyph layer, drawn from the same
+  // path the exporter fills — so the swipe sits under the same letters in the editor and the PDF.
+  const waBackdrop = element.isWordArt ? wordArtBackdrop(element.wordArtStyle) : undefined;
   // WordArt layers are a drop-shadow chain: `text-shadow` would bleed through
   // the clipped gradient fill and turn the metal muddy.
   const waFilter = waCss.filter;
@@ -319,8 +322,13 @@ const TextRenderer: React.FC<{
   // the WordArt stack in the exporter, so they come first here too.
   const glyphShadow = paint.cssShadow || undefined;
 
-  // One box per line: the gradient and the sparkles are clipped/placed by it.
-  const boxes: GlyphBox[] = lineGlyphBoxes(layout, offset);
+  // One box per line: the gradient, the sparkles and the painted backdrop are clipped/placed by
+  // it. Before the font has been measured the list can come back empty — falling back to the whole
+  // element keeps the first paint (and any headless render) from reading an undefined box.
+  const measuredBoxes: GlyphBox[] = lineGlyphBoxes(layout, offset);
+  const boxes: GlyphBox[] = measuredBoxes.length
+    ? measuredBoxes
+    : [{ x: 0, y: 0, width: element.width, height: element.height }];
 
   const baseColor = waCss.color ?? (paint.fillTransparent ? 'transparent' : element.color);
   // Sparkles are shared geometry: the exporter draws the same stars from the
@@ -435,6 +443,26 @@ const TextRenderer: React.FC<{
         userSelect: 'none',
       }}
     >
+      {waBackdrop &&
+        boxes.map((box, index) => (
+          <svg
+            key={`wa-backdrop-${index}`}
+            aria-hidden
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            style={{
+              position: 'absolute',
+              left: box.x,
+              top: box.y + box.height * waBackdrop.top,
+              width: box.width,
+              height: Math.max(1, box.height * (waBackdrop.bottom - waBackdrop.top)),
+              pointerEvents: 'none',
+            }}
+          >
+            <path d={waBackdrop.path} fill={waBackdrop.fill} />
+          </svg>
+        ))}
+
       {layout.dropCap && (
         <span
           style={{
