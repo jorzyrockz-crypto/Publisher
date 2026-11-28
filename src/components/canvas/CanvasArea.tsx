@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
 import { snapPaperPosition } from '../../utils/artboardSnapping';
 import { SelectionToolbar } from './SelectionToolbar';
@@ -58,6 +58,9 @@ export const CanvasArea: React.FC = () => {
   const [spreadMode, setSpreadMode] = useState<'reading' | 'pairs'>('reading');
   /** Where a paper is snapping to while it is dragged, in artboard px — drawn as a hairline. */
   const [paperGuides, setPaperGuides] = useState<{ x?: number; y?: number } | null>(null);
+  /** Which paper is being carried, so the pasteboard can grow under it without it sticking. */
+  const [draggingPage, setDraggingPage] = useState<number | null>(null);
+  const lastOriginRef = useRef<{ x: number; y: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const didInitialFitRef = useRef(false);
   /** Key of the view/page that was last auto-fitted, so a hand-set zoom is never stomped. */
@@ -275,6 +278,7 @@ export const CanvasArea: React.FC = () => {
     e.preventDefault();
     setActivePageIndex(pageIndex);
 
+    setDraggingPage(pageIndex);
     const initial = getArtboardCoords(pageIndex);
     const dragged = project.pages[pageIndex];
     const startClientX = e.clientX;
@@ -288,8 +292,8 @@ export const CanvasArea: React.FC = () => {
       const dy = (me.clientY - startClientY) / zoom;
       const snap = snapPaperPosition(
         {
-          x: Math.max(20, initial.x + dx),
-          y: Math.max(36, initial.y + dy),
+          x: initial.x + dx,
+          y: initial.y + dy,
           width: dragged.width,
           height: dragged.height,
         },
@@ -302,6 +306,7 @@ export const CanvasArea: React.FC = () => {
 
     const onUp = () => {
       setPaperGuides(null);
+      setDraggingPage(null);
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseup', onUp);
     };
@@ -310,14 +315,43 @@ export const CanvasArea: React.FC = () => {
     window.addEventListener('mouseup', onUp);
   };
 
-  // Compute artboard canvas bounds
-  let artboardMaxRight = 2400;
-  let artboardMaxBottom = 1600;
+  /**
+   * The pasteboard has to extend into negative coordinates, because dragging a paper up or left
+   * used to hit the edge of the world at x = 20, y = 36 — the canvas looked clamped and a paper
+   * could not be parked above or left of its start. The paper's coordinates stay relative to the
+   * artboard origin (0, 0); only the drawn container is shifted, by a fixed gutter, so the space
+   * around zero is reachable.
+   */
+  const paperCoords = project.pages.map((_, idx) => getArtboardCoords(idx));
+  const ARTBOARD_GUTTER = 360;
+  const originX = Math.min(0, ...paperCoords.map((c) => c.x)) - ARTBOARD_GUTTER;
+  const originY = Math.min(0, ...paperCoords.map((c) => c.y)) - ARTBOARD_GUTTER;
+  let artboardMaxRight = originX + 2400;
+  let artboardMaxBottom = originY + 1600;
   project.pages.forEach((pg, idx) => {
-    const coords = getArtboardCoords(idx);
+    const coords = paperCoords[idx];
     artboardMaxRight = Math.max(artboardMaxRight, coords.x + pg.width + 600);
     artboardMaxBottom = Math.max(artboardMaxBottom, coords.y + pg.height + 500);
   });
+  /** Zoomed out, a paper is a postage stamp: the handle either crowds it or says too much. */
+  const compactHandles = zoom < 0.45;
+
+  /**
+   * The pasteboard grows when a paper is carried towards (or past) its top-left corner. The origin
+   * shifting moves every paper the other way on screen, so the scroll has to travel with it — else
+   * the paper you are dragging stops under your cursor, which is exactly the "the canvas is
+   * limited, I can't move around" feeling. Only while a drag is live; a zoom re-layout must not
+   * yank the view.
+   */
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    const last = lastOriginRef.current;
+    if (el && last && draggingPage !== null && (last.x !== originX || last.y !== originY)) {
+      el.scrollLeft += (last.x - originX) * zoom;
+      el.scrollTop += (last.y - originY) * zoom;
+    }
+    lastOriginRef.current = { x: originX, y: originY };
+  }, [originX, originY, zoom, draggingPage]);
 
   // Group pages into facing spreads ('reading': Cover, [2|3], [4|5], Back; or 'pairs': [1|2], [3|4])
   const spreadGroups: { label: string; pages: { page: typeof activePage; index: number; role: string }[] }[] = [];
@@ -441,8 +475,8 @@ export const CanvasArea: React.FC = () => {
             <div
               className="relative flex-shrink-0"
               style={{
-                width: `calc(${artboardMaxRight + 80}px * var(--sp-zoom))`,
-                height: `calc(${artboardMaxBottom + 96}px * var(--sp-zoom))`,
+                width: `calc(${artboardMaxRight - originX + 80}px * var(--sp-zoom))`,
+                height: `calc(${artboardMaxBottom - originY + 96}px * var(--sp-zoom))`,
               }}
             >
               {project.pages.map((pg, idx) => {
@@ -451,41 +485,50 @@ export const CanvasArea: React.FC = () => {
                 // A handle is ~24px tall. Above the paper it belongs, but at 20% zoom a paper at
                 // y=80 sits 16px down — so the handle would be clipped off the top of the viewport
                 // and the paper could not be moved at all. Clamp it onto the paper instead.
-                const handleLift = Math.min(30, Math.max(0, coords.y * zoom - 2));
+                const screenX = (coords.x - originX) * zoom;
+                const screenY = (coords.y - originY) * zoom;
+                const handleLift = Math.min(30, Math.max(0, screenY - 2));
+                // Name, size and the page menu belong to the paper you are working on. Everything
+                // else is a number, so a row of papers reads as a row of papers.
+                const showDetail = !compactHandles && isActive;
 
                 return (
                   <div
                     key={pg.id}
                     data-canvas-page-id={pg.id}
-                    style={{
-                      position: 'absolute',
-                      left: `calc(${coords.x}px * var(--sp-zoom))`,
-                      top: `calc(${coords.y}px * var(--sp-zoom))`,
-                    }}
+                    style={{ position: 'absolute', left: screenX, top: screenY }}
                     className="flex flex-col items-start"
                   >
                     {/* Draggable Artboard Handle Pill (Grab to move paper anywhere!) */}
                     <div
                       onMouseDown={(e) => handleArtboardDragStart(idx, e)}
                       style={{ position: 'absolute', left: 0, top: -handleLift, zIndex: 30 }}
-                      className={`artboard-drag-handle flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold cursor-grab active:cursor-grabbing transition shadow-xs ${
+                      className={`artboard-drag-handle flex items-center rounded-full font-semibold cursor-grab active:cursor-grabbing transition shadow-xs ${
+                        compactHandles ? 'gap-1 px-1.5 py-0.5 text-[10px]' : 'gap-1.5 px-2.5 py-0.5 text-[11px]'
+                      } ${
                         isActive
                           ? 'bg-[#6e56cf] text-white'
                           : 'bg-white/90 text-slate-600 border border-slate-200 hover:bg-white hover:border-[#d3c9f9]'
                       }`}
                       title="Drag to move this paper anywhere on the canvas"
                     >
-                      <GripVertical size={11} className="opacity-75" />
-                      <span>Page {idx + 1}</span>
-                      {pg.name && <span className="opacity-80">• {pg.name}</span>}
-                      <span
-                        className={`ml-1 text-[9.5px] font-mono px-1.5 py-0.2 rounded-full ${
-                          isActive ? 'bg-[#5c4bb8]/80 text-[#efeafd]' : 'bg-slate-100 text-slate-500'
-                        }`}
-                      >
-                        {(pg.width / 96).toFixed(1)}"×{(pg.height / 96).toFixed(1)}"
-                      </span>
-                      {project.pages.length > 1 && (
+                      <GripVertical size={compactHandles ? 9 : 11} className="opacity-75" />
+                      <span>{compactHandles ? idx + 1 : `Page ${idx + 1}`}</span>
+                      {/* Zoomed out, a paper is a postage stamp and the pill is the biggest thing
+                          on it: name, size and the page menu all go, leaving the number. */}
+                      {showDetail && pg.name && (
+                        <span className="max-w-[240px] truncate opacity-80">• {pg.name}</span>
+                      )}
+                      {showDetail && (
+                        <span
+                          className={`ml-1 text-[9.5px] font-mono px-1.5 py-0.2 rounded-full ${
+                            isActive ? 'bg-[#5c4bb8]/80 text-[#efeafd]' : 'bg-slate-100 text-slate-500'
+                          }`}
+                        >
+                          {(pg.width / 96).toFixed(1)}"×{(pg.height / 96).toFixed(1)}"
+                        </span>
+                      )}
+                      {showDetail && project.pages.length > 1 && (
                         <button
                           type="button"
                           onMouseDown={(e) => e.stopPropagation()}
@@ -518,13 +561,13 @@ export const CanvasArea: React.FC = () => {
               {paperGuides?.x !== undefined && (
                 <div
                   className="absolute top-0 bottom-0 w-px bg-[#6e56cf] opacity-80 pointer-events-none z-40"
-                  style={{ left: `calc(${paperGuides.x}px * var(--sp-zoom))` }}
+                  style={{ left: (paperGuides.x - originX) * zoom }}
                 />
               )}
               {paperGuides?.y !== undefined && (
                 <div
                   className="absolute left-0 right-0 h-px bg-[#6e56cf] opacity-80 pointer-events-none z-40"
-                  style={{ top: `calc(${paperGuides.y}px * var(--sp-zoom))` }}
+                  style={{ top: (paperGuides.y - originY) * zoom }}
                 />
               )}
 
@@ -537,8 +580,8 @@ export const CanvasArea: React.FC = () => {
                   <div
                     style={{
                       position: 'absolute',
-                      left: `calc(${lastCoords.x + lastPg.width + 60}px * var(--sp-zoom))`,
-                      top: `calc(${lastCoords.y + 36}px * var(--sp-zoom))`,
+                      left: (lastCoords.x + lastPg.width + 60 - originX) * zoom,
+                      top: (lastCoords.y + 36 - originY) * zoom,
                     }}
                     className="flex flex-col gap-2"
                   >

@@ -1141,7 +1141,7 @@ export function tarpapelToProject(spec: TarpapelTemplate): DocumentProject {
 
   const page: Page = {
     id: `page-${spec.id}`,
-    name: `${name} — ${Math.round(spec.canvas.widthMm)} × ${Math.round(spec.canvas.heightMm)} mm`,
+    name,
     width: geo.canvasWidth,
     height: geo.canvasHeight,
     orientation: geo.canvasWidth >= geo.canvasHeight ? 'landscape' : 'portrait',

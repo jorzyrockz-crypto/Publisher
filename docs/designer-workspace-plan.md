@@ -224,3 +224,12 @@ accounted for:
   radius is `8 / zoom` — eight *screen* pixels — for the same reason element snapping is now
   `6 / zoom`: a fixed radius in page pixels shrinks to nothing as you zoom out (at 20% it was
   1.2 screen pixels, i.e. it looked broken).
+* **The pasteboard ended at the top-left corner.** Dragging was clamped at x = 20, y = 36, so a
+  paper could never be parked above or left of its starting place — the canvas felt walled in. The
+  clamps are gone; the artboard is drawn from an origin 360 px outside the papers' bounding box, so
+  there is always pasteboard to drag into, and the origin grows as a carried paper approaches it.
+  Growing the origin moves every paper the other way on screen, so the scroll travels with it —
+  otherwise the paper under your cursor would stop dead, which is the same complaint in a new suit.
+* **The handle said too much.** At 20% a paper is a postage stamp and the pill above it — page
+  number, page name and a size badge — is bigger than the paper. Below 45% it collapses to a grip
+  and a number; at any zoom only the **active** paper shows its name, size and menu.
