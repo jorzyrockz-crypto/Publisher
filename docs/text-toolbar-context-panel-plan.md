@@ -98,6 +98,10 @@ returns to the pane you were on.
 Typography card. One component, two destinations, chosen by `workspaceMode` in
 `openTextControl`; the panel itself does not know the difference.
 
+**And the collage panel now follows the same rule** (`CollageControlsPanel` gained the same
+`card | pane` variant). Whatever the bar opens appears in the sidebar beside it: one nested
+panel, one destination, no per-bar exceptions.
+
 Shell reused from the collage panel: title + section chips (so you can switch Type ↔ Colour
 without going back to the bar) + close (×). Body switches on the section.
 

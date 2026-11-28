@@ -11,7 +11,9 @@ import { DesignerSettingsPanel } from './DesignerSettingsPanel';
 import { DesignerVisualsPanel } from './DesignerVisualsPanel';
 import { DesignerMediaPanel } from './DesignerMediaPanel';
 import { TextControlsPanel } from '../canvas/TextControlsPanel';
-import { TEXT_CONTROL_TITLES, type TextControlSection } from '../../constants/textControls';
+import { CollageControlsPanel } from '../canvas/CollageControlsPanel';
+import { COLLAGE_CONTROL_TITLES, type CollageControlSection } from '../../constants/collageControls';
+import { TEXT_CONTROL_TITLES } from '../../constants/textControls';
 import {
   clearUploads,
   deleteUpload,
@@ -47,8 +49,6 @@ import {
   Grid,
   Magnet,
 } from 'lucide-react';
-
-const TEXT_PANEL_TITLE: Record<TextControlSection, string> = TEXT_CONTROL_TITLES;
 
 type DesignerDrawerTab =
   | 'edit'
@@ -92,6 +92,8 @@ export const DesignerToolRail: React.FC = () => {
     setToolMode,
     textControlSection,
     closeTextControl,
+    collageControlSection,
+    closeCollageControl,
   } = usePublisher();
 
   const [activeDrawer, setActiveDrawer] = useState<DesignerDrawerTab>('text');
@@ -104,15 +106,23 @@ export const DesignerToolRail: React.FC = () => {
   );
 
   /**
-   * The bar's font and colour chips open here, in the edit sidebar beside the toolbar.
+   * Nested controls from the canvas bar open here, in the sidebar beside it — the font list,
+   * the colour palette, a collage's layouts and backdrop. One destination for every bar.
    *
    * Derived, not synchronised: asking for a panel *is* a drawer that is open on the Edit
    * pane, so there is no state to set in an effect and nothing to get out of step. Closing
-   * the section returns the drawer to whatever it was showing before.
+   * the panel returns the drawer to whatever it was showing before.
    */
-  const sectionOpen = Boolean(textControlSection);
-  const pane: DesignerDrawerTab = sectionOpen ? 'edit' : activeDrawer;
-  const drawerVisible = drawerOpen || sectionOpen;
+  const sidePanel = textControlSection
+    ? { title: TEXT_CONTROL_TITLES[textControlSection], close: closeTextControl }
+    : collageControlSection
+    ? {
+        title: COLLAGE_CONTROL_TITLES[collageControlSection as CollageControlSection],
+        close: closeCollageControl,
+      }
+    : null;
+  const pane: DesignerDrawerTab = sidePanel ? 'edit' : activeDrawer;
+  const drawerVisible = drawerOpen || Boolean(sidePanel);
 
   // Sync Layers drawer with isLeftPanelOpen when toggling from elsewhere
   useEffect(() => {
@@ -121,6 +131,7 @@ export const DesignerToolRail: React.FC = () => {
 
   const handleSelectRailTab = (tab: DesignerDrawerTab) => {
     closeTextControl();
+    closeCollageControl();
     if (drawerOpen && activeDrawer === tab) {
       setDrawerOpen(false);
       return;
@@ -299,14 +310,14 @@ export const DesignerToolRail: React.FC = () => {
               {pane !== 'stock' && (
                 <div className="px-3.5 py-3 border-b border-[#e5e9ee] flex items-center justify-between flex-shrink-0">
                   <div className="flex items-center gap-1.5 min-w-0">
-                    {textControlSection && (
+                    {sidePanel && (
                       <button
                         type="button"
                         onClick={() => {
-                          // Closing the section returns to the Edit pane rather than
+                          // Closing the panel returns to the pane you were on rather than
                           // taking the drawer down with it.
                           setDrawerOpen(true);
-                          closeTextControl();
+                          sidePanel.close();
                         }}
                         aria-label="Back to the edit panel"
                         className="w-6 h-6 flex items-center justify-center rounded-full text-[#4a5661] hover:bg-[#f4f2ff] hover:text-[#5c4bb8] transition cursor-pointer flex-shrink-0"
@@ -315,7 +326,7 @@ export const DesignerToolRail: React.FC = () => {
                       </button>
                     )}
                     <h2 className="text-xs font-semibold text-[#161a22] truncate">
-                      {textControlSection ? TEXT_PANEL_TITLE[textControlSection] : drawerTitle}
+                      {sidePanel ? sidePanel.title : drawerTitle}
                     </h2>
                   </div>
                 </div>
@@ -352,9 +363,13 @@ export const DesignerToolRail: React.FC = () => {
                   onOpenStock={() => setActiveDrawer('stock')}
                   notice={uploadNotice}
                 />
-              ) : textControlSection ? (
+              ) : sidePanel ? (
                 <div className="flex-1 overflow-y-auto p-3">
-                  <TextControlsPanel variant="pane" />
+                  {textControlSection ? (
+                    <TextControlsPanel variant="pane" />
+                  ) : (
+                    <CollageControlsPanel variant="pane" />
+                  )}
                 </div>
               ) : (
                 <div className="flex-1 overflow-y-auto p-3 space-y-4">

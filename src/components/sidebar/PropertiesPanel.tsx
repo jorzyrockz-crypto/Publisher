@@ -372,8 +372,9 @@ export const PropertiesPanel: React.FC = () => {
         <DesignIdeasPanel />
       ) : (
       <div className="p-3.5 space-y-4">
-        {/* Nested collage controls from the canvas bar (vibe packs today). */}
-        <CollageControlsPanel />
+        {/* Nested collage controls from the canvas bar. In Designer these live in the left
+            drawer beside the bar; the inspector is the Publisher-mode destination. */}
+        {workspaceMode !== 'designer' && <CollageControlsPanel />}
         {/* Nested text controls from the same bar (font, text colour). In Designer this
             panel lives in the left drawer beside the toolbar; the inspector is the
             Publisher-mode destination, since that mode has no drawer. */}

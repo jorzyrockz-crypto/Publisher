@@ -63,7 +63,7 @@ function LayoutThumb({ layoutId }: { layoutId: string }) {
  * Lives in the right inspector, which renders in both Publisher and Designer mode, so the
  * bar has one destination rather than two implementations that drift apart.
  */
-export const CollageControlsPanel: React.FC = () => {
+export const CollageControlsPanel: React.FC<{ variant?: 'card' | 'pane' }> = ({ variant = 'card' }) => {
   const {
     collageControlSection,
     closeCollageControl,
@@ -112,22 +112,30 @@ export const CollageControlsPanel: React.FC = () => {
   return (
     <div
       ref={rootRef}
-      className="space-y-2 rounded-[10px] border border-[#d3c9f9] bg-[#faf8ff] p-2.5"
+      className={
+        variant === 'card'
+          ? 'space-y-2 rounded-[10px] border border-[#d3c9f9] bg-[#faf8ff] p-2.5'
+          : 'space-y-2'
+      }
     >
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[11px] font-semibold text-[#4a3c8c]">
-          {COLLAGE_CONTROL_TITLES[section]}
-        </span>
-        <button
-          type="button"
-          onClick={closeCollageControl}
-          className="p-0.5 rounded-[5px] text-[#7a6dbb] hover:bg-[#efeafd] hover:text-[#5c4bb8] transition"
-          aria-label="Close collage controls"
-          title="Close"
-        >
-          <X size={12} />
-        </button>
-      </div>
+      {/* In the drawer the header is the drawer's own: back chevron and title. A second
+          title and a second way to close would be noise. */}
+      {variant === 'card' && (
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[11px] font-semibold text-[#4a3c8c]">
+            {COLLAGE_CONTROL_TITLES[section]}
+          </span>
+          <button
+            type="button"
+            onClick={closeCollageControl}
+            className="p-0.5 rounded-[5px] text-[#7a6dbb] hover:bg-[#efeafd] hover:text-[#5c4bb8] transition"
+            aria-label="Close collage controls"
+            title="Close"
+          >
+            <X size={12} />
+          </button>
+        </div>
+      )}
 
       {section === 'vibes' && (
         <>

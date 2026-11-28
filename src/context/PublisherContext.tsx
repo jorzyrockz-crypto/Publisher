@@ -677,13 +677,19 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     },
     []
   );
-  const openCollageControl = useCallback((section: CollageControlSection) => {
-    setCollageControlSection(section);
-    setTextControlSection(null);
-    // One destination in both modes: the inspector renders for Publisher and Designer.
-    setIsRightPanelOpen(true);
-    setRightPanelTab('inspector');
-  }, []);
+  const openCollageControl = useCallback(
+    (section: CollageControlSection) => {
+      setCollageControlSection(section);
+      setTextControlSection(null);
+      // Same destination rule as text: the drawer beside the bar in Designer, the inspector
+      // in Publisher, which has no drawer.
+      if (workspaceMode !== 'designer') {
+        setIsRightPanelOpen(true);
+        setRightPanelTab('inspector');
+      }
+    },
+    [workspaceMode]
+  );
   const openTextControl = useCallback(
     (section: TextControlSection) => {
       setTextControlSection(section);
