@@ -11,6 +11,7 @@ import {
   type PrintSettings,
 } from '../../utils/printUtils';
 import { exportTarpapelPdf } from '../../utils/pdfExport';
+import { printTarpapelPoster } from '../../utils/printTarpapel';
 
 /**
  * Print as Tarpaulin.
@@ -119,7 +120,7 @@ export const TarpapelModal: React.FC = () => {
   const [gridTouched, setGridTouched] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewBusy, setPreviewBusy] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<'pdf' | 'print' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
@@ -310,7 +311,7 @@ export const TarpapelModal: React.FC = () => {
 
   const handleExport = async () => {
     if (!sourcePage || !sourceProject) return;
-    setBusy(true);
+    setBusy('pdf');
     setError(null);
     try {
       setPrintSettings({ ...settings, printMode: 'tarpapel' });
@@ -319,7 +320,31 @@ export const TarpapelModal: React.FC = () => {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'The poster could not be written.');
     } finally {
-      setBusy(false);
+      setBusy(null);
+    }
+  };
+
+  /**
+   * Straight to the printer: the sheets are laid out at true physical size in a hidden frame, so the
+   * dialog opens on paper that already matches the design — no PDF to save, find and re-open.
+   */
+  const handlePrint = async () => {
+    if (!sourcePage || !sourceProject) return;
+    setBusy('print');
+    setError(null);
+    try {
+      setPrintSettings({ ...settings, printMode: 'tarpapel' });
+      const { sheets } = await printTarpapelPoster(sourceProject, sourcePage, settings);
+      if (sheets === 0) throw new Error('Nothing to print — pick a design first.');
+      setIsTarpapelModalOpen(false);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'The print dialog could not be opened. Use Download instead.'
+      );
+    } finally {
+      setBusy(null);
     }
   };
 
@@ -716,7 +741,7 @@ export const TarpapelModal: React.FC = () => {
             {error ? (
               <span className="text-rose-600 font-semibold">{error}</span>
             ) : (
-              'Each sheet prints with corner ticks, its number and the glue edge in the margin.'
+              'Print sends the sheets at true size — set the printer to “Actual size”, not “Fit to page”.'
             )}
           </p>
           <div className="flex items-center gap-2">
@@ -730,11 +755,20 @@ export const TarpapelModal: React.FC = () => {
             <button
               type="button"
               onClick={handleExport}
-              disabled={busy || !sourcePage}
-              className="inline-flex items-center gap-1.5 px-4 h-8 rounded-lg text-[11.5px] font-bold text-white bg-[#5c4bb8] hover:bg-[#4c3d9e] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
+              disabled={busy !== null || !sourcePage}
+              className="inline-flex items-center gap-1.5 px-3 h-8 rounded-lg text-[11.5px] font-bold text-[#4a3f9e] bg-[#efeafd] hover:bg-[#e5ddfb] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               <Download size={13} />
-              {busy ? 'Writing…' : 'Download tarpapel PDF'}
+              {busy === 'pdf' ? 'Writing…' : 'Download PDF'}
+            </button>
+            <button
+              type="button"
+              onClick={handlePrint}
+              disabled={busy !== null || !sourcePage}
+              className="inline-flex items-center gap-1.5 px-4 h-8 rounded-lg text-[11.5px] font-bold text-white bg-[#5c4bb8] hover:bg-[#4c3d9e] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
+            >
+              <Printer size={13} />
+              {busy === 'print' ? 'Preparing sheets…' : 'Print poster'}
             </button>
           </div>
         </div>

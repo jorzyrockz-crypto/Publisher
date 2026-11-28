@@ -2,6 +2,9 @@ import { DocumentProject, Page, PublisherElement } from '../types/publisher';
 import { renderPageModelToCanvas } from './canvasRenderer';
 
 export type PrintLayoutMode = 'standard' | 'booklet' | 'tarpapel';
+
+/** Big points to millimetres: 1 pt = 25.4/72 mm. Shared by the PDF and the direct-print paths. */
+export const PRINT_PT_TO_MM = 25.4 / 72;
 export type SheetOrientation = 'auto' | 'portrait' | 'landscape';
 
 export interface PrintSettings {

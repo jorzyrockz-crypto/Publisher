@@ -158,6 +158,25 @@ wall-sized gallery template (`Poster`, `Tarpapel`, `Champs Reading`, `Hero Banne
 uploaded JPG/PNG. A design does not have to be open, or even made in this app, to be printed at
 poster size.
 
+### P0.5b — print, not just download ✅
+
+"Download a PDF" is two more steps: save it, find it, open a viewer, press print, then hope the driver
+does not "fit to page" the sheets that were measured to the millimetre. `printTarpapelPoster` removes
+all of it: the tiles are laid out at **true physical size** in a hidden frame with
+`@page { size: 297mm 210mm; margin: 0 }`, marks come from the same `sheetMarkGeometry` as the PDF
+(converted to mm), and `window.print()` opens the system dialog on a document that is already the
+right size.
+
+Two details that matter more than they look:
+
+- **The frame waits for its own artwork** (`img.complete` / `load`, then one frame) — printing before
+  decode gives the driver blank sheets, which is the classic "it printed white pages" bug.
+- **The page is the effective page.** `tarpapelPrintContext` reads the same
+  `resolvePaperBaseDimensions` the slicer uses, so a landscape A4 is 297 × 210 and the art box is
+  297 − 2 × margin. Verified in Node: `@page` matches the paper to 0.1 mm, the art is inset by the
+  margin, and glue labels appear only on inner edges — `(cols−1) × rows + (rows−1) × cols`, 7 for a
+  3 × 2.
+
 ### P0.6 — image quick path (PaperTarp parity) ✅ folded into P0.5
 
 [papertarp.com](https://www.papertarp.com/) is six inputs: upload an image, grid cols × rows, a

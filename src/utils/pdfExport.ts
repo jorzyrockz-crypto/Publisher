@@ -63,7 +63,7 @@ function drawCropMarks(
   pdf.line(right, bottom + gap, right, bottom + gap + len);
 }
 
-function resolveMasterElementsForPdf(project: DocumentProject, page: Page) {
+export function resolveMasterElementsForPdf(project: DocumentProject, page: Page) {
   if (page.hideMaster || project.masterPage?.showOnAllPages === false) return [];
   if (project.masterPages && project.masterPages.length > 0) {
     const m = page.masterId
