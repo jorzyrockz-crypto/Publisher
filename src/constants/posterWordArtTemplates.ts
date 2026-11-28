@@ -817,7 +817,7 @@ export const WORDART_POSTER_TEMPLATES: TemplateDefinition[] = [
               panY: 0,
               locked: true,
             },
-            // Arched because the style carries `arc: 0.12`, and rimmed because the style carries
+            // Arched because the style carries `arc: 0.11`, and rimmed because the style carries
             // its own cream die-cut — it reads over a painted wall without a scrim.
             {
               ...FESTIVAL_WORD,

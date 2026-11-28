@@ -1,8 +1,11 @@
 # Asset packs
 
 A pack is a kit of pieces drawn to be used together — a backdrop, the frames that sit on it, the
-stickers that go over both — plus one `manifest.json` that lists them. Two packs exist: the
-**Storybook & Reading Corner** kit that ships with the app, and whatever the user imports.
+stickers that go over both — plus one `manifest.json` that lists them. Three exist: the **Storybook &
+Reading Corner** kit that ships inside the app, the **Eco-Campaign & Fiesta Awards** kit that ships
+beside it as a `.zip`, and whatever the user imports. The eco kit is deliberately not a second
+built-in: it arrives through the same button a teacher's pack arrives through, which keeps the import
+route honest.
 
 ## The manifest
 
@@ -121,6 +124,39 @@ generate" line. The script prints anything missing rather than writing a manifes
 `PACK_ONLY=frame-side-ivy,sticker-wooden-sign npm run pack:storybook` re-cuts just those pieces and
 rewrites the whole manifest from what is already on disk — worth knowing, because a scanned piece
 takes a few seconds and a full rebuild of every cutout is closer to half a minute.
+
+### The second kit, and the zip it ships in
+
+`public/asset-packs/eco-fiesta-v1.zip` — **Eco-Campaign & Fiesta Awards, v1.0.0, 10 pieces,
+1.84 MB** — built by **`npm run pack:eco`** from art in `.pack-src-eco/` (generated, gitignored).
+The unpacked build lands in `.pack-dist/eco-fiesta-v1/`, which is ignored: only the zip is committed,
+because the zip is the deliverable.
+
+| piece | layer | slot | size |
+|---|---|---|---|
+| Tropical Hills & Valley | backdrop | — | 768×1376 |
+| Fiesta Night Lights | backdrop | — | 768×1376 |
+| Mangrove River | backdrop | — | 848×1264 |
+| Tropical Leaf Corners | frame | corner | 1024×561 |
+| Fiesta Banderitas | frame | top | 1024×387 |
+| Soil & Seedlings Strip | frame | bottom | 1024×363 |
+| Planting Together | sticker | — | 1024×612 |
+| Bahay Kubo | sticker | — | 947×701 |
+| Wooden Signboard | sticker | — | 1024×380 |
+| Gold Laurel Frame | badge | — | 782×713 |
+
+Two things this kit needed that the first did not:
+
+- **The zip writer.** `writeZip` is thirty lines of `zlib.deflateRawSync` and hand-written local
+  headers, because the reader in `assetStore.ts` is hand-written too and a pack we author should not
+  need a dependency the app does not have.
+- **`trimBorder`.** One backdrop came back from the generator with a flat paper margin, which on a
+  page reads as a white frame around the picture. Backdrops are otherwise left edge to edge; this
+  trims the margin before the resize and nothing else.
+
+The picker's footer carries a **Get the Eco & Fiesta kit (.zip)** link next to *Import a .zip pack*,
+so the file is one click from the place it gets used. Nothing is hotlinked and nothing is fetched at
+runtime: the zip is a static file beside the pack it builds.
 
 ### Cutting the white out
 

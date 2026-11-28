@@ -1052,10 +1052,12 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     },
     stroke: { width: 6, color: '#fffbeb' },
     heavyStroke: true,
-    castShadow: { dx: 0, dy: 4, blur: 10, color: 'rgba(6, 78, 59, 0.22)' },
+    // Deeper than the other sage tones: the arched header sits over a sunlit window in the nook
+    // poster, and a 0.22 shadow dissolves into that wall instead of lifting the letters off it.
+    castShadow: { dx: 0, dy: 4, blur: 10, color: 'rgba(6, 78, 59, 0.38)' },
     // A reading-corner header wants the gentle smile, and it belongs to the *style*: arch it here
     // and every page that uses it agrees, with the Curve control still free to override.
-    arc: 0.12,
+    arc: 0.11,
     shadows: [],
   },
   'storytime-banner': {

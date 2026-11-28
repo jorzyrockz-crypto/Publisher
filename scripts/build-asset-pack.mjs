@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * Builds the shipped Storybook & Reading Corner asset pack.
+ * Builds the asset packs this repo authors: the Storybook & Reading Corner kit (shipped unpacked as
+ * the built-in pack) and the Eco-Campaign & Fiesta Awards kit (shipped as a `.zip` you import).
  *
  * Source art lives in `.pack-src/<id>.png` (generated, not committed). This turns each piece into
  * the two sizes the picker needs — a 160px thumb and a full-size WebP — and writes the pack's
@@ -15,24 +16,21 @@
  * (connected only — an owl's glasses or a book's pages stay white) and the result is trimmed to its
  * ink. Backdrops are kept as painted, edge to edge.
  *
- * Requires ImageMagick (`convert`) on PATH. Run: npm run pack:storybook
+ * Requires ImageMagick (`convert`) on PATH.
+ *
+ *   npm run pack:storybook      # built-in kit → public/asset-packs/storybook-reading-v1/
+ *   npm run pack:eco            # eco kit → .pack-dist/ + public/asset-packs/eco-fiesta-v1.zip
+ *   npm run pack:all            # both
  */
 import { execFileSync } from 'node:child_process';
+import zlib from 'node:zlib';
 import fs from 'node:fs';
 import path from 'node:path';
 
 const ROOT = process.cwd();
-const SRC = path.join(ROOT, '.pack-src');
-const OUT = path.join(ROOT, 'public', 'asset-packs', 'storybook-reading-v1');
-
-const PACK = {
-  packId: 'storybook-reading-v1',
-  name: 'Storybook & Reading Corner',
-  version: '1.1.0',
-};
 
 /** `slot` is an addition to the published schema: a hint for where a frame wants to land. */
-const ASSETS = [
+const STORYBOOK_ASSETS = [
   {
     id: 'bg-enchanted-forest',
     label: 'Enchanted Forest Clearing',
@@ -202,6 +200,137 @@ const ASSETS = [
   },
 ];
 
+/** The eco kit: campaign backdrops on the one hand, fiesta and award pieces on the other. */
+const ECO_ASSETS = [
+  {
+    id: 'bg-eco-hills',
+    label: 'Tropical Hills & Valley',
+    layer: 'backdrop',
+    tags: ['eco', 'hills', 'valley', 'nature', 'campaign'],
+    cutout: false,
+  },
+  {
+    id: 'bg-fiesta-stage',
+    label: 'Fiesta Night Lights',
+    layer: 'backdrop',
+    tags: ['fiesta', 'night', 'bokeh', 'award', 'celebration'],
+    cutout: false,
+  },
+  {
+    id: 'bg-mangrove-river',
+    label: 'Mangrove River',
+    layer: 'backdrop',
+    tags: ['mangrove', 'river', 'water', 'eco', 'nature'],
+    cutout: false,
+    // The art came back with a paper margin; on a page it reads as a white frame.
+    trimBorder: true,
+  },
+  {
+    id: 'frame-tropical-leaves',
+    label: 'Tropical Leaf Corners',
+    layer: 'frame',
+    tags: ['tropical', 'leaves', 'corner', 'frame', 'blossom'],
+    cutout: true,
+    slot: 'corner',
+    // The leaves cover the corners themselves, so there is no corner to flood from.
+    scanPockets: { cell: 16, min: 80 },
+  },
+  {
+    id: 'frame-fiesta-bunting',
+    label: 'Fiesta Banderitas',
+    layer: 'frame',
+    tags: ['bunting', 'banderitas', 'fiesta', 'garland', 'top'],
+    cutout: true,
+    slot: 'top',
+  },
+  {
+    id: 'frame-soil-sprouts',
+    label: 'Soil & Seedlings Strip',
+    layer: 'frame',
+    tags: ['soil', 'sprouts', 'seedling', 'bottom', 'eco'],
+    cutout: true,
+    slot: 'bottom',
+    scanPockets: { cell: 16, min: 60 },
+  },
+  {
+    id: 'sticker-planting-kids',
+    label: 'Planting Together',
+    layer: 'sticker',
+    tags: ['kids', 'students', 'planting', 'eco', 'tree'],
+    cutout: true,
+    // Paper trapped between the two children, behind the seedling. Their white uniform shirts are
+    // separate blobs, so seeding the middle clears the background and leaves the polo shirts alone.
+    clearSeeds: [
+      [0.426, 0.669],
+      [0.42, 0.5],
+      [0.44, 0.8],
+      [0.45, 0.3],
+      [0.5, 0.38],
+      [0.48, 0.4],
+      [0.52, 0.36],
+    ],
+  },
+  {
+    id: 'sticker-nipa-hut',
+    label: 'Bahay Kubo',
+    layer: 'sticker',
+    tags: ['hut', 'bahay kubo', 'bamboo', 'fiesta', 'village'],
+    cutout: true,
+    scanPockets: { cell: 16, min: 70 },
+  },
+  {
+    id: 'sticker-wood-plank',
+    label: 'Wooden Signboard',
+    layer: 'sticker',
+    tags: ['plank', 'wood', 'sign', 'blank', 'label'],
+    cutout: true,
+  },
+  {
+    id: 'sticker-gold-laurel',
+    label: 'Gold Laurel Frame',
+    layer: 'badge',
+    tags: ['laurel', 'gold', 'award', 'wreath', 'badge'],
+    cutout: true,
+    // The wreath is a ring: the circle inside it is background, and it is enclosed.
+    clearSeeds: [
+      [0.5, 0.5],
+      [0.5, 0.42],
+      [0.5, 0.58],
+    ],
+  },
+];
+
+/**
+ * Two packs, one builder.
+ *
+ * The storybook kit ships unpacked under `public/asset-packs/` because it is the built-in pack the
+ * app fetches piece by piece. The eco kit ships as a `.zip` under `public/asset-packs/`, is built
+ * into `.pack-dist/` on the way, and reaches the app the same way any user's pack does — through
+ * the import button. Two delivery routes, one set of rules, so a pack we author cannot be a
+ * different kind of thing from a pack a teacher authors.
+ */
+const PACKS = [
+  {
+    packId: 'storybook-reading-v1',
+    name: 'Storybook & Reading Corner',
+    version: '1.1.0',
+    src: '.pack-src',
+    out: 'public/asset-packs/storybook-reading-v1',
+    zip: null,
+    assets: STORYBOOK_ASSETS,
+  },
+  {
+    packId: 'eco-fiesta-v1',
+    name: 'Eco-Campaign & Fiesta Awards',
+    version: '1.0.0',
+    src: '.pack-src-eco',
+    out: '.pack-dist/eco-fiesta-v1',
+    zip: 'public/asset-packs/eco-fiesta-v1.zip',
+    assets: ECO_ASSETS,
+  },
+];
+
+
 const run = (args) => execFileSync('convert', args, { stdio: ['ignore', 'pipe', 'pipe'] });
 const size = (file) => {
   const [w, h] = execFileSync('identify', ['-format', '%w %h', file]).toString().trim().split(' ').map(Number);
@@ -254,7 +383,7 @@ function measureWhiteSeeds(imgFile, { cell = 40, min = 600 } = {}) {
  */
 function cutout(srcFile, dstFile, clearSeeds = [], scanPockets = null, knockout = 0) {
   const flood = (point) => ['-fill', 'none', '-floodfill', point, 'white'];
-  const work = path.join(OUT, `.cutout-${path.basename(dstFile, '.webp')}.png`);
+  const work = path.join(path.dirname(dstFile), `.cutout-${path.basename(dstFile, '.webp')}.png`);
 
   // Pass 1 — the background: flood the corner, trim what is left.
   run([srcFile, '-alpha', 'set', '-fuzz', '12%', ...flood('+0+0'), ...flood('+0+0'), '-trim', '+repage', work]);
@@ -319,43 +448,134 @@ function cutout(srcFile, dstFile, clearSeeds = [], scanPockets = null, knockout 
   fs.rmSync(work, { force: true });
 }
 
-function paint(srcFile, dstFile) {
-  run([srcFile, '-resize', '1400x1400>', '-strip', '-quality', '86', dstFile]);
+/**
+ * A backdrop keeps its paint edge to edge. `trimBorder` is for the one case where the generator put a
+ * flat paper margin around the picture: left alone it becomes a white frame on the poster.
+ */
+function paint(srcFile, dstFile, trimBorder = false) {
+  run([
+    srcFile,
+    ...(trimBorder ? ['-fuzz', '8%', '-trim', '+repage'] : []),
+    '-resize', '1400x1400>',
+    '-strip',
+    '-quality', '86',
+    dstFile,
+  ]);
 }
 
 function thumb(srcFile, dstFile) {
   run([srcFile, '-resize', '160x160', '-strip', '-quality', '72', dstFile]);
 }
 
-function main() {
-  if (!fs.existsSync(SRC)) {
-    console.error(`No source art in ${path.relative(ROOT, SRC)}/ — nothing to build.`);
-    process.exit(1);
-  }
-  fs.mkdirSync(path.join(OUT, 'thumbs'), { recursive: true });
-  fs.mkdirSync(path.join(OUT, 'full'), { recursive: true });
+/**
+ * Writes a DEFLATE zip with no dependency — the mirror image of the reader in
+ * `src/utils/assetStore.ts`, which walks exactly this structure back out.
+ */
+function writeZip(zipFile, packDir, entries) {
+  const crcTable = (() => {
+    const table = new Int32Array(256);
+    for (let i = 0; i < 256; i += 1) {
+      let c = i;
+      for (let k = 0; k < 8; k += 1) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+      table[i] = c;
+    }
+    return table;
+  })();
+  const crc32 = (buf) => {
+    let c = -1;
+    for (const byte of buf) c = crcTable[(c ^ byte) & 0xff] ^ (c >>> 8);
+    return (c ^ -1) >>> 0;
+  };
 
-  // PACK_ONLY=frame-side-ivy,sticker-wooden-sign re-cuts just those pieces and rewrites the whole
-  // manifest from whatever is already on disk — the full run is minutes once the scanners kick in.
-  const only = (process.env.PACK_ONLY ?? '')
-    .split(',')
-    .map((id) => id.trim())
-    .filter(Boolean);
+  const locals = [];
+  const central = [];
+  let offset = 0;
+  for (const name of entries) {
+    const raw = fs.readFileSync(path.join(packDir, name));
+    const deflated = zlib.deflateRawSync(raw, { level: 9 });
+    const useDeflate = deflated.length < raw.length;
+    const body = useDeflate ? deflated : raw;
+    const nameBytes = Buffer.from(name, 'utf8');
+    const crc = crc32(raw);
+
+    const local = Buffer.alloc(30);
+    local.writeUInt32LE(0x04034b50, 0);
+    local.writeUInt16LE(20, 4);
+    local.writeUInt16LE(0x0800, 6);
+    local.writeUInt16LE(useDeflate ? 8 : 0, 8);
+    local.writeUInt16LE(0, 10);
+    local.writeUInt16LE(0x21, 12);
+    local.writeUInt32LE(crc, 14);
+    local.writeUInt32LE(body.length, 18);
+    local.writeUInt32LE(raw.length, 22);
+    local.writeUInt16LE(nameBytes.length, 26);
+    local.writeUInt16LE(0, 28);
+    locals.push(local, nameBytes, body);
+
+    const entry = Buffer.alloc(46);
+    entry.writeUInt32LE(0x02014b50, 0);
+    entry.writeUInt16LE(20, 4);
+    entry.writeUInt16LE(20, 6);
+    entry.writeUInt16LE(0x0800, 8);
+    entry.writeUInt16LE(useDeflate ? 8 : 0, 10);
+    entry.writeUInt16LE(0, 12);
+    entry.writeUInt16LE(0x21, 14);
+    entry.writeUInt32LE(crc, 16);
+    entry.writeUInt32LE(body.length, 20);
+    entry.writeUInt32LE(raw.length, 24);
+    entry.writeUInt16LE(nameBytes.length, 28);
+    entry.writeUInt16LE(0, 30);
+    entry.writeUInt16LE(0, 32);
+    entry.writeUInt16LE(0, 34);
+    entry.writeUInt16LE(0, 36);
+    entry.writeUInt32LE(0, 38);
+    entry.writeUInt32LE(offset, 42);
+    central.push(entry, nameBytes);
+
+    offset += local.length + nameBytes.length + body.length;
+  }
+
+  const centralBytes = Buffer.concat(central);
+  const end = Buffer.alloc(22);
+  end.writeUInt32LE(0x06054b50, 0);
+  end.writeUInt16LE(0, 4);
+  end.writeUInt16LE(0, 6);
+  end.writeUInt16LE(entries.length, 8);
+  end.writeUInt16LE(entries.length, 10);
+  end.writeUInt32LE(centralBytes.length, 12);
+  end.writeUInt32LE(offset, 16);
+  end.writeUInt16LE(0, 20);
+
+  fs.mkdirSync(path.dirname(zipFile), { recursive: true });
+  fs.writeFileSync(zipFile, Buffer.concat([...locals, centralBytes, end]));
+  return fs.statSync(zipFile).size;
+}
+
+function buildPack(pack, only) {
+  const src = path.join(ROOT, pack.src);
+  const out = path.join(ROOT, pack.out);
+  if (!fs.existsSync(src)) {
+    console.log(`${pack.packId}: no source art in ${pack.src}/ — skipped`);
+    return;
+  }
+  fs.mkdirSync(path.join(out, 'thumbs'), { recursive: true });
+  fs.mkdirSync(path.join(out, 'full'), { recursive: true });
+
   const assets = [];
   const missing = [];
 
-  for (const asset of ASSETS) {
-    const srcFile = path.join(SRC, `${asset.id}.png`);
+  for (const asset of pack.assets) {
+    const srcFile = path.join(src, `${asset.id}.png`);
     if (!fs.existsSync(srcFile)) {
       missing.push(asset.id);
       continue;
     }
-    const fullAbs = path.join(OUT, 'full', `${asset.id}.webp`);
-    const thumbAbs = path.join(OUT, 'thumbs', `${asset.id}.webp`);
+    const fullAbs = path.join(out, 'full', `${asset.id}.webp`);
+    const thumbAbs = path.join(out, 'thumbs', `${asset.id}.webp`);
     const rebuild = only.length === 0 || only.includes(asset.id);
     if (rebuild) {
       if (asset.cutout) cutout(srcFile, fullAbs, asset.clearSeeds, asset.scanPockets, asset.knockout);
-      else paint(srcFile, fullAbs);
+      else paint(srcFile, fullAbs, asset.trimBorder);
       thumb(fullAbs, thumbAbs);
     } else if (!fs.existsSync(fullAbs) || !fs.existsSync(thumbAbs)) {
       missing.push(asset.id);
@@ -375,20 +595,46 @@ function main() {
       height,
     });
     console.log(
-      `${asset.id.padEnd(24)} ${asset.layer.padEnd(8)} ${String(width).padStart(4)}x${String(height).padEnd(4)}`,
+      `${asset.id.padEnd(26)} ${asset.layer.padEnd(8)} ${String(width).padStart(4)}x${String(height).padEnd(4)}`,
       `${(fs.statSync(fullAbs).size / 1024).toFixed(0)} kB`
     );
   }
 
-  const manifest = { ...PACK, assets };
-  fs.writeFileSync(path.join(OUT, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
+  const manifest = { packId: pack.packId, name: pack.name, version: pack.version, assets };
+  const manifestText = `${JSON.stringify(manifest, null, 2)}\n`;
+  fs.writeFileSync(path.join(out, 'manifest.json'), manifestText);
 
   const bytes = assets.reduce(
-    (sum, a) => sum + fs.statSync(path.join(OUT, a.full)).size + fs.statSync(path.join(OUT, a.thumb)).size,
+    (sum, a) => sum + fs.statSync(path.join(out, a.full)).size + fs.statSync(path.join(out, a.thumb)).size,
     0
   );
-  console.log(`\n${assets.length} assets, ${(bytes / 1024 / 1024).toFixed(2)} MB total`);
+  console.log(`\n${pack.packId} ${pack.version}: ${assets.length} assets, ${(bytes / 1024 / 1024).toFixed(2)} MB`);
+
+  if (pack.zip) {
+    const entries = ['manifest.json'];
+    for (const asset of assets) entries.push(asset.thumb, asset.full);
+    const zipBytes = writeZip(path.join(ROOT, pack.zip), out, entries);
+    console.log(`packed ${pack.zip} — ${(zipBytes / 1024 / 1024).toFixed(2)} MB`);
+  }
   if (missing.length) console.log(`still to generate: ${missing.join(', ')}`);
+}
+
+function main() {
+  // PACK_ONLY=frame-side-ivy,sticker-wooden-sign re-cuts just those pieces and rewrites the whole
+  // manifest from whatever is already on disk — the full run is minutes once the scanners kick in.
+  const only = (process.env.PACK_ONLY ?? '')
+    .split(',')
+    .map((id) => id.trim())
+    .filter(Boolean);
+  const wanted = process.argv.slice(2).filter((arg) => !arg.startsWith('-'));
+  const packs = wanted.length ? PACKS.filter((pack) => wanted.includes(pack.packId)) : PACKS;
+  if (!packs.length) {
+    console.error(`Unknown pack. Try: ${PACKS.map((p) => p.packId).join(', ')}`);
+    process.exit(1);
+  }
+  for (const pack of packs) {
+    buildPack(pack, only);
+  }
 }
 
 main();

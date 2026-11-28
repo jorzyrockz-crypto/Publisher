@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertCircle, Box, Download, Layers, Search, Trash2 } from 'lucide-react';
+import { AlertCircle, Box, Download, Layers, Package, Search, Trash2 } from 'lucide-react';
 import { usePublisher } from '../../context/PublisherContext';
 import {
   AssetPackError,
@@ -373,6 +373,17 @@ export const AssetPackPanel: React.FC<{ embedded?: boolean }> = ({ embedded = fa
             }}
           />
         </label>
+        {/* Our other kit ships as a zip rather than as a built-in: it is proof that the import
+            route is not a second-class citizen, and it is the file to hand someone who wants a pack
+            to copy from. */}
+        <a
+          href="./asset-packs/eco-fiesta-v1.zip"
+          download="eco-fiesta-v1.zip"
+          className="flex w-full items-center justify-center gap-2 rounded-tile border border-dashed border-line-soft px-3 py-2 text-meta font-medium text-ink-muted transition hover:border-accent hover:text-accent"
+        >
+          <Package size={13} />
+          <span>Get the Eco &amp; Fiesta kit (.zip)</span>
+        </a>
         <p className="px-1 text-[10px] leading-snug text-ink-faint">
           A pack is a folder with a manifest.json plus thumbs and full-size artwork. Imported packs
           are stored on this device and keep working offline.

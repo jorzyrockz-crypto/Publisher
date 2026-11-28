@@ -26,3 +26,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Source art for the eco kit and the unpacked build of any zip-only pack
+.pack-src-eco
+.pack-dist
