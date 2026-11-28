@@ -19,8 +19,9 @@
  * Requires ImageMagick (`convert`) on PATH.
  *
  *   npm run pack:storybook      # built-in kit → public/asset-packs/storybook-reading-v1/
+ *   npm run pack:underwater     # reef kit → public/asset-packs/champs-underwater-v1/
  *   npm run pack:eco            # eco kit → .pack-dist/ + public/asset-packs/eco-fiesta-v1.zip
- *   npm run pack:all            # both
+ *   npm run pack:all            # all three
  */
 import { execFileSync } from 'node:child_process';
 import zlib from 'node:zlib';
@@ -383,6 +384,86 @@ const ECO_ASSETS = [
  * is what you hand someone who wants a pack to copy, and what proves the import route is not a
  * second-class citizen. Both come out of one table, so the two can never disagree.
  */
+/**
+ * Underwater Reading Reef (`champs-underwater-v1`) — the second kit we author as a built-in pack.
+ *
+ * Same rule as the storybook table: the pack's manifest is generated from this list, so a piece that
+ * was asked for and never drawn shows up as a missing row rather than as a dead tile in picker.
+ */
+const CHAMPS_UNDERWATER_ASSETS = [
+  {
+    id: 'bg-underwater-cove',
+    label: 'Sunlit Coral Cove',
+    layer: 'backdrop',
+    tags: ['underwater', 'ocean', 'coral', 'sunbeam', 'cover'],
+    cutout: false,
+  },
+  {
+    id: 'bg-coral-word-wall',
+    label: 'Coral Word Wall',
+    layer: 'backdrop',
+    tags: ['coral', 'word wall', 'vocabulary', 'ocean'],
+    cutout: false,
+  },
+  {
+    id: 'frame-ocean-top',
+    label: 'Bubbles & Kelp Arch',
+    layer: 'frame',
+    tags: ['bubbles', 'kelp', 'arch', 'top', 'frame', 'ocean'],
+    cutout: true,
+    slot: 'top',
+  },
+  {
+    id: 'frame-coral-bottom',
+    label: 'Sandy Reef Strip',
+    layer: 'frame',
+    tags: ['sand', 'coral', 'shell', 'bottom', 'frame', 'reef'],
+    cutout: true,
+    slot: 'bottom',
+  },
+  {
+    id: 'sticker-reading-turtle',
+    label: 'Reading Sea Turtle',
+    layer: 'sticker',
+    tags: ['turtle', 'book', 'reading', 'ocean'],
+    cutout: true,
+    scanPockets: { cell: 16, min: 80 },
+  },
+  {
+    id: 'sticker-book-whale',
+    label: 'Book-Balancing Baby Whale',
+    layer: 'sticker',
+    tags: ['whale', 'books', 'sea', 'sparkle'],
+    cutout: true,
+    scanPockets: { cell: 16, min: 80 },
+  },
+  {
+    id: 'sticker-octopus-audio',
+    label: 'Underwater Audio Station',
+    layer: 'sticker',
+    tags: ['octopus', 'audio', 'headphones', 'listening'],
+    cutout: true,
+    scanPockets: { cell: 16, min: 80 },
+  },
+  {
+    id: 'sticker-kids-sub',
+    label: 'Reading Submarine',
+    layer: 'sticker',
+    tags: ['children', 'submarine', 'filipino', 'reading'],
+    cutout: true,
+    scanPockets: { cell: 16, min: 80 },
+  },
+  {
+    // Id says frame, layer says sticker: it is a set of cards to write on, not an edge to hang.
+    // Its white centres are left alone for exactly that reason.
+    id: 'frame-bubble-cards',
+    label: 'Bubble & Shell Word Cards',
+    layer: 'sticker',
+    tags: ['word card', 'bubble', 'shell', 'vocabulary', 'blank'],
+    cutout: true,
+  },
+];
+
 const PACKS = [
   {
     packId: 'storybook-reading-v1',
@@ -397,6 +478,15 @@ const PACKS = [
       ...ECO_ASSETS.map((asset) => ({ ...asset, src: '.pack-src-eco' })),
       ...CHAMPS_ASSETS,
     ],
+  },
+  {
+    packId: 'champs-underwater-v1',
+    name: 'Underwater Reading Reef',
+    version: '1.0.0',
+    src: '.pack-src',
+    out: 'public/asset-packs/champs-underwater-v1',
+    zip: null,
+    assets: CHAMPS_UNDERWATER_ASSETS,
   },
   {
     packId: 'eco-fiesta-v1',

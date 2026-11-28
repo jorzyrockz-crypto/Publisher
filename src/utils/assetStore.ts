@@ -64,7 +64,18 @@ const DB_VERSION = 1;
 const PACKS = 'packs';
 const BLOBS = 'blobs';
 
-/** The kit that ships with the app, built by `npm run pack:storybook`. */
+/**
+ * Kits that ship with the app, in the order the picker offers them. Each is a folder under
+ * `public/asset-packs/` written by `npm run pack:<name>`, so a new kit is a row here plus a build —
+ * never a second code path. A folder that is missing from a build is skipped quietly: a teacher on
+ * a trimmed deploy should get fewer packs, not an error.
+ */
+export const BUILTIN_PACKS: { packId: string; baseUrl: string }[] = [
+  { packId: 'storybook-reading-v1', baseUrl: './asset-packs/storybook-reading-v1/' },
+  { packId: 'champs-underwater-v1', baseUrl: './asset-packs/champs-underwater-v1/' },
+];
+
+/** The starter kit — the one every other read path falls back to. */
 export const BUILTIN_PACK_BASE = './asset-packs/storybook-reading-v1/';
 
 /**
@@ -405,25 +416,34 @@ export async function getAssetDataUrl(
 
 /* ------------------------------------------------------------------ the built-in pack */
 
-export async function fetchBuiltinPack(): Promise<PackSummary | null> {
-  try {
-    const res = await fetch(`${BUILTIN_PACK_BASE}manifest.json`, { cache: 'no-cache' });
-    if (!res.ok) return null;
-    const manifest = parseManifest(await res.json());
-    return { ...manifest, source: 'builtin', baseUrl: BUILTIN_PACK_BASE };
-  } catch {
-    // A build without the folder is a build without the starter kit, not an error the user caused.
-    return null;
-  }
+export async function fetchBuiltinPacks(): Promise<PackSummary[]> {
+  const packs = await Promise.all(
+    BUILTIN_PACKS.map(async ({ baseUrl }): Promise<PackSummary | null> => {
+      try {
+        const res = await fetch(`${baseUrl}manifest.json`, { cache: 'no-cache' });
+        if (!res.ok) return null;
+        const manifest = parseManifest(await res.json());
+        return { ...manifest, source: 'builtin', baseUrl };
+      } catch {
+        return null;
+      }
+    })
+  );
+  return packs.filter((pack): pack is PackSummary => pack !== null);
 }
 
-/** The built-in kit first, then everything the user imported. */
+/** The starter kit on its own, for callers that only need the first pack. */
+export async function fetchBuiltinPack(): Promise<PackSummary | null> {
+  return (await fetchBuiltinPacks())[0] ?? null;
+}
+
+/** The built-in kits first, then everything the user imported. */
 export async function listAssetPacks(): Promise<PackSummary[]> {
   const [builtin, installed] = await Promise.all([
-    fetchBuiltinPack(),
+    fetchBuiltinPacks(),
     listInstalledPacks().catch(() => [] as PackSummary[]),
   ]);
-  return builtin ? [builtin, ...installed] : installed;
+  return [...builtin, ...installed];
 }
 
 /* ------------------------------------------------------------------ zip import */

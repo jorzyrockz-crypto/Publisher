@@ -191,6 +191,36 @@ generate" line. The script prints anything missing rather than writing a manifes
 rewrites the whole manifest from what is already on disk — worth knowing, because a scanned piece
 takes a few seconds and a full rebuild of every cutout is closer to half a minute.
 
+### The second built-in kit: Underwater Reading Reef
+
+`public/asset-packs/champs-underwater-v1/` — **Underwater Reading Reef, v1.0.0, 9 pieces, 1.1 MB**,
+built by **`npm run pack:underwater`** from the `CHAMPS_UNDERWATER_ASSETS` table:
+
+| piece | layer | slot | size |
+|---|---|---|---|
+| Sunlit Coral Cove | backdrop | — | 896×1200 |
+| Coral Word Wall | backdrop | — | 896×1200 |
+| Bubbles & Kelp Arch | frame | top | 1024×316 |
+| Sandy Reef Strip | frame | bottom | 1024×226 |
+| Reading Sea Turtle | sticker | — | 556×631 |
+| Book-Balancing Baby Whale | sticker | — | 546×675 |
+| Underwater Audio Station | sticker | — | 693×645 |
+| Reading Submarine | sticker | — | 951×694 |
+| Bubble & Shell Word Cards | sticker | — | 1024×348 |
+
+It is a **second built-in pack, not a bigger first one** — `BUILTIN_PACKS` in `assetStore.ts` is a
+table of folders, and the picker lists them as chips, so each kit's manifest and thumbnails are only
+touched when it is selected. That is what keeps adding art cheap: 37 pieces and 9 pieces cost the
+picker one manifest each, where a single 46-piece kit would make every "All" tab pay for both.
+
+Two deliberate cuts in that table:
+
+- **The word cards keep their white centres** (`frame-bubble-cards` has no `scanPockets`). They are
+  pieces of paper to write on; clearing the white would put the writing area on the page colour.
+  The id says `frame-` because the card set was drawn with the frames, but its layer is `sticker`.
+- **The kelp arch is a frame with `slot: 'top'`**, so "apply to page" hangs it across the header
+  instead of stretching it edge to edge like a backdrop.
+
 ### The sample pack, and the zip it ships in
 
 `public/asset-packs/eco-fiesta-v1.zip` — **Eco-Campaign & Fiesta Awards, v1.0.0, 10 pieces,
