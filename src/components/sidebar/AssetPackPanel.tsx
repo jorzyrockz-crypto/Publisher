@@ -3,6 +3,9 @@ import { AlertCircle, Box, Download, Layers, Package, Search, Trash2 } from 'luc
 import { usePublisher } from '../../context/PublisherContext';
 import {
   AssetPackError,
+  FEATURED_PACK_ID,
+  FEATURED_PACK_NAME,
+  FEATURED_PACK_ZIP,
   filterAssets,
   getAssetDataUrl,
   getAssetUrl,
@@ -45,6 +48,7 @@ export const AssetPackPanel: React.FC<{ embedded?: boolean }> = ({ embedded = fa
   const [query, setQuery] = useState('');
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
+  const [addingKit, setAddingKit] = useState(false);
   const [notice, setNotice] = useState<{ kind: 'error' | 'info'; text: string } | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
 
@@ -172,6 +176,49 @@ export const AssetPackPanel: React.FC<{ embedded?: boolean }> = ({ embedded = fa
     },
     [activePack, addImage, activePage]
   );
+
+  const kitInstalled = packs.some((pack) => pack.packId === FEATURED_PACK_ID);
+
+  /**
+   * The bundled second kit, installed from the panel. It used to be a plain `download` link: the
+   * file landed in Downloads, nothing changed on screen, and the reader was left to find the import
+   * button and locate the zip themselves. A control that only works if you already know the next
+   * step is not a control, so this fetches the same bytes and installs them where it stands.
+   */
+  const addFeaturedKit = useCallback(async () => {
+    setNotice(null);
+    if (kitInstalled) {
+      setActivePackId(FEATURED_PACK_ID);
+      setLayer('all');
+      setQuery('');
+      setNotice({ kind: 'info', text: `“${FEATURED_PACK_NAME}” is already installed — opened it.` });
+      return;
+    }
+    setAddingKit(true);
+    try {
+      const response = await fetch(FEATURED_PACK_ZIP, { cache: 'no-cache' });
+      if (!response.ok) throw new Error(`${response.status}`);
+      const pack = await importAssetPackZip(await response.blob());
+      await refresh();
+      setActivePackId(pack.packId);
+      setLayer('all');
+      setQuery('');
+      setNotice({
+        kind: 'info',
+        text: `Added “${pack.name}” — ${pack.assets.length} pieces, stored on this device.`,
+      });
+    } catch (err) {
+      setNotice({
+        kind: 'error',
+        text:
+          err instanceof AssetPackError
+            ? err.message
+            : `“${FEATURED_PACK_NAME}” could not be downloaded — save the .zip and import it instead.`,
+      });
+    } finally {
+      setAddingKit(false);
+    }
+  }, [kitInstalled, refresh]);
 
   const onImport = useCallback(
     async (file: File | undefined) => {
@@ -374,15 +421,29 @@ export const AssetPackPanel: React.FC<{ embedded?: boolean }> = ({ embedded = fa
           />
         </label>
         {/* Our other kit ships as a zip rather than as a built-in: it is proof that the import
-            route is not a second-class citizen, and it is the file to hand someone who wants a pack
-            to copy from. */}
-        <a
-          href="./asset-packs/eco-fiesta-v1.zip"
-          download="eco-fiesta-v1.zip"
-          className="flex w-full items-center justify-center gap-2 rounded-tile border border-dashed border-line-soft px-3 py-2 text-meta font-medium text-ink-muted transition hover:border-accent hover:text-accent"
+            route is not a second-class citizen. Clicking adds it; the file itself stays one small
+            link away, for anyone who wants a pack to copy from. */}
+        <button
+          type="button"
+          onClick={() => void addFeaturedKit()}
+          disabled={addingKit}
+          className="flex w-full items-center justify-center gap-2 rounded-tile border border-dashed border-line-soft px-3 py-2 text-meta font-medium text-ink-muted transition hover:border-accent hover:text-accent disabled:opacity-60"
         >
           <Package size={13} />
-          <span>Get the Eco &amp; Fiesta kit (.zip)</span>
+          <span>
+            {addingKit
+              ? 'Adding the Eco & Fiesta kit…'
+              : kitInstalled
+                ? 'Open the Eco & Fiesta kit'
+                : 'Add the Eco & Fiesta kit'}
+          </span>
+        </button>
+        <a
+          href={FEATURED_PACK_ZIP}
+          download="eco-fiesta-v1.zip"
+          className="block w-full text-center text-[10px] leading-snug text-ink-faint underline decoration-dotted hover:text-accent"
+        >
+          or save eco-fiesta-v1.zip
         </a>
         <p className="px-1 text-[10px] leading-snug text-ink-faint">
           A pack is a folder with a manifest.json plus thumbs and full-size artwork. Imported packs

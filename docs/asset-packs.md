@@ -154,9 +154,17 @@ Two things this kit needed that the first did not:
   page reads as a white frame around the picture. Backdrops are otherwise left edge to edge; this
   trims the margin before the resize and nothing else.
 
-The picker's footer carries a **Get the Eco & Fiesta kit (.zip)** link next to *Import a .zip pack*,
-so the file is one click from the place it gets used. Nothing is hotlinked and nothing is fetched at
-runtime: the zip is a static file beside the pack it builds.
+The picker's footer carries **Add the Eco & Fiesta kit** next to *Import a .zip pack*, and it
+installs rather than downloads: it fetches `asset-packs/eco-fiesta-v1.zip` from the same origin,
+runs it through `importAssetPackZip` and switches the panel to the new kit with a count in the
+notice. The second click reads *Open the Eco & Fiesta kit*. A small `or save eco-fiesta-v1.zip` link
+below it still hands over the file itself, for anyone who wants a pack to copy from.
+
+That shape came from using it: as a plain `download` link the button dropped a zip in the Downloads
+folder, changed nothing on screen, and left the reader to find the import control and locate the
+file — a control that only works if you already know the next step. Nothing is hotlinked and nothing
+is fetched from a third party: the zip is a static file beside the pack it builds, and a second
+install of it replaces the first instead of listing the kit twice.
 
 ### Cutting the white out
 

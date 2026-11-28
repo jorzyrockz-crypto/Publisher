@@ -59,6 +59,15 @@ const BLOBS = 'blobs';
 /** The kit that ships with the app, built by `npm run pack:storybook`. */
 export const BUILTIN_PACK_BASE = './asset-packs/storybook-reading-v1/';
 
+/**
+ * The second kit we author, built by `npm run pack:eco` and shipped as a zip rather than as a second
+ * built-in — so it reaches the app through the same door a user's pack does. The picker installs it
+ * in one click; the same file is what you hand someone who wants a pack to copy from.
+ */
+export const FEATURED_PACK_ZIP = './asset-packs/eco-fiesta-v1.zip';
+export const FEATURED_PACK_ID = 'eco-fiesta-v1';
+export const FEATURED_PACK_NAME = 'Eco-Campaign & Fiesta Awards';
+
 const LAYERS: AssetLayer[] = ['backdrop', 'frame', 'sticker', 'badge'];
 const SLOTS: FrameSlot[] = ['top', 'bottom', 'left', 'right', 'corner'];
 
