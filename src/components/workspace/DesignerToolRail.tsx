@@ -10,6 +10,8 @@ import { DesignerViewPanel } from './DesignerViewPanel';
 import { DesignerSettingsPanel } from './DesignerSettingsPanel';
 import { DesignerVisualsPanel } from './DesignerVisualsPanel';
 import { DesignerMediaPanel } from './DesignerMediaPanel';
+import { TextControlsPanel } from '../canvas/TextControlsPanel';
+import { TEXT_CONTROL_TITLES, type TextControlSection } from '../../constants/textControls';
 import {
   clearUploads,
   deleteUpload,
@@ -45,6 +47,8 @@ import {
   Grid,
   Magnet,
 } from 'lucide-react';
+
+const TEXT_PANEL_TITLE: Record<TextControlSection, string> = TEXT_CONTROL_TITLES;
 
 type DesignerDrawerTab =
   | 'edit'
@@ -86,6 +90,8 @@ export const DesignerToolRail: React.FC = () => {
     setRightPanelTab,
     setIsLeftPanelOpen,
     setToolMode,
+    textControlSection,
+    closeTextControl,
   } = usePublisher();
 
   const [activeDrawer, setActiveDrawer] = useState<DesignerDrawerTab>('text');
@@ -97,12 +103,24 @@ export const DesignerToolRail: React.FC = () => {
     typeof window !== 'undefined' ? window.innerWidth >= 1024 : true
   );
 
+  /**
+   * The bar's font and colour chips open here, in the edit sidebar beside the toolbar.
+   *
+   * Derived, not synchronised: asking for a panel *is* a drawer that is open on the Edit
+   * pane, so there is no state to set in an effect and nothing to get out of step. Closing
+   * the section returns the drawer to whatever it was showing before.
+   */
+  const sectionOpen = Boolean(textControlSection);
+  const pane: DesignerDrawerTab = sectionOpen ? 'edit' : activeDrawer;
+  const drawerVisible = drawerOpen || sectionOpen;
+
   // Sync Layers drawer with isLeftPanelOpen when toggling from elsewhere
   useEffect(() => {
-    setIsLeftPanelOpen(drawerOpen && activeDrawer === 'layers');
-  }, [drawerOpen, activeDrawer, setIsLeftPanelOpen]);
+    setIsLeftPanelOpen(drawerVisible && pane === 'layers');
+  }, [drawerVisible, pane, setIsLeftPanelOpen]);
 
   const handleSelectRailTab = (tab: DesignerDrawerTab) => {
+    closeTextControl();
     if (drawerOpen && activeDrawer === tab) {
       setDrawerOpen(false);
       return;
@@ -202,21 +220,21 @@ export const DesignerToolRail: React.FC = () => {
       : 'w-[268px]';
 
   const drawerTitle =
-    activeDrawer === 'edit'
+    pane === 'edit'
       ? 'Page & Design'
-      : activeDrawer === 'text'
+      : pane === 'text'
       ? 'Text editing'
-      : activeDrawer === 'media'
+      : pane === 'media'
       ? 'My media'
-      : activeDrawer === 'visuals'
+      : pane === 'visuals'
       ? 'Add visuals'
-      : activeDrawer === 'collage'
+      : pane === 'collage'
       ? 'Collage'
-      : activeDrawer === 'stock'
+      : pane === 'stock'
       ? 'Stock art'
-      : activeDrawer === 'brand'
+      : pane === 'brand'
       ? 'Brand Studio'
-      : activeDrawer === 'view'
+      : pane === 'view'
       ? 'View & Display'
       : 'Settings';
 
@@ -268,9 +286,9 @@ export const DesignerToolRail: React.FC = () => {
       </aside>
 
       {/* 2. Single Expandable Left Studio Drawer */}
-      {drawerOpen && (
+      {drawerVisible && (
         <div className="h-full flex items-stretch relative">
-          {activeDrawer === 'layers' ? (
+          {pane === 'layers' ? (
             <div className="h-full flex">
               <PageThumbnails />
             </div>
@@ -278,32 +296,51 @@ export const DesignerToolRail: React.FC = () => {
             <div
               className={`${drawerWidthClass} h-full bg-white border-r border-[#e5e9ee] flex flex-col overflow-hidden`}
             >
-              {activeDrawer !== 'stock' && (
+              {pane !== 'stock' && (
                 <div className="px-3.5 py-3 border-b border-[#e5e9ee] flex items-center justify-between flex-shrink-0">
-                  <h2 className="text-xs font-semibold text-[#161a22]">{drawerTitle}</h2>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    {textControlSection && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // Closing the section returns to the Edit pane rather than
+                          // taking the drawer down with it.
+                          setDrawerOpen(true);
+                          closeTextControl();
+                        }}
+                        aria-label="Back to the edit panel"
+                        className="w-6 h-6 flex items-center justify-center rounded-full text-[#4a5661] hover:bg-[#f4f2ff] hover:text-[#5c4bb8] transition cursor-pointer flex-shrink-0"
+                      >
+                        <ChevronLeft size={15} />
+                      </button>
+                    )}
+                    <h2 className="text-xs font-semibold text-[#161a22] truncate">
+                      {textControlSection ? TEXT_PANEL_TITLE[textControlSection] : drawerTitle}
+                    </h2>
+                  </div>
                 </div>
               )}
 
-              {activeDrawer === 'brand' ? (
+              {pane === 'brand' ? (
                 <DesignerBrandPanel />
-              ) : activeDrawer === 'view' ? (
+              ) : pane === 'view' ? (
                 <DesignerViewPanel />
-              ) : activeDrawer === 'settings' ? (
+              ) : pane === 'settings' ? (
                 <DesignerSettingsPanel />
-              ) : activeDrawer === 'visuals' ? (
+              ) : pane === 'visuals' ? (
                 <DesignerVisualsPanel onOpenMyMedia={() => setActiveDrawer('media')} />
-              ) : activeDrawer === 'collage' ? (
+              ) : pane === 'collage' ? (
                 <React.Suspense
                   fallback={<div className="p-3 text-meta text-ink-muted">Loading collage…</div>}
                 >
                   <DesignerCollagePanel />
                 </React.Suspense>
-              ) : activeDrawer === 'stock' ? (
+              ) : pane === 'stock' ? (
                 /* All sources, filters, key bar, paging and credits, untouched. The rail
                    hides its own drawer header here: the panel brings an inspector-style
                    one, and two stacked titles is noise. */
                 <StockArtPanel embedded />
-              ) : activeDrawer === 'media' ? (
+              ) : pane === 'media' ? (
                 <DesignerMediaPanel
                   uploads={uploads}
                   onFiles={handleUploadFiles}
@@ -315,9 +352,13 @@ export const DesignerToolRail: React.FC = () => {
                   onOpenStock={() => setActiveDrawer('stock')}
                   notice={uploadNotice}
                 />
+              ) : textControlSection ? (
+                <div className="flex-1 overflow-y-auto p-3">
+                  <TextControlsPanel variant="pane" />
+                </div>
               ) : (
                 <div className="flex-1 overflow-y-auto p-3 space-y-4">
-                  {activeDrawer === 'edit' && (
+                  {pane === 'edit' && (
                     <>
                       <div className="space-y-2">
                         <p className="text-[11px] font-semibold text-[#4a5661]">Page &amp; Canvas</p>
@@ -460,7 +501,7 @@ export const DesignerToolRail: React.FC = () => {
                     </>
                   )}
 
-                  {activeDrawer === 'text' && (
+                  {pane === 'text' && (
                     <>
                       <div className="space-y-1.5">
                         <button

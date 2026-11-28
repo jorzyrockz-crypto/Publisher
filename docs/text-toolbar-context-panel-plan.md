@@ -88,9 +88,15 @@ selection — the bar falls back to the generic one, the same way a collage does
 
 ### 2.4 The panel (`src/components/canvas/TextControlsPanel.tsx`)
 
-Rendered at the top of the inspector, immediately above the existing Typography card, in
-exactly the slot `CollageControlsPanel` occupies — the inspector already renders in both
-workspaces, so one panel serves both modes.
+**In Designer it opens in the edit sidebar** — the drawer beside the toolbar, in the pane the
+rail already calls Edit. That is the surface attached to the bar, and it is where a font list
+belongs: it has the full height of the window and it is right next to the chips that opened it.
+The drawer's header becomes the panel's header (back chevron + title), and the back chevron
+returns to the pane you were on.
+
+**In Publisher there is no drawer**, so the same component renders in the inspector above the
+Typography card. One component, two destinations, chosen by `workspaceMode` in
+`openTextControl`; the panel itself does not know the difference.
 
 Shell reused from the collage panel: title + section chips (so you can switch Type ↔ Colour
 without going back to the bar) + close (×). Body switches on the section.
@@ -229,6 +235,9 @@ Built against the two reference panels: **Fonts** (back chevron, search, categor
 
 What differs from the plan as written:
 
+- **The drawer is the Designer destination.** The plan said inspector for both modes; the
+  reference panels are left flyouts attached to the bar, and the drawer is this app's version of
+  that. Publisher keeps the inspector, since it has no drawer to put it in.
 - **No section chips inside the panel.** The references use a back chevron and one panel at a
   time, so that is what shipped: `TEXT_CONTROL_TITLES` names the panel, the chevron closes the
   section. Switching sections means going back to the bar's other chip, which is one click

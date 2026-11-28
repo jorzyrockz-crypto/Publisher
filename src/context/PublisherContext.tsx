@@ -684,12 +684,19 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setIsRightPanelOpen(true);
     setRightPanelTab('inspector');
   }, []);
-  const openTextControl = useCallback((section: TextControlSection) => {
-    setTextControlSection(section);
-    setCollageControlSection(null);
-    setIsRightPanelOpen(true);
-    setRightPanelTab('inspector');
-  }, []);
+  const openTextControl = useCallback(
+    (section: TextControlSection) => {
+      setTextControlSection(section);
+      setCollageControlSection(null);
+      // Designer has an edit sidebar beside the toolbar, and that is where a font list
+      // belongs; Publisher has no drawer, so there the inspector is the destination.
+      if (workspaceMode !== 'designer') {
+        setIsRightPanelOpen(true);
+        setRightPanelTab('inspector');
+      }
+    },
+    [workspaceMode]
+  );
   const closeTextControl = useCallback(() => setTextControlSection(null), []);
   const closeCollageControl = useCallback(() => setCollageControlSection(null), []);
 

@@ -75,7 +75,7 @@ const PanelHeader: React.FC<{ title: string; onBack: () => void }> = ({ title, o
  * need room, a search box and a scrollbar, and a floating pill has none of those. This panel
  * is that room — one section at a time, the same way the collage bar hands off to its panel.
  */
-export const TextControlsPanel: React.FC = () => {
+export const TextControlsPanel: React.FC<{ variant?: 'card' | 'pane' }> = ({ variant = 'card' }) => {
   const {
     textControlSection,
     closeTextControl,
@@ -188,9 +188,15 @@ export const TextControlsPanel: React.FC = () => {
   return (
     <div
       ref={rootRef}
-      className="rounded-[10px] border border-[#d3c9f9] bg-[#faf8ff] p-2.5 space-y-2.5"
+      className={
+        variant === 'card'
+          ? 'rounded-[10px] border border-[#d3c9f9] bg-[#faf8ff] p-2.5 space-y-2.5'
+          : 'space-y-2.5'
+      }
     >
-      <PanelHeader title={TEXT_CONTROL_TITLES[section]} onBack={closeTextControl} />
+      {variant === 'card' && (
+        <PanelHeader title={TEXT_CONTROL_TITLES[section]} onBack={closeTextControl} />
+      )}
 
       {section === 'type' && (
         <>
