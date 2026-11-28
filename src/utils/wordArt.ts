@@ -901,38 +901,49 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   },
   'cartoon-bubble-blue': {
     weight: '900',
+    // Sky to royal: a bright top edge and a deep foot, the way a printed sign is lit from above.
     gradient: {
       angle: 180,
       stops: [
-        { offset: 0, color: '#b9e2ff' },
-        { offset: 0.16, color: '#4aa3ff' },
-        { offset: 0.5, color: '#1c72e8' },
-        { offset: 0.84, color: '#0c47a8' },
-        { offset: 1, color: '#082f76' },
+        { offset: 0, color: '#7dd3fc' },
+        { offset: 0.18, color: '#38bdf8' },
+        { offset: 0.55, color: '#0284c7' },
+        { offset: 1, color: '#1d4ed8' },
       ],
     },
-    stroke: { width: 9, color: '#ffffff' },
+    // 6 px at the 72 px reference — half of it shows past the glyph edge, so 6 px of white — and a
+    // near-black ring rather than navy: the reference sign's outer line is ink, not a tint of the
+    // fill, and a tint reads as a soft edge at banner size.
+    stroke: { width: 6, color: '#ffffff' },
     heavyStroke: true,
-    outline: { width: 4, color: '#0b2f6e' },
-    castShadow: { dx: 0, dy: 6, blur: 12, color: 'rgba(9, 38, 94, 0.35)' },
+    outline: { width: 3.5, color: '#18181b' },
+    // A two-step dark lip under the face. Small and hard: it is the thickness of a die-cut sticker,
+    // not a 3D block.
+    extrusion: { steps: 2, dx: 0, dy: 1.5, startColor: '#18181b', endColor: '#18181b' },
+    castShadow: { dx: 0, dy: 5, blur: 8, color: 'rgba(15, 23, 42, 0.35)' },
+    // The gentle classroom-banner smile. Belongs to the style, so a template gets it for free and an
+    // element's own `textCurve` still overrides it.
+    arc: 0.08,
     shadows: [],
   },
   'cartoon-bubble-pink': {
     weight: '900',
+    // Candy to magenta, lit the same way as the blue so a pair of signs reads as a pair.
     gradient: {
       angle: 180,
       stops: [
-        { offset: 0, color: '#ffd1e8' },
-        { offset: 0.16, color: '#ff5fae' },
-        { offset: 0.5, color: '#ea1a84' },
-        { offset: 0.84, color: '#b00a5a' },
-        { offset: 1, color: '#7d0740' },
+        { offset: 0, color: '#fbcfe8' },
+        { offset: 0.18, color: '#f472b6' },
+        { offset: 0.55, color: '#ec4899' },
+        { offset: 1, color: '#be185d' },
       ],
     },
-    stroke: { width: 9, color: '#ffffff' },
+    stroke: { width: 6, color: '#ffffff' },
     heavyStroke: true,
-    outline: { width: 4, color: '#7a0b46' },
-    castShadow: { dx: 0, dy: 6, blur: 12, color: 'rgba(96, 6, 52, 0.35)' },
+    outline: { width: 3.5, color: '#18181b' },
+    extrusion: { steps: 2, dx: 0, dy: 1.5, startColor: '#18181b', endColor: '#18181b' },
+    castShadow: { dx: 0, dy: 5, blur: 8, color: 'rgba(15, 23, 42, 0.35)' },
+    arc: 0.08,
     shadows: [],
   },
   'sticker-teal': {

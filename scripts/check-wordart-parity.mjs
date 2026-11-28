@@ -266,20 +266,40 @@ for (const style of WORD_ART_STYLES) {
 }
 console.log(`${audited} styles audited through the canvas painter`);
 
-// 8. The bubble sign is the reference case for the keyline and the rim.
+// 8. The bubble sign is the reference case for the keyline and the rim. Read the numbers off the
+//    spec, not out of the test: these are a designer's dials, and a test pinned to 0.25em would go
+//    red the day somebody tunes the rim rather than when something breaks.
 const bubble = wordArtSpec('cartoon-bubble-blue');
+const bubblePaint = wordArtPaint('cartoon-bubble-blue');
+const bubbleRimEm = Math.round((wordArtRimWidth(bubble) / 72) * 1000) / 1000;
+const strokeColour = bubble.stroke.color.toLowerCase();
 const rimAt = (fontSize) => {
   const { calls } = runStyle('cartoon-bubble-blue', { fontSize });
-  return calls.find((c) => c.mode === 'stroke' && String(c.style).toLowerCase() === '#ffffff')?.width;
+  return calls.find((c) => c.mode === 'stroke' && String(c.style).toLowerCase() === strokeColour)?.width;
 };
 check('canvas rim is the heavy width at the reference size', rimAt(72) === wordArtRimWidth(bubble), String(rimAt(72)));
 check('canvas rim grows with the type', rimAt(144) === wordArtRimWidth(bubble) * 2, String(rimAt(144)));
-check('canvas rim matches the DOM em at a big title', Math.abs((rimAt(138) ?? 0) - 0.25 * 138) < 0.001, String(rimAt(138)));
+check(
+  // The stylesheet writes the em to three decimals so the file can be checked in and diffed; the
+  // canvas multiplies the unrounded ratio. A tenth of a pixel apart at a 138 px title is the same
+  // rim, and the alternative is a stylesheet full of 0.16666666666666666em.
+  'canvas rim matches the DOM em at a big title',
+  Math.abs((rimAt(138) ?? 0) - bubbleRimEm * 138) < 0.1,
+  `${rimAt(138)} vs ${bubbleRimEm * 138}`
+);
 const { calls: bubbleCalls } = runStyle('cartoon-bubble-blue', {});
 check(
   'the keyline is stroked in its own colour',
-  bubbleCalls.some((c) => c.mode === 'stroke' && String(c.style) === '#0b2f6e')
+  bubbleCalls.some((c) => c.mode === 'stroke' && String(c.style).toLowerCase() === bubblePaint.outline.color.toLowerCase()),
+  bubblePaint.outline.color
 );
+// The lip: two steps of the same offset, which the CSS chain compounds into 1.5 and 3.0.
+check(
+  'the bubble sign has a two-step dark lip',
+  bubblePaint.extrusion?.steps === 2 && bubblePaint.extrusion.dy === 1.5,
+  JSON.stringify(bubblePaint.extrusion)
+);
+check('the bubble sign carries its own arc', (bubble.arc ?? 0) > 0, String(bubble.arc));
 
 console.log(failures === 0 ? 'ALL CHECKS PASSED' : `${failures} FAILURES`);
 process.exitCode = failures === 0 ? 0 : 1;

@@ -18,8 +18,8 @@ Six styles close that gap, and two small features make them behave.
 | `brush-sunshine` | Sunshine Brush Swipe | navy → ink gradient on a ragged `#facc15` swipe |
 | `brush-blush` | Pastel Blush Ribbon | rose → wine gradient on a `#fbcfe8` swipe, arched 0.12 |
 | `pill-highlight` | Pastel Pill Highlight | indigo ink on a pastel pill |
-| `cartoon-bubble-blue` | Bubble Sign Blue | sky → royal → navy ramp, 9px white die-cut, 4px navy keyline |
-| `cartoon-bubble-pink` | Bubble Sign Pink | blush → magenta → wine ramp, 9px white die-cut, 4px wine keyline |
+| `cartoon-bubble-blue` | Bubble Sign Blue | sky → royal ramp, 6px white die-cut, 3.5px ink keyline, 2-step dark lip, **arc 0.08** |
+| `cartoon-bubble-pink` | Bubble Sign Pink | candy → magenta ramp, 6px white die-cut, 3.5px ink keyline, 2-step dark lip, **arc 0.08** |
 
 All six go through the existing `PAINT` table, so the gallery, the inspector, the DOM painter and
 the canvas exporter pick them up with no new plumbing. `npm run wordart:css` regenerates the
@@ -543,3 +543,21 @@ spec (`steps × the step`) when it decides how much room a text box needs.
 `npm run check:wordart-parity` runs all 52 painted styles through the canvas default painter and fails
 if any stroke falls back to the context default, any pass is drawn off its anchor, any blur fails to
 scale with the multiplier, or any extrusion lists running totals instead of steps.
+
+### The bubble sign, refined
+
+Both sign styles were tuned a second time, against the printed cartoon sign rather than against the
+first attempt:
+
+| dial | before | now | why |
+|---|---|---|---|
+| rim | 9 px (18 heavy) | 6 px (12 heavy) | a die-cut that reads at tile size without closing up Baloo's counters |
+| keyline | 4 px navy / wine | 3.5 px `#18181b` | the outer line on a printed sign is ink, not a tint of the fill; a tint reads as a soft edge at banner size |
+| ramp | 5 stops, pale sky → navy | 4 stops, `#7dd3fc`→`#38bdf8`→`#0284c7`→`#1d4ed8` | bright top, royal foot — a sign lit from above, not a metal |
+| depth | none | 2-step `#18181b` lip at 1.5 px + cast shadow `0 5 8` | the thickness of a sticker, not a 3D block |
+| arc | flat | 0.08 | the classroom-banner smile, owned by the style so a template gets it free (an element's `textCurve` still overrides) |
+
+The lip is two drop-shadows of *one step* each, which the CSS chain compounds into 1.5 px and 3.0 px —
+the same depth the canvas paints, for the same reason the extrusion fix exists.
+
+Sample render (ImageMagick approximation, real Fredoka, 168 pt): `.arena/banner/wordart-bubble.png`.
