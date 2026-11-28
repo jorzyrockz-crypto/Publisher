@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "check:tarpapel": "node --experimental-strip-types --no-warnings scripts/check-tarpapel.mjs",
+    "check:home": "node scripts/check-home.mjs",
     "check:wordart": "node --experimental-strip-types --no-warnings scripts/check-wordart-fonts.mjs",
     "check:wordart-parity": "node --experimental-strip-types --no-warnings --import ./scripts/ts-resolve.mjs scripts/check-wordart-parity.mjs",
     "check:textbox": "node --experimental-strip-types --no-warnings --import ./scripts/ts-resolve.mjs scripts/check-textbox-growth.mjs",

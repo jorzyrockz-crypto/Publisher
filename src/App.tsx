@@ -12,6 +12,7 @@ import { StockArtPanel } from './components/sidebar/StockArtPanel';
 import { AssetPackPanel } from './components/sidebar/AssetPackPanel';
 import { StatusBar } from './components/statusbar/StatusBar';
 import { CinematicSplashScreen } from './components/common/CinematicSplashScreen';
+import { HomeScreen } from './components/home/HomeScreen';
 // Heavy overlay dialogs are code-split so the initial bundle only ships the
 // editor shell (ribbon + canvas + sidebar). Each chunk loads on first open.
 const BackstageModal = React.lazy(() =>
@@ -44,6 +45,7 @@ const ShortcutsModal = React.lazy(() =>
 
 export const AppContent: React.FC = () => {
   const {
+    view,
     workspaceMode,
     isLeftPanelOpen,
     isRightPanelOpen,
@@ -146,33 +148,53 @@ export const AppContent: React.FC = () => {
   return (
     <div className="flex flex-col w-screen h-screen overflow-hidden bg-[#edf0f3] text-[#161a22] font-sans">
       <CinematicSplashScreen />
-      {/* 1. Office Ribbon (Publisher) or Clean Top Bar (Designer) */}
-      {workspaceMode === 'designer' ? <QuickAccessToolbar /> : <Ribbon />}
 
-      {/* 2. Main Work Area: Tool Rail + Drawer (Designer) or Thumbnails + Canvas + Inspector */}
-      <div className="flex flex-1 w-full min-h-0 overflow-hidden relative">
-        {workspaceMode === 'designer' ? <DesignerToolRail /> : <PageThumbnails />}
-        <CanvasArea />
-        {hasNarrowDrawerOpen && (
-          <div
-            onClick={() => {
-              setIsLeftPanelOpen(false);
-              setIsRightPanelOpen(false);
-              setIsStockArtPanelOpen(false);
-              setIsAssetPackPanelOpen(false);
-            }}
-            className="absolute inset-0 bg-[#15232d]/25 backdrop-blur-[1px] z-25 transition-opacity"
-            aria-hidden="true"
-          />
-        )}
-        {workspaceMode !== 'designer' && !isAssetPackPanelOpen && <StockArtPanel />}
-        {workspaceMode !== 'designer' && isAssetPackPanelOpen && <AssetPackPanel />}
-        <PropertiesPanel />
-      </div>
+      {/*
+        Home is the landing view; the editor is only mounted once you are in it.
 
-      {/* 3. Excel-Style Bottom Sheet Tabs & Status Bar */}
-      <DocumentTabsBar />
-      <StatusBar />
+        It is mounted rather than hidden on purpose. The canvas listens for keys on `window`, so a
+        display:none editor would still be deleting elements while you typed in the Home search,
+        and its first-mount auto-fit gives up after 60 frames of being 0×0. Nothing is lost by
+        leaving it out: the document, the tabs, the zoom, the selection and the open panels all live
+        in the context, which is what "keep the current document in state" actually needs.
+      */}
+      {view === 'editor' && (
+        <div className="flex flex-col flex-1 w-full min-h-0">
+          {/* 1. Office Ribbon (Publisher) or Clean Top Bar (Designer) */}
+          {workspaceMode === 'designer' ? <QuickAccessToolbar /> : <Ribbon />}
+
+          {/* 2. Main Work Area: Tool Rail + Drawer (Designer) or Thumbnails + Canvas + Inspector */}
+          <div className="flex flex-1 w-full min-h-0 overflow-hidden relative">
+            {workspaceMode === 'designer' ? <DesignerToolRail /> : <PageThumbnails />}
+            <CanvasArea />
+            {hasNarrowDrawerOpen && (
+              <div
+                onClick={() => {
+                  setIsLeftPanelOpen(false);
+                  setIsRightPanelOpen(false);
+                  setIsStockArtPanelOpen(false);
+                  setIsAssetPackPanelOpen(false);
+                }}
+                className="absolute inset-0 bg-[#15232d]/25 backdrop-blur-[1px] z-25 transition-opacity"
+                aria-hidden="true"
+              />
+            )}
+            {workspaceMode !== 'designer' && !isAssetPackPanelOpen && <StockArtPanel />}
+            {workspaceMode !== 'designer' && isAssetPackPanelOpen && <AssetPackPanel />}
+            <PropertiesPanel />
+          </div>
+
+          {/* 3. Excel-Style Bottom Sheet Tabs & Status Bar */}
+          <DocumentTabsBar />
+          <StatusBar />
+        </div>
+      )}
+
+      {view === 'home' && (
+        <div className="flex flex-1 w-full min-h-0">
+          <HomeScreen />
+        </div>
+      )}
 
       {/* 4. Full-screen & Overlay Modals (lazy — loaded on first open) */}
       <Suspense fallback={null}>

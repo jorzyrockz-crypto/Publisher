@@ -507,4 +507,22 @@ export interface HistoryState {
 }
 
 /** Sections available in the File (Backstage) view. */
-export type BackstageSection = 'info' | 'new' | 'open' | 'save' | 'print' | 'export';
+/**
+ * The File (Backstage) sections. `new` used to live here — the template gallery — but starting a
+ * document is now the Home screen's job, so File is only about the document you already have.
+ */
+export type BackstageSection = 'info' | 'open' | 'save' | 'print' | 'export';
+
+/**
+ * Where the app is. `home` is the landing screen (templates, recents, kits); `editor` is the
+ * document workspace. The document itself never lives here — switching views only changes which
+ * shell is on screen, which is what lets you leave a half-finished page and come back to it.
+ */
+export type AppView = 'home' | 'editor';
+
+/**
+ * The four Home destinations. They are shared state rather than local state because other parts of
+ * the app deep-link into them — the ribbon's Templates button lands on `templates`, and the Story
+ * Kits tile in the editor lands on `kits`.
+ */
+export type HomeSection = 'home' | 'templates' | 'projects' | 'kits';

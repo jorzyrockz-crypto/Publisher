@@ -18,6 +18,7 @@ import {
   Moon,
   PenTool,
   LayoutGrid,
+  FileText,
 } from 'lucide-react';
 
 export const QuickAccessToolbar: React.FC = () => {
@@ -43,6 +44,7 @@ export const QuickAccessToolbar: React.FC = () => {
     setIsWordArtModalOpen,
     setIsTarpapelModalOpen,
     openBackstage,
+    openHome,
   } = usePublisher();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -122,16 +124,26 @@ export const QuickAccessToolbar: React.FC = () => {
     >
       {/* Left: Brand Emblem, Title, Document Name & Ghost Quick Actions */}
       <div className="flex items-center gap-2 min-w-0">
-        {/* Brand Emblem + Publisher Studio (opens Backstage / File) */}
+        {/* Brand Emblem + name — the way back to Home, the way out of a document. */}
         <button
-          onClick={() => setIsBackstageOpen(true)}
+          onClick={() => openHome()}
           className="flex items-center gap-2.5 px-1.5 py-1 -ml-1.5 rounded-[8px] hover:bg-[#f4f2ff] transition-colors group cursor-pointer"
-          title="Open File & Templates (Backstage)"
+          title="StudioPress Home — templates, kits and saved designs"
         >
           <StudioPressLogo size={26} />
           <span className="font-semibold text-[12.5px] tracking-[-0.01em] text-[#161a22] group-hover:text-[#5c4bb8] whitespace-nowrap">
             Publisher Studio
           </span>
+        </button>
+
+        {/* File — Save As, Print, Export and Info now live here and only here. */}
+        <button
+          onClick={() => setIsBackstageOpen(true)}
+          className="flex items-center gap-1 px-2 py-1 rounded-[8px] text-[11.5px] font-semibold text-[#4a5661] hover:bg-[#f4f2ff] hover:text-[#5c4bb8] transition-colors cursor-pointer"
+          title="File — Save As, Print, Export, Info"
+        >
+          <FileText size={14} />
+          <span>File</span>
         </button>
 
         <div className="w-[1px] h-4 bg-[#e5e9ee] mx-0.5 flex-shrink-0" />

@@ -1,6 +1,7 @@
 import { DocumentProject, Page, PublisherElement } from '../types/publisher';
 import { renderPageModelToCanvas } from './canvasRenderer';
 import { resolveMasterElementsForProject } from './printUtils';
+import { recordRecentDesign } from './recentDesigns';
 
 export async function exportToImage(
   page: Page,
@@ -32,6 +33,9 @@ export async function exportToImage(
 }
 
 export function saveProjectToFile(project: DocumentProject): void {
+  // The download is the file; this copy is what makes the Home screen able to offer the document
+  // back. Fire-and-forget: a cache that cannot be written must never fail a save.
+  void recordRecentDesign(project);
   const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');

@@ -35,7 +35,7 @@ export const DocumentTabsBar: React.FC = () => {
     duplicateWorkspaceTab,
     moveWorkspaceTab,
     setWorkspaceTabColor,
-    openBackstage,
+    openHome,
   } = usePublisher();
 
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
@@ -243,7 +243,7 @@ export const DocumentTabsBar: React.FC = () => {
       {/* Right: Templates Shortcut */}
       <button
         type="button"
-        onClick={() => openBackstage('new')}
+        onClick={() => openHome('templates')}
         className="h-5 px-2 rounded bg-white/80 hover:bg-white border border-slate-300/80 text-[10px] font-semibold text-slate-700 hover:text-[#5c4bb8] flex items-center gap-1 transition flex-shrink-0 cursor-pointer"
         title="Open Templates Gallery or Saved Files"
       >

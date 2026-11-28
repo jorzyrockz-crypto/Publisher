@@ -8,14 +8,22 @@ An authentic, modern, desktop-grade clone of **Microsoft Publisher** built with 
 
 ## 🌟 Key Features
 
+### 0. Home Screen (default view)
+- **The app opens on Home, not on a blank page**: a navigation rail, a search-first hero, a Recent Designs strip and a visual template grid. See `docs/home-screen.md`.
+- **Create a Design** popover: Blank A4, Tarpapel 3×2, Landscape Banner or a custom size — a tarpapel canvas arrives with its 3 × 2 print grid already set.
+- **Recent Designs**: every save keeps a copy in IndexedDB (with a page-1 thumbnail) so it can be reopened from the strip or from My Projects.
+- **Resume Editing** in the Home top bar returns to the exact document you left; the editor is unmounted while Home is on screen, so nothing is lost and nothing intercepts your typing.
+- **Story Kits** shelf: the asset packs with their artwork, plus one-click `.zip` import and removal.
+- The gallery is one scrollable category row plus a `Portrait / Landscape / Tiled` filter over a responsive four-column grid, with hairline cards, sheet badges and a hover `Use Template`.
+
 ### 1. Authentic Office Ribbon Interface
 - **Publisher-style chrome**: the ribbon, Quick Access Toolbar and Backstage view follow Microsoft Publisher's layout, while the accent palette is StudioPress "Iris" violet (see §6) rather than Publisher green.
 - **Quick Access Toolbar**: Instant Save (.pub), Undo/Redo, Export to PDF, and Print buttons.
 - **Ribbon Tabs**:
-  - **FILE**: Fullscreen Backstage View (New, Open, Save As, Export, Print, Info).
+  - **FILE**: Fullscreen Backstage View (Open, Save, Save As, Export, Print, Info). Starting a document is Home's job now, so the File menu is only about the one you already have.
   - **HOME**: Clipboard, Font styling, Paragraph formatting, Object insertion, and Z-Order arrangement.
   - **INSERT**: Pages, Tables (with visual grid picker), Pictures, Shapes, Dividers, WordArt, and Publisher Building Blocks.
-  - **PAGE DESIGN**: Template gallery, Margins, Orientations (Portrait / Landscape), Page Sizes, Office Color Schemes, Background colors, and Snap toggles.
+  - **PAGE DESIGN**: Templates (opens Home ▸ Templates), Margins, Orientations (Portrait / Landscape), Page Sizes, Office Color Schemes, Background colors, and Snap toggles.
   - **MAILINGS**: Mail Merge wizard with recipient database, token replacement (`{{FirstName}}`, `{{Company}}`), and batch generation.
   - **VIEW**: Rulers, Guides, Gridlines toggles, and Zoom controls (100%, Fit to Page, +/- sliders).
 

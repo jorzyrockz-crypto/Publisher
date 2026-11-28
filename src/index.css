@@ -1744,3 +1744,118 @@ a[href] {
     min-height: 40px;
   }
 }
+
+/* ============================================================================
+   Home screen
+
+   The landing view: a navigation rail, a hero that carries the search, a recent
+   strip and a template grid. Everything here is written against the tokens
+   (`--sp-accent*`, `--sp-surface*`, `--sp-ink*`, `--sp-line*`), so `html.dark`
+   restyles the whole screen by redefining them — no second set of rules, and no
+   chance of a card that stays white on a dark ground.
+   ============================================================================ */
+
+/* The hero: the Iris accent blooming from the top-left into the surface, over a
+   faint tint of the soft accent. Two radial washes rather than a flat gradient,
+   because a linear ramp across a wide card bands on 8-bit displays. */
+.home-hero-wash {
+  background:
+    radial-gradient(
+      120% 170% at 6% -20%,
+      color-mix(in srgb, var(--sp-accent-from) 30%, transparent) 0%,
+      transparent 58%
+    ),
+    radial-gradient(
+      90% 150% at 95% -10%,
+      color-mix(in srgb, var(--sp-accent-focus) 22%, transparent) 0%,
+      transparent 55%
+    ),
+    linear-gradient(
+      112deg,
+      color-mix(in srgb, var(--sp-accent-soft) 82%, var(--sp-surface)) 0%,
+      var(--sp-surface) 66%
+    );
+}
+
+/* On dark the same washes would glow like a lamp, so they are halved and the
+   surface tint carries the colour instead. */
+html.dark .home-hero-wash {
+  background:
+    radial-gradient(
+      120% 170% at 6% -20%,
+      color-mix(in srgb, var(--sp-accent-from) 26%, transparent) 0%,
+      transparent 60%
+    ),
+    linear-gradient(
+      112deg,
+      color-mix(in srgb, var(--sp-accent-soft) 74%, var(--sp-surface)) 0%,
+      var(--sp-surface) 70%
+    );
+}
+
+/* A strip that scrolls without a scrollbar. The fade at each end is the
+   affordance; a 6px scrollbar under a row of pills is not. */
+.home-strip {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.home-strip::-webkit-scrollbar {
+  height: 0;
+  width: 0;
+}
+
+/* The category bar's ends fade instead of slicing a pill in half. */
+.home-fade-x {
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 20px,
+    #000 calc(100% - 20px),
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 20px,
+    #000 calc(100% - 20px),
+    transparent 100%
+  );
+}
+
+/* Home owns its scrolling: `body` is overflow:hidden for the canvas, so without
+   this a long gallery would scroll the document instead of the page area. */
+.home-scroll {
+  overscroll-behavior: contain;
+}
+
+/* A page on a sunken ground needs a hint of edge or it floats. */
+.home-paper-shadow {
+  box-shadow:
+    0 1px 2px #161a2214,
+    0 10px 26px #161a2212;
+}
+html.dark .home-paper-shadow {
+  box-shadow:
+    0 1px 2px #00000055,
+    0 12px 30px #00000066;
+}
+
+/* The card hover scrim.
+   Written as a class rather than `group-hover:opacity-100` on purpose: the
+   touch stylesheet above force-reveals anything matching that selector, and a
+   permanent dark scrim over every preview is not "helpful on a tablet" — the
+   whole card is already the tap target there. */
+.home-card-scrim {
+  opacity: 0;
+  transition: opacity 140ms ease;
+}
+.group:hover .home-card-scrim,
+.group:focus-within .home-card-scrim {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .home-card-scrim {
+    display: none;
+  }
+}
