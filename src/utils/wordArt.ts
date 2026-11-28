@@ -58,6 +58,15 @@ export const WORD_ART_STYLES: WordArtOption[] = [
     label: 'Pine Script Sticker',
     className: 'wordart-forest-script-sticker',
   },
+  // Fiesta and award: trophy metal, a fiesta spectrum, parchment script and a wood sign.
+  { id: 'trophy-gold', label: 'Award Trophy Gold', className: 'wordart-trophy-gold' },
+  { id: 'fiesta-mosaic', label: 'Fiesta Spectrum Sticker', className: 'wordart-fiesta-mosaic' },
+  {
+    id: 'parchment-script',
+    label: 'Parchment Brush Script',
+    className: 'wordart-parchment-script',
+  },
+  { id: 'folklore-wood', label: 'Folklore Wood Sign', className: 'wordart-folklore-wood' },
 ];
 
 const BY_ID = new Map<string, WordArtOption>(WORD_ART_STYLES.map((s) => [s.id, s]));
@@ -904,6 +913,77 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     castShadow: { dx: 0, dy: 3, blur: 8, color: 'rgba(0, 0, 0, 0.28)' },
     shadows: [],
   },
+  // ---- fiesta & award -------------------------------------------------------------------
+  // Trophy gold is the one place a horizon break is not "AI chrome": an award seal has a hard
+  // bronze reflection band, and the whole point is that the top half is lit.
+  'trophy-gold': {
+    weight: '900',
+    glints: true,
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#fffbeb' },
+        { offset: 0.28, color: '#fde047' },
+        { offset: 0.48, color: '#eab308' },
+        { offset: 0.51, color: '#92400e' },
+        { offset: 0.72, color: '#f59e0b' },
+        { offset: 0.9, color: '#fef08a' },
+        { offset: 1, color: '#ca8a04' },
+      ],
+    },
+    stroke: { width: 2.5, color: '#fef9c3' },
+    extrusion: { steps: 5, dx: 0.5, dy: 1.3, startColor: '#b45309', endColor: '#451a03' },
+    bloom: [{ blur: 16, color: 'rgba(250, 204, 21, 0.48)' }],
+    castShadow: { dx: 0, dy: 8, blur: 14, color: 'rgba(0, 0, 0, 0.65)' },
+    shadows: [],
+  },
+  // A horizontal sweep, not a vertical one: every letter gets its own fiesta hue, which is the
+  // only way a one-word headline can carry six colours without looking striped.
+  'fiesta-mosaic': {
+    weight: '900',
+    gradient: {
+      angle: 90,
+      stops: [
+        { offset: 0, color: '#dc2626' },
+        { offset: 0.22, color: '#eab308' },
+        { offset: 0.42, color: '#ea580c' },
+        { offset: 0.62, color: '#16a34a' },
+        { offset: 0.8, color: '#0d9488' },
+        { offset: 1, color: '#78350f' },
+      ],
+    },
+    stroke: { width: 7, color: '#ffffff' },
+    heavyStroke: true,
+    castShadow: { dx: 0, dy: 5, blur: 12, color: 'rgba(0, 0, 0, 0.4)' },
+    shadows: [],
+  },
+  'parchment-script': {
+    weight: '900',
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#18181b' },
+        { offset: 1, color: '#09090b' },
+      ],
+    },
+    backdrop: { type: 'brush-swipe', color: '#fef3c7', paddingX: 32, paddingY: 12 },
+    shadows: [],
+  },
+  'folklore-wood': {
+    weight: '900',
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#fffbeb' },
+        { offset: 0.65, color: '#fde68a' },
+        { offset: 1, color: '#f59e0b' },
+      ],
+    },
+    stroke: { width: 3.5, color: '#291002' },
+    castShadow: { dx: 0, dy: 4, blur: 6, color: 'rgba(0, 0, 0, 0.7)' },
+    backdrop: { type: 'wood-plank', color: '#78350f', paddingX: 44, paddingY: 14 },
+    shadows: [],
+  },
 };
 
 /** Paint instructions for a style, or undefined for plain text. */
@@ -1157,6 +1237,41 @@ export function wordArtSelfContained(style?: WordArtStyle): boolean {
   // sticker styles are white, so this only widens the rule to the eco styles.)
   if (paint.heavyStroke && paint.stroke.width >= 5) return true;
   return paint.stroke.width >= 4 && lum > 0.8;
+}
+
+/**
+ * Whether a style supplies its own contrast, so the colour pass must leave it alone.
+ *
+ * Wider than `wordArtSelfContained`, and used by a different question. `wordArtSelfContained` asks
+ * "is there a die-cut border", which also decides composability; this asks "will this line still be
+ * legible on any ground", which is what the enhancement pass needs to know:
+ *
+ * - a painted backdrop (swipe, plank, ribbon) *is* the ground, so pitch-black script on a dark scrim
+ *   still reads — it sits on its own cream swipe;
+ * - a rim heavy enough to be a border separates the letters from anything;
+ * - a gradient with a wide luminance range has structure inside the glyph itself: award gold runs
+ *   from near-white to bronze, so it never dissolves into a single background even though one of
+ *   its stops might match it.
+ */
+export function wordArtCarriesContrast(style?: WordArtStyle): boolean {
+  const paint = wordArtPaint(style);
+  if (!paint) return false;
+  if (wordArtSelfContained(style)) return true;
+  if (paint.backdrop) return true;
+
+  const luminance = (hex: string) => {
+    const clean = hex.replace('#', '');
+    if (clean.length !== 6) return 0.5;
+    const [r, g, b] = [0, 2, 4].map((i) => parseInt(clean.slice(i, i + 2), 16) / 255);
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const stops = paint.gradient
+    ? paint.gradient.stops.map((stop) => luminance(stop.color))
+    : paint.fill
+      ? [luminance(paint.fill)]
+      : [];
+  if (stops.length === 0) return false;
+  return Math.max(...stops) - Math.min(...stops) >= 0.55;
 }
 
 /** The curve to lay this element out with: the element's own, else the style's `arc`. */

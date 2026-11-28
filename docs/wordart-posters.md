@@ -141,6 +141,59 @@ loaded. The rule now also accepts a declared `heavyStroke` of 5px or more. The f
 are white, so nothing that already existed changes behaviour; the library score is identical
 (89.0 avg / 90 median / A 58 / B 15 / no C or D).
 
+## Fiesta and award: metal, spectrum, parchment and wood
+
+Four styles for an award night or a town fiesta.
+
+| id | label | look |
+|---|---|---|
+| `trophy-gold` | Award Trophy Gold | champagne→gold→**bronze break**→amber→cream ramp, 5-step bronze block, warm bloom, corner glints |
+| `fiesta-mosaic` | Fiesta Spectrum Sticker | six colours swept **horizontally**, 7px white die-cut rim |
+| `parchment-script` | Parchment Brush Script | near-black ink on a cream dry-brush swipe |
+| `folklore-wood` | Folklore Wood Sign | cream→amber type, espresso rim, on the sawn plank |
+
+Two of these lean on things that already existed, which is the point of a single spec: `fiesta-mosaic`
+is `angle: 90`, and both painters map that to a left-to-right sweep with no new code
+(`createAngledGradient` on canvas, `linear-gradient(90deg, …)` in CSS); `folklore-wood` reuses the
+`wood-plank` backdrop unchanged.
+
+`trophy-gold` is the one style where a hard horizon break is right rather than an "AI chrome" tell: an
+award seal *does* have a bronze reflection band, and the whole point is that the top half is lit. Its
+glints come from the same `wordArtGlints` anchors as `synth-chrome` — three sparkles, shared geometry,
+so the DOM and the export agree.
+
+**Declared width is what you see.** `fiesta-mosaic` declares a 7px rim and sets
+`heavyStroke: true`, so the generated stylesheet emits `-webkit-text-stroke: 14px` with the fill
+covering the inner half — 7px of white, on screen and in the PDF, exactly like the sticker styles.
+The sketch's hand-written rule said `7px` because CSS stroke is centred; pasting it would have given
+a 3.5px border.
+
+### The contrast pass needed a sharper question
+
+`trophy-gold` and `parchment-script` were being repainted to `cyber-acid` and `liquid-glass` the
+moment the template loaded. The old check asked "is there a die-cut border?" (`wordArtSelfContained`)
+— too narrow for both: black script on a dark scrim *is* legible because it sits on its own cream
+swipe, and award gold on parchment never dissolves because its ramp runs from near-white to bronze.
+
+`wordArtCarriesContrast` answers the question the pass actually has — "does this style supply its own
+ground?" — and is true when the style has a backdrop, a heavy rim, or a gradient whose luminance range
+is 0.55 or wider. `wordArtSelfContained` keeps its original, narrower meaning because composability
+depends on the border test, not this one. Library-wide the change is neutral to positive: 89.1 avg /
+90 median / A 60 / B 15, no new warnings.
+
+## The fiesta poster template
+
+`poster-fiesta-awards` (816×1056, **97 / A**, zero warnings) puts them on a page: the full-bleed
+street-dance photograph under a warm 34% scrim, BALETE sweeping six colours across the top, the
+competition in parchment script, **6th Best** in trophy gold on a parchment card (gold needs paper —
+a medal needs a sash), the troupe name on the plank, then date, time and footer at body scale.
+
+The first draft was a photo band over a parchment panel and scored **80**: photo plus scrim plus nine
+full-width boxes covered the page. The scorer's whitespace band tops out at 72%, and it was right —
+the page was crowded. Full-bleeding the photograph makes it a page background (excluded from
+coverage), a single local card gives the gold its ground, and the coverage lands inside the band.
+Nothing was made smaller to please the metric; one element moved, the ground changed.
+
 ## The eco poster template
 
 `poster-eco-champions` (816×1056, scores **91 / A**) puts the five styles on the page they were drawn

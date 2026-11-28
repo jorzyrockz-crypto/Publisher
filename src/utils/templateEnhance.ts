@@ -7,7 +7,7 @@ import type {
   TextElement,
 } from '../types/publisher';
 import type { TemplateCategory } from '../constants/templates';
-import { WORD_ART_STYLES, wordArtPaint, wordArtSelfContained } from './wordArt';
+import { WORD_ART_STYLES, wordArtCarriesContrast, wordArtPaint } from './wordArt';
 import type { WordArtStyle } from '../types/publisher';
 
 /**
@@ -363,7 +363,9 @@ function enhanceText(el: TextElement, page: Page, category: TemplateCategory, ta
     if (
       el.wordArtStyle &&
       el.wordArtStyle !== 'none' &&
-      !wordArtSelfContained(el.wordArtStyle) &&
+      // Not "does it have a border" but "does it supply its own ground" — a swipe or a wide gold
+      // ramp is contrast by construction, and repainting it destroys the artwork.
+      !wordArtCarriesContrast(el.wordArtStyle) &&
       contrastScore(el.wordArtStyle, bgLum) < MIN_CONTRAST
     ) {
       const better = wordArtChoice(el, category, page);

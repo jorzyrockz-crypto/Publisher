@@ -59,7 +59,11 @@ export type WordArtStyle =
   | 'eco-leaf'
   | 'wood-plank-action'
   | 'eco-ribbon'
-  | 'forest-script-sticker';
+  | 'forest-script-sticker'
+  | 'trophy-gold'
+  | 'fiesta-mosaic'
+  | 'parchment-script'
+  | 'folklore-wood';
 
 export type BorderArtStyle =
   | 'none'
