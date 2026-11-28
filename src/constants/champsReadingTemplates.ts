@@ -439,6 +439,12 @@ function readingLogHalf(x: number, w: number, top: number, rowsHeight: number): 
   );
   el.push(shape({ x, y: top, w, h: headerH, fill: '#f1f5f9', name: 'Log header band' }));
 
+  const dots = 3;
+  const dotD = 10;
+  const dotGap = 5;
+  const levelW = cuts[3] - cuts[2];
+  const dotsStartX = cuts[2] + Math.round((levelW - (dots * dotD + (dots - 1) * dotGap)) / 2);
+
   const headers = ['DATE', 'BOOK TITLE & AUTHOR', 'LEVEL', 'RATING', 'INITIALS'];
   headers.forEach((label, i) => {
     el.push(
@@ -457,6 +463,23 @@ function readingLogHalf(x: number, w: number, top: number, rowsHeight: number): 
     );
   });
 
+  // G / B / O sit exactly over the three dots beneath them, so the column needs no legend.
+  ['G', 'B', 'O'].forEach((letter, i) => {
+    el.push(
+      text({
+        x: dotsStartX + i * (dotD + dotGap) - 4,
+        y: top + headerH - 14,
+        w: dotD + 8,
+        h: 10,
+        text: letter,
+        size: 8,
+        weight: '600',
+        color: MUTED,
+        align: 'center',
+      })
+    );
+  });
+
   // Header rules and body rules, then the column rules across both.
   for (let r = 1; r <= 9; r += 1) {
     el.push(rule(x, Math.round(bodyTop + r * rowH), w, RULE));
@@ -465,8 +488,6 @@ function readingLogHalf(x: number, w: number, top: number, rowsHeight: number): 
     el.push(vRule(cuts[c], top, headerH + rowsHeight, RULE));
   }
 
-  const levelLeft = cuts[2];
-  const levelW = cuts[3] - cuts[2];
   const ratingLeft = cuts[3];
   const ratingW = cuts[4] - cuts[3];
 
@@ -476,13 +497,9 @@ function readingLogHalf(x: number, w: number, top: number, rowsHeight: number): 
     el.push(rule(cuts[1] + 4, rowY + Math.round(rowH * 0.62), cuts[2] - cuts[1] - 8, '#eef2f7'));
 
     // Three hollow level dots — G / B / O — to colour in, one per book.
-    const dots = 3;
-    const d = 10;
-    const gap = 5;
-    const startX = levelLeft + Math.round((levelW - (dots * d + (dots - 1) * gap)) / 2);
-    const dotY = rowY + Math.round(rowH / 2) - d / 2;
+    const dotY = rowY + Math.round(rowH / 2) - dotD / 2;
     for (let k = 0; k < dots; k += 1) {
-      el.push(circle(startX + k * (d + gap), dotY, d));
+      el.push(circle(dotsStartX + k * (dotD + dotGap), dotY, dotD));
     }
 
     el.push(
@@ -672,29 +689,56 @@ function circulationLogPage(): Page {
     { title: "LEARNER'S NAME", note: '' },
     { title: 'BOOK TITLE', note: '' },
     { title: 'LEVEL / LANG', note: 'E B T  ·  EN FIL' },
-    { title: 'SESSION TYPE', note: 'FREE · BUDDY · ARAL · HOME' },
-    { title: 'RETURNED', note: 'DATE / ✓' },
-    { title: 'CONDITION', note: '/ SIGN' },
+    { title: 'SESSION TYPE', note: '' },
+    { title: 'RETURNED', note: 'DATE' },
+    { title: 'CONDITION', note: 'G / D · INITIALS' },
   ];
   headers.forEach((h, i) => {
+    const checkboxes = h.title === 'SESSION TYPE';
     el.push(
       text({
         x: cuts[i] + 3,
-        y: tableTop,
+        y: checkboxes ? tableTop + 1 : tableTop,
         w: cuts[i + 1] - cuts[i] - 6,
-        h: headerH,
+        h: checkboxes ? 14 : headerH,
         text: h.note ? `${h.title}\n${h.note}` : h.title,
         size: h.note ? 7 : 7.5,
         weight: '600',
         ls: 0.3,
         lh: 1.45,
         align: 'center',
-        valign: 'middle',
+        valign: checkboxes ? 'top' : 'middle',
+      })
+    );
+  });
+
+  // Four tappable boxes per row — Free, Buddy, ARAL, Home — with F / B / A / H right above them.
+  const boxStride = 14;
+  const sessionLeft = cuts[4] + Math.round((cuts[5] - cuts[4] - (4 * 9 + 3 * (boxStride - 9))) / 2);
+  ['F', 'B', 'A', 'H'].forEach((letter, i) => {
+    el.push(
+      text({
+        x: sessionLeft + i * boxStride - 2,
+        y: tableTop + 17,
+        w: 13,
+        h: 10,
+        text: letter,
+        size: 8,
+        weight: '600',
+        color: MUTED,
+        align: 'center',
       })
     );
   });
 
   const bodyTop = tableTop + headerH;
+  for (let r = 0; r < rows; r += 1) {
+    const boxY = bodyTop + r * rowH + Math.round((rowH - 9) / 2);
+    for (let k = 0; k < 4; k += 1) {
+      el.push(shape({ x: sessionLeft + k * boxStride, y: boxY, w: 9, h: 9, stroke: '#a8b6c6', width: 1 }));
+    }
+  }
+
   for (let r = 1; r < rows; r += 1) {
     el.push(rule(top, bodyTop + r * rowH, contentW, RULE));
   }
@@ -816,59 +860,57 @@ const cardFooters = (x: number, y: number, label: string): PublisherElement[] =>
 const LEVEL_CARDS = [
   {
     color: GREEN,
-    title: 'EMERGENT',
-    size: 27,
-    guide:
-      'Pictures carry the story. One short sentence a page, 1–20 words, the same words again and again. Read it aloud with a buddy and point to each word.',
+    title: 'EMERGENT READERS',
+    size: 25,
+    wordArt: 'champs-level-emergent' as WordArtStyle,
+    guide: 'Picture-heavy books, 1–2 simple lines per page.',
   },
   {
     color: GREEN,
-    title: 'EMERGENT',
-    size: 27,
-    guide:
-      'Pictures carry the story. One short sentence a page, 1–20 words, the same words again and again. Read it aloud with a buddy and point to each word.',
+    title: 'EMERGENT READERS',
+    size: 25,
+    wordArt: 'champs-level-emergent' as WordArtStyle,
+    guide: 'Picture-heavy books, 1–2 simple lines per page.',
   },
   {
     color: BLUE,
-    title: 'BEGINNING',
-    size: 27,
-    guide:
-      'Familiar words, longer sentences. 21–60 words a page over two to four lines. Read a whole page, then retell what happened in it.',
+    title: 'BEGINNING READERS',
+    size: 25,
+    wordArt: 'champs-level-beginning' as WordArtStyle,
+    guide: 'Short sentences, high-frequency & decodable words.',
   },
   {
     color: BLUE,
-    title: 'BEGINNING',
-    size: 27,
-    guide:
-      'Familiar words, longer sentences. 21–60 words a page over two to four lines. Read a whole page, then retell what happened in it.',
+    title: 'BEGINNING READERS',
+    size: 25,
+    wordArt: 'champs-level-beginning' as WordArtStyle,
+    guide: 'Short sentences, high-frequency & decodable words.',
   },
   {
     color: AMBER,
-    title: 'TRANSITIONAL',
-    size: 27,
-    guide:
-      'Multi-paragraph pages, 61–150 words, fewer pictures. Read two to three pages silently, then tell the story in the right order.',
+    title: 'TRANSITIONAL READERS',
+    size: 21,
+    wordArt: 'champs-level-transitional' as WordArtStyle,
+    guide: 'Longer stories, rich vocabulary, independent reading.',
   },
   {
     color: AMBER,
-    title: 'TRANSITIONAL',
-    size: 27,
-    guide:
-      'Multi-paragraph pages, 61–150 words, fewer pictures. Read two to three pages silently, then tell the story in the right order.',
+    title: 'TRANSITIONAL READERS',
+    size: 21,
+    wordArt: 'champs-level-transitional' as WordArtStyle,
+    guide: 'Longer stories, rich vocabulary, independent reading.',
   },
   {
     color: TEAL,
     title: 'FILIPINO & LOCAL TALES',
     size: 21,
-    guide:
-      'Mga kuwentong bayan at Akeanon tales. Big type, local names, local places — the stories children already hear at home.',
+    guide: 'Mga kuwentong bayan at Akeanon tales, big type and local names.',
   },
   {
     color: CORAL,
     title: 'ENGLISH STORYBOOKS',
     size: 25,
-    guide:
-      'English picture books for readers who are ready for more. Chapter starters, richer words, longer sitting-down time.',
+    guide: 'English picture books for readers ready for more.',
   },
 ];
 
@@ -883,9 +925,9 @@ function levelCardsPage(): Page {
     el.push(
       text({
         x: x + 12,
-        y: y + 8,
+        y: y + 5,
         w: CARD_W - 24,
-        h: 37,
+        h: 43,
         text: card.title,
         size: card.size,
         weight: '900',
@@ -893,19 +935,25 @@ function levelCardsPage(): Page {
         color: WHITE,
         align: 'center',
         valign: 'middle',
+        wordArt: card.wordArt,
+        pad: 2,
         name: `${card.title} label`,
       })
     );
     el.push(
+      // One line of copy leaves the card half empty: centre it in the colour field below the bar
+      // so the label reads as a label rather than as orphaned text.
       text({
         x: x + 16,
-        y: y + 68,
+        y: y + 60,
         w: CARD_W - 32,
-        h: 142,
+        h: 146,
         text: card.guide,
-        size: 12,
-        lh: 1.5,
+        size: 12.5,
+        lh: 1.45,
         color: INK,
+        align: 'center',
+        valign: 'middle',
       })
     );
     el.push(...cardFooters(x, y, `BIN ${i + 1} OF 8 · SHEET A`));
@@ -927,8 +975,8 @@ const GENRE_CARDS = [
   { label: 'Big Books', art: 'sticker-big-book-easel' },
   { label: 'Decodable Readers', art: 'sticker-abc-blocks' },
   { label: 'Pop-Up & Tactile', art: 'sticker-popup-book' },
-  { label: 'Local & Akeanon Tales', art: 'sticker-nipa-hut' },
-  { label: 'Audio Station', art: 'sticker-audio-station' },
+  { label: 'Local / Akeanon Tales', art: 'sticker-nipa-hut' },
+  { label: 'Audio Stories', art: 'sticker-audio-station' },
   { label: 'Puppets & Props', art: 'sticker-story-puppet' },
   { label: 'Book Return Bin', art: 'sticker-return-bin' },
 ];
@@ -1002,10 +1050,10 @@ const project = (id: string, name: string, pageSizeName: string, pages: Page[]):
 
 export const CHAMPS_READING_TEMPLATES: TemplateDefinition[] = [
   {
-    id: 'champs-reading-passport',
-    name: 'Learner Reading Passport (A4 · 2 sheets)',
+    id: 'champs-passport-a4',
+    name: 'Learner Reading Passport (Half-Fold)',
     description:
-      'Fold-and-staple passport. Sheet 1 is the cover — pupil details on the front, home reading reflection on the back; sheet 2 is a twenty-book log with level dots and star ratings.',
+      'Half-fold A4 passport: cover with pupil details, home reading reflection on the back, and a 20-book log inside with G/B/O level dots and five-star ratings. Category 5B.',
     category: 'Champs Reading',
     thumbnailColor: '#1e3a8a',
     thumbnailGradient: 'linear-gradient(135deg, #1e3a8a 0%, #e11d48 55%, #0d9488 100%)',
@@ -1016,9 +1064,9 @@ export const CHAMPS_READING_TEMPLATES: TemplateDefinition[] = [
   },
   {
     id: 'champs-circulation-log',
-    name: 'Book Circulation & Daily Usage Log',
+    name: 'Book Circulation & ARAL Usage Log',
     description:
-      'One A4 sheet the reading corner can live on: header ribbon with School / Grade / Month / Teacher, fifteen rows of borrow-and-return detail, and the circulated totals and signatures at the foot.',
+      'One A4 sheet the reading corner can live on: gold ribbon with School / Grade / Month / Teacher, fifteen 9 mm rows with session checkboxes, and the circulated and ARAL totals at the foot. Category 5A & 5B.',
     category: 'Champs Reading',
     thumbnailColor: '#b45309',
     thumbnailGradient: 'linear-gradient(135deg, #0f766e 0%, #fbbf24 60%, #b45309 100%)',
@@ -1028,9 +1076,9 @@ export const CHAMPS_READING_TEMPLATES: TemplateDefinition[] = [
   },
   {
     id: 'champs-level-labels',
-    name: 'Level & Genre Bin Cards (A4 · 8-up)',
+    name: 'Color-Coded Leveling & Bin Labels (8-Up)',
     description:
-      'Eight colour-coded cards per sheet for the shelf: emergent, beginning and transitional levels on sheet A, then storybooks, big books, decodable, pop-up, local tales, audio, puppets and the return bin on sheet B.',
+      'Eight 92 × 64 mm cards per sheet on dashed cut lines: emergent green, beginning blue and transitional gold bands on sheet A, then picture-labelled genre bins for non-readers on sheet B. Category 2B & 3B.',
     category: 'Champs Reading',
     thumbnailColor: '#0d9488',
     thumbnailGradient: 'linear-gradient(135deg, #16a34a 0%, #2563eb 40%, #d97706 70%, #e11d48 100%)',

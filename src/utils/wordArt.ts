@@ -93,6 +93,26 @@ export const WORD_ART_STYLES: WordArtOption[] = [
     label: 'Champs Gold Ribbon',
     className: 'wordart-champs-gold-ribbon',
   },
+  // The three level bands, one per shelf colour: cream type with the band's own deep ink as the
+  // edge, so a title still reads when the card is printed in mono.
+  {
+    id: 'champs-level-emergent',
+    label: 'Emergent Green',
+    className: 'wordart-champs-level-emergent',
+    dark: true,
+  },
+  {
+    id: 'champs-level-beginning',
+    label: 'Beginning Blue',
+    className: 'wordart-champs-level-beginning',
+    dark: true,
+  },
+  {
+    id: 'champs-level-transitional',
+    label: 'Transitional Gold',
+    className: 'wordart-champs-level-transitional',
+    dark: true,
+  },
   // Portfolios: quiet, trimmed, at 800.
   {
     id: 'portfolio-editorial',
@@ -1135,6 +1155,25 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     },
     castShadow: { dx: 0, dy: 2, blur: 4, color: 'rgba(24, 24, 27, 0.4)' },
     backdrop: { type: 'ribbon-banner', color: '#0f766e', paddingX: 34, paddingY: 12 },
+    shadows: [],
+  },
+
+  // No stroke on purpose: these are set at 25px inside a 14 mm band, and an outline at that size
+  // eats the letterform. A two-tone cream keeps the band's colour family without hurting a
+  // five-metre read or a mono photocopy.
+  'champs-level-emergent': {
+    weight: '900',
+    gradient: { angle: 180, stops: [{ offset: 0, color: '#ffffff' }, { offset: 1, color: '#dcfce7' }] },
+    shadows: [],
+  },
+  'champs-level-beginning': {
+    weight: '900',
+    gradient: { angle: 180, stops: [{ offset: 0, color: '#ffffff' }, { offset: 1, color: '#dbeafe' }] },
+    shadows: [],
+  },
+  'champs-level-transitional': {
+    weight: '900',
+    gradient: { angle: 180, stops: [{ offset: 0, color: '#ffffff' }, { offset: 1, color: '#fef3c7' }] },
     shadows: [],
   },
 

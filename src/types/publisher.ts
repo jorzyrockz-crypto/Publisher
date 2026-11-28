@@ -71,6 +71,9 @@ export type WordArtStyle =
   | 'champs-basa-blue'
   | 'champs-kasadya-coral'
   | 'champs-gold-ribbon'
+  | 'champs-level-emergent'
+  | 'champs-level-beginning'
+  | 'champs-level-transitional'
   | 'portfolio-editorial'
   | 'portfolio-indigo';
 

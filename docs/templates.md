@@ -108,9 +108,16 @@ So `category: 'Champs Reading'` returns the authored project untouched, and the 
 
 | template | paper | what it is |
 |---|---|---|
-| Learner Reading Passport | A4 landscape, 2 sheets | folded cover + pupil details, home reflection on the back, 20-book log inside |
-| Book Circulation & Daily Usage Log | A4 landscape, 1 sheet | header ribbon, School/Grade/Month/Teacher strip, 15 borrow rows, totals and signatures |
-| Level & Genre Bin Cards | A4 portrait, 2 sheets | 8-up 92 × 64 mm cards on dashed cut lines: colour-coded levels, then picture-labelled genre bins |
+| `champs-passport-a4` — Learner Reading Passport (Half-Fold) | A4 landscape, 2 sheets | folded cover + pupil details, home reflection on the back, 20-book log inside |
+| `champs-circulation-log` — Book Circulation & ARAL Usage Log | A4 landscape, 1 sheet | gold ribbon, School/Grade/Month/Teacher strip, 15 borrow rows with session checkboxes, totals and signatures |
+| `champs-level-labels` — Color-Coded Leveling & Bin Labels (8-Up) | A4 portrait, 2 sheets | 8-up 92 × 64 mm cards on dashed cut lines: green/blue/gold level bands, then picture-labelled genre bins |
+
+The legend inside each form is part of the form, not decoration: the log's four `F B A H` checkboxes sit
+under the letters that name them, and the passport's `G B O` dots sit under the letters that name them, so
+a teacher never has to remember which box is which. The three level bands carry the
+`champs-level-emergent` / `-beginning` / `-transitional` word-art styles — deliberately **stroked with
+nothing but a two-tone cream**: at 25px inside a 14 mm band an outline eats the letterform, and these
+cards are read from across a room and photocopied in mono.
 
 Two things about the geometry are worth knowing before editing one:
 
