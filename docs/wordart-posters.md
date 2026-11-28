@@ -20,8 +20,18 @@ Six styles close that gap, and two small features make them behave.
 | `pill-highlight` | Pastel Pill Highlight | indigo ink on a pastel pill |
 | `cartoon-bubble-blue` | Bubble Sign Blue | sky → royal ramp, 6px white die-cut, 3.5px ink keyline, 2-step dark lip, **arc 0.08** |
 | `cartoon-bubble-pink` | Bubble Sign Pink | candy → magenta ramp, 6px white die-cut, 3.5px ink keyline, 2-step dark lip, **arc 0.08** |
+| `cartoon-bubble-magenta` | Bubble Sign Magenta | rose → wine ramp, 4.5px white die-cut, 3.5px ink keyline, 2-step dark lip, **arc 0.08** |
+| `cartoon-bubble-cyan` | Bubble Sign Cyan | ice → petrol ramp, 4.5px white die-cut, 3.5px ink keyline, 2-step dark lip, **arc 0.08** |
+| `cartoon-bubble-purple` | Bubble Sign Purple | lilac → aubergine ramp, 4.5px white die-cut, 3.5px ink keyline, 2-step dark lip, **arc 0.08** |
+| `cartoon-body-black` | Bubble Sign Ink Black | graphite → near-black ramp, 4px white die-cut, 3.2px ink keyline, flat (no arc) |
 
-All six go through the existing `PAINT` table, so the gallery, the inspector, the DOM painter and
+The three colours are the pencil-playful set that sits beside blue and pink: same grammar, tuned to
+4.5 px of rim and a 6 px cast shadow so the short sign words ("Read", "Grow", "Explore") stay crisp at
+tile size. `cartoon-body-black` is the sub-line of the family — the same die-cut so it stacks under a
+coloured sign, but a graphite ramp, no lip and no arc, because it carries the secondary words ("every
+day", "new stories", "your vocabulary") and must not out-shout the sign above it.
+
+All of these go through the existing `PAINT` table, so the gallery, the inspector, the DOM painter and
 the canvas exporter pick them up with no new plumbing. `npm run wordart:css` regenerates the
 `.wordart-*` block in `src/index.css`; `-- --check` proves it is in sync.
 
@@ -515,7 +525,7 @@ Poster category. `src/constants/posterWordArtTemplates.ts` holds it.
 A style paints letters; it does not choose the typeface. That gap is why a green ramp in Plus Jakarta
 Sans reads as "a gradient" rather than "a sticker": the letterform is half the look.
 
-The family now lives on the paint spec (`WordArtPaint.fontFamily`) — all **52** styles have one — and
+The family now lives on the paint spec (`WordArtPaint.fontFamily`) — all **56** styles have one — and
 `wordArtDefaultFont(style)` reads it. Three things use it:
 
 - the generated rule (`font-family: 'Lilita One', sans-serif`), so a gallery tile is set in the face
@@ -528,7 +538,7 @@ The family now lives on the paint spec (`WordArtPaint.fontFamily`) — all **52*
 
 | family | styles | why |
 |---|---|---|
-| Lilita One | 8 — bubble signs, stickers, eco, fiesta, candy, hablon | chunky rounded display: a sign, not a sentence |
+| Lilita One | 12 — bubble signs, stickers, eco, fiesta, candy, hablon | chunky rounded display: a sign, not a sentence |
 | Montserrat | 13 — chrome, neon, AI metal, outline, retro, fire, rainbow | a geometric grotesque holds a hard gradient |
 | Playfair Display | 5 — gold, cinematic, rose gold, obsidian, editorial | high-contrast serif for foil and film |
 | Kaushan Script | 5 — brush and parchment | a brush stroke with a real tail |
@@ -582,7 +592,7 @@ spec (`steps × the step`) when it decides how much room a text box needs.
 | blur | `drop-shadow(… blur)` | `filter: blur(blur × scale / 2)` — CSS blur reads about twice as wide, and the export multiplier keeps a 3× PNG's bloom in proportion |
 | anchor | glyph box | `line.x, line.y` |
 
-`npm run check:wordart-parity` runs all 52 painted styles through the canvas default painter and fails
+`npm run check:wordart-parity` runs all 56 painted styles through the canvas default painter and fails
 if any stroke falls back to the context default, any pass is drawn off its anchor, any blur fails to
 scale with the multiplier, or any extrusion lists running totals instead of steps.
 

@@ -68,6 +68,10 @@ export type WordArtStyle =
   // keyline outside it — the school-banner lettering in the reference art.
   | 'cartoon-bubble-blue'
   | 'cartoon-bubble-pink'
+  | 'cartoon-bubble-magenta'
+  | 'cartoon-bubble-cyan'
+  | 'cartoon-bubble-purple'
+  | 'cartoon-body-black'
   | 'storybook-crayon'
   | 'fairytale-sparkle'
   | 'reading-nook-sage'

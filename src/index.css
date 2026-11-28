@@ -654,6 +654,152 @@
   pointer-events: none;
 }
 
+.wordart-cartoon-bubble-magenta {
+  font-weight: 900;
+  font-family: 'Lilita One', sans-serif;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  -webkit-text-stroke: 0.125em #ffffff;
+  paint-order: stroke fill;
+  position: relative;
+  z-index: 0;
+  filter:
+    drop-shadow(0.049em 0em 0 #18181b)
+    drop-shadow(0.034em 0.034em 0 #18181b)
+    drop-shadow(0em 0.049em 0 #18181b)
+    drop-shadow(-0.034em 0.034em 0 #18181b)
+    drop-shadow(-0.049em 0em 0 #18181b)
+    drop-shadow(-0.034em -0.034em 0 #18181b)
+    drop-shadow(0em -0.049em 0 #18181b)
+    drop-shadow(0.034em -0.034em 0 #18181b)
+    drop-shadow(0px 1.5px 0px #18181b)
+    drop-shadow(0px 1.5px 0px #18181b)
+    drop-shadow(0px 4px 6px rgba(15, 23, 42, 0.22));
+}
+
+.wordart-cartoon-bubble-magenta::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, #ffafd8 0%, #f43f5e 25%, #be123c 85%, #881337 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0;
+  pointer-events: none;
+}
+
+.wordart-cartoon-bubble-cyan {
+  font-weight: 900;
+  font-family: 'Lilita One', sans-serif;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  -webkit-text-stroke: 0.125em #ffffff;
+  paint-order: stroke fill;
+  position: relative;
+  z-index: 0;
+  filter:
+    drop-shadow(0.049em 0em 0 #18181b)
+    drop-shadow(0.034em 0.034em 0 #18181b)
+    drop-shadow(0em 0.049em 0 #18181b)
+    drop-shadow(-0.034em 0.034em 0 #18181b)
+    drop-shadow(-0.049em 0em 0 #18181b)
+    drop-shadow(-0.034em -0.034em 0 #18181b)
+    drop-shadow(0em -0.049em 0 #18181b)
+    drop-shadow(0.034em -0.034em 0 #18181b)
+    drop-shadow(0px 1.5px 0px #18181b)
+    drop-shadow(0px 1.5px 0px #18181b)
+    drop-shadow(0px 4px 6px rgba(15, 23, 42, 0.22));
+}
+
+.wordart-cartoon-bubble-cyan::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, #a5f3fc 0%, #06b6d4 35%, #0891b2 85%, #164e63 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0;
+  pointer-events: none;
+}
+
+.wordart-cartoon-bubble-purple {
+  font-weight: 900;
+  font-family: 'Lilita One', sans-serif;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  -webkit-text-stroke: 0.125em #ffffff;
+  paint-order: stroke fill;
+  position: relative;
+  z-index: 0;
+  filter:
+    drop-shadow(0.049em 0em 0 #18181b)
+    drop-shadow(0.034em 0.034em 0 #18181b)
+    drop-shadow(0em 0.049em 0 #18181b)
+    drop-shadow(-0.034em 0.034em 0 #18181b)
+    drop-shadow(-0.049em 0em 0 #18181b)
+    drop-shadow(-0.034em -0.034em 0 #18181b)
+    drop-shadow(0em -0.049em 0 #18181b)
+    drop-shadow(0.034em -0.034em 0 #18181b)
+    drop-shadow(0px 1.5px 0px #18181b)
+    drop-shadow(0px 1.5px 0px #18181b)
+    drop-shadow(0px 4px 6px rgba(15, 23, 42, 0.22));
+}
+
+.wordart-cartoon-bubble-purple::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, #e9d5ff 0%, #a855f7 35%, #7e22ce 85%, #581c87 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0;
+  pointer-events: none;
+}
+
+.wordart-cartoon-body-black {
+  font-weight: 900;
+  font-family: 'Lilita One', sans-serif;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  -webkit-text-stroke: 0.111em #ffffff;
+  paint-order: stroke fill;
+  position: relative;
+  z-index: 0;
+  filter:
+    drop-shadow(0.044em 0em 0 #18181b)
+    drop-shadow(0.031em 0.031em 0 #18181b)
+    drop-shadow(0em 0.044em 0 #18181b)
+    drop-shadow(-0.031em 0.031em 0 #18181b)
+    drop-shadow(-0.044em 0em 0 #18181b)
+    drop-shadow(-0.031em -0.031em 0 #18181b)
+    drop-shadow(0em -0.044em 0 #18181b)
+    drop-shadow(0.031em -0.031em 0 #18181b)
+    drop-shadow(0px 3px 4px rgba(15, 23, 42, 0.2));
+}
+
+.wordart-cartoon-body-black::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, #4b5563 0%, #1f2937 20%, #030712 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0;
+  pointer-events: none;
+}
+
 .wordart-brush-sunshine {
   font-weight: 900;
   font-family: 'Kaushan Script', cursive;

@@ -61,6 +61,34 @@ export const WORD_ART_STYLES: WordArtOption[] = [
     className: 'wordart-cartoon-bubble-pink',
     isNew: true,
   },
+  // The rest of the pencil-playful sign set: the same white die-cut and ink keyline in magenta, cyan
+  // and purple, so a colour-coded wall reads as one family — plus an ink-black one for the sub-line
+  // that sits under a sign ("every day", "new stories"), where the colour would compete with the
+  // word above it.
+  {
+    id: 'cartoon-bubble-magenta',
+    label: 'Bubble Sign Magenta',
+    className: 'wordart-cartoon-bubble-magenta',
+    isNew: true,
+  },
+  {
+    id: 'cartoon-bubble-cyan',
+    label: 'Bubble Sign Cyan',
+    className: 'wordart-cartoon-bubble-cyan',
+    isNew: true,
+  },
+  {
+    id: 'cartoon-bubble-purple',
+    label: 'Bubble Sign Purple',
+    className: 'wordart-cartoon-bubble-purple',
+    isNew: true,
+  },
+  {
+    id: 'cartoon-body-black',
+    label: 'Bubble Sign Ink Black',
+    className: 'wordart-cartoon-body-black',
+    isNew: true,
+  },
   // Flat ink on a painted highlight — the brush-swipe and pastel-pill headline.
   { id: 'brush-sunshine', label: 'Sunshine Brush Swipe', className: 'wordart-brush-sunshine' },
   { id: 'brush-blush', label: 'Pastel Blush Ribbon', className: 'wordart-brush-blush' },
@@ -976,6 +1004,93 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     extrusion: { steps: 2, dx: 0, dy: 1.5, startColor: '#18181b', endColor: '#18181b' },
     castShadow: { dx: 0, dy: 5, blur: 8, color: 'rgba(15, 23, 42, 0.35)' },
     arc: 0.08,
+    shadows: [],
+  },
+  // The rest of the pencil-playful sign set. Same grammar as blue and pink — a vertical ramp inside
+  // a doubled white rim inside an ink keyline, with the two-step lip of a die-cut sticker — tuned to
+  // 4.5 px of rim and a 6 px blur so the smaller sign words ("Read", "Grow") stay crisp.
+  'cartoon-bubble-magenta': {
+    fontFamily: 'Lilita One',
+    weight: '900',
+    // Rose to wine, lit from above like its siblings so a row of signs reads as a set.
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#ffafd8' },
+        { offset: 0.25, color: '#f43f5e' },
+        { offset: 0.85, color: '#be123c' },
+        { offset: 1, color: '#881337' },
+      ],
+    },
+    // 4.5 px at the 72 px reference, doubled and half-hidden by the fill, so 4.5 px of white shows.
+    stroke: { width: 4.5, color: '#ffffff' },
+    heavyStroke: true,
+    outline: { width: 3.5, color: '#18181b' },
+    extrusion: { steps: 2, dx: 0, dy: 1.5, startColor: '#18181b', endColor: '#18181b' },
+    castShadow: { dx: 0, dy: 4, blur: 6, color: 'rgba(15, 23, 42, 0.22)' },
+    arc: 0.08,
+    shadows: [],
+  },
+  'cartoon-bubble-cyan': {
+    fontFamily: 'Lilita One',
+    weight: '900',
+    // Ice to petrol: the cool member of the set, with a slightly longer ramp to the deep stop.
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#a5f3fc' },
+        { offset: 0.35, color: '#06b6d4' },
+        { offset: 0.85, color: '#0891b2' },
+        { offset: 1, color: '#164e63' },
+      ],
+    },
+    stroke: { width: 4.5, color: '#ffffff' },
+    heavyStroke: true,
+    outline: { width: 3.5, color: '#18181b' },
+    extrusion: { steps: 2, dx: 0, dy: 1.5, startColor: '#18181b', endColor: '#18181b' },
+    castShadow: { dx: 0, dy: 4, blur: 6, color: 'rgba(15, 23, 42, 0.22)' },
+    arc: 0.08,
+    shadows: [],
+  },
+  'cartoon-bubble-purple': {
+    fontFamily: 'Lilita One',
+    weight: '900',
+    // Lilac to aubergine, the same 0.35 mid as cyan so the two read as one weight of colour.
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#e9d5ff' },
+        { offset: 0.35, color: '#a855f7' },
+        { offset: 0.85, color: '#7e22ce' },
+        { offset: 1, color: '#581c87' },
+      ],
+    },
+    stroke: { width: 4.5, color: '#ffffff' },
+    heavyStroke: true,
+    outline: { width: 3.5, color: '#18181b' },
+    extrusion: { steps: 2, dx: 0, dy: 1.5, startColor: '#18181b', endColor: '#18181b' },
+    castShadow: { dx: 0, dy: 4, blur: 6, color: 'rgba(15, 23, 42, 0.22)' },
+    arc: 0.08,
+    shadows: [],
+  },
+  // The sub-line of the set: identical rim and keyline so it stacks under a coloured sign, but a
+  // graphite-to-near-black ramp and no lip — it carries secondary words, so it must not out-shout
+  // the one above. Shorter shadow, thinner ring, and flat: an arc is a headline gesture.
+  'cartoon-body-black': {
+    fontFamily: 'Lilita One',
+    weight: '900',
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#4b5563' },
+        { offset: 0.2, color: '#1f2937' },
+        { offset: 1, color: '#030712' },
+      ],
+    },
+    stroke: { width: 4, color: '#ffffff' },
+    heavyStroke: true,
+    outline: { width: 3.2, color: '#18181b' },
+    castShadow: { dx: 0, dy: 3, blur: 4, color: 'rgba(15, 23, 42, 0.2)' },
     shadows: [],
   },
   'sticker-teal': {
