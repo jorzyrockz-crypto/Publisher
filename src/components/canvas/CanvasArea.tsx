@@ -46,6 +46,7 @@ export const CanvasArea: React.FC = () => {
     zoomFit,
     rulerVisible,
     addGuide,
+    clearSelection,
   } = usePublisher();
 
   const [cursorPos, setCursorPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -197,10 +198,18 @@ export const CanvasArea: React.FC = () => {
       containerRef.current.scrollTop = startScrollTop - dy;
     };
 
-    const handleMouseUp = () => {
+    const handleMouseUp = (upEvent: MouseEvent) => {
       setIsPanning(false);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
+
+      // The pasteboard is not a place where an object can be. A click there -- a click, not
+      // the pan that dragging starts -- is "nothing is selected", so the selection goes with
+      // it, and the panels that were opened for it close in the same breath.
+      const dragged = Math.hypot(upEvent.clientX - startX, upEvent.clientY - startY) > 4;
+      if (!dragged && !clickedInsidePage && !effectivePanMode && e.button === 0) {
+        clearSelection();
+      }
     };
 
     window.addEventListener('mousemove', handleMouseMove);
