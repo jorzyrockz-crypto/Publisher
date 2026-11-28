@@ -413,6 +413,7 @@ export const InsertTab: React.FC = () => {
                   [
                     { id: 'all', label: 'All' },
                     { id: 'vibe', label: 'Vibe Packs' },
+                    { id: 'certificates', label: 'Certificates' },
                     { id: 'people', label: 'People' },
                     { id: 'animals', label: 'Animals' },
                     { id: 'plants', label: 'Plants' },

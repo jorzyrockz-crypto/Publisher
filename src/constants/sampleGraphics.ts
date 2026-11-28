@@ -1139,4 +1139,12 @@ export const SAMPLE_GRAPHICS: SampleGraphic[] = [
     width: 1200,
     height: 120,
   },
+  {
+    id: 'cert-line-gold-flourish',
+    name: 'Gold Flourish Divider',
+    category: 'Certificates',
+    src: './assets/certificates/cert-line-gold-flourish.png',
+    width: 1200,
+    height: 120,
+  },
 ];

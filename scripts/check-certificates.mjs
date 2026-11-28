@@ -32,6 +32,9 @@ const { polishProject, polishPage, placeArtwork, TEMPLATE_POLISH_STATS } = await
 );
 const { wordArtCarriesContrast, wordArtPaint } = await server.ssrLoadModule('/src/utils/wordArt.ts');
 const { SAMPLE_GRAPHICS } = await server.ssrLoadModule('/src/constants/sampleGraphics.ts');
+const { STICKER_CATALOG, getStickerById } = await server.ssrLoadModule(
+  '/src/constants/stickerLibrary.ts',
+);
 
 let passed = 0;
 const failures = [];
@@ -553,7 +556,7 @@ const webpInfo = (buffer) => {
 };
 
 const certificateAssets = SAMPLE_GRAPHICS.filter((g) => g.category === 'Certificates');
-check('certificate assets are registered', certificateAssets.length >= 9, `${certificateAssets.length}`);
+check('certificate assets are registered', certificateAssets.length >= 10, `${certificateAssets.length}`);
 check(
   'certificate asset ids are unique',
   new Set(certificateAssets.map((g) => g.id)).size === certificateAssets.length,
@@ -588,6 +591,50 @@ for (const asset of certificateAssets) {
     check(`${label}: WebP ground is page-sized`, info.width === 1600 && info.height === 1200);
     check(`${label}: ground inserts as the page`, asset.insertAs === 'page');
   }
+}
+
+// The seals and award stickers are drawn PNGs, registered in the sticker catalog so a template can
+// reach them through `stickerUri()` exactly like a vector sticker.
+const certificateStickers = STICKER_CATALOG.filter((s) => s.category === 'certificates');
+check(
+  'certificate seals and stickers are registered',
+  certificateStickers.length === 5,
+  `${certificateStickers.length}`,
+);
+check(
+  'certificate sticker ids are unique',
+  new Set(certificateStickers.map((s) => s.id)).size === certificateStickers.length,
+);
+check(
+  'certificate stickers do not collide with vector stickers',
+  new Set(STICKER_CATALOG.map((s) => s.id)).size === STICKER_CATALOG.length,
+);
+
+for (const sticker of certificateStickers) {
+  const label = sticker.id;
+  const relative = String(sticker.dataUri).replace(/^\.\//, '');
+  const file = `public/${relative}`;
+  check(`${label}: dataUri points at the drawn file`, relative.startsWith('assets/certificates/'), relative);
+  check(`${label}: file exists`, existsSync(file), file);
+  if (!existsSync(file)) continue;
+  const bytes = readFileSync(file);
+  const info = pngInfo(bytes);
+  check(`${label}: PNG header parses`, Boolean(info), relative);
+  if (!info) continue;
+  check(`${label}: is a 512×512 seal`, info.width === 512 && info.height === 512, `${info.width}×${info.height}`);
+  check(`${label}: PNG carries an alpha channel`, info.hasAlpha === true);
+  check(
+    `${label}: under the weight budget`,
+    statSync(file).size <= 400_000,
+    `${Math.round(statSync(file).size / 1024)} kB`,
+  );
+  check(`${label}: svg wrapper embeds the drawn file`, sticker.svg.includes(relative));
+  check(`${label}: svg wrapper is a self-contained document`, sticker.svg.startsWith('<svg xmlns='));
+  // `stickerUri()` in certificateTemplates.ts reaches a seal by id alone; this is that lookup.
+  check(
+    `${label}: resolves by id the way a template asks for it`,
+    getStickerById(sticker.id)?.dataUri === sticker.dataUri,
+  );
 }
 
 await server.close();

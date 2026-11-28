@@ -237,11 +237,27 @@ point at them instead of restyling a rectangle:
 | `cert-border-royal-gold.png` | 1600×1200, transparent | navy + gold double filigree, laurel corners |
 | `cert-border-k3-crayon-stars.png` | 1600×1200, transparent | scalloped rainbow edge, hand-drawn stars and confetti |
 | `cert-border-emerald-modern.png` | 1600×1200, transparent | emerald + champagne corner brackets |
-| `cert-line-blue-ribbon.png`, `cert-line-k3-stars.png` | 1200×120, transparent | blue double hairline with gold ends, pastel dots with three stars |
+| `cert-line-blue-ribbon.png` | 1200×120, transparent | blue double hairline with gold ends |
+| `cert-line-k3-stars.png` | 1200×120, transparent | pastel dotted rule with three stars |
+| `cert-line-gold-flourish.png` | 1200×120, transparent | metallic gold scrollwork, diamond star at dead centre |
+| `cert-seal-gold-foil.png` | 512×512, transparent | serrated gold foil, laurel rim, navy swallowtail ribbons, blank centre |
+| `cert-seal-torch-laurel.png` | 512×512, transparent | gold torch inside a green laurel wreath |
+| `cert-stk-k3-gold-star.png` | 512×512, transparent | glossy smiling star medal on a red/blue striped ribbon, white die-cut edge |
+| `cert-stk-perfect-attendance.png` | 512×512, transparent | cartoon alarm clock, red apple and sparkles |
+| `cert-stk-values-heart.png` | 512×512, transparent | glowing heart held by two laurel leaves, gold sparkles |
 
-The seals and K-3 stickers (`cert-seal-*`, `cert-stk-*`, 512×512) are the next batch in the same
-folder and register through `stickerLibrary.ts`, so a certificate can carry one the way it carries
-`stk-gold-seal` today.
+Grounds, frames and rules register in `sampleGraphics.ts` under the **Certificates** category; the
+seals and K-3 stickers register in `stickerLibrary.ts` under a `certificates` sticker category, so a
+template reaches them through `stickerUri(id)` exactly as it reaches `stk-gold-seal` — `StickerDef`
+requires an inline `svg` plus a `dataUri`, and `makeRasterSticker` fills both for a drawn PNG (the
+`svg` wraps an `<image>` of the file). Seals insert as images, not as grounds; the K-3 stickers carry
+their own die-cut white edge so they read on cream paper without the app drawing one.
+
+**The gold rule is assembled, not drawn.** The generator will not draw a 10:1 ornament that is all
+ornament — a flourish asking for a divider comes back at 5:1, and squeezing it into 1200×120 shrinks
+it to two-thirds of the canvas. So the ornament keeps its own height and a hairline in its own gold
+is carried from each tip out to the edge; the rule therefore fills its canvas, stays symmetrical
+about the diamond star, and is still one file at the size the template expects.
 
 **Grounds insert as the page.** `SampleGraphic` gained `width`, `height` and `insertAs: 'page'`.
 A ground is placed at 0,0 at the page's own size, `objectFit: 'fill'`, `zIndex: 1`, ratio unlocked —
@@ -255,7 +271,10 @@ rule, the pockets between laurel leaves) so nothing reads as a white patch on cr
 result is trimmed to its ink, given 1.2% transparent breathing room and scaled to its canvas.
 Backgrounds take the opposite treatment: the outer 3% comes off (the generator likes to draw a sheet
 on a desk, shadow included) and the middle is eased toward the paper tone so a watermark medallion
-never fights the name printed over it. The matte is a probe, not product code — the shipped files
+never fights the name printed over it. Stickers are the one cut that cannot be found by keying white — their outline *is* white on white, so
+the flood has nothing to stop at. The matte grows the object a few pixels into the flood instead: the
+ring it keeps is the die-cut edge, and the line lands where a sticker's edge belongs rather than on
+the artwork. The matte is a probe, not product code — the shipped files
 are the deliverable, and `check:certs` asserts every one of them resolves, is the size it claims, and
 carries an alpha channel where it must.
 
@@ -313,7 +332,7 @@ past the bottom margin is not spread at all.
 - Every page was rasterised (Pillow, DejaVu) and inspected page by page: the veils, the composed
   posters and invitations, and the pages the guard left alone all read correctly. The renderer
   lives outside the repo (it is a probe, not product code).
-- `npm run check:certs` — 1041 assertions over the six certificates and their art: family is one the app loads,
+- `npm run check:certs` — 1097 assertions over the six certificates and their art: family is one the app loads,
   no typed-in signature, a rule at 1.5px under every name, the requested WordArt style and face on
   every title, logo slots still empty, QR blocks holding a URL, every non-WordArt colour clearing
   4.5:1 (3:1 at display sizes) against the shape actually behind it, and both pipeline stages

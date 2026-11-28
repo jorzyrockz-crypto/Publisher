@@ -10,7 +10,8 @@ export type StickerCategory =
   | 'animals'
   | 'plants'
   | 'objects'
-  | 'school-office';
+  | 'school-office'
+  | 'certificates';
 
 export interface StickerDef {
   id: string;
@@ -40,6 +41,22 @@ const makeSticker = (
     svg,
     dataUri: toSvgUri(svg),
   };
+};
+
+/**
+ * The certificate seals and K-3 stickers are drawn by hand as 512×512 transparent PNGs rather than
+ * as SVG paths, so they register through the same catalog with the file itself as the data URI.
+ * `svg` still carries a wrapper so anything that inlines a sticker sees a self-contained document.
+ */
+const makeRasterSticker = (
+  id: string,
+  name: string,
+  category: StickerCategory,
+  src: string,
+  size = 512
+): StickerDef => {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}"><image href="${src}" x="0" y="0" width="${size}" height="${size}"/></svg>`;
+  return { id, name, category, svg, dataUri: src };
 };
 
 export const STICKER_CATALOG: StickerDef[] = [
@@ -493,6 +510,37 @@ export const STICKER_CATALOG: StickerDef[] = [
      <circle cx="64" cy="36" r="6" fill="#3b82f6"/>
      <circle cx="80" cy="48" r="6" fill="#10b981"/>
      <circle cx="42" cy="64" r="6" fill="#f59e0b"/>`
+  ),
+  // Certificates (seals and K-3 award stickers — hand-drawn PNGs in public/assets/certificates)
+  makeRasterSticker(
+    'cert-seal-gold-foil',
+    'Gold Foil Seal',
+    'certificates',
+    './assets/certificates/cert-seal-gold-foil.png'
+  ),
+  makeRasterSticker(
+    'cert-seal-torch-laurel',
+    'Torch & Laurel Seal',
+    'certificates',
+    './assets/certificates/cert-seal-torch-laurel.png'
+  ),
+  makeRasterSticker(
+    'cert-stk-k3-gold-star',
+    'Smiling Star Medal',
+    'certificates',
+    './assets/certificates/cert-stk-k3-gold-star.png'
+  ),
+  makeRasterSticker(
+    'cert-stk-perfect-attendance',
+    'Perfect Attendance',
+    'certificates',
+    './assets/certificates/cert-stk-perfect-attendance.png'
+  ),
+  makeRasterSticker(
+    'cert-stk-values-heart',
+    'Values Heart',
+    'certificates',
+    './assets/certificates/cert-stk-values-heart.png'
   ),
 ];
 
