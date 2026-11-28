@@ -174,6 +174,11 @@ export function buildCollageElements(input: CollageBuildInput): CollageBuildResu
   // Deep copy: the caller (and the caller's caller) must not be able to mutate the meta
   // through the elements we hand back.
   const serializedMeta: CollageMeta = JSON.parse(JSON.stringify(meta));
+  // Minted once, at insert: every element of this collage carries it from then on, so the
+  // collage can be found again whatever happens to its group.
+  if (!serializedMeta.collageId) {
+    serializedMeta.collageId = `col-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  }
   const elements: PublisherElement[] = [];
   let pageBackdrop: PageBackdropPatch | null = null;
 
