@@ -54,6 +54,8 @@ export const CanvasArea: React.FC = () => {
   const [spreadMode, setSpreadMode] = useState<'reading' | 'pairs'>('reading');
   const containerRef = useRef<HTMLDivElement>(null);
   const didInitialFitRef = useRef(false);
+  /** Key of the view/page that was last auto-fitted, so a hand-set zoom is never stomped. */
+  const fittedKeyRef = useRef('');
 
   // Auto-fit the artboard on first mount so Page 1 is fully framed between the
   // rulers and the floating zoom toolbar (critical on 1280x800 laptops where a
@@ -84,6 +86,22 @@ export const CanvasArea: React.FC = () => {
     // Only ever run once for the initial load; user zoom is never overridden.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Fit whenever the view opens or the document/page changes in single view. Keyed on ids
+  // rather than on `zoomFit` itself: that callback is re-created whenever the page object
+  // changes, and re-firing for that reason would undo a zoom the user just set by hand.
+  const zoomFitRef = useRef(zoomFit);
+  useEffect(() => {
+    zoomFitRef.current = zoomFit;
+  }, [zoomFit]);
+  useEffect(() => {
+    if (viewMode !== 'single' || isEditingMaster) return;
+    const key = `${viewMode}:${project.id}:${activePage.id}`;
+    if (fittedKeyRef.current === key) return;
+    fittedKeyRef.current = key;
+    const raf = requestAnimationFrame(() => zoomFitRef.current());
+    return () => cancelAnimationFrame(raf);
+  }, [viewMode, project.id, activePage.id, isEditingMaster]);
 
   // Smoothly scroll canvas to active page whenever activePageIndex changes (e.g. clicking in Pages sidebar)
   useEffect(() => {
@@ -572,117 +590,120 @@ export const CanvasArea: React.FC = () => {
             </div>
           )}
 
-          {/* Modern Floating Viewport, Tool Mode, Page View & Zoom Pill */}
-          <div
-            className="absolute bottom-3 right-3 z-20 max-w-[calc(100%-24px)] overflow-x-auto no-scrollbar flex items-center gap-1 bg-white/95 backdrop-blur-sm px-2.5 py-1.5 rounded-full border border-[#e5e9ee] shadow-[0_8px_28px_rgba(28,44,58,0.12)] text-xs text-[#202833] transition-all"
-          >
-            {/* Select vs Hand/Pan Tool Switcher */}
-            <div className="flex items-center bg-slate-100 p-0.5 rounded-full mr-0.5">
-              <button
-                onClick={() => setToolMode('select')}
-                className={`p-1 rounded-full transition ${
-                  !effectivePanMode
-                    ? 'bg-white text-[#5c4bb8] shadow-2xs'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-                title="Select Tool (V)"
-              >
-                <MousePointer2 size={12} />
-              </button>
-              <button
-                onClick={() => setToolMode('pan')}
-                className={`p-1 rounded-full transition ${
-                  effectivePanMode
-                    ? 'bg-[#6e56cf] text-white shadow-2xs'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-                title="Hand / Pan Canvas Tool (H or hold Space)"
-              >
-                <Hand size={12} />
-              </button>
-            </div>
+        </div>
 
-            {/* Multi-page view mode switcher */}
-            <div className="flex items-center bg-slate-100 p-0.5 rounded-full mr-1">
-              <button
-                onClick={() => setViewMode('artboard')}
-                className={`p-1 rounded-full transition ${
-                  viewMode === 'artboard'
-                    ? 'bg-white text-[#5c4bb8] shadow-2xs'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-                title="Freeform Artboards (Move papers & mix sizes)"
-              >
-                <LayoutDashboard size={12} />
-              </button>
-              <button
-                onClick={() => setViewMode('single')}
-                className={`p-1 rounded-full transition ${
-                  viewMode === 'single'
-                    ? 'bg-white text-[#5c4bb8] shadow-2xs'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-                title="Single Page View"
-              >
-                <File size={12} />
-              </button>
-              <button
-                onClick={() => setViewMode('continuous')}
-                className={`p-1 rounded-full transition ${
-                  viewMode === 'continuous'
-                    ? 'bg-white text-[#5c4bb8] shadow-2xs'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-                title="All Pages Vertical Scroll"
-              >
-                <Files size={12} />
-              </button>
-              <button
-                onClick={() => setViewMode('spread')}
-                className={`p-1 rounded-full transition ${
-                  viewMode === 'spread'
-                    ? 'bg-white text-[#5c4bb8] shadow-2xs'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-                title="2-Page Spread View"
-              >
-                <BookOpen size={12} />
-              </button>
-            </div>
-
-            <div className="w-[1px] h-3.5 bg-slate-200 mr-0.5" />
-
+        {/* Floating viewport / zoom pill. A sibling of the scrolling viewport,
+            not a child: `position: absolute` inside a scroll container anchors to
+            the content, so the old placement scrolled away with the page. */}
+        <div
+          className="absolute bottom-3 right-3 z-20 max-w-[calc(100%-24px)] overflow-x-auto no-scrollbar flex items-center gap-1 bg-white/95 backdrop-blur-sm px-2.5 py-1.5 rounded-full border border-[#e5e9ee] shadow-[0_8px_28px_rgba(28,44,58,0.12)] text-xs text-[#202833] transition-all"
+        >
+          {/* Select vs Hand/Pan Tool Switcher */}
+          <div className="flex items-center bg-slate-100 p-0.5 rounded-full mr-0.5">
             <button
-              onClick={zoomOut}
-              className="p-1 hover:bg-slate-100 rounded-full transition active:scale-95 text-slate-600"
-              title="Zoom Out"
+              onClick={() => setToolMode('select')}
+              className={`p-1 rounded-full transition ${
+                !effectivePanMode
+                  ? 'bg-white text-[#5c4bb8] shadow-2xs'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+              title="Select Tool (V)"
             >
-              <ZoomOut size={13} />
+              <MousePointer2 size={12} />
             </button>
-
-            <span className="font-mono font-semibold text-[11px] px-1 text-slate-800 min-w-[38px] text-center">
-              {Math.round(zoom * 100)}%
-            </span>
-
             <button
-              onClick={zoomIn}
-              className="p-1 hover:bg-slate-100 rounded-full transition active:scale-95 text-slate-600"
-              title="Zoom In"
+              onClick={() => setToolMode('pan')}
+              className={`p-1 rounded-full transition ${
+                effectivePanMode
+                  ? 'bg-[#6e56cf] text-white shadow-2xs'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+              title="Hand / Pan Canvas Tool (H or hold Space)"
             >
-              <ZoomIn size={13} />
-            </button>
-
-            <div className="w-[1px] h-3.5 bg-slate-200 mx-0.5" />
-
-            <button
-              onClick={zoomFit}
-              className="flex items-center gap-1 px-2 py-0.5 rounded-full hover:bg-[#efeafd] hover:text-[#5c4bb8] text-[11px] font-medium transition"
-              title="Fit to Window"
-            >
-              <Maximize size={11} className="text-[#5c4bb8]" />
-              <span>Fit</span>
+              <Hand size={12} />
             </button>
           </div>
+
+          {/* Multi-page view mode switcher */}
+          <div className="flex items-center bg-slate-100 p-0.5 rounded-full mr-1">
+            <button
+              onClick={() => setViewMode('artboard')}
+              className={`p-1 rounded-full transition ${
+                viewMode === 'artboard'
+                  ? 'bg-white text-[#5c4bb8] shadow-2xs'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+              title="Freeform Artboards (Move papers & mix sizes)"
+            >
+              <LayoutDashboard size={12} />
+            </button>
+            <button
+              onClick={() => setViewMode('single')}
+              className={`p-1 rounded-full transition ${
+                viewMode === 'single'
+                  ? 'bg-white text-[#5c4bb8] shadow-2xs'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+              title="Single Page View"
+            >
+              <File size={12} />
+            </button>
+            <button
+              onClick={() => setViewMode('continuous')}
+              className={`p-1 rounded-full transition ${
+                viewMode === 'continuous'
+                  ? 'bg-white text-[#5c4bb8] shadow-2xs'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+              title="All Pages Vertical Scroll"
+            >
+              <Files size={12} />
+            </button>
+            <button
+              onClick={() => setViewMode('spread')}
+              className={`p-1 rounded-full transition ${
+                viewMode === 'spread'
+                  ? 'bg-white text-[#5c4bb8] shadow-2xs'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+              title="2-Page Spread View"
+            >
+              <BookOpen size={12} />
+            </button>
+          </div>
+
+          <div className="w-[1px] h-3.5 bg-slate-200 mr-0.5" />
+
+          <button
+            onClick={zoomOut}
+            className="p-1 hover:bg-slate-100 rounded-full transition active:scale-95 text-slate-600"
+            title="Zoom Out"
+          >
+            <ZoomOut size={13} />
+          </button>
+
+          <span className="font-mono font-semibold text-[11px] px-1 text-slate-800 min-w-[38px] text-center">
+            {Math.round(zoom * 100)}%
+          </span>
+
+          <button
+            onClick={zoomIn}
+            className="p-1 hover:bg-slate-100 rounded-full transition active:scale-95 text-slate-600"
+            title="Zoom In"
+          >
+            <ZoomIn size={13} />
+          </button>
+
+          <div className="w-[1px] h-3.5 bg-slate-200 mx-0.5" />
+
+          <button
+            onClick={zoomFit}
+            className="flex items-center gap-1 px-2 py-0.5 rounded-full hover:bg-[#efeafd] hover:text-[#5c4bb8] text-[11px] font-medium transition"
+            title="Fit to Window"
+          >
+            <Maximize size={11} className="text-[#5c4bb8]" />
+            <span>Fit</span>
+          </button>
         </div>
       </div>
 

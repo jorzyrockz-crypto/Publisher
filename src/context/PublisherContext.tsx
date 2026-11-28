@@ -518,7 +518,11 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [selectedElementIds, setSelectedElementIds] = useState<string[]>([]);
   const [copiedElements, setCopiedElements] = useState<PublisherElement[]>([]);
   const [isEditingMaster, setIsEditingMasterState] = useState<boolean>(false);
-  const [viewMode, setViewMode] = useState<'artboard' | 'single' | 'continuous' | 'spread'>('artboard');
+  // Single page is the default view: one page, fully fitted, is what people open a
+  // document to look at. Spread/artboard are deliberate choices from the view control.
+  const [viewMode, setViewMode] = useState<'artboard' | 'single' | 'continuous' | 'spread'>(
+    'single'
+  );
   const [toolMode, setToolMode] = useState<'select' | 'pan'>('select');
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
@@ -2776,7 +2780,9 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const scaleX = (containerW - padX) / activePage.width;
     const scaleY = (containerH - padY) / activePage.height;
     const fitScale = Math.min(scaleX, scaleY, 1.2);
-    setZoomState(Number(Math.min(3.0, Math.max(0.2, fitScale)).toFixed(2)));
+    // A page without a measurable size produced NaN here, and a NaN zoom draws nothing.
+    const safeScale = Number.isFinite(fitScale) ? fitScale : 1;
+    setZoomState(Number(Math.min(3.0, Math.max(0.2, safeScale)).toFixed(2)));
     setPan({ x: 0, y: 0 });
   }, [activePage]);
 
