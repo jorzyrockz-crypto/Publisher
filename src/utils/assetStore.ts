@@ -17,6 +17,7 @@ export type AssetLayer = 'backdrop' | 'frame' | 'sticker' | 'badge';
 
 /** Where a frame piece wants to land on a page. Optional: an addition to the published schema. */
 export type FrameSlot = 'top' | 'bottom' | 'left' | 'right' | 'corner';
+export type FrameFit = 'page';
 
 export interface AssetEntry {
   id: string;
@@ -30,6 +31,13 @@ export interface AssetEntry {
   width: number;
   height: number;
   slot?: FrameSlot;
+  /**
+   * `page` means the piece was drawn *as* a page — corner clusters that must land on the page's own
+   * corners, whatever the page's proportions. Placed stretched to the page bounds rather than
+   * fitted to the width, because a frame that leaves the backdrop showing at the sides is not a
+   * frame. Optional like `slot`; anything else is dropped.
+   */
+  fit?: FrameFit;
 }
 
 export interface AssetPackManifest {
@@ -70,6 +78,7 @@ export const FEATURED_PACK_NAME = 'Eco-Campaign & Fiesta Awards';
 
 const LAYERS: AssetLayer[] = ['backdrop', 'frame', 'sticker', 'badge'];
 const SLOTS: FrameSlot[] = ['top', 'bottom', 'left', 'right', 'corner'];
+const FITS: FrameFit[] = ['page'];
 
 const urlCache = new Map<string, string>();
 
@@ -139,6 +148,9 @@ export function parseManifest(raw: unknown): AssetPackManifest {
     const slot = typeof a.slot === 'string' && SLOTS.includes(a.slot as FrameSlot)
       ? (a.slot as FrameSlot)
       : undefined;
+    const fit = typeof a.fit === 'string' && FITS.includes(a.fit as FrameFit)
+      ? (a.fit as FrameFit)
+      : undefined;
 
     return {
       id,
@@ -150,6 +162,7 @@ export function parseManifest(raw: unknown): AssetPackManifest {
       width: asNumber(a.width, `assets[${index}].width`),
       height: asNumber(a.height, `assets[${index}].height`),
       ...(slot ? { slot } : {}),
+      ...(fit ? { fit } : {}),
     };
   });
 

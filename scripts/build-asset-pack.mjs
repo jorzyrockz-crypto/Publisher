@@ -232,6 +232,8 @@ const ECO_ASSETS = [
     tags: ['tropical', 'leaves', 'corner', 'frame', 'blossom'],
     cutout: true,
     slot: 'corner',
+    // Drawn as a page, so it stretches to the paper instead of sitting as a top band.
+    fit: 'page',
     // The leaves cover the corners themselves, so there is no corner to flood from.
     scanPockets: { cell: 16, min: 80 },
   },
@@ -301,23 +303,27 @@ const ECO_ASSETS = [
 ];
 
 /**
- * Two packs, one builder.
+ * The built-in kit and the zip it also ships as.
  *
- * The storybook kit ships unpacked under `public/asset-packs/` because it is the built-in pack the
- * app fetches piece by piece. The eco kit ships as a `.zip` under `public/asset-packs/`, is built
- * into `.pack-dist/` on the way, and reaches the app the same way any user's pack does — through
- * the import button. Two delivery routes, one set of rules, so a pack we author cannot be a
- * different kind of thing from a pack a teacher authors.
+ * The built-in pack is one kit with two registers in it — storybook reading corners and the eco /
+ * fiesta campaign pieces — because a teacher picking pieces should not have to know which drawing
+ * session a backdrop came from. The same eco pieces are *also* built as a standalone `.zip`, which
+ * is what you hand someone who wants a pack to copy, and what proves the import route is not a
+ * second-class citizen. Both come out of one table, so the two can never disagree.
  */
 const PACKS = [
   {
     packId: 'storybook-reading-v1',
-    name: 'Storybook & Reading Corner',
-    version: '1.1.0',
+    name: 'Story Kit',
+    version: '1.2.0',
     src: '.pack-src',
     out: 'public/asset-packs/storybook-reading-v1',
     zip: null,
-    assets: STORYBOOK_ASSETS,
+    // The eco pieces live in their own source folder; `src` on the entry overrides the pack's.
+    assets: [
+      ...STORYBOOK_ASSETS,
+      ...ECO_ASSETS.map((asset) => ({ ...asset, src: '.pack-src-eco' })),
+    ],
   },
   {
     packId: 'eco-fiesta-v1',
@@ -565,7 +571,7 @@ function buildPack(pack, only) {
   const missing = [];
 
   for (const asset of pack.assets) {
-    const srcFile = path.join(src, `${asset.id}.png`);
+    const srcFile = path.join(ROOT, asset.src ?? pack.src, `${asset.id}.png`);
     if (!fs.existsSync(srcFile)) {
       missing.push(asset.id);
       continue;
@@ -589,6 +595,7 @@ function buildPack(pack, only) {
       layer: asset.layer,
       tags: asset.tags,
       ...(asset.slot ? { slot: asset.slot } : {}),
+      ...(asset.fit ? { fit: asset.fit } : {}),
       thumb: `thumbs/${asset.id}.webp`,
       full: `full/${asset.id}.webp`,
       width,
@@ -599,6 +606,11 @@ function buildPack(pack, only) {
       `${(fs.statSync(fullAbs).size / 1024).toFixed(0)} kB`
     );
   }
+
+  // Grouped by layer in manifest order, so the picker's "All" reads backdrops, frames, stickers,
+  // badges even when the pieces were authored in three separate sittings.
+  const LAYER_RANK = { backdrop: 0, frame: 1, sticker: 2, badge: 3 };
+  assets.sort((a, b) => LAYER_RANK[a.layer] - LAYER_RANK[b.layer]);
 
   const manifest = { packId: pack.packId, name: pack.name, version: pack.version, assets };
   const manifestText = `${JSON.stringify(manifest, null, 2)}\n`;

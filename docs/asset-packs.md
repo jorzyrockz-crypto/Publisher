@@ -1,11 +1,15 @@
 # Asset packs
 
 A pack is a kit of pieces drawn to be used together — a backdrop, the frames that sit on it, the
-stickers that go over both — plus one `manifest.json` that lists them. Three exist: the **Storybook &
-Reading Corner** kit that ships inside the app, the **Eco-Campaign & Fiesta Awards** kit that ships
-beside it as a `.zip`, and whatever the user imports. The eco kit is deliberately not a second
-built-in: it arrives through the same button a teacher's pack arrives through, which keeps the import
-route honest.
+stickers that go over both — plus one `manifest.json` that lists them. Two exist: the **Story Kit**
+that ships inside the app, and whatever the user imports.
+
+The Story Kit holds both of the registers we drew — storybook reading corners and the eco / fiesta
+campaign pieces — because a teacher choosing a frame should not have to know which drawing session it
+came from. The eco ten are *also* built as a standalone `.zip` (`sample pack`, one small link in the
+picker), which is what you hand someone who wants a pack to copy, and what the import route is tested
+against. Both come out of one table in the builder, so the built-in kit and the sample can never
+disagree.
 
 ## The manifest
 
@@ -39,6 +43,12 @@ route honest.
   hint for where a frame piece wants to land. Unknown `slot` values are dropped rather than fatal.
   The vertical pair is real, not decoration: a `left`/`right` frame scales to the page *height* and
   pins to that edge, so a side border stays a border on a portrait poster.
+- **`fit: 'page'`**, alongside `slot`, means the piece was drawn *as* a page: corner clusters that
+  have to land on the page's own corners. It is placed stretched to the paper rather than fitted to
+  the page width. A 4-corner frame fitted to the width of a portrait page puts its lower clusters
+  halfway down the page, floating; stretched, the same leaves sit on the corners where they were
+  drawn, and a bit of horizontal give in foliage is invisible. Also optional, also dropped if
+  unknown.
 - Paths are relative to the pack root and may not leave it — `../x.webp` is refused by name.
 
 `parseManifest` is the only way in, and its errors name the offending asset: a pack author gets
@@ -88,13 +98,13 @@ Two doors, one panel, because both apps own the same space:
 The panel groups by layer with counts, searches label and tags, and shows transparent art on a
 checkerboard so a cutout reads as a cutout. Placing obeys the layer: a backdrop is inserted page-sized
 at `zIndex: 0` and locked; a frame spans the page width at its slot edge (or the page height, at a
-side slot); a sticker arrives at 260px centred. Import is a `.zip` picker; the footer says what a pack is, because a file input with no
+side slot, or the whole page, when it is a `fit: 'page'` frame); a sticker arrives at 260px centred. Import is a `.zip` picker; the footer says what a pack is, because a file input with no
 explanation is a puzzle.
 
 ## The shipped kit
 
-`public/asset-packs/storybook-reading-v1/` — **v1.1.0, 19 pieces, 2.69 MB**, built by
-**`npm run pack:storybook`** from art in `.pack-src/` (generated, gitignored):
+`public/asset-packs/storybook-reading-v1/` — **Story Kit, v1.2.0, 29 pieces, 4.5 MB**, built by
+**`npm run pack:storybook`** from art in `.pack-src/` and `.pack-src-eco/` (generated, gitignored):
 
 | piece | layer | slot | size |
 |---|---|---|---|
@@ -118,6 +128,26 @@ explanation is a puzzle.
 | Rosette Award | badge | — | 520×697 |
 | Star Medal | badge | — | 313×632 |
 
+and the eco / fiesta ten, in the same kit:
+
+| piece | layer | slot | size |
+|---|---|---|---|
+| Tropical Hills & Valley | backdrop | — | 768×1376 |
+| Fiesta Night Lights | backdrop | — | 768×1376 |
+| Mangrove River | backdrop | — | 848×1264 |
+| Tropical Leaf Corners | frame | corner, page | 561×1024 |
+| Fiesta Banderitas | frame | top | 1024×387 |
+| Soil & Seedlings Strip | frame | bottom | 1024×363 |
+| Planting Together | sticker | — | 1024×612 |
+| Bahay Kubo | sticker | — | 947×701 |
+| Wooden Signboard | sticker | — | 1024×380 |
+| Gold Laurel Frame | badge | — | 782×713 |
+
+The manifest is written in layer order — nine backdrops, eight frames, nine stickers, three badges —
+rather than in the order the pieces were authored, because the picker's "All" list is what a reader
+actually scrolls. An entry may name its own `src` folder, which is how one kit can be built from two
+source trees.
+
 Every piece in the builder's table is generated, so the run ends with a count and no "still to
 generate" line. The script prints anything missing rather than writing a manifest that lies.
 
@@ -125,25 +155,17 @@ generate" line. The script prints anything missing rather than writing a manifes
 rewrites the whole manifest from what is already on disk — worth knowing, because a scanned piece
 takes a few seconds and a full rebuild of every cutout is closer to half a minute.
 
-### The second kit, and the zip it ships in
+### The sample pack, and the zip it ships in
 
 `public/asset-packs/eco-fiesta-v1.zip` — **Eco-Campaign & Fiesta Awards, v1.0.0, 10 pieces,
-1.84 MB** — built by **`npm run pack:eco`** from art in `.pack-src-eco/` (generated, gitignored).
-The unpacked build lands in `.pack-dist/eco-fiesta-v1/`, which is ignored: only the zip is committed,
-because the zip is the deliverable.
+1.84 MB** — built by **`npm run pack:eco`** from the same table that puts those pieces in the built-in
+kit. The unpacked build lands in `.pack-dist/eco-fiesta-v1/`, which is ignored: only the zip is
+committed, because the zip is the deliverable.
 
-| piece | layer | slot | size |
-|---|---|---|---|
-| Tropical Hills & Valley | backdrop | — | 768×1376 |
-| Fiesta Night Lights | backdrop | — | 768×1376 |
-| Mangrove River | backdrop | — | 848×1264 |
-| Tropical Leaf Corners | frame | corner | 1024×561 |
-| Fiesta Banderitas | frame | top | 1024×387 |
-| Soil & Seedlings Strip | frame | bottom | 1024×363 |
-| Planting Together | sticker | — | 1024×612 |
-| Bahay Kubo | sticker | — | 947×701 |
-| Wooden Signboard | sticker | — | 1024×380 |
-| Gold Laurel Frame | badge | — | 782×713 |
+It is not an "add this kit" button. The pieces are already in the Story Kit, so asking a reader to
+import what they can already see would be busywork; the picker offers the file as *Sample pack to
+copy from (.zip)* in one faint line, next to *Import a .zip pack*, which is where someone who wants
+to author a pack is already looking.
 
 Two things this kit needed that the first did not:
 
@@ -154,17 +176,13 @@ Two things this kit needed that the first did not:
   page reads as a white frame around the picture. Backdrops are otherwise left edge to edge; this
   trims the margin before the resize and nothing else.
 
-The picker's footer carries **Add the Eco & Fiesta kit** next to *Import a .zip pack*, and it
-installs rather than downloads: it fetches `asset-packs/eco-fiesta-v1.zip` from the same origin,
-runs it through `importAssetPackZip` and switches the panel to the new kit with a count in the
-notice. The second click reads *Open the Eco & Fiesta kit*. A small `or save eco-fiesta-v1.zip` link
-below it still hands over the file itself, for anyone who wants a pack to copy from.
-
-That shape came from using it: as a plain `download` link the button dropped a zip in the Downloads
-folder, changed nothing on screen, and left the reader to find the import control and locate the
-file — a control that only works if you already know the next step. Nothing is hotlinked and nothing
-is fetched from a third party: the zip is a static file beside the pack it builds, and a second
-install of it replaces the first instead of listing the kit twice.
+An earlier revision shipped the eco pieces only as a zip, with an **Add the Eco & Fiesta kit** button
+that fetched it and installed it in place. That was the right fix for a bad button — as a plain
+`download` link it dropped a file in Downloads, changed nothing on screen, and left the reader to
+find the import control and locate the file. It was the wrong shape for the product: a kit we drew
+should simply be in the kit. The ten pieces are now part of the built-in Story Kit, the button is
+gone, and the zip survives as the sample to copy from. Nothing is hotlinked and nothing is fetched
+from a third party.
 
 ### Cutting the white out
 
@@ -195,10 +213,14 @@ it — thumb and full are separate files so the picker never decodes a 1024px im
 
 Store, zip and picker logic are exercised in Node with `fake-indexeddb`:
 
-- the full kit — 19 pieces — is zipped (DEFLATE, 2.7 MB), imported through `importAssetPackZip`,
-  installed, listed, and read back: a badge thumb resolves as a blob URL, the entry's full size
-  arrives as a `data:image/webp;base64,…` with bytes, and uninstalling leaves zero packs behind;
-- `filterAssets`: `owl` → 1, `frame` + `leaves` → 1;
+- the built-in kit is fetched and parsed as the app does it: **29 pieces**, layers 9 / 8 / 9 / 3,
+  and every `thumb` and `full` the manifest names exists over HTTP with the thumb smaller than its
+  full — the check that catches a manifest which has outrun the files;
+- one piece from each register resolves to a `data:image/webp;base64,…` with real bytes — a storybook
+  backdrop and an eco sticker through the same call, because to the store they are the same thing;
+- the sample zip (DEFLATE, 1.84 MB) imports through `importAssetPackZip` into `fake-indexeddb`,
+  installs as its own 10-piece pack, lists once, reads a thumb blob, and uninstalls back to zero;
+- `filterAssets` over the merged list: `fiesta` → three pieces, layer `frame` → eight;
 - four authoring mistakes are refused by name.
 
 And a composed page — starlit sky, bunting at `top`, the ivy border at `left` (scaled to the page

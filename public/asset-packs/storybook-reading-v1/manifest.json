@@ -1,7 +1,7 @@
 {
   "packId": "storybook-reading-v1",
-  "name": "Storybook & Reading Corner",
-  "version": "1.1.0",
+  "name": "Story Kit",
+  "version": "1.2.0",
   "assets": [
     {
       "id": "bg-enchanted-forest",
@@ -95,6 +95,54 @@
       "height": 1200
     },
     {
+      "id": "bg-eco-hills",
+      "label": "Tropical Hills & Valley",
+      "layer": "backdrop",
+      "tags": [
+        "eco",
+        "hills",
+        "valley",
+        "nature",
+        "campaign"
+      ],
+      "thumb": "thumbs/bg-eco-hills.webp",
+      "full": "full/bg-eco-hills.webp",
+      "width": 768,
+      "height": 1376
+    },
+    {
+      "id": "bg-fiesta-stage",
+      "label": "Fiesta Night Lights",
+      "layer": "backdrop",
+      "tags": [
+        "fiesta",
+        "night",
+        "bokeh",
+        "award",
+        "celebration"
+      ],
+      "thumb": "thumbs/bg-fiesta-stage.webp",
+      "full": "full/bg-fiesta-stage.webp",
+      "width": 768,
+      "height": 1376
+    },
+    {
+      "id": "bg-mangrove-river",
+      "label": "Mangrove River",
+      "layer": "backdrop",
+      "tags": [
+        "mangrove",
+        "river",
+        "water",
+        "eco",
+        "nature"
+      ],
+      "thumb": "thumbs/bg-mangrove-river.webp",
+      "full": "full/bg-mangrove-river.webp",
+      "width": 827,
+      "height": 1239
+    },
+    {
       "id": "frame-top-canopy",
       "label": "Hanging Canopy Leaves",
       "layer": "frame",
@@ -174,6 +222,58 @@
       "full": "full/frame-bunting-stars.webp",
       "width": 1024,
       "height": 252
+    },
+    {
+      "id": "frame-tropical-leaves",
+      "label": "Tropical Leaf Corners",
+      "layer": "frame",
+      "tags": [
+        "tropical",
+        "leaves",
+        "corner",
+        "frame",
+        "blossom"
+      ],
+      "slot": "corner",
+      "fit": "page",
+      "thumb": "thumbs/frame-tropical-leaves.webp",
+      "full": "full/frame-tropical-leaves.webp",
+      "width": 561,
+      "height": 1024
+    },
+    {
+      "id": "frame-fiesta-bunting",
+      "label": "Fiesta Banderitas",
+      "layer": "frame",
+      "tags": [
+        "bunting",
+        "banderitas",
+        "fiesta",
+        "garland",
+        "top"
+      ],
+      "slot": "top",
+      "thumb": "thumbs/frame-fiesta-bunting.webp",
+      "full": "full/frame-fiesta-bunting.webp",
+      "width": 1024,
+      "height": 387
+    },
+    {
+      "id": "frame-soil-sprouts",
+      "label": "Soil & Seedlings Strip",
+      "layer": "frame",
+      "tags": [
+        "soil",
+        "sprouts",
+        "seedling",
+        "bottom",
+        "eco"
+      ],
+      "slot": "bottom",
+      "thumb": "thumbs/frame-soil-sprouts.webp",
+      "full": "full/frame-soil-sprouts.webp",
+      "width": 1024,
+      "height": 363
     },
     {
       "id": "sticker-reading-kids",
@@ -266,6 +366,54 @@
       "height": 696
     },
     {
+      "id": "sticker-planting-kids",
+      "label": "Planting Together",
+      "layer": "sticker",
+      "tags": [
+        "kids",
+        "students",
+        "planting",
+        "eco",
+        "tree"
+      ],
+      "thumb": "thumbs/sticker-planting-kids.webp",
+      "full": "full/sticker-planting-kids.webp",
+      "width": 1024,
+      "height": 612
+    },
+    {
+      "id": "sticker-nipa-hut",
+      "label": "Bahay Kubo",
+      "layer": "sticker",
+      "tags": [
+        "hut",
+        "bahay kubo",
+        "bamboo",
+        "fiesta",
+        "village"
+      ],
+      "thumb": "thumbs/sticker-nipa-hut.webp",
+      "full": "full/sticker-nipa-hut.webp",
+      "width": 947,
+      "height": 701
+    },
+    {
+      "id": "sticker-wood-plank",
+      "label": "Wooden Signboard",
+      "layer": "sticker",
+      "tags": [
+        "plank",
+        "wood",
+        "sign",
+        "blank",
+        "label"
+      ],
+      "thumb": "thumbs/sticker-wood-plank.webp",
+      "full": "full/sticker-wood-plank.webp",
+      "width": 1024,
+      "height": 380
+    },
+    {
       "id": "badge-rosette",
       "label": "Rosette Award",
       "layer": "badge",
@@ -295,6 +443,22 @@
       "full": "full/badge-star-medal.webp",
       "width": 313,
       "height": 632
+    },
+    {
+      "id": "sticker-gold-laurel",
+      "label": "Gold Laurel Frame",
+      "layer": "badge",
+      "tags": [
+        "laurel",
+        "gold",
+        "award",
+        "wreath",
+        "badge"
+      ],
+      "thumb": "thumbs/sticker-gold-laurel.webp",
+      "full": "full/sticker-gold-laurel.webp",
+      "width": 782,
+      "height": 713
     }
   ]
 }
