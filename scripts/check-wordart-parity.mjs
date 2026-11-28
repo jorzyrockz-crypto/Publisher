@@ -301,5 +301,25 @@ check(
 );
 check('the bubble sign carries its own arc', (bubble.arc ?? 0) > 0, String(bubble.arc));
 
+// 9. The DOM painter's layer order. There is no DOM in this environment, so this reads the
+//    renderer's source: the three things that were wrong are all structural, and all of them are
+//    invisible in a unit test that does not build a tree.
+const renderer = readFileSync('src/components/canvas/ElementRenderer.tsx', 'utf8');
+const filterAt = renderer.indexOf('...(waFilter ? { filter: waFilter } : {})');
+const outlineAt = renderer.indexOf("renderGlyphs(waCss.outline.color, 'outline', true, true)");
+const baseAt = renderer.indexOf("renderGlyphs(baseColor, 'base', true)");
+check('the DOM filter wrapper opens before the keyline layer', filterAt !== -1 && filterAt < outlineAt, `${filterAt} vs ${outlineAt}`);
+check('the keyline is painted under the face', outlineAt !== -1 && outlineAt < baseAt, `${outlineAt} vs ${baseAt}`);
+check(
+  'word art is not clipped by its own box',
+  (renderer.match(/overflow: element\.isWordArt \? 'visible' : 'hidden'/g) ?? []).length >= 2,
+  'expected the view and both run spans to opt out of clipping'
+);
+check(
+  'the DOM keyline stroke comes from the shared helper',
+  renderer.includes('wordArtOutlineStrokeCss(element.wordArtStyle)') &&
+    !renderer.includes('paint.strokeWidth || 0) + waCss.outline.width')
+);
+
 console.log(failures === 0 ? 'ALL CHECKS PASSED' : `${failures} FAILURES`);
 process.exitCode = failures === 0 ? 0 : 1;

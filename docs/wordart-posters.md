@@ -32,9 +32,10 @@ separates the white from whatever the sign is printed on. One `-webkit-text-stro
 draw two rings, so the paint grew an `outline` field and each painter stacks one more silhouette
 under the rim:
 
-- **DOM** (`ElementRenderer`): a copy of the glyphs stroked to `rim + outline.width` and filled with
-  the keyline colour, painted before the real glyphs. The rim covers the inner half, so exactly
-  `outline.width` of dark shows.
+- **DOM** (`ElementRenderer`): a copy of the glyphs stroked to `wordArtOutlineStrokeCss` — rim +
+  *two* rings, in em, the same helper the sheet and the canvas use — and filled with the keyline
+  colour, painted before the real glyphs. A centred stroke shows only half of itself, so the ring is
+  doubled in the stroke and the visible result is one ring of dark, on all three surfaces.
 - **Canvas** (`wordArtCanvas`): one extra pass — a filled *and* stroked silhouette — before the rim.
   Same arithmetic, so the export matches the editor. Each pass now sets its own `strokeStyle`:
   `strokeText` reads that, not `fillStyle`, and nothing was setting it, so every rim and keyline in
@@ -581,3 +582,16 @@ The lip is two drop-shadows of *one step* each, which the CSS chain compounds in
 the same depth the canvas paints, for the same reason the extrusion fix exists.
 
 Sample render (ImageMagick approximation, real Fredoka, 168 pt): `.arena/banner/wordart-bubble.png`.
+
+### Layer order in the DOM painter
+
+Three things the DOM has to get right that the canvas gets right by construction:
+
+| layer | rule |
+|---|---|
+| the drop-shadow chain | one `filter` over **both** the keyline silhouette and the face. A `drop-shadow` paints behind the element it is applied to, so a filter on the face alone puts the cast shadow and the extrusion copies *over* the dark keyline drawn underneath — the sign loses its outer line wherever the shadow crosses it. |
+| the keyline stroke | `wordArtOutlineStrokeCss(style)`, never `strokeWidth + outline.width`. That was the half-rim arithmetic, and a full rim simply covers it. |
+| clipping | `overflow: visible` on the glyph container **and** on each run span when the element is WordArt. A run's box is one line tall and a fat rim is taller than that; the sign was being sliced at the frame on exactly the styles that need the room. Plain text still clips, so nothing bleeds onto the page. |
+
+`npm run check:wordart-parity` asserts the first two structurally (it reads the renderer's source,
+because there is no DOM in the check environment) and both overflow opt-outs.

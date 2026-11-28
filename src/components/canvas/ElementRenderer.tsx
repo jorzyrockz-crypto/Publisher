@@ -20,12 +20,11 @@ import { buildTextEffectPainter } from '../../utils/textEffects';
 import { imageContentRect, imageFit, imageMaskClip } from '../../utils/imageFrame';
 import {
   glintStarPath,
-  outlineStrokeCss,
+  wordArtOutlineStrokeCss,
   wordArtBackdropLayers,
   wordArtCss,
   wordArtCurve,
   wordArtGlints,
-  wordArtPaint,
 } from '../../utils/wordArt';
 import { useImageAspect } from '../../hooks/useImageAspect';
 import { elementClipPath } from '../../utils/shapeClip';
@@ -336,9 +335,10 @@ const TextRenderer: React.FC<{
    * rim, filled in the same dark ink, then covered by the real glyphs. The rim's outer edge sits at
    * `strokeWidth`, so the keyline clears it by exactly its own width.
    */
-  // Rim + ring, in em, from the same helper the stylesheet uses: the silhouette has to clear the
-  // whole rim or the dark keyline is simply hidden under it, and both have to grow with the type.
-  const outlineKeyline = outlineStrokeCss(wordArtPaint(element.wordArtStyle));
+  // Rim + ring, in em, from the same helper the stylesheet and the canvas painter use: the
+  // silhouette has to clear the whole rim or the dark keyline is hidden under it, and both have to
+  // grow with the type.
+  const outlineKeyline = wordArtOutlineStrokeCss(element.wordArtStyle);
   const outlineStyle: React.CSSProperties = waCss.outline && outlineKeyline
     ? {
         WebkitTextStroke: outlineKeyline,
@@ -455,7 +455,9 @@ const TextRenderer: React.FC<{
               backgroundColor: highlight,
               textDecoration: element.textDecoration,
               width: isSpace ? run.width : undefined,
-              overflow: 'hidden',
+              // Same rule one level down: a run's own box is as tall as its line, and a fat rim is
+              // taller than that. Word art is not clipped here either.
+              overflow: element.isWordArt ? 'visible' : 'hidden',
               whiteSpace: 'pre',
             }}
           >
@@ -561,7 +563,11 @@ const TextRenderer: React.FC<{
         style={{
           position: 'absolute',
           inset: 0,
-          overflow: 'hidden',
+          // A WordArt rim, keyline, cast shadow and arch all paint outside the glyphs — and the box
+          // is the box. Clipping a sticker border at the frame is the one thing that makes a style
+          // look broken rather than placed, so word art is allowed out; plain text still cannot
+          // bleed onto the page.
+          overflow: element.isWordArt ? 'visible' : 'hidden',
           fontFamily: element.fontFamily,
           fontWeight: (waCss.fontWeight ?? element.fontWeight) as React.CSSProperties['fontWeight'],
           // style-level italic (synthwave, liquid metal) slants the type too
@@ -591,24 +597,31 @@ const TextRenderer: React.FC<{
         </span>
       )}
 
-      {/* The keyline, under everything: the glyphs stroked in the dark ink and filled with it, so
-          only a ring shows once the rim and the face are painted over the top. */}
-      {waCss.outline && (
-        <div style={{ position: 'absolute', inset: 0 }}>{renderGlyphs(waCss.outline.color, 'outline', true, true)}</div>
-      )}
+      {/*
+        One filter over the whole sign — silhouette *and* face — not one over the face alone.
 
-      {/* Base copy carries the fill, stroke and shadows. The WordArt stack is
-          one filter over the whole word, so glows and extrusions behind
-          neighbouring glyphs join up instead of stacking per letter. */}
-      <div style={{ position: 'absolute', inset: 0 }}>
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            color: baseColor,
-            ...(waFilter ? { filter: waFilter } : {}),
-          }}
-        >
+        A `drop-shadow` filter paints its copies behind the element it is applied to, so with the
+        filter on the face layer the cast shadow and the extrusion copies went down *over* the dark
+        keyline the layer below had just drawn: the sign lost its outer line wherever the shadow
+        crossed it. Wrapping both layers puts the shadows behind the keyline, where the canvas
+        painter has always drawn them, and the filter still runs once over the word, so glows and
+        extrusions behind neighbouring glyphs join up instead of stacking per letter.
+      */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          ...(waFilter ? { filter: waFilter } : {}),
+        }}
+      >
+        {/* The keyline, under everything: the glyphs stroked in the dark ink and filled with it, so
+            only a ring shows once the rim and the face are painted over the top. */}
+        {waCss.outline && (
+          <div style={{ position: 'absolute', inset: 0 }}>
+            {renderGlyphs(waCss.outline.color, 'outline', true, true)}
+          </div>
+        )}
+        <div style={{ position: 'absolute', inset: 0, color: baseColor }}>
           {renderGlyphs(baseColor, 'base', true)}
         </div>
       </div>

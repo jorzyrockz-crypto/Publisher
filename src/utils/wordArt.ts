@@ -1687,6 +1687,19 @@ export function outlineStrokeCss(paint?: WordArtPaint): string {
   return `${wordArtEmSize(wordArtRimWidth(paint) + paint.outline.width * 2)} ${paint.outline.color}`;
 }
 
+/**
+ * The keyline stroke for a style, ready to hand to `WebkitTextStroke` — or undefined when the style
+ * has no second outline.
+ *
+ * The style-based spelling exists because the DOM renderer has a style, not a paint spec, and
+ * reaching into `wordArtPaint` there to do the arithmetic a second time is how the silhouette ended
+ * up half a ring wide once already. Same 72 px reference as `strokeCss` and the canvas painter.
+ */
+export function wordArtOutlineStrokeCss(style?: WordArtStyle): string | undefined {
+  const stroke = outlineStrokeCss(wordArtPaint(style));
+  return stroke || undefined;
+}
+
 export function wordArtShadowChain(paint?: WordArtPaint): WordArtShadow[] {
   if (!paint) return [];
   const chain: WordArtShadow[] = [];
