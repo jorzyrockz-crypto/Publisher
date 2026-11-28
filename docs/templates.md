@@ -150,8 +150,8 @@ Two templates ship from it:
 | template | tiling | assembled | what it is |
 |---|---|---|---|
 | `champs-tarpapel-3x2` — Champs Reading Corner Banner | 3 × 2 A4 landscape | 871 × 410 mm | DepEd header strip, three lapped garlands, THE CHAMPS / READING CORNER word art, gold Basa Kasadya ribbon, both side badges in their own column |
-| `champs-tarpapel-tree` — Tree of Knowledge Tarpapel | 2 × 2 A4 portrait | 396 × 567 mm | one big cut-out tree with nine blank fruit to write words or names on, a header band, three editable subject tags, Grade & Section footer. Hung alone |
-| `champs-wordwall-2x2` — Word Wall | 2 × 2 A4 portrait | 396 × 567 mm | twenty-four blank cards, 83 × 53 mm on paper, in four 2 × 3 blocks with both glue seams landing in the wide central gutters. Header, subject line, instruction footer |
+| `champs-tarpapel-tree` — Tree of Knowledge Tarpapel | 2 × 2 A4 portrait | 396 × 567 mm | one big cut-out tree with nine blank fruit to write words or names on; the headline is split `TREE OF` / `KNOWLEDGE` so the seam falls in the gap between the words; four editable subject tags, instruction strips and footer also split two-and-two. Hung alone |
+| `champs-wordwall-2x2` — Word Wall | 2 × 2 A4 portrait | 396 × 567 mm | twenty-four blank cards, 83 × 53 mm on paper, in four 2 × 3 blocks with both glue seams landing in the wide central gutters. `WORD` / `WALL` headline, subject line and instruction footer split at the seam |
 
 The tree and the word wall used to be one template with a card grid above a mounted landscape print. They
 are two jobs: the tree is a **poster to hang alone**, the word wall is **furniture that cards hang on**.
@@ -213,3 +213,20 @@ past the bottom margin is not spread at all.
 - Every page was rasterised (Pillow, DejaVu) and inspected page by page: the veils, the composed
   posters and invitations, and the pages the guard left alone all read correctly. The renderer
   lives outside the repo (it is a probe, not product code).
+
+## The seam rule
+
+A 2 × 2 tarpapel is four A4s glued with a 10 mm overlap. Anything printed across that strip is
+printed twice, 10 mm apart, and arrives on the wall as a doubled, misaligned ghost. So the layout
+rule for every poster here is simple and tested:
+
+> **No letter may ever land on the glue strip. Art may.**
+
+Everything that carries words is split at the seam and reads as one line after gluing — `TREE OF`
+right-aligned to the strip, `KNOWLEDGE` left-aligned from it, and the same for the subtitle, the
+instruction strips, the subject tags (two a side) and the footer (Grade & Section | Adviser).
+
+The tree itself crosses both seams, and that is deliberate: a subject that fills four sheets cannot
+avoid a strip running through it, and a cut trunk is a seam a teacher expects. A cut letter is not.
+`/tmp`-style checks are not the guard — the check lives in the tarpapel test and fails the build if
+any text box intersects a seam band.
