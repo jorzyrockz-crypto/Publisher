@@ -83,5 +83,6 @@ export function useResizablePanel(options: {
     }
   }, [defaultWidth, storageKey]);
 
-  return { width: effectiveWidth, isDragging, onMouseDown, resetWidth };
+  /** Exposed so a panel can widen itself for content that needs it (e.g. an embedded browser). */
+  return { width: effectiveWidth, isDragging, onMouseDown, resetWidth, setWidth };
 }

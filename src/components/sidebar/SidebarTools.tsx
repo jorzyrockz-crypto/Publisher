@@ -1,25 +1,31 @@
-import React from 'react';
-import { ChevronRight, LayoutGrid, Printer } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { ArrowLeft, ChevronRight, LayoutGrid, Package, Printer } from 'lucide-react';
 import { usePublisher } from '../../context/PublisherContext';
+import { AssetPackPanel } from './AssetPackPanel';
 
 /**
- * Tools — the two jobs that are not "edit this page".
+ * Tools — the jobs that begin with material, not with a blank page.
  *
- * Both of these start with the work rather than with a blank canvas: the collage maker wants photos,
- * the tarpaulin printer wants a design that already exists. Sitting them at the top of the left
- * sidebar, above Pages & Layers, means a teacher finds them before they start drawing, and the rail
- * still collapses to a strip when the canvas needs the room.
+ * Collage Maker and Tarpaulin Printer open as modals: they are self-contained jobs with their own
+ * preview and their own exit. Story Kit is different — it is a library you pick from while the page
+ * stays visible — so it opens *in place*, as a panel inside this sidebar with a way back to Tools.
+ * One list, two destinations, chosen by what the job needs rather than by taste.
  */
+
+type Tone = 'violet' | 'amber' | 'teal';
 
 interface ToolBannerProps {
   title: string;
   hint: string;
   Icon: typeof LayoutGrid;
-  tone: 'violet' | 'amber';
+  tone: Tone;
   onClick: () => void;
 }
 
-const TONES = {
+const TONES: Record<
+  Tone,
+  { card: string; chip: string; title: string; glow: string }
+> = {
   violet: {
     card: 'border-[#e3dcfb] hover:border-[#c9bcf5] hover:bg-[#f7f4ff]',
     chip: 'bg-[#efeafd] text-[#5c4bb8]',
@@ -32,7 +38,13 @@ const TONES = {
     title: 'text-[#8a5310]',
     glow: 'shadow-[0_1px_0_rgba(180,120,20,0.06)]',
   },
-} as const;
+  teal: {
+    card: 'border-[#d3ece8] hover:border-[#b3ded8] hover:bg-[#f4fbfa]',
+    chip: 'bg-[#e2f4f1] text-[#0f766e]',
+    title: 'text-[#0b5c56]',
+    glow: 'shadow-[0_1px_0_rgba(15,118,110,0.06)]',
+  },
+};
 
 const ToolBanner: React.FC<ToolBannerProps> = ({ title, hint, Icon, tone, onClick }) => {
   const t = TONES[tone];
@@ -60,11 +72,44 @@ const ToolBanner: React.FC<ToolBannerProps> = ({ title, hint, Icon, tone, onClic
   );
 };
 
-export const SidebarTools: React.FC<{ compact?: boolean }> = ({ compact = false }) => {
+interface SidebarToolsProps {
+  compact?: boolean;
+  /**
+   * Told when Story Kit takes the whole sidebar, so Pages & Layers can step aside instead of being
+   * squeezed into the bottom two centimetres.
+   */
+  onImmersiveChange?: (immersive: boolean) => void;
+}
+
+export const SidebarTools: React.FC<SidebarToolsProps> = ({
+  compact = false,
+  onImmersiveChange,
+}) => {
   const { setIsCollageModalOpen, setIsTarpapelModalOpen } = usePublisher();
+  const [view, setView] = useState<'tools' | 'storykit'>('tools');
+
+  useEffect(() => {
+    onImmersiveChange?.(view === 'storykit');
+  }, [view, onImmersiveChange]);
+
+  if (view === 'storykit') {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <button
+          type="button"
+          onClick={() => setView('tools')}
+          className="group flex items-center gap-1.5 px-3 h-9 shrink-0 border-b border-[#eef1f5] text-[11px] font-bold text-[#5c4bb8] hover:bg-[#f8f6ff] transition cursor-pointer"
+        >
+          <ArrowLeft size={13} className="transition-transform group-hover:-translate-x-0.5" />
+          Tools
+        </button>
+        <AssetPackPanel embedded />
+      </div>
+    );
+  }
 
   return (
-    <div className="px-3 pt-2.5 pb-2.5 border-b border-[#eef1f5]">
+    <div className="px-3 pt-2.5 pb-2.5 border-b border-[#eef1f5] shrink-0">
       <div className="flex items-center justify-between mb-1.5">
         <span className="text-[9px] font-bold uppercase tracking-[0.09em] text-[#9aa4b0]">
           Tools
@@ -84,6 +129,13 @@ export const SidebarTools: React.FC<{ compact?: boolean }> = ({ compact = false 
           Icon={Printer}
           tone="amber"
           onClick={() => setIsTarpapelModalOpen(true)}
+        />
+        <ToolBanner
+          title="Story Kit"
+          hint={compact ? 'Art packs' : 'Backdrops, frames, stickers'}
+          Icon={Package}
+          tone="teal"
+          onClick={() => setView('storykit')}
         />
       </div>
     </div>

@@ -311,7 +311,7 @@ export const DesignerToolRail: React.FC = () => {
         <div className="h-full flex items-stretch relative">
           {pane === 'layers' ? (
             <div className="h-full flex">
-              <PageThumbnails showTools={false} />
+              <PageThumbnails />
             </div>
           ) : (
             <div
