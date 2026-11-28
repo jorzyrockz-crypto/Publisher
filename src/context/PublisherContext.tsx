@@ -29,6 +29,7 @@ import { buildMergedPartFromShape } from '../utils/shapePaths';
 import { mergeShapeGeometry } from '../utils/shapeBoolean';
 import { pageRingsToLocal, ringsToPath, shapeOutlineRings } from '../utils/shapeClip';
 import { TEMPLATES } from '../constants/templates';
+import { preloadProjectFonts } from '../constants/fonts';
 import {
   clearWorkspaceStorage,
   flushMirrorSync,
@@ -1518,10 +1519,14 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   );
 
   const loadTemplate = useCallback(
-    (templateId: string) => {
+    async (templateId: string) => {
       const tpl = TEMPLATES.find((t) => t.id === templateId);
       if (!tpl) return;
       const cloned: DocumentProject = JSON.parse(JSON.stringify(tpl.project));
+      // Settle the faces the template is set in before the page is measured: a script headline
+      // laid out in the fallback face is sized for a font it is not drawn in, and every
+      // neighbouring box inherits the mistake. Times out quickly if the network is slow.
+      await preloadProjectFonts(cloned);
       createNewTab(cloned);
       setIsBackstageOpen(false);
     },

@@ -141,6 +141,37 @@ loaded. The rule now also accepts a declared `heavyStroke` of 5px or more. The f
 are white, so nothing that already existed changes behaviour; the library score is identical
 (89.0 avg / 90 median / A 58 / B 15 / no C or D).
 
+## The eco poster template
+
+`poster-eco-champions` (816×1056, scores **91 / A**) puts the five styles on the page they were drawn
+for: a full-bleed planting photograph under a pine scrim, then CHAMPIONS in gold signwork, ECO in
+emerald, IN ACTION on the plank, the date on a notched ribbon, and the script line straddling the top
+edge of the seedling print — the "readable over the photos" case the white rim exists for.
+
+Two photographs are ours (`public/templates/eco-planting-hero.jpg`,
+`eco-seedling-card.jpg`) and are ordinary image elements: swappable, croppable, deletable.
+
+Things the first draft got wrong, kept here because they are the scoring model working:
+
+- **A text-on-text overlap** (the script line clipping the ribbon by 18px) cost the page 18 points
+  before anything else was looked at.
+- **Display type all the way down.** Five WordArt lines and two 19px captions is not a hierarchy: the
+  shout measured 5.5× the body and the scorer calls that a flat page. One plain 34px subtitle fixed
+  it — and the poster is better for having a sentence in it.
+- **Odd gaps.** Boxes off an 8px module drag `rhythm` down with every neighbouring pair. Snapping the
+  stack to 8/16/24 took it from 0.54 to 1.0.
+- **A white print border** through the script lettering looked like an accident rather than a layer.
+  The card keeps its radius and shadow and drops the frame.
+
+### Templates now arrive in their own typeface
+
+The script line is Kaushan Script, and a document laid out before that face arrives is measured in
+the fallback face — every box around it inherits the mistake. `loadTemplate` now awaits
+`preloadProjectFonts(project)`, which fetches the stylesheets and then settles
+`document.fonts.load` for the weights the page uses, racing a 1.5s timeout so a slow network never
+blocks opening a template. System-font templates resolve immediately (an empty family list is a
+no-op).
+
 ## Arched type already existed — and was broken in export
 
 `textCurve` (Curve slider, presets) turns a line into glyphs along a circle, and both renderers
