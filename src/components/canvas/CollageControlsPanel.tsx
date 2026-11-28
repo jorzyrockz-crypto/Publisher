@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Check, X } from 'lucide-react';
 import { usePublisher } from '../../context/PublisherContext';
 import { useCollageSelection } from '../../hooks/useCollageSelection';
+import { useCloseOnOutsideClick } from '../../hooks/useCloseOnOutsideClick';
 import { COLLAGE_CONTROL_TITLES, type CollageControlSection } from '../../constants/collageControls';
 import {
   COLLAGE_BORDER_ART_OPTIONS,
@@ -71,11 +72,15 @@ export const CollageControlsPanel: React.FC = () => {
     openCollageControl,
   } = usePublisher();
   const collage = useCollageSelection();
+  const rootRef = useRef<HTMLDivElement>(null);
 
   // The panel is about one collage; if the selection moves on, so does the panel.
   useEffect(() => {
     if (!collage) closeCollageControl();
   }, [collage, closeCollageControl]);
+
+  // And a click outside it is a click about something else.
+  useCloseOnOutsideClick(rootRef, Boolean(collageControlSection && collage), closeCollageControl);
 
   if (!collageControlSection || !collage) return null;
 
@@ -105,7 +110,10 @@ export const CollageControlsPanel: React.FC = () => {
   const section = collageControlSection as CollageControlSection;
 
   return (
-    <div className="space-y-2 rounded-[10px] border border-[#d3c9f9] bg-[#faf8ff] p-2.5">
+    <div
+      ref={rootRef}
+      className="space-y-2 rounded-[10px] border border-[#d3c9f9] bg-[#faf8ff] p-2.5"
+    >
       <div className="flex items-center justify-between gap-2">
         <span className="text-[11px] font-semibold text-[#4a3c8c]">
           {COLLAGE_CONTROL_TITLES[section]}

@@ -1,6 +1,8 @@
 import React from 'react';
 import { usePublisher } from '../../context/PublisherContext';
 import { CollageActionBar } from './CollageActionBar';
+import { TextActionBar } from './TextActionBar';
+import { useTextSelection } from '../../hooks/useTextSelection';
 import { useCollageSelection } from '../../hooks/useCollageSelection';
 import {
   AlignHorizontalJustifyStart,
@@ -73,6 +75,7 @@ export const SelectionToolbar: React.FC = () => {
   } = usePublisher();
 
   const collageSelection = useCollageSelection();
+  const textSelection = useTextSelection();
   const count = selectedElementIds.length;
   if (count === 0) return null;
 
@@ -91,6 +94,14 @@ export const SelectionToolbar: React.FC = () => {
         <span className="px-2 text-[10px] font-semibold text-[#5b6673] tabular-nums whitespace-nowrap">
           {count === 1 ? '1 object' : `${count} objects`}
         </span>
+
+        {/* Text carries the same font and colour chips here as in the Designer bar. */}
+        {textSelection && (
+          <>
+            <Divider />
+            <TextActionBar />
+          </>
+        )}
 
         {canGroup && (
           <>

@@ -1,19 +1,17 @@
 import React, { useRef, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
 import { CollageActionBar } from '../canvas/CollageActionBar';
+import { TextActionBar } from '../canvas/TextActionBar';
 import { useCollageSelection } from '../../hooks/useCollageSelection';
-import { ColorInput } from '../common/ColorInput';
 import { removeImageBackground } from '../../utils/bgRemoval';
-import type { ImageElement, ShapeElement, TextElement } from '../../types/publisher';
+import { ColorInput } from '../common/ColorInput';
+import type { ImageElement, ShapeElement } from '../../types/publisher';
 import {
+  ArrowUp,
+  ArrowDown,
   AlignLeft,
   AlignCenter,
   AlignRight,
-  ArrowUp,
-  ArrowDown,
-  Bold,
-  Italic,
-  Underline,
   Copy,
   Trash2,
   Lock,
@@ -21,8 +19,6 @@ import {
   FlipHorizontal2,
   FlipVertical2,
   Sparkles,
-  Minus,
-  Plus,
   Group,
   Ungroup,
   Combine,
@@ -33,16 +29,6 @@ import {
   Loader2,
 } from 'lucide-react';
 
-const QUICK_FONTS = [
-  'Inter',
-  'Playfair Display',
-  'Montserrat',
-  'Poppins',
-  'Lora',
-  'Oswald',
-  'Georgia',
-  'Arial',
-];
 
 export const DesignerContextBar: React.FC = () => {
   const {
@@ -78,7 +64,6 @@ export const DesignerContextBar: React.FC = () => {
   if (collageSelection) return <CollageActionBar />;
 
   const primary = selectedElements[0];
-  const isSingleText = selectedElements.length === 1 && primary?.type === 'text';
   const isSingleShape = selectedElements.length === 1 && primary?.type === 'shape';
   const isSingleImage = selectedElements.length === 1 && primary?.type === 'image';
   const hasMulti = selectedElements.length >= 2;
@@ -141,135 +126,9 @@ export const DesignerContextBar: React.FC = () => {
 
   return (
     <div className="pointer-events-auto max-w-[96%] min-h-[46px] bg-white/95 backdrop-blur-md border border-[#e5e9ee] rounded-2xl shadow-[0_8px_28px_rgba(22,26,34,0.10)] px-2.5 py-1 flex items-center gap-1 overflow-x-auto select-none touch-manipulation">
-      {/* Single Text Formatting Controls */}
-      {isSingleText && (
-        <>
-          <ColorInput
-            value={(primary as TextElement).color || '#161a22'}
-            onChange={(e) =>
-              updateElement(primary.id, { color: e.target.value })
-            }
-            className="w-8 h-8 rounded-full border border-[#e5e9ee] flex-shrink-0 touch-manipulation"
-            title="Text Color"
-          />
-
-          <select
-            value={(primary as TextElement).fontFamily || 'Inter'}
-            onChange={(e) =>
-              updateElement(primary.id, { fontFamily: e.target.value })
-            }
-            className="h-9 max-w-[132px] px-2.5 rounded-[10px] border border-[#e5e9ee] bg-[#f8fafb] text-xs font-medium text-[#161a22] outline-none cursor-pointer touch-manipulation"
-            title="Font Family"
-          >
-            {!QUICK_FONTS.includes((primary as TextElement).fontFamily) && (
-              <option value={(primary as TextElement).fontFamily}>
-                {(primary as TextElement).fontFamily}
-              </option>
-            )}
-            {QUICK_FONTS.map((f) => (
-              <option key={f} value={f}>
-                {f}
-              </option>
-            ))}
-          </select>
-
-          <div className="flex items-center border border-[#e5e9ee] rounded-[10px] bg-[#f8fafb] h-9 px-1 gap-1">
-            <button
-              type="button"
-              onClick={() =>
-                updateElement(primary.id, {
-                  fontSize: Math.max(8, ((primary as TextElement).fontSize || 16) - 2),
-                })
-              }
-              className="w-7 h-7 flex items-center justify-center rounded-[7px] text-[#4a5661] hover:text-[#5c4bb8] hover:bg-white cursor-pointer touch-manipulation"
-              title="Decrease Font Size"
-            >
-              <Minus size={13} />
-            </button>
-            <span className="text-xs font-semibold min-w-[26px] text-center text-[#161a22]">
-              {Math.round((primary as TextElement).fontSize || 16)}
-            </span>
-            <button
-              type="button"
-              onClick={() =>
-                updateElement(primary.id, {
-                  fontSize: Math.min(200, ((primary as TextElement).fontSize || 16) + 2),
-                })
-              }
-              className="w-7 h-7 flex items-center justify-center rounded-[7px] text-[#4a5661] hover:text-[#5c4bb8] hover:bg-white cursor-pointer touch-manipulation"
-              title="Increase Font Size"
-            >
-              <Plus size={13} />
-            </button>
-          </div>
-
-          <div className="w-[1px] h-5 bg-[#e5e9ee] mx-0.5" />
-
-          <button
-            type="button"
-            onClick={() =>
-              updateElement(primary.id, {
-                fontWeight:
-                  (primary as TextElement).fontWeight === 'bold' ? 'normal' : 'bold',
-              })
-            }
-            className={iconBtn((primary as TextElement).fontWeight === 'bold')}
-            title="Bold"
-          >
-            <Bold size={15} />
-          </button>
-          <button
-            type="button"
-            onClick={() =>
-              updateElement(primary.id, {
-                fontStyle:
-                  (primary as TextElement).fontStyle === 'italic' ? 'normal' : 'italic',
-              })
-            }
-            className={iconBtn((primary as TextElement).fontStyle === 'italic')}
-            title="Italic"
-          >
-            <Italic size={15} />
-          </button>
-          <button
-            type="button"
-            onClick={() =>
-              updateElement(primary.id, {
-                textDecoration:
-                  (primary as TextElement).textDecoration === 'underline'
-                    ? 'none'
-                    : 'underline',
-              })
-            }
-            className={iconBtn((primary as TextElement).textDecoration === 'underline')}
-            title="Underline"
-          >
-            <Underline size={15} />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              const order: Array<'left' | 'center' | 'right'> = ['left', 'center', 'right'];
-              const cur = (primary as TextElement).textAlign || 'left';
-              const next = order[(order.indexOf(cur as 'left' | 'center' | 'right') + 1) % order.length];
-              updateElement(primary.id, { textAlign: next });
-            }}
-            className={iconBtn(false)}
-            title="Cycle Text Alignment"
-          >
-            {(primary as TextElement).textAlign === 'center' ? (
-              <AlignCenter size={15} />
-            ) : (primary as TextElement).textAlign === 'right' ? (
-              <AlignRight size={15} />
-            ) : (
-              <AlignLeft size={15} />
-            )}
-          </button>
-
-          <div className="w-[1px] h-5 bg-[#e5e9ee] mx-0.5" />
-        </>
-      )}
+      {/* Text formatting: one shared bar, in both workspaces. It shows itself only when
+          every selected element is text, so this needs no condition of its own. */}
+      <TextActionBar />
 
       {/* Single Image Controls (Microsoft Designer Image Pill Style) */}
       {isSingleImage && (

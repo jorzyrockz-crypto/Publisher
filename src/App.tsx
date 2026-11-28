@@ -49,6 +49,7 @@ export const AppContent: React.FC = () => {
     setIsStockArtPanelOpen,
     selectedElementIds,
     closeCollageControl,
+    closeTextControl,
   } = usePublisher();
   const windowWidth = useWindowWidth();
   const prevWidthRef = useRef(windowWidth);
@@ -78,6 +79,7 @@ export const AppContent: React.FC = () => {
     }
 
     closeCollageControl();
+    closeTextControl();
     if (isRightPanelOpen) {
       inspectorClosedForDeselectRef.current = true;
       setIsRightPanelOpen(false);
@@ -87,6 +89,7 @@ export const AppContent: React.FC = () => {
     isRightPanelOpen,
     setIsRightPanelOpen,
     closeCollageControl,
+    closeTextControl,
   ]);
 
   // On tablet/narrow initial mount (< 1024px), start with sidebars collapsed so the canvas is immediately visible
