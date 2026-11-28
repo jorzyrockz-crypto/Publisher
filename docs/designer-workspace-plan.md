@@ -208,3 +208,19 @@ tool feel wrong.
 * D6 — the inspector still leads with page setup when nothing is selected.
 * D4 — no position/spacing in the contextual pill, no overflow menu.
 * D2/D3/D5/D7 — untouched (Phase 2).
+
+## Moving papers on the artboard
+
+A paper is dragged by the pill above its top-left corner. Two things went wrong there and are now
+accounted for:
+
+* **The pill was clipped off the viewport when zoomed out.** It was laid out in unscaled pixels above
+  a paper whose screen offset shrinks with the zoom, so at 20% a paper at y = 80 sat 16 px down and a
+  24 px handle above it started at −6 px — outside the scroll area, unreachable. The handle is now
+  positioned instead of flowed, and rides up over the paper's top edge when there is no room above
+  it, so a paper can always be grabbed.
+* **Papers did not snap.** They do now: edges and centres pull to every other paper's edges and
+  centres (and to the artboard origin), with a violet hairline showing what it snapped to. The pull
+  radius is `8 / zoom` — eight *screen* pixels — for the same reason element snapping is now
+  `6 / zoom`: a fixed radius in page pixels shrinks to nothing as you zoom out (at 20% it was
+  1.2 screen pixels, i.e. it looked broken).

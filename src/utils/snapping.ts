@@ -7,7 +7,12 @@ export interface SnapResult {
   verticalGuide?: number; // X position of alignment guide
 }
 
-const SNAP_THRESHOLD = 6; // pixels
+/**
+ * Default pull radius, in **page** pixels. Callers that know the zoom pass `6 / zoom` instead, so a
+ * drag pulls over 6 pixels of *screen* — at 20% the fixed number used to mean 1.2 screen pixels,
+ * which felt like snapping was switched off.
+ */
+const SNAP_THRESHOLD = 6;
 
 export function calculateSnap(
   currentElementId: string,
@@ -17,7 +22,8 @@ export function calculateSnap(
   height: number,
   page: Page,
   snapToGuides = true,
-  snapToObjects = true
+  snapToObjects = true,
+  threshold = SNAP_THRESHOLD
 ): SnapResult {
   let snappedX = proposedX;
   let snappedY = proposedY;
@@ -66,7 +72,7 @@ export function calculateSnap(
   }
 
   // Snap X: check left, center, right
-  let minDiffX = SNAP_THRESHOLD;
+  let minDiffX = threshold;
   for (const target of targetXPoints) {
     // Snap Left
     if (Math.abs(currentLeft - target) < minDiffX) {
@@ -89,7 +95,7 @@ export function calculateSnap(
   }
 
   // Snap Y: check top, center, bottom
-  let minDiffY = SNAP_THRESHOLD;
+  let minDiffY = threshold;
   for (const target of targetYPoints) {
     // Snap Top
     if (Math.abs(currentTop - target) < minDiffY) {

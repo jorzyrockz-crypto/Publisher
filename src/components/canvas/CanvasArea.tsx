@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
+import { snapPaperPosition } from '../../utils/artboardSnapping';
 import { SelectionToolbar } from './SelectionToolbar';
 import { DesignerContextBar } from '../workspace/DesignerContextBar';
 import { PageCanvas } from './PageCanvas';
@@ -55,6 +56,8 @@ export const CanvasArea: React.FC = () => {
   const [isPanning, setIsPanning] = useState(false);
   const [isSpaceHeld, setIsSpaceHeld] = useState(false);
   const [spreadMode, setSpreadMode] = useState<'reading' | 'pairs'>('reading');
+  /** Where a paper is snapping to while it is dragged, in artboard px — drawn as a hairline. */
+  const [paperGuides, setPaperGuides] = useState<{ x?: number; y?: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const didInitialFitRef = useRef(false);
   /** Key of the view/page that was last auto-fitted, so a hand-set zoom is never stomped. */
@@ -264,27 +267,41 @@ export const CanvasArea: React.FC = () => {
     return { x: autoX, y: 80 };
   };
 
-  // Dragging a paper / artboard anywhere (left, right, top, bottom)
+  // Dragging a paper / artboard anywhere (left, right, top, bottom), with the same treat as an
+  // element drag: papers pull to each other's edges and centres, and the pull is measured in screen
+  // pixels so it feels identical at 20% and at 200%.
   const handleArtboardDragStart = (pageIndex: number, e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     setActivePageIndex(pageIndex);
 
     const initial = getArtboardCoords(pageIndex);
+    const dragged = project.pages[pageIndex];
     const startClientX = e.clientX;
     const startClientY = e.clientY;
+    const others = project.pages
+      .map((pg, idx) => ({ ...getArtboardCoords(idx), width: pg.width, height: pg.height }))
+      .filter((_, idx) => idx !== pageIndex);
 
     const onMove = (me: MouseEvent) => {
       const dx = (me.clientX - startClientX) / zoom;
       const dy = (me.clientY - startClientY) / zoom;
-      updatePagePosition(
-        pageIndex,
-        Math.max(20, initial.x + dx),
-        Math.max(36, initial.y + dy)
+      const snap = snapPaperPosition(
+        {
+          x: Math.max(20, initial.x + dx),
+          y: Math.max(36, initial.y + dy),
+          width: dragged.width,
+          height: dragged.height,
+        },
+        others,
+        8 / zoom
       );
+      updatePagePosition(pageIndex, snap.x, snap.y);
+      setPaperGuides({ x: snap.guideX, y: snap.guideY });
     };
 
     const onUp = () => {
+      setPaperGuides(null);
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseup', onUp);
     };
@@ -431,6 +448,10 @@ export const CanvasArea: React.FC = () => {
               {project.pages.map((pg, idx) => {
                 const isActive = idx === project.activePageIndex;
                 const coords = getArtboardCoords(idx);
+                // A handle is ~24px tall. Above the paper it belongs, but at 20% zoom a paper at
+                // y=80 sits 16px down — so the handle would be clipped off the top of the viewport
+                // and the paper could not be moved at all. Clamp it onto the paper instead.
+                const handleLift = Math.min(30, Math.max(0, coords.y * zoom - 2));
 
                 return (
                   <div
@@ -446,7 +467,8 @@ export const CanvasArea: React.FC = () => {
                     {/* Draggable Artboard Handle Pill (Grab to move paper anywhere!) */}
                     <div
                       onMouseDown={(e) => handleArtboardDragStart(idx, e)}
-                      className={`artboard-drag-handle mb-1.5 flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold cursor-grab active:cursor-grabbing transition shadow-xs ${
+                      style={{ position: 'absolute', left: 0, top: -handleLift, zIndex: 30 }}
+                      className={`artboard-drag-handle flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold cursor-grab active:cursor-grabbing transition shadow-xs ${
                         isActive
                           ? 'bg-[#6e56cf] text-white'
                           : 'bg-white/90 text-slate-600 border border-slate-200 hover:bg-white hover:border-[#d3c9f9]'
@@ -491,6 +513,20 @@ export const CanvasArea: React.FC = () => {
                   </div>
                 );
               })}
+
+              {/* Where the paper under the cursor is snapping to. */}
+              {paperGuides?.x !== undefined && (
+                <div
+                  className="absolute top-0 bottom-0 w-px bg-[#6e56cf] opacity-80 pointer-events-none z-40"
+                  style={{ left: `calc(${paperGuides.x}px * var(--sp-zoom))` }}
+                />
+              )}
+              {paperGuides?.y !== undefined && (
+                <div
+                  className="absolute left-0 right-0 h-px bg-[#6e56cf] opacity-80 pointer-events-none z-40"
+                  style={{ top: `calc(${paperGuides.y}px * var(--sp-zoom))` }}
+                />
+              )}
 
               {/* Quick + Add Artboard & + Brand Board buttons positioned near last page */}
               {(() => {

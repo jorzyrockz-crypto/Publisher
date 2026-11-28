@@ -425,7 +425,9 @@ export const PageCanvas: React.FC<PageCanvasProps> = React.memo(({
         primary.height,
         targetPage,
         snapToGuides,
-        true
+        true,
+        // Six screen pixels, so the pull feels the same zoomed out as zoomed in.
+        6 / Math.max(zoom, 0.05)
       );
 
       setActiveAlignGuideH(snap.horizontalGuide);
