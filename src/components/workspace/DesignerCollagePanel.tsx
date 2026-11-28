@@ -1,10 +1,17 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { Images, LayoutGrid, Plus, Sparkles, Upload, X } from 'lucide-react';
 import { usePublisher } from '../../context/PublisherContext';
-import { COLLAGE_LAYOUTS, computeCollageSlots } from '../../utils/collageLayouts';
+import {
+  COLLAGE_LAYOUTS,
+  computeCollageSlots,
+  pickCollageLayoutForCount,
+} from '../../utils/collageLayouts';
 import type { ImageElement, PublisherElement, ShapeElement } from '../../types/publisher';
 
 const MAX_PHOTOS = 12;
+/** No preset holds more than this, so a larger tray could never be fully placed. */
+const MAX_COLLAGE_SLOTS = Math.max(...COLLAGE_LAYOUTS.map((layout) => layout.slotCount));
+const PHOTO_LIMIT = Math.min(MAX_PHOTOS, MAX_COLLAGE_SLOTS);
 /** Side of the square collage canvas, as a share of the shorter page edge. */
 const CANVAS_SHARE = 0.72;
 
@@ -26,7 +33,6 @@ function LayoutThumb({ slots }: { slots: { x: number; y: number; width: number; 
     </svg>
   );
 }
-
 /**
  * The Collage drawer.
  *
@@ -55,6 +61,23 @@ export const DesignerCollagePanel: React.FC = () => {
     [activePage.elements]
   );
 
+  /**
+   * Images on the page that are not already part of a collage. Insert falls back to these
+   * when nothing is selected, so a collage never feeds its own frames back into a new one.
+   */
+  const pageImagesOutsideCollage = useMemo(
+    () =>
+      activePage.elements
+        .filter(
+          (el): el is ImageElement =>
+            el.type === 'image' &&
+            Boolean(el.src) &&
+            !el.groupId?.startsWith('grp-collage-')
+        )
+        .map((el) => el.src),
+    [activePage.elements]
+  );
+
   const selectedImages = useMemo(() => {
     const selected = new Set(selectedElementIds);
     return activePage.elements
@@ -64,25 +87,49 @@ export const DesignerCollagePanel: React.FC = () => {
       .map((el) => el.src);
   }, [activePage.elements, selectedElementIds]);
 
-  const [photos, setPhotos] = useState<string[]>(() =>
-    selectedImages.length > 0 ? selectedImages.slice(0, MAX_PHOTOS) : []
-  );
-  const [layoutId, setLayoutId] = useState<string>('2-split-v');
+  /**
+   * `null` means "still following the workspace". It becomes an array the moment the user
+   * builds the tray by hand (upload, remove, "Use page images"), which is the only way to
+   * tell their intent apart from the ambient state.
+   */
+  const [manualPhotos, setManualPhotos] = useState<string[] | null>(null);
+  const photos = useMemo(() => {
+    if (manualPhotos) return manualPhotos;
+    if (selectedImages.length > 0) return selectedImages.slice(0, PHOTO_LIMIT);
+    return pageImagesOutsideCollage.slice(0, PHOTO_LIMIT);
+  }, [manualPhotos, selectedImages, pageImagesOutsideCollage]);
+
+  /**
+   * A manual preset choice is stored with the photo count it was made at: add or remove a
+   * photo and the automatic choice takes over again, so a 3-up preset never survives into
+   * a 5-photo collage.
+   */
+  const [manualPick, setManualPick] = useState<{ id: string; count: number } | null>(null);
   const [gap, setGap] = useState(8);
   const [corner, setCorner] = useState(0);
   const [backdrop, setBackdrop] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const autoLayoutId = useMemo(
+    () => pickCollageLayoutForCount(photos.length),
+    [photos.length]
+  );
+  const usingManualPick = Boolean(manualPick && manualPick.count === photos.length);
+  const layoutId = usingManualPick ? (manualPick as { id: string }).id : autoLayoutId;
   const layout = useMemo(
     () => COLLAGE_LAYOUTS.find((item) => item.id === layoutId) ?? COLLAGE_LAYOUTS[0],
     [layoutId]
   );
 
+  const updatePhotos = (updater: (current: string[]) => string[]) => {
+    setManualPhotos((current) => updater(current ?? photos));
+  };
+
   const addPhotos = (urls: string[]) => {
-    setPhotos((current) => {
+    updatePhotos((current) => {
       const next = [...current];
       for (const url of urls) {
-        if (next.length >= MAX_PHOTOS) break;
+        if (next.length >= PHOTO_LIMIT) break;
         if (!next.includes(url)) next.push(url);
       }
       return next;
@@ -161,6 +208,9 @@ export const DesignerCollagePanel: React.FC = () => {
     });
 
     addElementsBatch(elements);
+    // Snapshot the tray: the insert selects the new collage, and a tray still following the
+    // selection would silently swap to the collage it just made.
+    setManualPhotos(photos);
     setToolMode('select');
   };
 
@@ -172,7 +222,7 @@ export const DesignerCollagePanel: React.FC = () => {
           <div className="flex items-baseline justify-between">
             <h3 className="text-lead font-semibold text-ink">Photos</h3>
             <span className="text-2xs text-ink-muted">
-              {photos.length}/{MAX_PHOTOS}
+              {photos.length}/{PHOTO_LIMIT}
             </span>
           </div>
 
@@ -192,7 +242,7 @@ export const DesignerCollagePanel: React.FC = () => {
                   />
                   <button
                     type="button"
-                    onClick={() => setPhotos((current) => current.filter((_, i) => i !== index))}
+                    onClick={() => updatePhotos((current) => current.filter((_, i) => i !== index))}
                     className="absolute right-0.5 top-0.5 grid h-4 w-4 cursor-pointer place-items-center rounded-full bg-black/60 text-white opacity-0 transition group-hover:opacity-100"
                     aria-label={`Remove photo ${index + 1}`}
                   >
@@ -222,6 +272,21 @@ export const DesignerCollagePanel: React.FC = () => {
             </button>
           )}
 
+          {manualPhotos === null && photos.length > 0 && (
+            <p className="text-2xs text-ink-muted">
+              {selectedImages.length > 0
+                ? 'Following your selection'
+                : 'Using the images on this page'}
+              {' · '}
+              {(() => {
+                const available =
+                  selectedImages.length > 0 ? selectedImages.length : pageImagesOutsideCollage.length;
+                return available > photos.length
+                  ? `${photos.length} of ${available} (no preset holds more than ${PHOTO_LIMIT})`
+                  : `${photos.length} ${photos.length === 1 ? 'image' : 'images'}`;
+              })()}
+            </p>
+          )}
           <div className="grid grid-cols-2 gap-1">
             <button
               type="button"
@@ -255,7 +320,11 @@ export const DesignerCollagePanel: React.FC = () => {
         <section className="space-y-2">
           <div className="flex items-baseline justify-between">
             <h3 className="text-lead font-semibold text-ink">Layout</h3>
-            <span className="text-2xs text-ink-muted">{layout.name}</span>
+            <span className="text-2xs text-ink-muted">
+              {usingManualPick
+                ? layout.name
+                : `${layout.name} · chosen for ${photos.length} ${photos.length === 1 ? 'photo' : 'photos'}`}
+            </span>
           </div>
           <div className="grid grid-cols-3 gap-1.5">
             {COLLAGE_LAYOUTS.map((item) => {
@@ -264,7 +333,7 @@ export const DesignerCollagePanel: React.FC = () => {
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => setLayoutId(item.id)}
+                  onClick={() => setManualPick({ id: item.id, count: photos.length })}
                   title={`${item.name} · ${item.slotCount} photos`}
                   className={`aspect-square cursor-pointer rounded-tile border p-1.5 transition ${
                     active
