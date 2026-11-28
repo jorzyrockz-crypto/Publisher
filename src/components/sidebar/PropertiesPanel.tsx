@@ -232,6 +232,7 @@ export const PropertiesPanel: React.FC = () => {
   const wordArtPickerBtnRef = useRef<HTMLButtonElement>(null);
   const [isShapePickerOpen, setIsShapePickerOpen] = useState(false);
   const [isWordArtPickerOpen, setIsWordArtPickerOpen] = useState(false);
+  const [wordArtQuery, setWordArtQuery] = useState('');
   const [typoTab, setTypoTab] = useState<'character' | 'paragraph' | 'effects'>('character');
 
   const wordArtOptions = wordArtPickerOptions().map((opt) => ({
@@ -239,6 +240,7 @@ export const PropertiesPanel: React.FC = () => {
     label: opt.label,
     cssClass: opt.className,
     dark: opt.dark,
+    isNew: opt.isNew,
     // A backdrop style is the one thing a 36px tile cannot show — the highlight is geometry, not a
     // text effect. Label the kind and show its colour, rather than faking a shape the export would
     // not match.
@@ -2445,11 +2447,37 @@ export const PropertiesPanel: React.FC = () => {
                             anchorRef={wordArtPickerBtnRef}
                             className="p-2.5 w-72"
                           >
-                            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1 mb-2">
-                              WordArt Styles ({wordArtOptions.length})
+                            <div className="flex items-center justify-between px-1 mb-1.5">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                WordArt Styles ({wordArtOptions.length})
+                              </span>
+                              {wordArtQuery && (
+                                <button
+                                  type="button"
+                                  onClick={() => setWordArtQuery('')}
+                                  className="text-[10px] font-semibold text-[#6e56cf] hover:underline cursor-pointer"
+                                >
+                                  Clear
+                                </button>
+                              )}
                             </div>
+                            <input
+                              type="search"
+                              value={wordArtQuery}
+                              onChange={(e) => setWordArtQuery(e.target.value)}
+                              placeholder="Search styles — try bubble, gold, sticker…"
+                              className="w-full mb-2 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-[11px] outline-none focus:bg-white focus:ring-2 focus:ring-[#6e56cf]/20 focus:border-[#b3a4f2]"
+                            />
                             <div className="grid grid-cols-2 gap-1.5 max-h-72 overflow-y-auto pr-0.5">
-                              {wordArtOptions.map((opt) => {
+                              {wordArtOptions
+                                .filter((opt) =>
+                                  wordArtQuery.trim()
+                                    ? `${opt.label} ${opt.id}`
+                                        .toLowerCase()
+                                        .includes(wordArtQuery.trim().toLowerCase())
+                                    : true
+                                )
+                                .map((opt) => {
                                 const isCurrent = activeStyleId === opt.id;
                                 return (
                                   <button
@@ -2474,6 +2502,11 @@ export const PropertiesPanel: React.FC = () => {
                                       }`}
                                     >
                                       <span className={opt.cssClass}>Aa</span>
+                                      {opt.isNew && (
+                                        <span className="absolute left-1 top-1 rounded-[3px] bg-[#6e56cf] px-1 text-[7px] font-bold uppercase tracking-wide text-white">
+                                          New
+                                        </span>
+                                      )}
                                       {opt.backdrop && (
                                         <span
                                           className="absolute right-1 top-1 rounded-[3px] px-1 text-[7px] font-bold uppercase tracking-wide text-slate-900/80 border border-black/10"
@@ -2496,6 +2529,16 @@ export const PropertiesPanel: React.FC = () => {
                                 );
                               })}
                             </div>
+                            {wordArtQuery.trim() &&
+                              !wordArtOptions.some((opt) =>
+                                `${opt.label} ${opt.id}`
+                                  .toLowerCase()
+                                  .includes(wordArtQuery.trim().toLowerCase())
+                              ) && (
+                                <p className="px-1 pt-2 text-[10px] text-slate-400">
+                                  Nothing matches “{wordArtQuery}”.
+                                </p>
+                              )}
                           </FloatingDropdown>
                         </>
                       );

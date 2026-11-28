@@ -11,6 +11,12 @@ export interface WordArtOption {
   className: string;
   /** Preview needs a dark tile to read (glow styles). */
   dark?: boolean;
+  /**
+   * Added in the current release. The pickers float these to the top and tag them: a catalogue of
+   * fifty-three styles under a 288 px dropdown means a new style that lands in the middle of it is
+   * a style nobody finds.
+   */
+  isNew?: boolean;
 }
 
 export const WORD_ART_STYLES: WordArtOption[] = [
@@ -47,11 +53,13 @@ export const WORD_ART_STYLES: WordArtOption[] = [
     id: 'cartoon-bubble-blue',
     label: 'Bubble Sign Blue',
     className: 'wordart-cartoon-bubble-blue',
+    isNew: true,
   },
   {
     id: 'cartoon-bubble-pink',
     label: 'Bubble Sign Pink',
     className: 'wordart-cartoon-bubble-pink',
+    isNew: true,
   },
   // Flat ink on a painted highlight — the brush-swipe and pastel-pill headline.
   { id: 'brush-sunshine', label: 'Sunshine Brush Swipe', className: 'wordart-brush-sunshine' },
@@ -157,7 +165,11 @@ export function wordArtClassName(style?: WordArtStyle): string {
 
 /** Every style the UI offers, with "none" first. */
 export function wordArtPickerOptions(): WordArtOption[] {
-  return [{ id: 'none', label: 'Standard Text', className: 'text-slate-700' }, ...WORD_ART_STYLES];
+  // New styles first, then the catalogue order. "Standard Text" stays at the very top: it is the
+  // way out of a style, not a style.
+  const fresh = WORD_ART_STYLES.filter((style) => style.isNew);
+  const rest = WORD_ART_STYLES.filter((style) => !style.isNew);
+  return [{ id: 'none', label: 'Standard Text', className: 'text-slate-700' }, ...fresh, ...rest];
 }
 
 /* ------------------------------------------------------------------ *

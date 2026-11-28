@@ -593,7 +593,9 @@ export const DesignerToolRail: React.FC = () => {
                           </button>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
-                          {WORD_ART_STYLES.map((style) => (
+                          {[...WORD_ART_STYLES]
+                            .sort((a, b) => Number(!!b.isNew) - Number(!!a.isNew))
+                            .map((style) => (
                             <button
                               key={style.id}
                               type="button"
@@ -632,7 +634,7 @@ export const DesignerToolRail: React.FC = () => {
                                   style.dark ? 'text-slate-300' : 'text-[#6a7682]'
                                 }`}
                               >
-                                {style.label}
+                                {style.isNew ? `${style.label} · new` : style.label}
                               </span>
                             </button>
                           ))}
