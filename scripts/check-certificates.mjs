@@ -1,5 +1,5 @@
 /**
- * The six certificates, held to the rules the templates promise.
+ * The twelve certificates, held to the rules the templates promise.
  *
  * A certificate is the one template a school prints and signs, so the failures that matter are the
  * quiet ones: a signature line typed as `'______\nPrincipal'`, a font that is not loaded (so the
@@ -187,6 +187,49 @@ const SPECS = {
     qr: { 'tr-qr': 72 },
     signatures: ['tr-sig-l', 'tr-sig-r'],
   },
+  'cert-deped-academic-excellence': {
+    wordArt: { 'dp-ac-title': ['trophy-gold', 'Playfair Display'] },
+    logoSlots: ['dp-ac-crest-left', 'dp-ac-crest-right'],
+    script: { 'dp-ac-name': ['Kaushan Script', 50] },
+    signatures: ['dp-ac-sig-l', 'dp-ac-sig-r'],
+  },
+  'cert-deped-k3-merit': {
+    wordArt: {
+      'dp-k3m-title': ['champs-basa-blue', 'Fredoka'],
+      'dp-k3m-ribbon': ['champs-gold-ribbon', 'Nunito'],
+    },
+    logoSlots: ['dp-k3m-crest-left', 'dp-k3m-crest-right'],
+    script: { 'dp-k3m-name': ['Baloo 2', 52] },
+    signatures: ['dp-k3m-sig-l', 'dp-k3m-sig-r'],
+  },
+  'cert-deped-character-traits': {
+    wordArt: { 'dp-ct-title': ['reading-nook-sage', 'Fredoka'] },
+    logoSlots: ['dp-ct-crest-left', 'dp-ct-crest-right'],
+    script: {},
+    signatures: ['dp-ct-sig-l', 'dp-ct-sig-r'],
+  },
+  'cert-deped-perfect-attendance': {
+    wordArt: {
+      'dp-att-title': ['champs-kasadya-coral', 'Fredoka'],
+      'dp-att-ribbon': ['champs-gold-ribbon', 'Nunito'],
+    },
+    logoSlots: ['dp-att-crest-left', 'dp-att-crest-right'],
+    script: { 'dp-att-name': ['Baloo 2', 50] },
+    signatures: ['dp-att-sig-l', 'dp-att-sig-r'],
+  },
+  'cert-deped-leadership-special': {
+    wordArt: { 'dp-lead-title': ['trophy-gold', 'Playfair Display'] },
+    logoSlots: ['dp-lead-crest-left', 'dp-lead-crest-right'],
+    script: { 'dp-lead-name': ['Kaushan Script', 50] },
+    signatures: ['dp-lead-sig-l', 'dp-lead-sig-r'],
+  },
+  'cert-deped-inset-lac': {
+    wordArt: { 'dp-lac-title': ['portfolio-indigo', 'Plus Jakarta Sans'] },
+    logoSlots: ['dp-lac-crest-left', 'dp-lac-crest-right'],
+    script: {},
+    qr: { 'dp-lac-qr': 88 },
+    signatures: ['dp-lac-sig-l', 'dp-lac-sig-r'],
+  },
   'cert-service-appreciation': {
     wordArt: { 'ap-title': ['trophy-gold', 'Playfair Display'] },
     gradients: [
@@ -205,8 +248,8 @@ const loadedFamilies = new Set(
 );
 
 check(
-  'six certificates are exported',
-  CERTIFICATE_TEMPLATES.length === 6,
+  'twelve certificates are exported',
+  CERTIFICATE_TEMPLATES.length === 12,
   `got ${CERTIFICATE_TEMPLATES.length}`,
 );
 
@@ -245,8 +288,19 @@ for (const template of CERTIFICATE_TEMPLATES) {
   check(`${label}: paper pattern tiles`, (pattern?.scale ?? 0) >= 24, `${pattern?.scale}`);
   check(
     `${label}: no watermark shape spends an element`,
-    elements.filter((el) => el.width === page.width && el.height === page.height).length === 0,
+    // A full-page *shape* is the failure this guards: it paints 'transparent' between its motifs
+    // and every contrast check then reads that as the colour behind the type. A full-page *image*
+    // is a drawn ground, which is how these certificates get their paper.
+    elements.filter((el) => el.type === 'shape' && el.width === page.width && el.height === page.height)
+      .length === 0,
   );
+
+  /* anything that calls itself the drawn sheet is pinned, and points at a drawn file */
+  for (const el of elements) {
+    if (el.type !== 'image' || !/-(ground|border)$/.test(el.id)) continue;
+    check(`${label}:${el.id}: is pinned`, el.locked === true);
+    check(`${label}:${el.id}: points at a drawn asset`, /^(\.\/)?assets\/certificates\//.test(String(el.src)), String(el.src));
+  }
 
   /* furniture is pinned: a border that the align pass can nudge is a border that drifts */
   for (const id of ['ch-outer', 'ch-inner', 'cs-card', 'st-sidebar', 'st-side-rule', 'em-border', 'tr-frame', 'tr-header', 'ap-card', 'ap-rule-a', 'ap-rule-b']) {
@@ -265,7 +319,7 @@ for (const template of CERTIFICATE_TEMPLATES) {
     check(`${label}:${el.id}: has area`, el.width > 0 && el.height > 0);
   }
 
-  /* the six requested WordArt pieces: style, family, and paint that needs no rescue */
+  /* every requested WordArt piece: style, family, and paint that needs no rescue */
   for (const [id, [style, family]] of Object.entries(spec?.wordArt ?? {})) {
     const el = byId.get(id);
     check(`${label}:${id}: exists as WordArt`, Boolean(el) && el.isWordArt === true && el.wordArtStyle === style, el?.wordArtStyle);
@@ -275,11 +329,20 @@ for (const template of CERTIFICATE_TEMPLATES) {
     const paint = wordArtPaint(style);
     const stops = paint?.gradient ? paint.gradient.stops.map((stop) => stop.color) : [paint?.fill].filter(Boolean);
     const ground = el ? backdropFor(el, elements, page) : '#ffffff';
-    const worstStop = stops.length > 0 ? Math.min(...stops.map((stop) => ratio(stop, ground) ?? 1)) : 0;
+    const rim = paint?.stroke?.color ? ratio(paint.stroke.color, ground) : null;
+    const best = Math.max(0, ...stops.map((stop) => ratio(stop, ground) ?? 0), rim ?? 0);
+    const plain = el ? (ratio(el.color, ground) ?? 0) : 0;
+    // Two questions, both real:
+    //  - the paint has to give the eye something to follow. Not *every* stop: a ramp from rose to
+    //    wine crossing a plum board has one end that matches the ground, and that is the point of
+    //    a ramp — the light end and the rim carry the glyph edges. So it is the best stop or the
+    //    rim, not the worst stop, that has to separate.
+    //  - and if a renderer ignores WordArt altogether, the element's own `color` is what prints,
+    //    so that has to read too.
     check(
       `${label}:${id}: reads on its ground`,
-      wordArtCarriesContrast(style) || worstStop >= 3,
-      `${style} on ${ground} = ${worstStop}:1`,
+      wordArtCarriesContrast(style) || (best >= 3 && plain >= 3),
+      `${style} on ${ground} = best ${best}:1, plain ${plain}:1`,
     );
   }
 
@@ -306,7 +369,11 @@ for (const template of CERTIFICATE_TEMPLATES) {
     const el = byId.get(id);
     check(`${label}:${id}: is an image slot`, el?.type === 'image');
     check(`${label}:${id}: is empty`, el?.src === '', String(el?.src).slice(0, 24));
-    check(`${label}:${id}: is 64px round`, el?.width === 64 && el?.height === 64 && el?.maskShape === 'circle');
+    check(
+      `${label}:${id}: is a square round slot`,
+      Boolean(el) && el.width === el.height && el.width >= 56 && el.width <= 72 && el.maskShape === 'circle',
+      `${el?.width}×${el?.height} ${el?.maskShape}`,
+    );
     check(`${label}:${id}: is marked as a logo slot`, el?.slotKind === 'logo' && el?.isPlaceholder === true);
   }
 

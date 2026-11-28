@@ -191,19 +191,19 @@ pieces live across three packs. Rather than rewrite their layout, `ASSET_ALIASES
 (`bg-champs-nook` → the Story Kit's `bg-cozy-reading-nook`, `frame-hanging-vines` → `frame-top-canopy`,
 `sticker-champs-trophy` → `badge-star-medal`, and so on).
 
-## The six certificates, drawn in parts
+## The twelve certificates, drawn in parts
 
 `src/constants/certificateTemplates.ts` held six object literals that had drifted apart: one pair of
 signature rules on the honor roll, `'______________________\nNames'` typed into a text box on the
 other five, `Inter` and `Poppins` on pages that never load them, and nothing at all behind the paper.
-They are now six pages built from the same four parts, so the pieces that must agree physically
-cannot drift:
+They are now pages built from the same four parts, so the pieces that must agree physically cannot
+drift:
 
 | part | what it is | why it is built this way |
 |---|---|---|
 | paper | `page.backgroundPattern` — dots or a grid at 5–6%, tiled at 28–40px | the sheet needs tooth; a *shape* cannot supply it. See below. |
 | signature | a real `line` at 1.5px, the name in bold, the role in muted letter-spaced small caps | runs are not styled, so "bold name over muted role" is three elements — and the rule is a line, not eight underscores |
-| logo slot | a 64px circular `image` with `src: ''` and `slotKind: 'logo'` | it is meant to be empty until the school drops its crest in |
+| logo slot | a circular `image` with `src: ''` and `slotKind: 'logo'` — 64px on the first six, 60px on the DepEd letterhead | it is meant to be empty until the school drops its crest in |
 | QR | a 96px (STEM) or 72px (training) `qr` pointing at a verification URL | the two certificates that certify attendance get one |
 
 Everything else is the individual design: a navy→indigo gradient banner with a gold accent bar and
@@ -223,10 +223,48 @@ paper tone into `fillColor` fixes that one shape, but the page's own pattern is 
 model already has: it renders in the canvas, the gallery preview and the rasteriser, it sits behind
 every element by definition, and it cannot be misread as ink.
 
+## The DepEd set, drawn on the sheet
+
+Six more certificates cover the Department's own calendar — academic excellence under DO 015, s. 2026,
+a K–3 merit award, the Core Values citation, perfect attendance, leadership, and INSET/LAC
+participation. They invert the first six's geometry: there, the paper was a page pattern and the
+frame was a locked stroke; here the paper *and* the frame are drawn assets from the library, full
+bleed at 1056×816 with `objectFit: 'fill'` and `locked: true` on both, at `zIndex` 1 and 2.
+
+That inverts the layout problem too. The margin no longer bounds the type — **the frame's own ink
+does**, and it is not a rectangle: the laurel clusters on `cert-border-royal-gold` climb to x 204 and
+x 851 by the signature rows, and the stars on `cert-border-k3-crayon-stars` reach x 180 and x 923.
+So each frame was measured at 1056×816 — alpha > 24, the free run in every row — and every box is
+placed inside the run of the rows it actually occupies, not inside one generous rectangle derived
+from the middle of the page. `check:certs` re-does that measurement and fails any element whose box
+touches frame ink at all; the proofs are rendered from the same numbers.
+
+Three consequences were designed rather than dodged:
+
+- **The letterhead is one helper.** `depedHeader(id, { x, y, width })` draws crest, "Republic of the
+  Philippines • Department of Education", "Region VI – Western Visayas • [School]", crest. Its width
+  is deliberately 4 more than a multiple of 8: the crests are 60 wide, so a 0-mod-8 width would put
+  the right crest 4px off the step and the align pass would nudge a *logo frame*, which is the one
+  thing a certificate must not do. A 4-mod-8 width puts both crests on the step, at the cost of a 2px
+  offset from the sheet's centre line.
+- **The coral title gets a board to stand on.** `champs-kasadya-coral` runs rose → wine; its own paint
+  cannot clear every ground, so `enhanceText` would repaint it. `cert-deped-perfect-attendance` puts
+  it on a plum `#4a1526` plaque instead — the classroom blackboard the award belongs on — and the
+  style survives both passes untouched, cream-rimmed letters on a dark board.
+- **Elements that must not move are drawn still.** Every box is on the 8px step and every stack gap
+  is a multiple of 8, so `alignToGrid` and `normaliseRhythm` have nothing to fix; `check:certs`
+  diffs the shipped page against both the enhanced and the tidied candidate and reports the largest
+  move, which is 0 for all six.
+
+The names follow the sheet: Kaushan Script 50px for the DO 015 and leadership awards, Baloo 2 for the
+K–3 and attendance pages, and the citations quote the instrument they rest on — School Form 2 (SF2)
+for attendance, DepEd Order No. 015 for the general average — because a certificate that does not
+name its basis is a poster.
+
 ## The drawn asset library (`public/assets/certificates/`)
 
-Fifteen pieces of certificate art live beside the templates, drawn once so the six certificates can
-point at them instead of restyling a rectangle:
+Fifteen pieces of certificate art live beside the templates, drawn once so the twelve can point at
+them instead of restyling a rectangle:
 
 | file | size | what it is |
 |---|---|---|
@@ -332,7 +370,7 @@ past the bottom margin is not spread at all.
 - Every page was rasterised (Pillow, DejaVu) and inspected page by page: the veils, the composed
   posters and invitations, and the pages the guard left alone all read correctly. The renderer
   lives outside the repo (it is a probe, not product code).
-- `npm run check:certs` — 1141 assertions over the six certificates and their art: family is one the app loads,
+- `npm run check:certs` — 2328 assertions over the twelve certificates and their art: family is one the app loads,
   no typed-in signature, a rule at 1.5px under every name, the requested WordArt style and face on
   every title, logo slots still empty, QR blocks holding a URL, every non-WordArt colour clearing
   4.5:1 (3:1 at display sizes) against the shape actually behind it, and both pipeline stages
