@@ -114,10 +114,15 @@ the card cannot land differently or produce different undo steps.
 ## 3. The sections
 
 ### 3.1 Type (the font)
-Full family list, not eight names: a searchable list built from `SYSTEM_FONTS` +
-`GOOGLE_FONTS_CATALOG` (reusing `FontSelector`'s data layer and its download-on-first-use
-behaviour), each row rendered in its own face. Below it: weight/style, size, tracking, leading,
-case — the fields the Typography card already has, in the same order, so the two read the same.
+Full family list, not eight names: every family in `SYSTEM_FONTS` + `GOOGLE_FONTS_CATALOG`,
+searchable and filterable, **including the ones this device has never downloaded** — the list
+exists to show you faces you do not have.
+
+Each row fetches its own stylesheet the first time it comes near the viewport
+(`useFontPreview`, `rootMargin: 160px`), so scrolling is what downloads previews and opening the
+panel costs about one screen of requests rather than sixty. Offline, no request is made: the
+rows still render, still apply when tapped, and the panel says so instead of silently showing
+every font in the fallback face.
 
 The bar's font chip shows the current family name (or `Mixed`) and opens here.
 

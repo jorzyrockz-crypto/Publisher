@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Check, ChevronLeft, Pipette, Plus, Search } from 'lucide-react';
 import { usePublisher } from '../../context/PublisherContext';
 import { useTextSelection } from '../../hooks/useTextSelection';
@@ -11,6 +11,7 @@ import {
   loadGoogleFontStylesheet,
   type FontDefinition,
 } from '../../constants/fonts';
+import { useFontPreview } from '../../hooks/useFontPreview';
 import { SmartPalette } from '../common/SmartPalette';
 import type { ColorTarget } from '../../utils/documentPalette';
 import type { TextElement } from '../../types/publisher';
@@ -46,6 +47,37 @@ function readRecentColors(): string[] {
     return [];
   }
 }
+
+/**
+ * One family in the list.
+ *
+ * Every family gets a row whether or not it is installed — the list exists to show faces you
+ * do not have. The row fetches its own stylesheet when it comes near the viewport, so scrolling
+ * the list is what downloads the previews and opening the panel costs one request, not sixty.
+ */
+const FontRow: React.FC<{
+  family: string;
+  isCurrent: boolean;
+  previews: boolean;
+  onPick: () => void;
+}> = ({ family, isCurrent, previews, onPick }) => {
+  const { nodeRef } = useFontPreview(family, previews);
+  return (
+    <button
+      ref={nodeRef}
+      type="button"
+      onClick={onPick}
+      aria-pressed={isCurrent}
+      className={`w-full min-h-[52px] flex items-center justify-between gap-2 px-3 rounded-[12px] text-left transition cursor-pointer active:scale-[0.99] touch-manipulation ${
+        isCurrent ? 'bg-[#efeafd] text-[#5c4bb8]' : 'bg-[#f8fafb] text-[#161a22]'
+      }`}
+      style={{ fontFamily: `"${family}", Inter, sans-serif` }}
+    >
+      <span className="text-[17px] leading-tight truncate">{family}</span>
+      {isCurrent && <Check size={16} className="shrink-0" />}
+    </button>
+  );
+};
 
 const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div className="text-[11px] font-bold uppercase tracking-[0.09em] text-[#6a7682] mb-1.5">
@@ -95,30 +127,23 @@ export const TextControlsPanel: React.FC<{ variant?: 'card' | 'pane' }> = ({ var
 
   useCloseOnOutsideClick(rootRef, Boolean(textControlSection && selection), closeTextControl);
 
-  const downloadsRequestedRef = useRef<Set<string>>(new Set());
   const section = textControlSection;
 
-  // Preview faces: ask for the stylesheet of the rows about to be drawn, once, capped so a
-  // 60-row list does not fire 60 requests. Already-cached families return immediately.
-  const visibleFamilies = useMemo(() => {
-    if (section !== 'type') return [] as string[];
-    const q = query.trim().toLowerCase();
-    return [...SYSTEM_FONTS, ...GOOGLE_FONTS_CATALOG]
-      .filter((font) => (category === 'all' ? true : font.category === category))
-      .filter((font) => (q ? font.family.toLowerCase().includes(q) : true))
-      .slice(0, 12)
-      .filter((font) => font.source === 'google')
-      .map((font) => font.family);
-  }, [section, query, category]);
-
+  // Previews need a connection; say so instead of showing every row in the fallback face and
+  // letting it look like the font list is broken.
+  const [online, setOnline] = useState(() =>
+    typeof navigator === 'undefined' ? true : navigator.onLine !== false
+  );
   useEffect(() => {
-    if (visibleFamilies.length === 0) return;
-    visibleFamilies.forEach((family) => {
-      if (downloadsRequestedRef.current.has(family)) return;
-      downloadsRequestedRef.current.add(family);
-      void loadGoogleFontStylesheet(family);
-    });
-  }, [visibleFamilies]);
+    const goOnline = () => setOnline(true);
+    const goOffline = () => setOnline(false);
+    window.addEventListener('online', goOnline);
+    window.addEventListener('offline', goOffline);
+    return () => {
+      window.removeEventListener('online', goOnline);
+      window.removeEventListener('offline', goOffline);
+    };
+  }, []);
 
   if (!section || !selection) return null;
 
@@ -163,26 +188,18 @@ export const TextControlsPanel: React.FC<{ variant?: 'card' | 'pane' }> = ({ var
       (q ? font.family.toLowerCase().includes(q) : true)
   );
 
-  const renderFamilyRow = (family: string) => {
-    const isCurrent = family === primary.fontFamily;
-    return (
-      <button
-        key={family}
-        type="button"
-        onClick={() => {
-          if (!downloaded.has(family)) void loadGoogleFontStylesheet(family);
-          applyToAll({ fontFamily: family });
-        }}
-        className={`w-full min-h-[52px] flex items-center justify-between gap-2 px-3 rounded-[12px] text-left transition cursor-pointer active:scale-[0.99] touch-manipulation ${
-          isCurrent ? 'bg-[#efeafd] text-[#5c4bb8]' : 'bg-[#f8fafb] text-[#161a22]'
-        }`}
-        style={{ fontFamily: `"${family}", Inter, sans-serif` }}
-      >
-        <span className="text-[17px] leading-tight truncate">{family}</span>
-        {isCurrent && <Check size={16} className="shrink-0" />}
-      </button>
-    );
-  };
+  const renderFamilyRow = (family: string) => (
+    <FontRow
+      key={family}
+      family={family}
+      isCurrent={family === primary.fontFamily}
+      previews={online}
+      onPick={() => {
+        if (!downloaded.has(family)) void loadGoogleFontStylesheet(family);
+        applyToAll({ fontFamily: family });
+      }}
+    />
+  );
 
   return (
     <div
@@ -234,19 +251,29 @@ export const TextControlsPanel: React.FC<{ variant?: 'card' | 'pane' }> = ({ var
           {familiesInDesign.length > 0 && (
             <div>
               <SectionLabel>In this design</SectionLabel>
-              <div className="space-y-1">{familiesInDesign.slice(0, 4).map(renderFamilyRow)}</div>
+              <div className="space-y-1">
+                {familiesInDesign.slice(0, 4).map((family) => renderFamilyRow(family))}
+              </div>
             </div>
           )}
 
           <div>
-            <SectionLabel>{query.trim() ? 'Results' : 'Recommended fonts'}</SectionLabel>
+            <SectionLabel>
+              {query.trim() ? `Results · ${matches.length}` : `All fonts · ${matches.length}`}
+            </SectionLabel>
+            {!online && (
+              <div className="mb-2 px-3 py-2 rounded-[10px] border border-[#f6d9a8] bg-[#fff8ec] text-[12px] text-[#8a5a12]">
+                Offline — previews for fonts you have not downloaded will appear when you
+                reconnect. You can still pick one.
+              </div>
+            )}
             <div className="max-h-[46vh] overflow-y-auto overscroll-contain -mx-1 px-1">
               {matches.length === 0 ? (
                 <div className="px-2 py-4 text-[13px] text-[#6a7682]">
                   No font matches “{query}”.
                 </div>
               ) : (
-                <div className="space-y-1">{matches.slice(0, 40).map((font) => renderFamilyRow(font.family))}</div>
+                <div className="space-y-1">{matches.map((font) => renderFamilyRow(font.family))}</div>
               )}
             </div>
           </div>
