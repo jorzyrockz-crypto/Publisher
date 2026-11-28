@@ -47,6 +47,13 @@ export interface WordArtLine {
 
 export interface WordArtCanvasOptions {
   /**
+   * Type size of the line, in page pixels. The paint specs are authored against a 72 px letter, and
+   * `-webkit-text-stroke` in the DOM is written in em, so the canvas has to scale its rim the same
+   * way or an export of a tarpaulin title comes back with a hairline where the editor showed a
+   * die-cut. Defaults to the 72 px reference, which is exactly the old fixed-width behaviour.
+   */
+  fontSize?: number;
+  /**
    * Export multiplier. Pass 1 when the context is already scaled (the page
    * renderer scales once for the whole sheet); pass the DPI factor when it is
    * not, so rims, extrusion depth and sparkles stay proportional.
@@ -193,6 +200,9 @@ export function drawBrushBackdrop(
  */
 const RIM_MULTIPLIER = 1;
 
+/** The type size the paint specs' pixel widths are authored at — the same 72 px as `strokeCss`. */
+const RIM_REFERENCE_SIZE = 72;
+
 export function renderWordArtCanvas(
   ctx: CanvasRenderingContext2D,
   spec: WordArtSpec,
@@ -204,14 +214,25 @@ export function renderWordArtCanvas(
     options.paint ??
     ((pass: WordArtPass) => {
       ctx.save();
-      if (pass.blur > 0 && 'filter' in ctx) ctx.filter = `blur(${pass.blur / 2}px)`;
+      // Half the CSS radius is the canvas radius (a `drop-shadow` blur reads about twice as wide as
+      // `filter: blur`), and the *export multiplier* has to be applied or a 3x PNG gets a bloom and a
+      // cast shadow sized for the 1x one — the letters sharpen and the soft parts stay soft.
+      if (pass.blur > 0 && 'filter' in ctx) ctx.filter = `blur(${(pass.blur * scale) / 2}px)`;
       ctx.translate(pass.offsetX, pass.offsetY);
-      ctx.fillStyle = pass.style;
       if (pass.mode === 'stroke') {
+        // `strokeText` reads `strokeStyle`, and nothing was setting it: every rim, keyline and
+        // extrusion wall in this painter was stroked in whatever colour the context last held —
+        // black, by default — so a white die-cut came out as a black outline. Set per pass, from
+        // the pass.
+        ctx.strokeStyle = pass.style;
         ctx.lineWidth = pass.lineWidth ?? 1;
-        ctx.strokeText(line.text, 0, 0);
+        // Where the line says it is. Both current callers pass an anchor of (0, 0) and place the
+        // context themselves, so this is the same pixel — but a caller that hands in a real anchor
+        // and gets its text drawn at the origin is a bug waiting in the default painter.
+        ctx.strokeText(line.text, line.x, line.y);
       } else {
-        ctx.fillText(line.text, 0, 0);
+        ctx.fillStyle = pass.style;
+        ctx.fillText(line.text, line.x, line.y);
       }
       ctx.restore();
     });
@@ -224,7 +245,8 @@ export function renderWordArtCanvas(
   // not part of the lettering.
   drawBrushBackdrop(ctx, line.box, spec.id, scale);
 
-  const rimWidth = wordArtRimWidth(spec) * RIM_MULTIPLIER * scale;
+  const rimWidth =
+    wordArtRimWidth(spec) * RIM_MULTIPLIER * scale * ((options.fontSize ?? RIM_REFERENCE_SIZE) / RIM_REFERENCE_SIZE);
   const gradient = createAngledGradient(ctx, spec, line.box);
 
   // 1. Light behind the letters, furthest first: the bloom, then the long cast

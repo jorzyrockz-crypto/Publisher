@@ -61,6 +61,34 @@ export const WORD_ART_STYLES: WordArtOption[] = [
     className: 'wordart-cartoon-bubble-pink',
     isNew: true,
   },
+  // The rest of the pencil-playful sign set: the same white die-cut and ink keyline in magenta, cyan
+  // and purple, so a colour-coded wall reads as one family — plus an ink-black one for the sub-line
+  // that sits under a sign ("every day", "new stories"), where the colour would compete with the
+  // word above it.
+  {
+    id: 'cartoon-bubble-magenta',
+    label: 'Bubble Sign Magenta',
+    className: 'wordart-cartoon-bubble-magenta',
+    isNew: true,
+  },
+  {
+    id: 'cartoon-bubble-cyan',
+    label: 'Bubble Sign Cyan',
+    className: 'wordart-cartoon-bubble-cyan',
+    isNew: true,
+  },
+  {
+    id: 'cartoon-bubble-purple',
+    label: 'Bubble Sign Purple',
+    className: 'wordart-cartoon-bubble-purple',
+    isNew: true,
+  },
+  {
+    id: 'cartoon-body-black',
+    label: 'Bubble Sign Ink Black',
+    className: 'wordart-cartoon-body-black',
+    isNew: true,
+  },
   // Flat ink on a painted highlight — the brush-swipe and pastel-pill headline.
   { id: 'brush-sunshine', label: 'Sunshine Brush Swipe', className: 'wordart-brush-sunshine' },
   { id: 'brush-blush', label: 'Pastel Blush Ribbon', className: 'wordart-brush-blush' },
@@ -241,6 +269,13 @@ export interface WordArtPaint {
    * the declared width — the rim covers the inner half, exactly like `heavyStroke`.
    */
   outline?: { width: number; color: string };
+  /**
+   * The typeface this style was drawn for. A style paints letters; it does not choose them, and a
+   * gradient in the wrong font is half a look. Picking a style applies this (see `wordArtFacePatch`)
+   * — once, at the moment of choosing — so a document keeps whatever font it was designed with and
+   * a manual change afterwards is not undone.
+   */
+  fontFamily?: string;
   /** Marching 3D block, painted behind everything. */
   extrusion?: WordArtExtrusion;
   /** Soft light spills (painted furthest back). */
@@ -559,6 +594,7 @@ export function wordArtHasBackdrop(style?: WordArtStyle): boolean {
 
 const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   rainbow: {
+    fontFamily: 'Montserrat',
     weight: '900',
     gradient: {
       angle: 135,
@@ -573,6 +609,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [{ dx: 0, dy: 2, blur: 4, color: 'rgba(0,0,0,0.15)' }],
   },
   gold3d: {
+    fontFamily: 'Playfair Display',
     weight: '800',
     gradient: {
       angle: 180,
@@ -590,12 +627,14 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     ],
   },
   outline: {
+    fontFamily: 'Montserrat',
     weight: '900',
     fill: '#ffffff',
     stroke: { width: 2, color: '#0f766e' },
     shadows: [{ dx: 2, dy: 3, blur: 0, color: 'rgba(15,118,110,0.3)' }],
   },
   retro: {
+    fontFamily: 'Montserrat',
     weight: '800',
     fill: '#ec4899',
     shadows: [
@@ -604,6 +643,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     ],
   },
   'neon-glow': {
+    fontFamily: 'Montserrat',
     weight: '900',
     fill: '#e0f2fe',
     shadows: [
@@ -613,6 +653,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     ],
   },
   chrome: {
+    fontFamily: 'Montserrat',
     weight: '900',
     gradient: {
       angle: 180,
@@ -631,6 +672,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [{ dx: 0, dy: 2, blur: 3, color: 'rgba(15,23,42,0.45)' }],
   },
   fire: {
+    fontFamily: 'Montserrat',
     weight: '900',
     gradient: {
       angle: 180,
@@ -643,12 +685,14 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [{ dx: 0, dy: 3, blur: 8, color: 'rgba(239,68,68,0.55)' }],
   },
   'comic-pop': {
+    fontFamily: 'Bangers',
     weight: '900',
     fill: '#facc15',
     stroke: { width: 2, color: '#0f172a' },
     shadows: [{ dx: 4, dy: 4, blur: 0, color: '#0f172a' }],
   },
   'emerald-3d': {
+    fontFamily: 'Montserrat',
     weight: '900',
     fill: '#10b981',
     shadows: [
@@ -659,6 +703,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     ],
   },
   'sunset-gradient': {
+    fontFamily: 'Montserrat',
     weight: '900',
     gradient: {
       angle: 135,
@@ -671,6 +716,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [{ dx: 0, dy: 2, blur: 4, color: 'rgba(236,72,153,0.3)' }],
   },
   'gradient-blue': {
+    fontFamily: 'Montserrat',
     weight: '900',
     gradient: {
       angle: 180,
@@ -685,6 +731,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   // Film-title gold: warm rim light, a deep ink edge so it survives a pale
   // backdrop, and a long soft cast shadow for depth.
   cinematic: {
+    fontFamily: 'Playfair Display',
     weight: '900',
     gradient: {
       angle: 178,
@@ -704,6 +751,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   // Iridescent foil — the "AI render" look: violet to cyan to pink, lifted by
   // a cool bloom and held together with a near-black edge.
   holographic: {
+    fontFamily: 'Montserrat',
     weight: '900',
     gradient: {
       angle: 135,
@@ -725,6 +773,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   },
   // College block letters: crisp white edge, hard offset shadow, no gradient.
   varsity: {
+    fontFamily: 'Bangers',
     weight: '900',
     fill: '#dc2626',
     stroke: { width: 4, color: '#ffffff' },
@@ -733,6 +782,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   // Horizon-break metal: gold sky, a hard snap into indigo water, cyan bounce
   // under it, a six-step ember block and a violet bloom — the "AI render" look.
   'synth-chrome': {
+    fontFamily: 'Montserrat',
     weight: '900',
     italic: true,
     glints: true,
@@ -755,6 +805,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'liquid-glass': {
+    fontFamily: 'Montserrat',
     weight: '900',
     glints: true,
     gradient: {
@@ -776,6 +827,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'rose-gold': {
+    fontFamily: 'Playfair Display',
     weight: '900',
     glints: true,
     gradient: {
@@ -797,6 +849,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'cyber-acid': {
+    fontFamily: 'Montserrat',
     weight: '900',
     italic: true,
     gradient: {
@@ -817,6 +870,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   // Self-contained on light or dark: a glossy charcoal face with a hard
   // diagonal sheen and a gold foil edge.
   'obsidian-gold': {
+    fontFamily: 'Playfair Display',
     weight: '900',
     gradient: {
       angle: 155,
@@ -835,6 +889,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'candy-gloss': {
+    fontFamily: 'Lilita One',
     weight: '900',
     gradient: {
       angle: 180,
@@ -855,6 +910,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   // Three bright stops on a vertical ramp, a fat white border and a soft paper-lift shadow.
   // No horizon break and no chrome: these are meant to be read from across a school yard.
   'sticker-royal': {
+    fontFamily: 'Lilita One',
     weight: '900',
     gradient: {
       angle: 180,
@@ -870,6 +926,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'sticker-forest': {
+    fontFamily: 'Kaushan Script',
     weight: '900',
     gradient: {
       angle: 180,
@@ -885,6 +942,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'sticker-coral': {
+    fontFamily: 'Kaushan Script',
     weight: '900',
     gradient: {
       angle: 180,
@@ -900,42 +958,143 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'cartoon-bubble-blue': {
+    fontFamily: 'Lilita One',
     weight: '900',
+    // Sky to royal: a bright top edge and a deep foot, the way a printed sign is lit from above.
     gradient: {
       angle: 180,
       stops: [
-        { offset: 0, color: '#b9e2ff' },
-        { offset: 0.16, color: '#4aa3ff' },
-        { offset: 0.5, color: '#1c72e8' },
-        { offset: 0.84, color: '#0c47a8' },
-        { offset: 1, color: '#082f76' },
+        { offset: 0, color: '#7dd3fc' },
+        { offset: 0.18, color: '#38bdf8' },
+        { offset: 0.55, color: '#0284c7' },
+        { offset: 1, color: '#1d4ed8' },
       ],
     },
-    stroke: { width: 9, color: '#ffffff' },
+    // 6 px at the 72 px reference — half of it shows past the glyph edge, so 6 px of white — and a
+    // near-black ring rather than navy: the reference sign's outer line is ink, not a tint of the
+    // fill, and a tint reads as a soft edge at banner size.
+    stroke: { width: 6, color: '#ffffff' },
     heavyStroke: true,
-    outline: { width: 4, color: '#0b2f6e' },
-    castShadow: { dx: 0, dy: 6, blur: 12, color: 'rgba(9, 38, 94, 0.35)' },
+    outline: { width: 3.5, color: '#18181b' },
+    // A two-step dark lip under the face. Small and hard: it is the thickness of a die-cut sticker,
+    // not a 3D block.
+    extrusion: { steps: 2, dx: 0, dy: 1.5, startColor: '#18181b', endColor: '#18181b' },
+    castShadow: { dx: 0, dy: 5, blur: 8, color: 'rgba(15, 23, 42, 0.35)' },
+    // The gentle classroom-banner smile. Belongs to the style, so a template gets it for free and an
+    // element's own `textCurve` still overrides it.
+    arc: 0.08,
     shadows: [],
   },
   'cartoon-bubble-pink': {
+    fontFamily: 'Lilita One',
+    weight: '900',
+    // Candy to magenta, lit the same way as the blue so a pair of signs reads as a pair.
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#fbcfe8' },
+        { offset: 0.18, color: '#f472b6' },
+        { offset: 0.55, color: '#ec4899' },
+        { offset: 1, color: '#be185d' },
+      ],
+    },
+    stroke: { width: 6, color: '#ffffff' },
+    heavyStroke: true,
+    outline: { width: 3.5, color: '#18181b' },
+    extrusion: { steps: 2, dx: 0, dy: 1.5, startColor: '#18181b', endColor: '#18181b' },
+    castShadow: { dx: 0, dy: 5, blur: 8, color: 'rgba(15, 23, 42, 0.35)' },
+    arc: 0.08,
+    shadows: [],
+  },
+  // The rest of the pencil-playful sign set. Same grammar as blue and pink — a vertical ramp inside
+  // a doubled white rim inside an ink keyline, with the two-step lip of a die-cut sticker — tuned to
+  // 4.5 px of rim and a 6 px blur so the smaller sign words ("Read", "Grow") stay crisp.
+  'cartoon-bubble-magenta': {
+    fontFamily: 'Lilita One',
+    weight: '900',
+    // Rose to wine, lit from above like its siblings so a row of signs reads as a set.
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#ffafd8' },
+        { offset: 0.25, color: '#f43f5e' },
+        { offset: 0.85, color: '#be123c' },
+        { offset: 1, color: '#881337' },
+      ],
+    },
+    // 4.5 px at the 72 px reference, doubled and half-hidden by the fill, so 4.5 px of white shows.
+    stroke: { width: 4.5, color: '#ffffff' },
+    heavyStroke: true,
+    outline: { width: 3.5, color: '#18181b' },
+    extrusion: { steps: 2, dx: 0, dy: 1.5, startColor: '#18181b', endColor: '#18181b' },
+    castShadow: { dx: 0, dy: 4, blur: 6, color: 'rgba(15, 23, 42, 0.22)' },
+    arc: 0.08,
+    shadows: [],
+  },
+  'cartoon-bubble-cyan': {
+    fontFamily: 'Lilita One',
+    weight: '900',
+    // Ice to petrol: the cool member of the set, with a slightly longer ramp to the deep stop.
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#a5f3fc' },
+        { offset: 0.35, color: '#06b6d4' },
+        { offset: 0.85, color: '#0891b2' },
+        { offset: 1, color: '#164e63' },
+      ],
+    },
+    stroke: { width: 4.5, color: '#ffffff' },
+    heavyStroke: true,
+    outline: { width: 3.5, color: '#18181b' },
+    extrusion: { steps: 2, dx: 0, dy: 1.5, startColor: '#18181b', endColor: '#18181b' },
+    castShadow: { dx: 0, dy: 4, blur: 6, color: 'rgba(15, 23, 42, 0.22)' },
+    arc: 0.08,
+    shadows: [],
+  },
+  'cartoon-bubble-purple': {
+    fontFamily: 'Lilita One',
+    weight: '900',
+    // Lilac to aubergine, the same 0.35 mid as cyan so the two read as one weight of colour.
+    gradient: {
+      angle: 180,
+      stops: [
+        { offset: 0, color: '#e9d5ff' },
+        { offset: 0.35, color: '#a855f7' },
+        { offset: 0.85, color: '#7e22ce' },
+        { offset: 1, color: '#581c87' },
+      ],
+    },
+    stroke: { width: 4.5, color: '#ffffff' },
+    heavyStroke: true,
+    outline: { width: 3.5, color: '#18181b' },
+    extrusion: { steps: 2, dx: 0, dy: 1.5, startColor: '#18181b', endColor: '#18181b' },
+    castShadow: { dx: 0, dy: 4, blur: 6, color: 'rgba(15, 23, 42, 0.22)' },
+    arc: 0.08,
+    shadows: [],
+  },
+  // The sub-line of the set: identical rim and keyline so it stacks under a coloured sign, but a
+  // graphite-to-near-black ramp and no lip — it carries secondary words, so it must not out-shout
+  // the one above. Shorter shadow, thinner ring, and flat: an arc is a headline gesture.
+  'cartoon-body-black': {
+    fontFamily: 'Lilita One',
     weight: '900',
     gradient: {
       angle: 180,
       stops: [
-        { offset: 0, color: '#ffd1e8' },
-        { offset: 0.16, color: '#ff5fae' },
-        { offset: 0.5, color: '#ea1a84' },
-        { offset: 0.84, color: '#b00a5a' },
-        { offset: 1, color: '#7d0740' },
+        { offset: 0, color: '#4b5563' },
+        { offset: 0.2, color: '#1f2937' },
+        { offset: 1, color: '#030712' },
       ],
     },
-    stroke: { width: 9, color: '#ffffff' },
+    stroke: { width: 4, color: '#ffffff' },
     heavyStroke: true,
-    outline: { width: 4, color: '#7a0b46' },
-    castShadow: { dx: 0, dy: 6, blur: 12, color: 'rgba(96, 6, 52, 0.35)' },
+    outline: { width: 3.2, color: '#18181b' },
+    castShadow: { dx: 0, dy: 3, blur: 4, color: 'rgba(15, 23, 42, 0.2)' },
     shadows: [],
   },
   'sticker-teal': {
+    fontFamily: 'Fredoka',
     weight: '900',
     gradient: {
       angle: 180,
@@ -952,6 +1111,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   },
   // Navy ink on a sunshine swipe: the highlight does the shouting, the type stays calm.
   'brush-sunshine': {
+    fontFamily: 'Kaushan Script',
     weight: '900',
     gradient: {
       angle: 180,
@@ -965,6 +1125,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   },
   // The softer sibling, for teacher-wellness and quote cards.
   'brush-blush': {
+    fontFamily: 'Kaushan Script',
     weight: '900',
     gradient: {
       angle: 180,
@@ -981,6 +1142,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   },
   // Indigo ink on a pastel pill: the same idea, tidier, for agendas.
   'pill-highlight': {
+    fontFamily: 'Plus Jakarta Sans',
     weight: '900',
     fill: '#1e1b4b',
     backdrop: { type: 'pastel-pill', color: '#e0e7ff', paddingX: 22, paddingY: 10 },
@@ -990,6 +1152,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   // Plant-a-tree posters: pine and gold, wood and ribbon. Same grammar as the stickers — a heavy
   // authored rim doing the contrast work — but the palette is forest rather than candy.
   'eco-champion': {
+    fontFamily: 'Lilita One',
     weight: '900',
     gradient: {
       angle: 180,
@@ -1008,6 +1171,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'eco-leaf': {
+    fontFamily: 'Lilita One',
     weight: '900',
     gradient: {
       angle: 180,
@@ -1022,6 +1186,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'wood-plank-action': {
+    fontFamily: 'Bangers',
     weight: '900',
     italic: true,
     gradient: {
@@ -1037,6 +1202,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'eco-ribbon': {
+    fontFamily: 'Nunito',
     weight: '900',
     gradient: {
       angle: 180,
@@ -1049,6 +1215,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'forest-script-sticker': {
+    fontFamily: 'Pacifico',
     weight: '900',
     gradient: {
       angle: 180,
@@ -1066,6 +1233,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   // Trophy gold is the one place a horizon break is not "AI chrome": an award seal has a hard
   // bronze reflection band, and the whole point is that the top half is lit.
   'trophy-gold': {
+    fontFamily: 'Bungee',
     weight: '900',
     glints: true,
     gradient: {
@@ -1089,6 +1257,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   // A horizontal sweep, not a vertical one: every letter gets its own fiesta hue, which is the
   // only way a one-word headline can carry six colours without looking striped.
   'fiesta-mosaic': {
+    fontFamily: 'Lilita One',
     weight: '900',
     gradient: {
       angle: 90,
@@ -1107,6 +1276,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'parchment-script': {
+    fontFamily: 'Kaushan Script',
     weight: '900',
     gradient: {
       angle: 180,
@@ -1119,6 +1289,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'folklore-wood': {
+    fontFamily: 'Bungee',
     weight: '900',
     gradient: {
       angle: 180,
@@ -1136,6 +1307,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   // ---- children's books & reading corners ------------------------------------------------
   // Crayon-bright, die-cut, and unafraid: these are read by a five-year-old across a classroom.
   'storybook-crayon': {
+    fontFamily: 'Baloo 2',
     weight: '900',
     gradient: {
       angle: 180,
@@ -1152,6 +1324,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'fairytale-sparkle': {
+    fontFamily: 'Chewy',
     weight: '900',
     glints: true,
     gradient: {
@@ -1169,6 +1342,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'reading-nook-sage': {
+    fontFamily: 'Fredoka',
     weight: '900',
     gradient: {
       angle: 180,
@@ -1189,6 +1363,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'storytime-banner': {
+    fontFamily: 'Nunito',
     weight: '900',
     gradient: {
       angle: 180,
@@ -1205,6 +1380,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   // Printed at A4 on a school photocopier: three colours, a cream die-cut so the words survive a
   // grey machine, and no bloom that a mono print would turn into mud.
   'champs-basa-blue': {
+    fontFamily: 'Fredoka',
     weight: '900',
     gradient: {
       angle: 180,
@@ -1220,6 +1396,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'champs-kasadya-coral': {
+    fontFamily: 'Fredoka',
     weight: '900',
     gradient: {
       angle: 180,
@@ -1235,6 +1412,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'champs-gold-ribbon': {
+    fontFamily: 'Nunito',
     weight: '900',
     gradient: {
       angle: 180,
@@ -1253,16 +1431,19 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   // eats the letterform. A two-tone cream keeps the band's colour family without hurting a
   // five-metre read or a mono photocopy.
   'champs-level-emergent': {
+    fontFamily: 'Baloo 2',
     weight: '900',
     gradient: { angle: 180, stops: [{ offset: 0, color: '#ffffff' }, { offset: 1, color: '#dcfce7' }] },
     shadows: [],
   },
   'champs-level-beginning': {
+    fontFamily: 'Baloo 2',
     weight: '900',
     gradient: { angle: 180, stops: [{ offset: 0, color: '#ffffff' }, { offset: 1, color: '#dbeafe' }] },
     shadows: [],
   },
   'champs-level-transitional': {
+    fontFamily: 'Baloo 2',
     weight: '900',
     gradient: { angle: 180, stops: [{ offset: 0, color: '#ffffff' }, { offset: 1, color: '#fef3c7' }] },
     shadows: [],
@@ -1271,6 +1452,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   // The reef theme's title and the cultural theme's title, so the tarpapel theme swap can name a
   // word art per theme instead of a colour per theme.
   'underwater-bubble': {
+    fontFamily: 'Baloo 2',
     weight: '900',
     gradient: {
       angle: 180,
@@ -1286,6 +1468,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'cultural-hablon': {
+    fontFamily: 'Lilita One',
     weight: '900',
     gradient: {
       angle: 180,
@@ -1304,6 +1487,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   // Refined, not shouted: a hairline trim and a soft lift. 800 rather than 900 so a serif or a
   // geometric sans keeps its shapes — the two styles that look wrong at poster weight.
   'portfolio-editorial': {
+    fontFamily: 'Playfair Display',
     weight: '800',
     gradient: {
       angle: 165,
@@ -1318,6 +1502,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'portfolio-indigo': {
+    fontFamily: 'Plus Jakarta Sans',
     weight: '800',
     gradient: {
       angle: 135,
@@ -1366,9 +1551,12 @@ export interface WordArtSpec {
   /**
    * Style-level arc, in the same units as the Curve control (0–100) divided by 100: `0.15` is the
    * gentle upward smile a banner header wants, `-0.15` the trough. An element's own `textCurve`
-   * always wins — see `wordArtCurve`.
+   * always wins, and a wrapped or line-broken headline does not take the style's arc at all — see
+   * `resolveTextCurve` in `textLayout`.
    */
   arc?: number;
+  /** The face the style was drawn for — see `wordArtDefaultFont`. */
+  fontFamily?: string;
 }
 
 export function wordArtSpec(style?: WordArtStyle): WordArtSpec | undefined {
@@ -1392,6 +1580,7 @@ export function wordArtSpec(style?: WordArtStyle): WordArtSpec | undefined {
     outline: paint.outline,
     backdrop: paint.backdrop,
     arc: paint.arc,
+    fontFamily: paint.fontFamily,
   };
 }
 
@@ -1405,8 +1594,36 @@ export function buildWordArtCssRule(style: WordArtStyle, className = `wordart-${
   const paint = wordArtPaint(style);
   if (!paint) return '';
   const lines: string[] = [`  font-weight: ${paint.weight};`];
+  if (paint.fontFamily) lines.push(`  font-family: ${fontStack(paint.fontFamily)};`);
   if (paint.italic) lines.push('  font-style: italic;');
-  if (paint.gradient) {
+
+  /*
+   * A fat rim cannot be a stroke on gradient text.
+   *
+   * `-webkit-text-stroke` is painted over the glyph *fill*, and a `background-clip: text` gradient
+   * is a background, not a fill — Chromium and WebKit both ignore `paint-order` there, so a 0.167em
+   * rim swallows the face and the word reads as a white blob. Nor can the rim be a `z-index: -1`
+   * pseudo-element: an element's own background paints *before* its negative-z-index children, so
+   * the silhouette would still land on top of the gradient.
+   *
+   * So the split is: the element's own text is the rim (stroke plus a fill in the same colour — a
+   * solid die-cut silhouette), and the gradient moves up onto an `::after` copy of the same letters
+   * at a positive z-index, where it covers the rim's inner half and nothing else. Same three layers
+   * the canvas painter stacks, in the same order: keyline (the drop-shadow ring), rim, face.
+   */
+  const rimLayer = rimNeedsOwnLayer(paint);
+  if (rimLayer) {
+    const rimColor = paint.stroke?.color ?? '#ffffff';
+    lines.push(
+      `  color: ${rimColor};`,
+      `  -webkit-text-fill-color: ${rimColor};`,
+      `  -webkit-text-stroke: ${strokeCss(paint)};`,
+      '  paint-order: stroke fill;',
+      // The stacking context the `::after` face is positioned in, and the base the filters apply to.
+      '  position: relative;',
+      '  z-index: 0;'
+    );
+  } else if (paint.gradient) {
     const stops = [...paint.gradient.stops]
       .sort((a, b) => a.offset - b.offset)
       .map((s) => `${s.color} ${Math.round(s.offset * 100)}%`)
@@ -1416,12 +1633,12 @@ export function buildWordArtCssRule(style: WordArtStyle, className = `wordart-${
       '  -webkit-background-clip: text;',
       '  -webkit-text-fill-color: transparent;'
     );
-  } else if (paint.fill) {
-    lines.push(`  color: ${paint.fill};`);
   }
-  if (paint.stroke) {
-    const rim = paint.heavyStroke ? paint.stroke.width * 2 : paint.stroke.width;
-    lines.push(`  -webkit-text-stroke: ${rim}px ${paint.stroke.color};`);
+  // A rim layer already set its own fill, but a rim over a flat colour still needs the colour.
+  if (!rimLayer && !paint.gradient && paint.fill) lines.push(`  color: ${paint.fill};`);
+
+  if (paint.stroke && !rimLayer) {
+    lines.push(`  -webkit-text-stroke: ${strokeCss(paint)};`);
     // Canvas paints the outline behind the fill; without this the DOM paints it
     // on top and the two renderers disagree about how thick the letters look.
     lines.push('  paint-order: stroke fill;');
@@ -1431,20 +1648,76 @@ export function buildWordArtCssRule(style: WordArtStyle, className = `wordart-${
     // colour so a preview tile shows the highlight without mounting the SVG.
     lines.push(`  --wordart-backdrop: ${paint.backdrop.color};`);
   }
-  const chain = wordArtShadowChain(paint);
+  // The keyline ring goes down first. CSS applies drop-shadow filters in list order, each to the
+  // output of the last, so a hairline ring listed *after* a blurred cast shadow gets stamped around
+  // the blur instead of around the letters — a dark fringe floating in the shadow. First in the
+  // list means the ring hugs the glyphs and the blur is added outside it.
+  const filters: string[] = [];
   if (paint.outline) {
-    // One `-webkit-text-stroke` per element, and the rim already has it. A ring of hairline
-    // drop-shadows is the preview's stand-in for the second keyline; the canvas paints the real
+    // One `webkit-text-stroke` per element, and the rim already has it. A ring of hairline
+    // `drop-shadow`s is the preview's stand-in for the second keyline; the canvas paints the real
     // thing (ElementRenderer adds a silhouette layer, wordArtCanvas a pass).
-    const r = Math.max(0.5, paint.outline.width / 2);
-    for (const [dx, dy] of RING_OFFSETS) chain.push({ dx: dx * r, dy: dy * r, blur: 0, color: paint.outline.color });
+    //
+    // In em, like the rim it clears — a 2 px offset around an 0.25 em rim is a 2 px keyline on a
+    // 72 px letter and a hairline on a 138 px one; `drop-shadow()` takes any length, em included.
+    const ringEm = Math.max(0.5, paint.outline.width) / 72;
+    const asEm = (value: number) => `${Math.round(value * 1000) / 1000}em`;
+    for (const [dx, dy] of RING_OFFSETS) {
+      filters.push(`drop-shadow(${asEm(dx * ringEm)} ${asEm(dy * ringEm)} 0 ${paint.outline.color})`);
+    }
   }
-  if (chain.length) {
-    lines.push('  filter:');
-    const shadows = chain.map((s) => `    drop-shadow(${shadowCss(s)})`);
-    lines[lines.length - 1] = `  filter:\n${shadows.join('\n')};`;
-  }
-  return `.${className} {\n${lines.join('\n')}\n}`;
+  for (const shadow of wordArtShadowChain(paint)) filters.push(`drop-shadow(${shadowCss(shadow)})`);
+  if (filters.length) lines.push(`  filter:\n${filters.map((f) => `    ${f}`).join('\n')};`);
+
+  const rule = `.${className} {\n${lines.join('\n')}\n}`;
+  if (!rimLayer || !paint.gradient) return rule;
+
+  const stops = [...paint.gradient.stops]
+    .sort((a, b) => a.offset - b.offset)
+    .map((s) => `${s.color} ${Math.round(s.offset * 100)}%`)
+    .join(', ');
+  // `data-text` is the tile's own text ("Aa" in the picker, "WordArt" in the gallery), so the face is
+  // the same letters by construction rather than a second guess at them. `-webkit-text-stroke: 0` is
+  // load-bearing: the property inherits, and without the reset this copy would eat the gradient too.
+  // Pinned at the top-left rather than stretched: the box then shrinks to the text, so the face sits
+  // on the rim even if the tile centres or truncates its label.
+  return `${rule}
+
+.${className}::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(${paint.gradient.angle}deg, ${stops});
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0;
+  pointer-events: none;
+}`;
+}
+
+/** Families that need a cursive fallback rather than a sans one when they fail to load. */
+const SCRIPT_FAMILIES: ReadonlySet<string> = new Set(['Kaushan Script', 'Pacifico', 'Chewy', 'Patrick Hand']);
+
+/**
+ * A CSS `font-family` value for one of the style faces, with a fallback that does not turn a brush
+ * script into Helvetica the moment the webfont is slow.
+ */
+export function fontStack(family: string): string {
+  const generic = SCRIPT_FAMILIES.has(family) ? 'cursive' : 'sans-serif';
+  return `'${family}', ${generic}`;
+}
+
+/**
+ * The typeface this style was drawn for, if it has one.
+ *
+ * Every style does now, but the signature stays optional: a future style that is a *material* rather
+ * than a letterform can decline, and the picker then leaves the document's font alone.
+ */
+export function wordArtDefaultFont(style?: WordArtStyle): string | undefined {
+  return wordArtPaint(style)?.fontFamily;
 }
 
 /** Every rule, in catalogue order — the body of the WordArt block in index.css. */
@@ -1545,29 +1818,84 @@ export function wordArtRimWidth(spec?: Pick<WordArtPaint, 'stroke' | 'heavyStrok
   return spec.heavyStroke ? spec.stroke.width * 2 : spec.stroke.width;
 }
 
+/**
+ * A WordArt width as `em`, measured against the 72 px reference the paint specs are authored at.
+ *
+ * Every rim in this file is a number of pixels — 9 px of white die-cut, 18 px once the border is
+ * heavy — but a *pixel* rim is only correct at one type size. In a 20 px gallery tile it swallows
+ * the letter, and on a 138 px tarpaulin title it is a hairline that disappears in the print. An
+ * `em` rim is the same fraction of the letter at every size, which is what a die-cut sticker
+ * actually is.
+ *
+ * Three decimals, because 4 px / 72 px is 0.056 em and the stylesheet is checked into the repo.
+ */
+export function wordArtEmSize(px: number): string {
+  return `${Math.round((px / 72) * 1000) / 1000}em`;
+}
+
+/** The rim as a CSS `-webkit-text-stroke` value: width in em, then the colour. */
+export function strokeCss(paint: WordArtPaint): string {
+  if (!paint.stroke) return '';
+  return `${wordArtEmSize(wordArtRimWidth(paint))} ${paint.stroke.color}`;
+}
+
+/**
+ * The keyline silhouette's stroke — the rim plus *twice* the ring, in em.
+ *
+ * The DOM draws the second keyline as a stroked copy of the glyphs under the rim. A centred stroke
+ * shows only half of itself past the glyph edge, and `paint-order: stroke fill` hides the other half:
+ * the white rim at width R reaches R/2 outside the letters, so a silhouette at R + ring would reach
+ * R/2 + ring/2 and show a ring *half* the width the canvas paints (`rimWidth + ring * 2`, whose
+ * visible part is exactly `ring`). Doubling the ring here is what makes the editor and the export
+ * agree to the pixel rather than to the half.
+ */
+export function outlineStrokeCss(paint?: WordArtPaint): string {
+  if (!paint?.outline) return '';
+  return `${wordArtEmSize(wordArtRimWidth(paint) + paint.outline.width * 2)} ${paint.outline.color}`;
+}
+
+/**
+ * The keyline stroke for a style, ready to hand to `WebkitTextStroke` — or undefined when the style
+ * has no second outline.
+ *
+ * The style-based spelling exists because the DOM renderer has a style, not a paint spec, and
+ * reaching into `wordArtPaint` there to do the arithmetic a second time is how the silhouette ended
+ * up half a ring wide once already. Same 72 px reference as `strokeCss` and the canvas painter.
+ */
+export function wordArtOutlineStrokeCss(style?: WordArtStyle): string | undefined {
+  const stroke = outlineStrokeCss(wordArtPaint(style));
+  return stroke || undefined;
+}
+
 export function wordArtShadowChain(paint?: WordArtPaint): WordArtShadow[] {
   if (!paint) return [];
   const chain: WordArtShadow[] = [];
   const extrusion = paint.extrusion;
   if (extrusion) {
+    // One *step* per shadow, not the running total. A CSS filter list is a chain — each
+    // `drop-shadow()` is applied to the output of the one before it — so listing `1d, 2d, 3d, 4d`
+    // does not put copies at 1, 2, 3 and 4: it puts them at 1, 3, 6 and 10, and a 4-step extrusion
+    // comes out two and a half times too deep, with the last copy flung off the letter. The canvas
+    // loops the steps itself and paints them at `dx * i`, so the CSS has to say `d` four times to
+    // mean the same thing. (Same compounding is why the keyline ring is listed before the blurred
+    // shadows — order and count of these filters is not cosmetic.)
     const { steps, dx, dy, startColor, endColor } = extrusion;
     for (let i = 1; i <= steps; i += 1) {
       chain.push({
-        dx: round2(dx * i),
-        dy: round2(dy * i),
+        dx: round2(dx),
+        dy: round2(dy),
         blur: 0,
         color: lerpHex(startColor, endColor, steps === 1 ? 1 : (i - 1) / (steps - 1)),
       });
     }
   }
   chain.push(...paint.shadows);
-  // A fat border drawn with sharp joins spikes at the corners of A, M and W. CSS text stroke has no
-  // `stroke-linejoin` to fix it (that property is SVG-only), and the canvas already rounds its
-  // joins — so the fix both renderers can share is a blurred copy of the fill in the border colour,
-  // painted just under the border. It rounds the outer edge the same way on screen and in export.
-  if (paint.stroke && paint.stroke.width >= 4) {
-    chain.push({ dx: 0, dy: 0, blur: 2, color: paint.stroke.color });
-  }
+  // No blurred stand-in for the rim's mitered corners. It was added to round the spiky joins of a
+  // fat stroke, but `drop-shadow(blur)` on a text-clipped element blurs the *whole* silhouette — the
+  // letters pick up a soft halo an eighth of an em wide, which reads as a badly upscaled image on
+  // every thick sticker rim. The corner spike is a miter problem with no CSS stroke property to fix
+  // it; the rim colour softened everything else instead. The canvas rounds its joins properly
+  // (`ctx.lineJoin = 'round'`), so this was never parity — only a blur.
   if (paint.castShadow) chain.push(paint.castShadow);
   for (const bloom of paint.bloom ?? []) {
     chain.push({ dx: 0, dy: 0, blur: bloom.blur, color: bloom.color });
@@ -1631,9 +1959,18 @@ export function wordArtCarriesContrast(style?: WordArtStyle): boolean {
   return Math.max(...stops) - Math.min(...stops) >= 0.55;
 }
 
-/** The curve to lay this element out with: the element's own, else the style's `arc`. */
-export function wordArtCurve(style: WordArtStyle | undefined, elementCurve?: number): number {
-  if (elementCurve !== undefined && elementCurve !== 0) return elementCurve;
+/**
+ * The arc a style carries, on the Curve control's scale (0–100), or 0.
+ *
+ * `WordArtPaint.arc` is on that same scale ÷100 — `0.15` is the gentle upward smile a banner header
+ * wants — so it is multiplied back up here, and rounded to zero when it is too small to matter but
+ * would still flip `layoutText` into its curved branch.
+ *
+ * This is only the *style's* opinion. Whether it gets painted is `resolveTextCurve`'s call (in
+ * `textLayout`): an arc is a one-line gesture, and a wrapped or line-broken headline does not take
+ * it. The element's own `textCurve` always wins over this.
+ */
+export function wordArtStyleArc(style: WordArtStyle | undefined): number {
   const arc = wordArtPaint(style)?.arc ?? 0;
   return Math.abs(arc) < 0.001 ? 0 : arc * 100;
 }
@@ -1653,6 +1990,11 @@ function shadowCss(s: WordArtShadow): string {
  * never on the element box (it would swallow the box fill).
  */
 export interface WordArtCss {
+  /**
+   * The rim, when it has to be painted as its own silhouette layer instead of as a stroke on the
+   * letters. `css` is the `-webkit-text-stroke` value (in em), `color` the fill for the layer.
+   */
+  rimStroke?: { css: string; color: string };
   /** The second keyline, if the style has one — the renderer paints it as a silhouette layer. */
   outline?: { width: number; color: string };
   fontWeight?: '800' | '900';
@@ -1670,6 +2012,23 @@ export interface WordArtCss {
   paintOrder?: 'stroke fill';
 }
 
+/**
+ * True when the rim must be its own layer rather than a stroke on the glyphs.
+ *
+ * `-webkit-text-stroke` is centred on the glyph outline, and Chromium paints it over the *text fill*
+ * — which, for `-webkit-background-clip: text` + `-webkit-text-fill-color: transparent`, is nothing:
+ * the gradient is a background behind it. `paint-order: stroke fill` orders stroke against fill, and
+ * a background-clipped gradient is not a fill, so a thick rim simply covers the letters. A stroke
+ * thin enough to read as an outline can stay where it is; anything fat enough to be a die-cut has to
+ * be a silhouette *under* the face, which is what the canvas painter and the DOM already do.
+ */
+export function rimNeedsOwnLayer(paint?: WordArtPaint): boolean {
+  if (!paint?.stroke) return false;
+  const rim = wordArtRimWidth(paint);
+  const fat = Boolean(paint.heavyStroke) || rim >= 3;
+  return fat && Boolean(paint.gradient);
+}
+
 export function wordArtCss(style?: WordArtStyle): WordArtCss {
   const paint = wordArtPaint(style);
   if (!paint) return {};
@@ -1685,8 +2044,16 @@ export function wordArtCss(style?: WordArtStyle): WordArtCss {
     css.textFillTransparent = true;
   }
   if (paint.stroke) {
-    css.webkitTextStroke = `${paint.stroke.width}px ${paint.stroke.color}`;
-    css.paintOrder = 'stroke fill';
+    // `wordArtRimWidth`, not `stroke.width`: a heavy border is painted at twice the authored width,
+    // and the editor was rendering half of what the stylesheet asks for — which is why a bubble sign
+    // looked thinner on the page than in the tile you picked it from.
+    if (rimNeedsOwnLayer(paint)) {
+      // Not on the face. The renderer paints this as a silhouette under the gradient glyphs.
+      css.rimStroke = { css: strokeCss(paint), color: paint.stroke.color };
+    } else {
+      css.webkitTextStroke = strokeCss(paint);
+      css.paintOrder = 'stroke fill';
+    }
   }
   if (paint.outline) css.outline = paint.outline;
   // `text-shadow` bleeds through a background-clipped fill and muddies the

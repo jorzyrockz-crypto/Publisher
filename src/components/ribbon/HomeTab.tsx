@@ -28,6 +28,7 @@ import {
   ImagePlus,
 } from 'lucide-react';
 import { isBoldWeight, toggleBoldWeight } from '../../utils/textWeight';
+import { wordArtFacePatch } from '../../constants/wordArtFonts';
 
 export const HomeTab: React.FC = () => {
   const {
@@ -179,10 +180,12 @@ export const HomeTab: React.FC = () => {
             {/* WordArt quick badge */}
             <button
               onClick={() =>
-                updateSelectedElements({
-                  isWordArt: !selectedTextElement?.isWordArt,
-                  wordArtStyle: selectedTextElement?.isWordArt ? 'none' : 'rainbow',
-                })
+                updateSelectedElements(
+                  selectedTextElement?.isWordArt
+                    ? { isWordArt: false, wordArtStyle: 'none' }
+                    : // Turning WordArt on brings its face with it, like every other way in.
+                      { isWordArt: true, wordArtStyle: 'rainbow', ...wordArtFacePatch('rainbow') }
+                )
               }
               className={`p-1.5 rounded-[8px] transition-all flex items-center gap-1 ml-1 cursor-pointer ${
                 selectedTextElement?.isWordArt

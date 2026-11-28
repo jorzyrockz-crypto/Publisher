@@ -18,10 +18,20 @@ Six styles close that gap, and two small features make them behave.
 | `brush-sunshine` | Sunshine Brush Swipe | navy → ink gradient on a ragged `#facc15` swipe |
 | `brush-blush` | Pastel Blush Ribbon | rose → wine gradient on a `#fbcfe8` swipe, arched 0.12 |
 | `pill-highlight` | Pastel Pill Highlight | indigo ink on a pastel pill |
-| `cartoon-bubble-blue` | Bubble Sign Blue | sky → royal → navy ramp, 9px white die-cut, 4px navy keyline |
-| `cartoon-bubble-pink` | Bubble Sign Pink | blush → magenta → wine ramp, 9px white die-cut, 4px wine keyline |
+| `cartoon-bubble-blue` | Bubble Sign Blue | sky → royal ramp, 6px white die-cut, 3.5px ink keyline, 2-step dark lip, **arc 0.08** |
+| `cartoon-bubble-pink` | Bubble Sign Pink | candy → magenta ramp, 6px white die-cut, 3.5px ink keyline, 2-step dark lip, **arc 0.08** |
+| `cartoon-bubble-magenta` | Bubble Sign Magenta | rose → wine ramp, 4.5px white die-cut, 3.5px ink keyline, 2-step dark lip, **arc 0.08** |
+| `cartoon-bubble-cyan` | Bubble Sign Cyan | ice → petrol ramp, 4.5px white die-cut, 3.5px ink keyline, 2-step dark lip, **arc 0.08** |
+| `cartoon-bubble-purple` | Bubble Sign Purple | lilac → aubergine ramp, 4.5px white die-cut, 3.5px ink keyline, 2-step dark lip, **arc 0.08** |
+| `cartoon-body-black` | Bubble Sign Ink Black | graphite → near-black ramp, 4px white die-cut, 3.2px ink keyline, flat (no arc) |
 
-All six go through the existing `PAINT` table, so the gallery, the inspector, the DOM painter and
+The three colours are the pencil-playful set that sits beside blue and pink: same grammar, tuned to
+4.5 px of rim and a 6 px cast shadow so the short sign words ("Read", "Grow", "Explore") stay crisp at
+tile size. `cartoon-body-black` is the sub-line of the family — the same die-cut so it stacks under a
+coloured sign, but a graphite ramp, no lip and no arc, because it carries the secondary words ("every
+day", "new stories", "your vocabulary") and must not out-shout the sign above it.
+
+All of these go through the existing `PAINT` table, so the gallery, the inspector, the DOM painter and
 the canvas exporter pick them up with no new plumbing. `npm run wordart:css` regenerates the
 `.wordart-*` block in `src/index.css`; `-- --check` proves it is in sync.
 
@@ -32,11 +42,14 @@ separates the white from whatever the sign is printed on. One `-webkit-text-stro
 draw two rings, so the paint grew an `outline` field and each painter stacks one more silhouette
 under the rim:
 
-- **DOM** (`ElementRenderer`): a copy of the glyphs stroked to `rim + outline.width` and filled with
-  the keyline colour, painted before the real glyphs. The rim covers the inner half, so exactly
-  `outline.width` of dark shows.
+- **DOM** (`ElementRenderer`): a copy of the glyphs stroked to `wordArtOutlineStrokeCss` — rim +
+  *two* rings, in em, the same helper the sheet and the canvas use — and filled with the keyline
+  colour, painted before the real glyphs. A centred stroke shows only half of itself, so the ring is
+  doubled in the stroke and the visible result is one ring of dark, on all three surfaces.
 - **Canvas** (`wordArtCanvas`): one extra pass — a filled *and* stroked silhouette — before the rim.
-  Same arithmetic, so the export matches the editor.
+  Same arithmetic, so the export matches the editor. Each pass now sets its own `strokeStyle`:
+  `strokeText` reads that, not `fillStyle`, and nothing was setting it, so every rim and keyline in
+  the default painter was stroked in the context's leftover colour — black.
 - **Preview tiles** (`buildWordArtCssRule`): a ring of hairline drop-shadows in the keyline colour,
   because the `.wordart-*` class is a single element and cannot stack a silhouette. The tiles are a
   stand-in; the canvas is the truth.
@@ -48,6 +61,31 @@ inner half under the fill — so a declared 6px border reads as 3px. A poster bo
 outline; it is the thing that keeps the word legible on a photograph. `heavyStroke: true` makes both
 renderers double the declared width (`wordArtRimWidth`), so `stroke.width: 6` means six pixels of
 white, on screen and in the PDF alike.
+
+### The rim is measured in `em`, not pixels
+
+A pixel rim is only right at one type size. The same 18 px die-cut swallows the letter in a 20 px
+gallery tile and disappears on a 138 px tarpaulin title — which is what happened, because the
+stylesheet painted the heavy width while the DOM painted half of it, at whatever size the box
+happened to be.
+
+`strokeCss(paint)` writes the rim as a fraction of the type, against the **72 px** reference the
+paint specs are authored at: `wordArtRimWidth` 18 → `0.25em`. At 72 px that is the 18 px it always
+was; at 138 px it is 34.5 px, and because `paint-order` hides the inner half the *visible* rim stays
+one eighth of the em at every size. The same function feeds the stylesheet, the DOM's inline style
+and — through `options.fontSize` — the canvas painter, so an export cannot disagree with the editor
+about how thick the border is. `outlineStrokeCss` does the same for the keyline silhouette, which has
+to clear the whole rim (rim + ring) or it is hidden underneath it.
+
+Two consequences worth knowing:
+
+- the preview tiles' keyline ring is written in `em` too, since `drop-shadow()` takes any length and
+  the ring is offset from the rim's outer edge — a 2 px ring around a 0.25 em rim is only correct at
+  one size;
+- the old `blur: 2` shadow in the stroke colour is gone. It was meant to round the mitered corners of
+  a fat border, but a `drop-shadow` blur on a clipped element blurs the whole silhouette: every thick
+  rim carried an eighth-of-an-em halo that read as an upscaled image. The canvas rounds its joins
+  properly with `ctx.lineJoin = 'round'`; the blur was never parity, only haze.
 
 ### Round joins, without a property that exists
 
@@ -116,11 +154,30 @@ reproduce from a box.)
 ### Arched type, from the style or from the element
 
 `WordArtPaint.arc` (and therefore `WordArtSpec.arc`) is an arc on the Curve slider's scale, ÷100:
-`0.15` is the gentle upward smile a banner header wants, `-0.15` the trough. `wordArtCurve(style,
-elementCurve)` resolves it — **the element's own `textCurve` always wins**, so a template can arch
-one line without forking the style, and nobody has to learn a second control. Both painters lay the
-text out through that resolved value, so a style-carried arc arches in the editor and in the export.
-`brush-blush` ships with `arc: 0.12`; the wellness-week HEALTH line keeps its explicit `textCurve: 14`.
+`0.15` is the gentle upward smile a banner header wants, `-0.15` the trough. `wordArtStyleArc(style)`
+is that style's opinion on its own — and `resolveTextCurve(element)` in `textLayout` is the only
+thing that decides whether it is painted:
+
+1. **The element's own `textCurve` always wins.** A template can arch one line without forking the
+   style, and nobody has to learn a second control.
+2. **A style's arc is a one-line gesture.** If the headline wraps, or carries a `\n`, the arc is not
+   applied and the block keeps its wrapping. Before that rule existed, `reading-nook-sage` and the
+   bubble signs hauled every word of a two-line title onto one circle and flattened it into a single
+   overflowing row — the words meant for line three ended up on the ends of the arch.
+
+`layoutText` resolves the curve internally, so the editor, the export, the properties panel's Curve
+readout and text-box growth all answer the same question the same way. `brush-blush` ships with
+`arc: 0.12`; the wellness-week HEALTH line keeps its explicit `textCurve: 14`.
+
+### A curved block keeps its lines
+
+When the arc *is* applied to more than one line — an explicit curve, or a template that arcs a
+kicker above a wrapped sub-line — `buildCurveLayout` no longer joins the lines into one string.
+Explicit `\n` is a line, anything wider than the frame wraps at a space using the same measurement
+the flat layout uses, and each line is placed on its own arc one `lineHeight` below the one above,
+covering the share of the sweep its width earns. The widest line takes the whole bend, a shorter one
+sits centred on less of it, and `contentHeight` grows by a line-height per row so auto-fit and
+text-box growth still see the real height. Nothing is ever re-flowed onto a single row.
 
 ## Eco campaign: pine, gold, wood and ribbon
 
@@ -398,8 +455,9 @@ no-op).
 already understood it. What did not work was the *combination*: `renderWordArtCanvas` walked
 `layout.lines`, and a curved element has no lines — the arc replaces them. A curved WordArt word
 therefore painted nothing into an export while looking fine in the editor. The painter now treats
-the curve as a single pseudo-line. The wellness-week template uses `textCurve: 14` on HEALTH, so the
-case is exercised by a shipped template, not only by a test.
+the curve as a single pseudo-line whose glyphs each carry their own position and rotation, which is
+also why a multi-row arc exports as correctly as it renders. The wellness-week template uses
+`textCurve: 14` on HEALTH, so the case is exercised by a shipped template, not only by a test.
 
 ### The arched header's rim, re-examined
 
@@ -467,16 +525,111 @@ Poster category. `src/constants/posterWordArtTemplates.ts` holds it.
 A style paints letters; it does not choose the typeface. That gap is why a green ramp in Plus Jakarta
 Sans reads as "a gradient" rather than "a sticker": the letterform is half the look.
 
-`src/constants/wordArtFonts.ts` carries the other half — `WORDART_FONT_MAP`, style id → family,
-weight and italic. Picking a style in the Text panel, the Designer rail or the WordArt gallery brings
-its face with it (`wordArtFacePatch`). Nothing happens on load, so a document keeps the fonts it was
-designed with, and the table is deliberately partial: material styles (Gold 3D, Chrome, Fire, Varsity)
-are happy in whatever font the page already uses, and 18 of the 52 styles say nothing at all.
+The family now lives on the paint spec (`WordArtPaint.fontFamily`) — all **56** styles have one — and
+`wordArtDefaultFont(style)` reads it. Three things use it:
 
-Two rules, and `npm run check:wordart` enforces both:
+- the generated rule (`font-family: 'Lilita One', sans-serif`), so a gallery tile is set in the face
+  the style was drawn for instead of whatever the page uses;
+- the export, through `WordArtSpec.fontFamily`;
+- the picker in the Text panel, the Designer rail, the WordArt gallery and the ribbon's WordArt
+  badge, which write it onto the element as `wordArtFacePatch(style)` — family, weight and slant —
+  **at the moment of choosing and never on load**, so a document keeps the fonts it was designed with
+  and a later manual change is not undone.
 
-- **every id must exist** — a typo means the face is silently never applied;
-- **every family must be in `src/constants/fonts.ts`** — this one already bit us. `Lilita One` and
-  `Bangers` were being asked for by sticker and comic styles while the catalogue had never offered
-  them, so the browser fell back to a system face and the styles looked broken rather than
-  misconfigured. Both are catalogued now.
+| family | styles | why |
+|---|---|---|
+| Lilita One | 12 — bubble signs, stickers, eco, fiesta, candy, hablon | chunky rounded display: a sign, not a sentence |
+| Montserrat | 13 — chrome, neon, AI metal, outline, retro, fire, rainbow | a geometric grotesque holds a hard gradient |
+| Playfair Display | 5 — gold, cinematic, rose gold, obsidian, editorial | high-contrast serif for foil and film |
+| Kaushan Script | 5 — brush and parchment | a brush stroke with a real tail |
+| Baloo 2 | 5 — crayon, underwater, champs levels | soft and bouncy, small counters |
+| Fredoka | 4 — Reading Corner, sage nook, teal sticker | friendly rounded book face |
+| Bangers | 3 — comic, varsity, wood plank | comic caption lettering |
+| Nunito | 3 — ribbons and banners | a humanist sans that reads as printed tape |
+| Bungee | 2 — trophy, folklore wood | signage caps |
+| Plus Jakarta Sans | 2 — portfolio, pill highlight | modern editorial sans |
+| Pacifico | 1 — pine script | a rounded brush script |
+| Chewy | 1 — fairytale | a storybook face |
+
+`index.html` preloads exactly these families and weights, because a tile that renders in the fallback
+font until you scroll past it is a tile that lies about the style.
+
+`npm run check:wordart` holds it together: every style has a face, every face is in
+`src/constants/fonts.ts`, and every generated rule and spec carries it. That last check already earned
+its keep — `Lilita One` and `Bangers` were once asked for by styles the catalogue could not offer, so
+the browser fell back to a system face and the styles looked broken rather than misconfigured.
+
+## Checks
+
+| command | what it holds |
+|---|---|
+| `npm run wordart:css -- --check` | `src/index.css` matches what `buildWordArtCssRule` generates |
+| `npm run check:wordart` | every styled face names a real style and a font the app can load |
+| `npm run check:wordart-parity` | the sheet, the DOM and the canvas agree: em rims, ring before blur, no rim haze, strokes in their own colour, canvas rim scaling with the type |
+| `npm run check:wordart-curve` | a style's `arc` is only painted on one line, an explicit curve survives a break, and a curved block keeps its rows one line-height apart with every letter in place |
+
+### Extrusion: the CSS list is a chain, not a list of offsets
+
+`filter: drop-shadow()` is applied to the output of the previous filter, so four entries of
+`drop-shadow(1px 1px)` put copies at 1, 3, 6 and 10 px — not 1, 2, 3, 4. Emitting the running total
+(`dx * i`) compounded twice and made every 3D style two-and-a-half times too deep, with the last copy
+flung off the letter while the canvas, which loops its own steps, stayed correct.
+
+`wordArtShadowChain` now emits one *step* per copy and lets the chain do the stacking: six entries of
+`drop-shadow(0.8px 1.3px)` land exactly where the canvas's `dx * i` does. Same reason the keyline ring
+is listed before the blurred shadows, and the same reason the rim halo had to go — in a filter chain
+the count and order of drops is the drawing, not a detail.
+
+Because the chain no longer reports how far a block reaches, `textEffectsFit` reads the depth from the
+spec (`steps × the step`) when it decides how much room a text box needs.
+
+### Canvas parity
+
+| what | editor | export |
+|---|---|---|
+| rim width | `0.25em` (via `strokeCss`) | `wordArtRimWidth × fontSize / 72` |
+| keyline | `outlineStrokeCss` silhouette | fill + stroke pass at `rim + ring × 2` |
+| blur | `drop-shadow(… blur)` | `filter: blur(blur × scale / 2)` — CSS blur reads about twice as wide, and the export multiplier keeps a 3× PNG's bloom in proportion |
+| anchor | glyph box | `line.x, line.y` |
+
+`npm run check:wordart-parity` runs all 56 painted styles through the canvas default painter and fails
+if any stroke falls back to the context default, any pass is drawn off its anchor, any blur fails to
+scale with the multiplier, or any extrusion lists running totals instead of steps.
+
+### The bubble sign, refined
+
+Both sign styles were tuned a second time, against the printed cartoon sign rather than against the
+first attempt:
+
+| dial | before | now | why |
+|---|---|---|---|
+| rim | 9 px (18 heavy) | 6 px (12 heavy) | a die-cut that reads at tile size without closing up Baloo's counters |
+| keyline | 4 px navy / wine | 3.5 px `#18181b` | the outer line on a printed sign is ink, not a tint of the fill; a tint reads as a soft edge at banner size |
+| ramp | 5 stops, pale sky → navy | 4 stops, `#7dd3fc`→`#38bdf8`→`#0284c7`→`#1d4ed8` | bright top, royal foot — a sign lit from above, not a metal |
+| depth | none | 2-step `#18181b` lip at 1.5 px + cast shadow `0 5 8` | the thickness of a sticker, not a 3D block |
+| arc | flat | 0.08 | the classroom-banner smile, owned by the style so a template gets it free — on a single line only; a wrapped headline stays flat, and an element's `textCurve` still overrides |
+
+The lip is two drop-shadows of *one step* each, which the CSS chain compounds into 1.5 px and 3.0 px —
+the same depth the canvas paints, for the same reason the extrusion fix exists.
+
+Sample render (ImageMagick approximation, real Fredoka, 168 pt): `.arena/banner/wordart-bubble.png`.
+
+### Layer order in the DOM painter
+
+Six things the DOM has to get right that the canvas gets right by construction:
+
+| layer | rule |
+|---|---|
+| the drop-shadow chain | one `filter` over **every** glyph layer — keyline, rim and face. A `drop-shadow` paints behind the element it is applied to, so a filter on the face alone puts the cast shadow and the extrusion copies *over* the dark keyline drawn underneath — the sign loses its outer line wherever the shadow crosses it. |
+| the keyline stroke | `wordArtOutlineStrokeCss(style)`, never `strokeWidth + outline.width`. That was the half-rim arithmetic, and a full rim simply covers it. |
+| round joins | the keyline and the rim are **SVG `<text>`** with `stroke-linejoin="round"` / `stroke-linecap="round"`, not `-webkit-text-stroke`. A text stroke joins glyph corners with a miter and CSS cannot change it, so a thick rim grew a dagger off every sharp point — the top of the N in the coral sticker, the apex of the A in the bubble sign. `ctx.lineJoin = 'round'` has always been what the exporter does, so here the DOM follows the canvas rather than the reverse. |
+| the silhouette baseline | SVG anchors text on its *baseline*; the run spans are flex boxes with the em box *centred* in `line.height`. `runBaseline()` asks the font for `fontBoundingBoxAscent`/`-Descent` — the metrics CSS line layout is built from — and returns `(lineHeight − size)/2 + (size + ascent − descent)/2`. Curved glyphs drop the first term: their box is centred on the glyph. Without it the rim is fat on one side and thin on the other. |
+| the fat rim | a stroke on `-webkit-background-clip: text` is painted *over* the gradient in Chromium and WebKit, and `paint-order: stroke fill` does not apply to a clipped background — so a 0.167em rim erases the face. When `rimNeedsOwnLayer(paint)` (a `heavyStroke` style, or a rim ≥ 3, over a gradient) the rim becomes a silhouette *layer* between keyline and face. In the editor it is the SVG rim layer; in the stylesheet the element's own text is the silhouette and the gradient moves up to an `::after` copy at `z-index: 1` — a `::before` at `z-index: -1` cannot do the job, because an element's background paints *before* its negative-z-index children. Every preview span that uses a style therefore needs `data-text` — `Aa` in the panel, `WordArt` in the gallery. |
+| overhangs | `-webkit-background-clip: text` paints inside the element's **border box**, so an italic overhang or a script swash that leaves it loses its fill — the final R in Bangers italic, the tail of Pacifico, every Kaushan Script descender. WordArt runs carry `padding-inline: 0.2em` with `margin-inline: -0.2em`, so the box grows and the glyphs do not move; `gradientStyle()` gives the `0.2em` back to `background-position`, because `background-origin` is the padding box. Curved glyph spans take the padding *without* the margin: they are centred by `translate(-50%, -50%)`, which would move them by the padding. |
+| clipping | `overflow: visible` on the glyph container when the element is WordArt. Run spans no longer clip at all — a run's box is one line tall and type leans out of it — except a space, which keeps its fixed width. Plain text is still clipped by the element's own frame, so nothing bleeds onto the page. |
+
+Back to front the painter is keyline → rim → face, the order the canvas painter uses.
+
+`npm run check:wordart-parity` asserts all of it structurally (it reads the renderer's source,
+because there is no DOM in the check environment), including the round joins, the measured
+baselines and the padding/position pair that keeps an overhang inside its own gradient.

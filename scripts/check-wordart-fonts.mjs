@@ -1,18 +1,23 @@
 /**
- * The WordArt font map, held to two promises.
+ * Every WordArt style is drawn for a typeface, and that typeface exists.
  *
- *   1. Every style it names is a style that exists. A typo in an id is invisible at runtime — the
- *      face is simply never applied — so it has to be a build failure.
- *   2. Every family it names is in `src/constants/fonts.ts`. This one already bit us: `Lilita One`
- *      and `Bangers` were mapped onto sticker and comic styles while the catalogue had never heard
- *      of them, so the browser fell back to a system face and the style looked broken rather than
- *      misconfigured. A font the app cannot load is a bug, not a preference.
+ * Two failures this guards against, both silent:
+ *
+ *   1. A style with no face. It paints a gradient in whatever font the document used, which is how
+ *      "a sticker" turns into "a gradient" and nobody can say why.
+ *   2. A face the app cannot load. The browser falls back to a system font and the style looks
+ *      broken rather than misconfigured. `Lilita One` and `Bangers` were mapped onto sticker and
+ *      comic styles for a while before either was in the catalogue.
  *
  *   npm run check:wordart
  */
 import { GOOGLE_FONTS_CATALOG, SYSTEM_FONTS } from '../src/constants/fonts.ts';
-import { WORD_ART_STYLES } from '../src/utils/wordArt.ts';
-import { WORDART_FONT_MAP } from '../src/constants/wordArtFonts.ts';
+import {
+  WORD_ART_STYLES,
+  buildWordArtCssRule,
+  wordArtDefaultFont,
+  wordArtSpec,
+} from '../src/utils/wordArt.ts';
 
 let fail = 0;
 const ok = (cond, msg) => {
@@ -22,21 +27,29 @@ const ok = (cond, msg) => {
   }
 };
 
-const styleIds = new Set(WORD_ART_STYLES.map((style) => style.id));
 const families = new Set([...GOOGLE_FONTS_CATALOG, ...SYSTEM_FONTS].map((font) => font.family));
 
-const entries = Object.entries(WORDART_FONT_MAP);
-for (const [id, face] of entries) {
-  ok(styleIds.has(id), `WORDART_FONT_MAP.${id} is not a WordArtStyle`);
-  ok(!!face && families.has(face.family), `${id} asks for “${face?.family}”, which no catalogue offers`);
+const counts = new Map();
+for (const style of WORD_ART_STYLES) {
+  const family = wordArtDefaultFont(style.id);
+  ok(!!family, `${style.id} has no default typeface`);
+  if (!family) continue;
+  ok(families.has(family), `${style.id} asks for “${family}”, which no catalogue offers`);
+  counts.set(family, (counts.get(family) ?? 0) + 1);
+
+  // The stylesheet is what a gallery tile renders with, so the family has to be in the rule or the
+  // tile shows the style in the wrong font.
+  const rule = buildWordArtCssRule(style.id);
+  ok(rule.includes(`font-family: '${family}'`), `${style.id} rule does not set its face`);
+
+  // And the spec, which is what an export paints with.
+  ok(wordArtSpec(style.id).fontFamily === family, `${style.id} spec lost its face`);
 }
 
-/* The reverse direction is a judgement call, not a rule: a style without a face keeps the
- * document's font on purpose. Report it, do not fail it. */
-const withoutFace = WORD_ART_STYLES.filter((style) => !(style.id in WORDART_FONT_MAP));
-console.log(
-  `${entries.length} styled faces, ${withoutFace.length} styles keep the document font:`,
-  withoutFace.map((style) => style.id).join(', ')
-);
+const tally = [...counts.entries()]
+  .sort((a, b) => b[1] - a[1])
+  .map(([family, n]) => `${family} ${n}`)
+  .join(', ');
+console.log(`${WORD_ART_STYLES.length} styles, ${counts.size} faces: ${tally}`);
 console.log(fail === 0 ? 'ALL CHECKS PASSED' : `${fail} FAILURES`);
 process.exitCode = fail === 0 ? 0 : 1;

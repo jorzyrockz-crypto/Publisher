@@ -1,4 +1,4 @@
-import { wordArtItalic, wordArtWeight } from './wordArt';
+import { wordArtItalic, wordArtStyleArc, wordArtWeight } from './wordArt';
 import type { TextElement } from '../types/publisher';
 
 /**
@@ -102,6 +102,41 @@ export function measureTextWidth(text: string, font: string): number {
   if (widthCache.size > 4000) widthCache.clear();
   widthCache.set(key, width);
   return width;
+}
+
+/**
+ * Ascent and descent of a CSS font string, in px.
+ *
+ * A stroked WordArt silhouette drawn as SVG `<text>` anchors on its *baseline*, while the DOM
+ * lists its runs as flex boxes with the em box centred — so the two only line up if the painter
+ * knows where the browser put the baseline. `fontBoundingBoxAscent` / `-Descent` are the font's own
+ * metrics, the ones CSS line layout is built from, so the answer is the browser's own.
+ */
+export function fontVerticalMetrics(font: string): { ascent: number; descent: number } {
+  const ctx = getMeasureCtx();
+  if (ctx) {
+    ctx.font = font;
+    const metrics = ctx.measureText('Hxg');
+    const ascent = metrics.fontBoundingBoxAscent;
+    const descent = metrics.fontBoundingBoxDescent;
+    if (Number.isFinite(ascent) && ascent > 0 && Number.isFinite(descent)) return { ascent, descent };
+  }
+  // Headless / very old engines: the usual 0.8 / 0.2 split is within a pixel of most faces.
+  const size = Number(/(\d+(?:\.\d+)?)px/.exec(font)?.[1] || 16);
+  return { ascent: size * 0.8, descent: size * 0.2 };
+}
+
+/**
+ * Baseline of one glyph box, in px from the top of that box.
+ *
+ * Both painters set `line-height: 1` and centre the em box in a box of `lineHeight`: the
+ * half-leading is `(lineHeight - size) / 2`, and within the line box the baseline sits at
+ * `(size + ascent - descent) / 2`. Pass `lineHeight === size` for a bare glyph span (curved text,
+ * where the box is centred on the glyph).
+ */
+export function runBaseline(font: string, size: number, lineHeight = size): number {
+  const { ascent, descent } = fontVerticalMetrics(font);
+  return (lineHeight - size) / 2 + (size + ascent - descent) / 2;
 }
 
 export function buildFontString(
@@ -279,6 +314,11 @@ export interface TextLayoutOptions {
   fontSize?: number;
   /** Skip the auto-fit recursion. */
   ignoreAutoFit?: boolean;
+  /**
+   * Lay the text out flat, whatever its curve says. `resolveTextCurve` uses this to ask the flow
+   * layout how many lines the text wants; nothing else should need it.
+   */
+  ignoreCurve?: boolean;
 }
 
 function buildRawLines(
@@ -410,6 +450,31 @@ function buildRawLines(
 }
 
 /**
+ * The curve a curved layout is drawn with: the element's own `textCurve`, else the WordArt style's
+ * `arc` — but only while the type is a single line.
+ *
+ * An arc is a one-line gesture. When a headline wraps, or carries a `\n`, the style's arc used to
+ * haul every word onto one circle and flatten the block into a single overflowing row — the words
+ * that were supposed to be on line three sat out on the ends of the arch instead. A wrapped block
+ * keeps its wrapping; the style's arc waits until the text is short enough to sit on one line.
+ *
+ * An explicit curve is a decision the user made with the slider, so it is honoured either way —
+ * `buildCurveLayout` gives every line its own concentric arc, which is why that is safe.
+ */
+export function resolveTextCurve(el: TextElement): number {
+  const explicit = el.textCurve ?? 0;
+  if (explicit !== 0 || !el.isWordArt) return explicit;
+  const styleArc = wordArtStyleArc(el.wordArtStyle);
+  if (styleArc === 0) return 0;
+  // A hard line break is a second line, whether or not the wrapping would have made one.
+  if (/[\r\n]/.test(el.text || '')) return 0;
+  // Would the flat layout wrap it? Ask at the base size: auto-fit only ever shrinks, so this is the
+  // widest the type will ever be and the most lines it will ever take.
+  const flow = layoutText(el, { ignoreCurve: true, ignoreAutoFit: true });
+  return flow.lines.length <= 1 ? styleArc : 0;
+}
+
+/**
  * Lays a text element out into absolute lines and runs, in document pixels.
  */
 export function layoutText(el: TextElement, options: TextLayoutOptions = {}): TextLayoutResult {
@@ -437,15 +502,15 @@ export function layoutText(el: TextElement, options: TextLayoutOptions = {}): Te
   const textWidth = Math.max(20, columnWidth - listIndent - hanging);
 
   const rawText = applyTextTransform(el.text || '', el);
-  const curveBend = el.textCurve ?? 0;
+  const curveBend = options.ignoreCurve ? 0 : resolveTextCurve(el);
 
-  // Curved text bypasses line layout: glyphs are placed on an arc instead.
+  // Curved text bypasses line layout: glyphs are placed on an arc instead. Line breaks and wrapping
+  // survive — `buildCurveLayout` puts each line on its own arc.
   if (curveBend !== 0) {
-    const curvedText = rawText.replace(/\n+/g, ' ').trim();
     const build = (size: number) =>
       buildCurveLayout(
         el,
-        curvedText,
+        rawText,
         size,
         scriptScale,
         baselineShift,
@@ -453,7 +518,8 @@ export function layoutText(el: TextElement, options: TextLayoutOptions = {}): Te
         wordSpacing,
         padding,
         boxW,
-        curveBend
+        curveBend,
+        size * lineHeightFactor
       );
 
     let size = baseSize;
@@ -694,9 +760,53 @@ export function layoutText(el: TextElement, options: TextLayoutOptions = {}): Te
 }
 
 /**
+ * Greedy wrap for arched type: an explicit `\n` is a line, and a line wider than the frame breaks
+ * at a space. Measured with the same `measureRun` the flow layout uses, so an arched headline wraps
+ * where the flat one would.
+ */
+function wrapCurveLines(
+  text: string,
+  font: string,
+  letterSpacing: number,
+  wordSpacing: number,
+  maxWidth: number
+): string[] {
+  const width = (value: string) => measureRun(value, font, letterSpacing, wordSpacing);
+  const lines: string[] = [];
+  for (const paragraph of text.split(/\r?\n/)) {
+    const words = paragraph.split(/\s+/).filter(Boolean);
+    if (words.length === 0) {
+      // A deliberate blank line still costs a row: the arc keeps its rhythm.
+      lines.push('');
+      continue;
+    }
+    let current = words[0];
+    for (const word of words.slice(1)) {
+      const candidate = `${current} ${word}`;
+      if (width(candidate) <= maxWidth) {
+        current = candidate;
+      } else {
+        lines.push(current);
+        current = word;
+      }
+    }
+    lines.push(current);
+  }
+  // A trailing newline is not a line of type: don't leave a blank row's worth of arch behind.
+  while (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
+  return lines;
+}
+
+/**
  * Places each glyph on a circular arc. `bend` is a percentage of a full turn:
  * 100 wraps the text into a complete ring, 35 gives a gentle arch, negative
  * values bow it downwards like a bowl.
+ *
+ * Every line gets its own arc, one line-height below the one above it and with the same curvature,
+ * and each line covers the share of the sweep its own width earns. Multi-line type therefore reads
+ * as nested arcs — the words stay where the line breaks put them, and the gap between the lines is
+ * the same all the way along the arch — instead of the whole block being squashed onto a single
+ * circle, which is how a two-line headline used to end up as one long overflowing row.
  */
 function buildCurveLayout(
   el: TextElement,
@@ -708,55 +818,77 @@ function buildCurveLayout(
   wordSpacing: number,
   padding: number,
   boxW: number,
-  bend: number
+  bend: number,
+  lineHeight: number
 ): { chars: CurveChar[]; contentHeight: number } {
   const font = buildFontString(el, baseSize);
   const chars: CurveChar[] = [];
-  const glyphs = Array.from(text);
-  if (glyphs.length === 0) return { chars, contentHeight: baseSize };
-
-  const widths = glyphs.map((ch) => measureRun(ch, font, letterSpacing, wordSpacing));
-  const totalWidth = Math.max(1, widths.reduce((a, b) => a + b, 0));
   const pct = Math.max(-100, Math.min(100, Math.abs(bend))) / 100;
-  const sweep = Math.PI * 2 * pct; // total angle the string covers
+  const sweep = Math.PI * 2 * pct; // total angle the widest line covers
   const upward = bend > 0;
+
+  const lineTexts = wrapCurveLines(
+    text.trim(),
+    font,
+    letterSpacing,
+    wordSpacing,
+    Math.max(baseSize * 2, boxW - padding * 2)
+  );
+  const rows = lineTexts.map((line) => Array.from(line));
+  if (rows.every((row) => row.length === 0)) return { chars, contentHeight: baseSize };
+
+  const widths = rows.map((row) => row.map((ch) => measureRun(ch, font, letterSpacing, wordSpacing)));
+  const lineWidths = widths.map((row) => Math.max(1, row.reduce((a, b) => a + b, 0)));
+  const widest = Math.max(...lineWidths);
 
   // A full ring only reads if the circle is big enough for the glyphs; when the
   // text is short the radius grows and the letters spread out along the arc
   // (exactly what Canva does) instead of piling up on a tight bend.
   const minRadius = baseSize * 1.55;
-  let radius = Math.max(minRadius, totalWidth / Math.max(0.001, sweep));
+  let radius = Math.max(minRadius, widest / Math.max(0.001, sweep));
   const usableHalf = Math.max(minRadius, boxW / 2 - padding - baseSize * 0.5);
   if (pct > 0.85) radius = Math.min(radius, Math.max(minRadius, usableHalf));
 
   const cx = padding + boxW / 2;
   const drop = radius * (1 - Math.cos(sweep / 2));
   const arcTop = padding + baseSize * 0.6;
+  // Every row is the same arc, pushed down by one line-height: the curvature matches, so the gap
+  // between two lines stays even along the whole arch instead of closing up at the ends, and a row
+  // can never end up with a radius small enough to turn inside out.
+  const rowGap = Math.max(1, lineHeight);
 
-  let cursor = 0;
-  glyphs.forEach((ch, index) => {
-    const width = widths[index];
-    const fraction = (cursor + width / 2) / totalWidth;
-    const theta = (fraction - 0.5) * sweep;
-    const x = cx + radius * Math.sin(theta);
-    const y = upward
-      ? arcTop + radius * (1 - Math.cos(theta))
-      : arcTop + drop - radius * (1 - Math.cos(theta));
-    chars.push({
-      text: ch,
-      x,
-      y,
-      angle: (upward ? theta : -theta) * (180 / Math.PI),
-      fontSize: baseSize,
-      width,
+  rows.forEach((row, lineIndex) => {
+    const rowTop = lineIndex * rowGap;
+    const lineWidth = lineWidths[lineIndex];
+    // Each line covers the share of the sweep its width earns, so the widest line takes the whole
+    // arc and a short one sits centred on less of it. A single line therefore behaves exactly as
+    // it did before there could be more than one.
+    const lineSweep = sweep * (lineWidth / widest);
+    let cursor = 0;
+    row.forEach((ch, index) => {
+      const width = widths[lineIndex][index];
+      const fraction = (cursor + width / 2) / lineWidth;
+      const theta = (fraction - 0.5) * lineSweep;
+      const x = cx + radius * Math.sin(theta);
+      const y = upward
+        ? arcTop + rowTop + radius * (1 - Math.cos(theta))
+        : arcTop + drop + rowTop - radius * (1 - Math.cos(theta));
+      chars.push({
+        text: ch,
+        x,
+        y,
+        angle: (upward ? theta : -theta) * (180 / Math.PI),
+        fontSize: baseSize,
+        width,
+      });
+      cursor += width;
     });
-    cursor += width;
   });
 
   void scriptScale;
   void baselineShift;
   void el;
-  const contentHeight = (upward ? drop : drop) + baseSize * 1.35;
+  const contentHeight = drop + Math.max(0, rows.length - 1) * rowGap + baseSize * 1.35;
   return { chars, contentHeight };
 }
 

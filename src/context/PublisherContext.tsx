@@ -1,4 +1,12 @@
-﻿import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
+﻿import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+} from 'react';
 import { projectTextGeometry } from '../utils/textBoxGrowth';
 import {
   DocumentProject,
@@ -20,6 +28,8 @@ import {
   ConnectorElement,
   ShapeType,
   BackstageSection,
+  AppView,
+  HomeSection,
 } from '../types/publisher';
 import type { TextControlSection } from '../constants/textControls';
 import { buildCollageElements } from '../utils/collageBuild';
@@ -62,6 +72,14 @@ interface PublisherContextType {
   activeTab: 'home' | 'insert' | 'page-design' | 'mailings' | 'view' | 'settings';
   workspaceMode: 'publisher' | 'designer';
   theme: 'light' | 'dark';
+  /**
+   * Home or the document editor. The app opens on `home`; the document stays in memory either way,
+   * so `openEditor()` returns to exactly the page, selection and zoom you left.
+   */
+  view: AppView;
+  /** Which Home destination is showing (see `HomeSection`). */
+  homeSection: HomeSection;
+  setHomeSection: (section: HomeSection) => void;
   isBackstageOpen: boolean;
   /** Active File (Backstage) section — shared so any button can deep-link. */
   backstageSection: BackstageSection;
@@ -135,6 +153,16 @@ interface PublisherContextType {
   toggleWorkspaceMode: () => void;
   setTheme: (theme: 'light' | 'dark') => void;
   toggleTheme: () => void;
+  setView: (view: AppView) => void;
+  /** Shows Home, optionally on a named destination (`openHome('templates')`). */
+  openHome: (section?: HomeSection) => void;
+  openEditor: () => void;
+  /**
+   * Whether there is a document worth resuming — the Home top bar only offers "Resume Editing"
+   * when the workspace actually holds work, so a first-time visitor is not told to resume a blank
+   * page they never started.
+   */
+  hasActiveDocument: boolean;
   setIsBackstageOpen: (open: boolean) => void;
   /** Opens the File view on a specific section (e.g. 'print'). */
   openBackstage: (section?: BackstageSection) => void;
@@ -318,6 +346,9 @@ const PublisherContext = createContext<PublisherContextType | null>(null);
 
 const BRAND_KITS_STORAGE_KEY = 'studiopress_brand_kits_v1';
 
+/** The id of the document the workspace makes when there is nothing to restore. */
+const BLANK_PROJECT_ID = TEMPLATES.find((t) => t.id === 'blank-letter')?.project.id ?? 'proj-blank';
+
 interface BootWorkspace {
   tabs: WorkspaceTab[];
   activeTabId: string;
@@ -341,11 +372,20 @@ function withAdoptedCollages(tabs: WorkspaceTab[]): WorkspaceTab[] {
   return changed ? next : tabs;
 }
 
+/**
+ * The document a first-time visitor lands with.
+ *
+ * It used to be `TEMPLATES[0]` — the trifold brochure — which meant the workspace held a finished
+ * design nobody had asked for, and "Resume Editing" had a document to offer before the visitor had
+ * done anything. A blank page is the honest starting point, and it is what `createNewTab` and
+ * `closeWorkspaceTab` already fall back to.
+ */
 function defaultWorkspace(): WorkspaceTab[] {
+  const blank = TEMPLATES.find((template) => template.id === 'blank-letter') ?? TEMPLATES[0];
   return [
     {
       id: 'tab-initial',
-      project: JSON.parse(JSON.stringify(TEMPLATES[0].project)),
+      project: JSON.parse(JSON.stringify(blank.project)),
       updatedAt: Date.now(),
     },
   ];
@@ -666,7 +706,51 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [isBackstageOpen, setIsBackstageOpen] = useState(false);
   // The File view section lives here so the toolbar, ribbon and status bar can
   // deep-link straight to Print / Export / New without prop drilling.
-  const [backstageSection, setBackstageSection] = useState<BackstageSection>('new');
+  const [backstageSection, setBackstageSection] = useState<BackstageSection>('open');
+
+  /**
+   * The app lands on Home. It used to land on a blank canvas, which meant a first-time visitor was
+   * shown an empty page and left to find the template gallery in a File menu.
+   */
+  const [view, setView] = useState<AppView>('home');
+  const [homeSection, setHomeSection] = useState<HomeSection>('home');
+
+  const openHome = useCallback((section: HomeSection = 'home') => {
+    // Leaving the canvas: drop the selection so nothing is half-selected when you come back to a
+    // different page, and close File if it was open — Home is the surface now.
+    //
+    // The destination resets to `home` unless one is named. Landing on Templates because that is
+    // where you were twelve clicks ago, when you asked for "Home", is how a screenshot of the hero
+    // ends up behind three menus.
+    setHomeSection(section);
+    setSelectedElementIds([]);
+    setIsBackstageOpen(false);
+    setView('home');
+  }, []);
+
+  const openEditor = useCallback(() => {
+    setIsBackstageOpen(false);
+    setView('editor');
+  }, []);
+
+  /**
+   * Resume means there is something to resume.
+   *
+   * A pristine blank page is not it: the workspace hands you one at boot, and telling a first-time
+   * visitor to "resume" the empty page they never started is a lie. So the pill appears once a tab
+   * exists that is not that blank — a created document, a template, an opened file — or once the
+   * blank has anything on it.
+   */
+  const hasActiveDocument = useMemo(
+    () =>
+      workspaceTabs.length > 1 ||
+      workspaceTabs.some(
+        (tab) =>
+          tab.project.id !== BLANK_PROJECT_ID ||
+          tab.project.pages.some((pg) => pg.elements.length > 0)
+      ),
+    [workspaceTabs]
+  );
 
   const openBackstage = useCallback((section?: BackstageSection) => {
     if (section) setBackstageSection(section);
@@ -1560,6 +1644,8 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       await preloadProjectFonts(cloned);
       createNewTab(cloned);
       setIsBackstageOpen(false);
+      // A template is a document, so choosing one is a commitment to the editor.
+      setView('editor');
     },
     [createNewTab]
   );
@@ -3012,6 +3098,9 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         activeTab,
         workspaceMode,
         theme,
+        view,
+        homeSection,
+        setHomeSection,
         isBackstageOpen,
         backstageSection,
         setBackstageSection,
@@ -3083,6 +3172,10 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         toggleWorkspaceMode,
         setTheme,
         toggleTheme,
+        setView,
+        openHome,
+        openEditor,
+        hasActiveDocument,
         setIsBackstageOpen,
         openBackstage,
         setIsMailMergeOpen,

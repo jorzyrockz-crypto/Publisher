@@ -20,10 +20,10 @@ import { FloatingDropdown } from '../common/FloatingDropdown';
 import { ShapePreviewIcon } from '../common/ShapePreviewIcon';
 import { SHAPE_CATALOG } from '../../utils/shapePaths';
 import { imageFit, panRoom } from '../../utils/imageFrame';
-import { wordArtCurve, wordArtPaint, wordArtPickerOptions } from '../../utils/wordArt';
+import { wordArtPaint, wordArtPickerOptions } from '../../utils/wordArt';
+import { resolveTextCurve } from '../../utils/textLayout';
 import { wordArtFacePatch } from '../../constants/wordArtFonts';
 import { isBoldWeight, toggleBoldWeight } from '../../utils/textWeight';
-import type { WordArtStyle } from '../../types/publisher';
 import { useImageAspect } from '../../hooks/useImageAspect';
 import {
   PATTERN_CATALOG,
@@ -107,15 +107,12 @@ import { textBoxContentHeight } from '../../utils/textBoxGrowth';
  * unavailable instead of silently doing nothing.
  */
 
-/** The curve that is actually painted: the element's own, else the WordArt style's `arc`. */
-const effectiveTextCurve = (element: {
-  isWordArt?: boolean;
-  wordArtStyle?: WordArtStyle;
-  textCurve?: number;
-}) =>
-  element.isWordArt
-    ? wordArtCurve(element.wordArtStyle, element.textCurve)
-    : (element.textCurve ?? 0);
+/**
+ * The curve that is actually painted: the element's own, else the WordArt style's `arc` — and, as
+ * `resolveTextCurve` decides, only while the type is a single line. Reading the raw element value
+ * would claim `0` over visibly arched type; reading the style alone would claim an arch over a
+ * headline that is correctly wrapped flat.
+ */
 
 const PanAxes: React.FC<{
   element: ImageElement;
@@ -1329,6 +1326,8 @@ export const PropertiesPanel: React.FC = () => {
         {/* Case 2: Text Frame Properties (Adobe-style Character, Paragraph & Effects) */}
         {selectedElement && selectedElement.type === 'text' && (() => {
           const textEl = selectedElement as TextElement;
+          // One resolution per render: it lays the text out to see whether it fits on one line.
+          const paintedCurve = resolveTextCurve(textEl);
           return (
             <InspectorCard className="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3.5 shadow-2xs">
               <div className="font-bold text-slate-800 flex items-center justify-between pb-2 border-b border-slate-100">
@@ -2359,7 +2358,7 @@ export const PropertiesPanel: React.FC = () => {
                         Curve
                       </label>
                       <span className="font-mono text-[10px] text-slate-500">
-                        {effectiveTextCurve(textEl)}
+                        {paintedCurve}
                       </span>
                     </div>
                     <input
@@ -2371,7 +2370,7 @@ export const PropertiesPanel: React.FC = () => {
                       // would claim "0" over type that is visibly arched, so the control always
                       // shows the curve that is painted; touching it writes an explicit curve,
                       // which then wins over the style.
-                      value={effectiveTextCurve(textEl)}
+                      value={paintedCurve}
                       onChange={(e) =>
                         updateElement(textEl.id, { textCurve: Number(e.target.value) })
                       }
@@ -2384,7 +2383,7 @@ export const PropertiesPanel: React.FC = () => {
                           type="button"
                           onClick={() => updateElement(textEl.id, { textCurve: preset.value })}
                           className={`py-1 rounded-lg text-[9.5px] font-bold border transition ${
-                            effectiveTextCurve(textEl) === preset.value
+                            paintedCurve === preset.value
                               ? 'bg-white border-[#b4a4f4] text-[#5c4bb8] shadow-xs'
                               : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-[#c9bdf7]'
                           }`}
@@ -2395,7 +2394,7 @@ export const PropertiesPanel: React.FC = () => {
                     </div>
                     <p className="text-[9.5px] text-slate-400 leading-tight">
                       Positive arches up, negative bows down, ±100 closes the text into a ring.
-                      Curved text is laid out on one line.
+                      Each line gets its own arc, so a wrapped headline stays wrapped.
                     </p>
                   </div>
 
@@ -2424,7 +2423,9 @@ export const PropertiesPanel: React.FC = () => {
                                   activeOpt.dark ? 'bg-slate-900' : 'bg-white border border-slate-200/80'
                                 }`}
                               >
-                                <span className={activeOpt.cssClass}>Aa</span>
+                                <span className={activeOpt.cssClass} data-text="Aa">
+                                  Aa
+                                </span>
                               </span>
                               <span className="truncate">{activeOpt.label}</span>
                             </div>
@@ -2509,7 +2510,9 @@ export const PropertiesPanel: React.FC = () => {
                                         opt.dark ? 'bg-slate-900' : 'bg-slate-50 border border-slate-100'
                                       }`}
                                     >
-                                      <span className={opt.cssClass}>Aa</span>
+                                      <span className={opt.cssClass} data-text="Aa">
+                                        Aa
+                                      </span>
                                       {opt.isNew && (
                                         <span className="absolute left-1 top-1 rounded-[3px] bg-[#6e56cf] px-1 text-[7px] font-bold uppercase tracking-wide text-white">
                                           New

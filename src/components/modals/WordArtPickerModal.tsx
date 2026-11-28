@@ -234,7 +234,10 @@ export const WordArtPickerModal: React.FC = () => {
                       : 'border-[#e5e9ee] hover:border-slate-300'
                   }`}
                 >
-                  <span className={`text-xl font-black ${s.previewClass} truncate max-w-full`}>
+                  <span
+                    className={`text-xl font-black max-w-full whitespace-nowrap ${s.previewClass}`}
+                    data-text="WordArt"
+                  >
                     WordArt
                   </span>
                   {s.isNew && (
