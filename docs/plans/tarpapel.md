@@ -86,13 +86,13 @@ sheet 1 first", no combined size on the page. Teachers assemble these on a class
 
 ### P0 — make the print honest (no visual change to any design)
 
-**0.1 Marks out of the artwork.** Split guides into `preview` (screen only) and `print` (vectors in
+**0.1 Marks out of the artwork. ✅ done** (`sheetMarkGeometry`) Split guides into `preview` (screen only) and `print` (vectors in
 the margin). In `exportTarpapelPdf`, stop drawing into the tile raster; after `addImage`, use jsPDF
 primitives to draw: trim ticks at the four corners *outside* `availableW/H`, `ROW 1 · COL 2 / 6` and
 `GLUE 10 MM` labels in the margin, and a hairline registration cross at each glue edge.
 
-- Files: `printUtils.ts` (remove raster marks), `pdfExport.ts` (vector marks), `BackstageModal.tsx` (toggle label → "guides in preview").
-- Done when: a 3 × 2 export contains no amber, no dashed box over art, and every sheet is labelled in the margin.
+- Files: `printUtils.ts` (`sheetMarkGeometry`), `pdfExport.ts` (slices with guides forced off, draws vectors), `BackstageModal.tsx` (toggle is now honestly labelled *in preview*).
+- Verified in Node: 8 tick lines per sheet, none inside the image area; `SHEET 2 / 6` + `R1 C2`; glue labels on inner edges only; borderless prints no marks at all.
 
 **0.2 Size computed, never typed.** One function, one source of truth:
 
@@ -122,7 +122,30 @@ never exists, so 300 dpi becomes real and peak memory is one tile.
 - Files: `printUtils.ts` (`slicePageIntoTarpapelTiles` rewritten around `renderPageModelToCanvas`), `pdfExport.ts`.
 - Done when: 3 × 3 A4 at 300 dpi completes, tiles are 3300 px wide, and no canvas exceeds one tile.
 
-### P0.5 — image quick path (parity with PaperTarp)
+### P0.5 — "Print as Tarpaulin": every design, one door ✅ done
+
+The philosophy settled the design: the modal is not an image tool, it is a **door onto the engine for
+whatever is in the workspace**. Source is a chip row — every open tab, or an image from disk — plus a
+page picker when the source has several. One `TarpapelModal`, three rows: *what are we printing*,
+*how it is cut up*, *what comes out*.
+
+Three decisions worth keeping:
+
+- **The grid is suggested, not imposed.** `suggestTarpapelGrid(page, settings)` scores every grid up
+  to 6 × 6 by how far the assembled poster's shape is from the design's, and breaks near-ties toward
+  fewer sheets. A 3292 × 1550 banner suggests **3 × 2 · 84 × 39 cm**; a 4:5 post suggests 1 × 2.
+  The teacher can override, and the offer disappears once they have.
+- **The mismatch is shown, not hidden.** The sheet map draws the poster's proportions cut into its
+  sheets with the design's silhouette over it, so "pad 5%" or "crop 5%" is a picture rather than a
+  warning. Same numbers the engine will use.
+- **Two doors, one setting.** Opening the modal seeds from the print panel's last tarpapel settings
+  and writes them back on export, so the two surfaces can never disagree.
+
+Reached from command search — **"Print as Tarpaulin"** — and implemented as `TarpapelModal.tsx` +
+`isTarpapelModalOpen` in the context. It calls `computeTarpapelMetrics` and `exportTarpapelPdf`; it
+owns no tiling code.
+
+### P0.6 — image quick path (PaperTarp parity) ✅ folded into P0.5
 
 [papertarp.com](https://www.papertarp.com/) is six inputs: upload an image, grid cols × rows, a
 unified margin preset (0.3/0.5/0.75/1 in), paper (Letter/A4/Legal), orientation, then *Download PDF*
@@ -217,10 +240,10 @@ the design is mostly ink-hungry full-bleed.
 
 | phase | why first | rough size |
 |---|---|---|
-| P0.1 + P0.2 + P0.3 | teachers are printing amber stripes and a size that isn't the design | one commit, ~half a day |
+| P0.1 ✅ + P0.5 ✅ | teachers were printing amber stripes, and had no door to tile anything at all | shipped |
+| P0.2 + P0.3 | the panel still reports 871 mm for an 840 mm poster | one commit |
 | P0.4 | the 300 dpi switch currently lies; also removes the OOM | one commit |
 | P1.1–1.3 | stops the next template from repeating the 3 cm error | one commit, largest |
-| P0.5 | a front door for an image; parity with the tool teachers already use | ~90 lines, depends on P0.1–0.2 |
 | P2 | the difference between "tiling" and "designed to be tiled" | one commit |
 | P3 | assembly is where the paper actually gets wasted | one commit |
 

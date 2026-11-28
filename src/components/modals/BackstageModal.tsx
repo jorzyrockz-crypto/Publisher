@@ -1344,7 +1344,7 @@ export const BackstageModal: React.FC = () => {
                                   }
                                   className="accent-amber-600 rounded"
                                 />
-                                <span>Show Cut &amp; Row/Col Guides</span>
+                                <span>Cut &amp; row/col guides in preview</span>
                               </label>
                               <button
                                 type="button"

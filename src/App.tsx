@@ -35,6 +35,9 @@ const BrandBoardModal = React.lazy(() =>
 const BrandKitModal = React.lazy(() =>
   import('./components/modals/BrandKitModal').then((m) => ({ default: m.BrandKitModal }))
 );
+const TarpapelModal = React.lazy(() =>
+  import('./components/modals/TarpapelModal').then((m) => ({ default: m.TarpapelModal }))
+);
 const ShortcutsModal = React.lazy(() =>
   import('./components/modals/ShortcutsModal').then((m) => ({ default: m.ShortcutsModal }))
 );
@@ -180,6 +183,7 @@ export const AppContent: React.FC = () => {
         <CollageModal />
         <BrandBoardModal />
         <BrandKitModal />
+        <TarpapelModal />
         <ShortcutsModal />
       </Suspense>
     </div>

@@ -5,6 +5,7 @@ import {
   PrintSettings,
   buildBookletSheets,
   resolvePaperBaseDimensions,
+  sheetMarkGeometry,
   slicePageIntoTarpapelTiles,
 } from './printUtils';
 
@@ -207,7 +208,14 @@ export async function exportTarpapelPdf(
 ): Promise<void> {
   const { jsPDF } = await loadJsPdf();
   const masterEls = resolveMasterElementsForPdf(project, page);
-  const tiles = await slicePageIntoTarpapelTiles(page, settings, masterEls);
+  // Guides are a screen aid. Baking them into the tile would print amber stripes across the art the
+  // teacher is about to glue, so the export always slices clean and draws its marks as vectors in the
+  // printer margin instead (see `sheetMarkGeometry`).
+  const tiles = await slicePageIntoTarpapelTiles(
+    page,
+    { ...settings, tarpapelShowTileGuides: false },
+    masterEls
+  );
   if (tiles.length === 0) return;
 
   const { widthIn, heightIn, isLandscape } = resolvePaperBaseDimensions(
@@ -230,6 +238,25 @@ export async function exportTarpapelPdf(
   tiles.forEach((tile, idx) => {
     if (idx > 0) pdf.addPage([ptW, ptH], isLandscape ? 'l' : 'p');
     pdf.addImage(tile.dataUrl, 'PNG', marginPt, marginPt, availW, availH);
+
+    const marks = sheetMarkGeometry(
+      ptW,
+      ptH,
+      marginPt,
+      Math.min(tile.col, settings.tarpapelCols),
+      Math.min(tile.row, settings.tarpapelRows),
+      settings.tarpapelCols,
+      settings.tarpapelRows
+    );
+    if (marks.lines.length === 0) return;
+    pdf.setDrawColor(90, 100, 112);
+    pdf.setLineWidth(0.4);
+    for (const line of marks.lines) pdf.line(line.x1, line.y1, line.x2, line.y2);
+    pdf.setFontSize(5.5);
+    pdf.setTextColor(90, 100, 112);
+    for (const label of marks.labels) {
+      pdf.text(label.text, label.x, label.y, label.align ? { align: label.align } : undefined);
+    }
   });
 
   const filename =

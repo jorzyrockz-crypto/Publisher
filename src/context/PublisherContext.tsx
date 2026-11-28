@@ -71,6 +71,12 @@ interface PublisherContextType {
   /** The storybook asset-pack picker (built-in kit + imported .zip packs). */
   isAssetPackPanelOpen: boolean;
   isCollageModalOpen: boolean;
+  /**
+   * The "print as tarpaulin" door: any design in the workspace, on A4 sheets. Deliberately separate
+   * from the print panel — a teacher tiling a poster is doing a different job from a teacher
+   * printing a letter, and the modal is reachable from the command search as well.
+   */
+  isTarpapelModalOpen: boolean;
   editingCollageState: {
     meta: import('../utils/borderArtStyles').CollageMeta;
     groupId?: string;
@@ -136,6 +142,7 @@ interface PublisherContextType {
   setIsStockArtPanelOpen: (open: boolean) => void;
   setIsAssetPackPanelOpen: (open: boolean) => void;
   setIsCollageModalOpen: (open: boolean) => void;
+  setIsTarpapelModalOpen: (open: boolean) => void;
   openCollageEditor: (opts: {
     meta: import('../utils/borderArtStyles').CollageMeta;
     groupId?: string;
@@ -652,6 +659,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [isWordArtModalOpen, setIsWordArtModalOpen] = useState(false);
   const [isBuildingBlocksModalOpen, setIsBuildingBlocksModalOpen] = useState(false);
   const [isAIImageModalOpen, setIsAIImageModalOpen] = useState(false);
+  const [isTarpapelModalOpen, setIsTarpapelModalOpen] = useState(false);
   const [isStockArtPanelOpen, setIsStockArtPanelOpen] = useState(false);
   const [isAssetPackPanelOpen, setIsAssetPackPanelOpen] = useState(false);
   const [isCollageModalOpen, setIsCollageModalOpenState] = useState(false);
@@ -3005,6 +3013,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         isStockArtPanelOpen,
         isAssetPackPanelOpen,
         isCollageModalOpen,
+        isTarpapelModalOpen,
         editingCollageState,
         isBrandBoardModalOpen,
         isBrandKitModalOpen,
@@ -3074,6 +3083,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setIsStockArtPanelOpen,
         setIsAssetPackPanelOpen,
         setIsCollageModalOpen,
+        setIsTarpapelModalOpen,
         openCollageEditor,
         replaceCollageGroup,
         patchCollageMeta,
