@@ -7,9 +7,27 @@ import {
   AIDesignAdvice,
   DesignRecommendationCategory,
   fetchAIDesignAdvice,
-  generateDesignRecommendations,
 } from '../../utils/designRecommendations';
-import { Sparkles, Wand2, Settings2, Check } from 'lucide-react';
+import { rankDesignCandidates } from '../../utils/designCandidates';
+import {
+  getFeedback,
+  recordDesignFeedback,
+  resetFeedback,
+  totalSignals,
+} from '../../utils/designFeedback';
+import { critiqueDesign, DesignCritique, storedCriticKey } from '../../utils/designCritic';
+import { LayoutScore, scoreLayout } from '../../utils/layoutScore';
+import { X, Sparkles, Wand2, Settings2, Check, ScanEye, Gauge } from 'lucide-react';
+
+/** The score, as a badge: green A, blue B, amber C, red D. */
+const scoreTone = (score: LayoutScore) =>
+  score.grade === 'A'
+    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+    : score.grade === 'B'
+    ? 'bg-sky-50 text-sky-700 border-sky-200'
+    : score.grade === 'C'
+    ? 'bg-amber-50 text-amber-700 border-amber-200'
+    : 'bg-rose-50 text-rose-700 border-rose-200';
 
 const GEMINI_KEY_STORAGE = 'studiopress_gemini_api_key';
 
@@ -26,6 +44,10 @@ export const DesignIdeasPanel: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [appliedId, setAppliedId] = useState<string | null>(null);
   const [showKeyConfig, setShowKeyConfig] = useState(false);
+  const [critique, setCritique] = useState<DesignCritique | null>(null);
+  const [isCritiquing, setIsCritiquing] = useState(false);
+  // Learned preferences are state, so a signal re-ranks the list in the same commit.
+  const [feedback, setFeedback] = useState(() => getFeedback());
   const [apiKeyDraft, setApiKeyDraft] = useState(() => {
     try {
       return localStorage.getItem(GEMINI_KEY_STORAGE) || '';
@@ -34,11 +56,27 @@ export const DesignIdeasPanel: React.FC = () => {
     }
   });
 
+  // Suggestions arrive ranked by how well they score as layouts, nudged by what this user has
+  // actually kept before. The panel is the same list it always was — it is just ordered.
+  const signals = totalSignals(feedback);
+
   const recommendations = useMemo(() => {
-    const all = generateDesignRecommendations(activePage, aiAdvice);
-    if (category === 'all') return all;
-    return all.filter((r) => r.category === category);
-  }, [activePage, aiAdvice, category]);
+    const ranked = rankDesignCandidates(activePage, aiAdvice, { limit: 8, feedback });
+    if (category === 'all') return ranked;
+    return ranked.filter((c) => c.category === category);
+  }, [activePage, aiAdvice, category, feedback]);
+
+  const pageScore = useMemo(() => scoreLayout(activePage), [activePage]);
+
+  const handleCritique = async () => {
+    setIsCritiquing(true);
+    try {
+      const result = await critiqueDesign(activePage);
+      setCritique(result);
+    } finally {
+      setIsCritiquing(false);
+    }
+  };
 
   const handleAskAI = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -162,10 +200,98 @@ export const DesignIdeasPanel: React.FC = () => {
         ))}
       </div>
 
-      {/* Live Mini-Canvas Recommendations */}
+      {/* What the page scores, why, and — with a key — a second opinion from a vision model. */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-2.5 space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-[10.5px] font-bold text-slate-700 flex items-center gap-1">
+            <Gauge size={12} className="text-[#5c4bb8]" /> This page
+          </span>
+          <span
+            className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${scoreTone(pageScore)}`}
+            title={pageScore.highlights.join(' · ') || 'No highlights yet'}
+          >
+            {pageScore.total} / 100 · {pageScore.grade}
+          </span>
+        </div>
+
+        {pageScore.issues.length === 0 ? (
+          <div className="text-[9.5px] text-emerald-700">
+            {pageScore.highlights.slice(0, 2).join(' · ') || 'Nothing to fix.'}
+          </div>
+        ) : (
+          <ul className="space-y-1">
+            {pageScore.issues.slice(0, 3).map((issue) => (
+              <li key={issue.id} className="text-[9.5px] leading-snug flex gap-1">
+                <span
+                  className={`mt-1 w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                    issue.severity === 'bad'
+                      ? 'bg-rose-500'
+                      : issue.severity === 'warn'
+                      ? 'bg-amber-500'
+                      : 'bg-slate-400'
+                  }`}
+                />
+                <span className="text-slate-600">
+                  <span className="font-semibold text-slate-800">{issue.label}.</span> {issue.detail}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {signals > 0 && (
+          <button
+            type="button"
+            onClick={() => {
+              resetFeedback();
+              setFeedback({});
+            }}
+            className="w-full text-left text-[9px] text-slate-400 hover:text-slate-600 cursor-pointer"
+            title="Forget which kinds of suggestion you have picked"
+          >
+            Reset learned preferences ({signals} signal{signals === 1 ? '' : 's'})
+          </button>
+        )}
+
+        <button
+          type="button"
+          onClick={handleCritique}
+          disabled={isCritiquing || !storedCriticKey()}
+          title={
+            storedCriticKey()
+              ? 'Render the page and have a vision model review it'
+              : 'Add your Gemini key to enable the AI second opinion'
+          }
+          className={`w-full h-8 rounded-xl text-[10px] font-bold flex items-center justify-center gap-1.5 transition ${
+            storedCriticKey()
+              ? 'bg-[#efeafd] text-[#5c4bb8] hover:bg-[#e6e0fb] cursor-pointer'
+              : 'bg-slate-50 text-slate-400 cursor-not-allowed'
+          }`}
+        >
+          <ScanEye size={12} />
+          {isCritiquing ? 'Reviewing…' : critique ? 'Review again' : 'Second opinion'}
+        </button>
+
+        {critique && (
+          <div className="rounded-xl bg-slate-50 border border-slate-200 p-2 space-y-1">
+            <div className="text-[9.5px] font-bold text-slate-800">
+              {critique.score} / 100 — {critique.verdict}
+            </div>
+            <ol className="list-decimal list-inside space-y-0.5">
+              {critique.fixes.map((fix) => (
+                <li key={fix} className="text-[9.5px] text-slate-600 leading-snug">
+                  {fix}
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
+      </div>
+
+      {/* Live Mini-Canvas Recommendations — ranked, with the reason on each card */}
       <div className="space-y-2.5">
         {recommendations.map((rec) => {
-          const pg = rec.previewPage;
+          const pg = rec.page;
           const thumbW = 216;
           const scale = thumbW / pg.width;
           const thumbH = Math.min(180, Math.round(pg.height * scale));
@@ -175,16 +301,52 @@ export const DesignIdeasPanel: React.FC = () => {
           const isApplied = appliedId === rec.id;
 
           return (
-            <button
+            <div
               key={rec.id}
-              type="button"
+              className="group relative w-full text-left bg-white hover:bg-[#efeafd] border border-slate-200 hover:border-[#d3c9f9] rounded-2xl p-2 transition-all shadow-2xs hover:shadow-md cursor-pointer space-y-1.5"
               onClick={() => {
                 applyDesignRecommendation(pg);
+                setFeedback(recordDesignFeedback(rec.learnKey, 'accepted'));
                 setAppliedId(rec.id);
                 window.setTimeout(() => setAppliedId(null), 1500);
               }}
-              className="group w-full text-left bg-white hover:bg-[#efeafd] border border-slate-200 hover:border-[#d3c9f9] rounded-2xl p-2 transition-all shadow-2xs hover:shadow-md cursor-pointer space-y-1.5"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                e.preventDefault();
+                applyDesignRecommendation(pg);
+                setFeedback(recordDesignFeedback(rec.learnKey, 'accepted'));
+              }}
             >
+              {/* The score, and the one thing that would make this layout better. */}
+              <div className="flex items-center gap-1.5 px-1">
+                <span
+                  className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border flex items-center gap-0.5 ${scoreTone(rec.score)}`}
+                  title={rec.score.issues.map((i) => `${i.label}: ${i.detail}`).join('\n') || 'No issues found'}
+                >
+                  <Gauge size={9} />
+                  {rec.score.total} · {rec.score.grade}
+                </span>
+                <span className="text-[9px] text-slate-500 truncate flex-1">{rec.rationale}</span>
+                {rec.exploring && (
+                  <span className="text-[8px] font-bold text-[#5c4bb8] px-1 rounded bg-[#efeafd]">
+                    new
+                  </span>
+                )}
+              </div>
+              <button
+                type="button"
+                title="Not this one"
+                aria-label={`Dismiss ${rec.title}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setFeedback(recordDesignFeedback(rec.learnKey, 'dismissed'));
+                }}
+                className="absolute top-1 left-1 z-10 w-5 h-5 rounded-full bg-white/90 border border-slate-200 text-slate-500 hover:text-rose-600 hover:border-rose-200 flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer"
+              >
+                <X size={11} />
+              </button>
               <div className="flex justify-center bg-slate-100/80 rounded-xl p-2 relative overflow-hidden">
                 <div
                   className="shadow-sm rounded-md overflow-hidden relative bg-white border border-slate-200/80"
@@ -266,7 +428,7 @@ export const DesignIdeasPanel: React.FC = () => {
                   {rec.badge}
                 </span>
               </div>
-            </button>
+            </div>
           );
         })}
       </div>

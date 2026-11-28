@@ -106,6 +106,18 @@ export const PageCanvas: React.FC<PageCanvasProps> = React.memo(({
 
   const canvasRef = useRef<HTMLDivElement>(null);
 
+  /**
+   * Where the dragged elements currently *look* like they are.
+   *
+   * Moving an object used to write new x/y into the document on every frame, which re-rendered
+   * the ribbon, both sidebars, the thumbnails and every element on the page to move one box.
+   * The drag now only updates this local offset — one translate on the boxes being moved — and
+   * the document is written once, when the pointer is released.
+   */
+  const [dragPreview, setDragPreview] = useState<{ ids: string[]; dx: number; dy: number } | null>(
+    null
+  );
+
   // Global keyboard shortcuts (Arrows to nudge, Delete to remove, Ctrl+D duplicate, etc.)
   useEffect(() => {
     if (!isActivePage) return;
@@ -358,6 +370,7 @@ export const PageCanvas: React.FC<PageCanvasProps> = React.memo(({
     let rafId: number | null = null;
     let latestMoveEvent: MouseEvent | null = null;
     let activeDropTargetId: string | null = null;
+    let lastDelta = { dx: 0, dy: 0 };
     const canDropIntoPlaceholder =
       element.type === 'image' && Boolean(element.src) && initialElementsPos.length === 1;
 
@@ -420,15 +433,15 @@ export const PageCanvas: React.FC<PageCanvasProps> = React.memo(({
 
       const effectiveDeltaX = snap.x - primary.startX;
       const effectiveDeltaY = snap.y - primary.startY;
+      lastDelta = { dx: effectiveDeltaX, dy: effectiveDeltaY };
 
-      const updatesById: Record<string, { x: number; y: number }> = {};
-      initialElementsPos.forEach((item) => {
-        updatesById[item.id] = {
-          x: Math.round(item.startX + effectiveDeltaX),
-          y: Math.round(item.startY + effectiveDeltaY),
-        };
-      });
-      updateElementsBatch(updatesById, { transient: true });
+      // Paint the move; the document waits for the drop.
+      const ids = initialElementsPos.map((item) => item.id);
+      setDragPreview((prev) =>
+        prev && prev.dx === effectiveDeltaX && prev.dy === effectiveDeltaY
+          ? prev
+          : { ids, dx: effectiveDeltaX, dy: effectiveDeltaY }
+      );
     };
 
     beginInteraction();
@@ -445,6 +458,20 @@ export const PageCanvas: React.FC<PageCanvasProps> = React.memo(({
         window.cancelAnimationFrame(rafId);
         rafId = null;
       }
+
+      // One write for the whole gesture: the boxes land where the preview left them.
+      if (lastDelta.dx !== 0 || lastDelta.dy !== 0) {
+        const finalPositions: Record<string, { x: number; y: number }> = {};
+        initialElementsPos.forEach((item) => {
+          finalPositions[item.id] = {
+            x: Math.round(item.startX + lastDelta.dx),
+            y: Math.round(item.startY + lastDelta.dy),
+          };
+        });
+        updateElementsBatch(finalPositions, { transient: true });
+      }
+      setDragPreview(null);
+
       setActiveAlignGuideH(undefined);
       setActiveAlignGuideV(undefined);
       setDragOverPlaceholderId(null);
@@ -543,9 +570,10 @@ export const PageCanvas: React.FC<PageCanvasProps> = React.memo(({
 
   return (
     <div
+      data-page-frame="true"
       style={{
-        width: `${targetPage.width * zoom}px`,
-        height: `${targetPage.height * zoom}px`,
+        width: `calc(${targetPage.width}px * var(--sp-zoom, 1))`,
+        height: `calc(${targetPage.height}px * var(--sp-zoom, 1))`,
         position: 'relative',
         flexShrink: 0,
       }}
@@ -586,8 +614,9 @@ export const PageCanvas: React.FC<PageCanvasProps> = React.memo(({
             return patStyle;
           })(),
           boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-          transform: `scale(${zoom})`,
+          transform: `scale(var(--sp-zoom, ${zoom}))`,
           transformOrigin: 'top left',
+          willChange: 'transform',
         }}
         onMouseMove={handleCanvasMouseMove}
         onMouseDown={(e) => {
@@ -943,8 +972,13 @@ export const PageCanvas: React.FC<PageCanvasProps> = React.memo(({
               top: `${element.y}px`,
               width: `${element.width}px`,
               height: `${element.height}px`,
-              transform: `rotate(${element.rotation}deg)`,
+              transform:
+                dragPreview && dragPreview.ids.includes(element.id)
+                  ? `translate3d(${dragPreview.dx}px, ${dragPreview.dy}px, 0) rotate(${element.rotation}deg)`
+                  : `rotate(${element.rotation}deg)`,
               transformOrigin: 'center center',
+              willChange:
+                dragPreview && dragPreview.ids.includes(element.id) ? 'transform' : undefined,
               zIndex: element.zIndex,
               opacity: element.opacity !== undefined ? element.opacity : 1,
             }}

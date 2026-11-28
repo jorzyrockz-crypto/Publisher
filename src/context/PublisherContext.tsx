@@ -1,4 +1,5 @@
 ﻿import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
+import { TEXT_EFFECT_KEYS, fitTextBoxToEffects } from '../utils/textEffectsFit';
 import {
   DocumentProject,
   Page,
@@ -1705,6 +1706,23 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const commitCurrentElements = useCallback(
     (nextElements: PublisherElement[]) => {
+      // Applying a text style grows the box to hold its paint (see utils/textEffectsFit), so a
+      // shadow, glow or extrusion is not clipped by the box that carries it. Running this at
+      // the one place element writes land means it covers the ribbon, the panels, the WordArt
+      // gallery and the stroke controls alike.
+      const projected = nextElements.map((el) => {
+        if (el.type !== 'text') return el;
+        const before = currentElements.find((prev) => prev.id === el.id) as TextElement | undefined;
+        if (!before) return el;
+        const record = el as unknown as Record<string, unknown>;
+        const previous = before as unknown as Record<string, unknown>;
+        const effectsChanged = TEXT_EFFECT_KEYS.some((key) => record[key] !== previous[key]);
+        if (!effectsChanged) return el;
+        const fit = fitTextBoxToEffects(el);
+        return fit ? ({ ...el, ...fit } as PublisherElement) : el;
+      });
+      nextElements = projected;
+
       if (isEditingMaster) {
         const nextMasters = masterPages.map((m) =>
           m.id === activeMasterId ? { ...m, elements: nextElements } : m
@@ -1726,7 +1744,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         commitProject({ ...project, pages: newPages });
       }
     },
-    [isEditingMaster, masterPages, activeMasterId, project, activePage, commitProject]
+    [isEditingMaster, masterPages, activeMasterId, project, activePage, currentElements, commitProject]
   );
 
   // Element actions

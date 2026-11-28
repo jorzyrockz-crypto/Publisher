@@ -5,6 +5,7 @@ import { CERTIFICATE_TEMPLATES } from './certificateTemplates';
 import { SAMPLE_GRAPHICS } from './sampleGraphics';
 import { getStickerById } from './stickerLibrary';
 import { enhanceProject } from '../utils/templateEnhance';
+import { polishProject } from '../utils/templatePolish';
 
 export type TemplateCategory =
   | 'Brochure'
@@ -40,7 +41,8 @@ export interface TemplateDefinition {
   project: DocumentProject;
 }
 
-const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
+/** The authored templates, before the design pass. Exported for the design tests. */
+export const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
   // 1. Trifold Brochure
   {
     id: 'trifold-business',
@@ -4974,5 +4976,7 @@ const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
  */
 export const TEMPLATES: TemplateDefinition[] = TEMPLATE_DEFINITIONS.map((tpl) => {
   const { project } = enhanceProject(tpl.project, tpl.category, tpl.thumbnailColor);
-  return { ...tpl, project };
+  // Then the design pass: artwork, margins, rhythm and contrast (see utils/templatePolish).
+  // The gallery thumbnail renders this project, so what you see is what you get.
+  return { ...tpl, project: polishProject(project, tpl.category) };
 });
