@@ -272,14 +272,29 @@
 .wordart-cinematic {
   font-weight: 900;
   font-family: 'Playfair Display', sans-serif;
-  background: linear-gradient(178deg, #fff4d6 0%, #f0b45a 34%, #c8842e 62%, #f7e2b2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #1b1206;
+  -webkit-text-fill-color: #1b1206;
   -webkit-text-stroke: 0.042em #1b1206;
   paint-order: stroke fill;
+  position: relative;
+  z-index: 0;
   filter:
     drop-shadow(0px 3px 10px rgba(255,176,74,0.45))
     drop-shadow(0px 10px 26px rgba(0,0,0,0.55));
+}
+
+.wordart-cinematic::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(178deg, #fff4d6 0%, #f0b45a 34%, #c8842e 62%, #f7e2b2 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0;
+  pointer-events: none;
 }
 
 .wordart-holographic {
@@ -364,11 +379,12 @@
   font-weight: 900;
   font-family: 'Montserrat', sans-serif;
   font-style: italic;
-  background: linear-gradient(135deg, #ecfccb 0%, #a3e635 35%, #22d3ee 70%, #06b6d4 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #09090b;
+  -webkit-text-fill-color: #09090b;
   -webkit-text-stroke: 0.042em #09090b;
   paint-order: stroke fill;
+  position: relative;
+  z-index: 0;
   filter:
     drop-shadow(1.2px 1.2px 0px #ec4899)
     drop-shadow(1.2px 1.2px 0px #d23c84)
@@ -379,14 +395,29 @@
     drop-shadow(0px 0px 14px rgba(163, 230, 53, 0.5));
 }
 
+.wordart-cyber-acid::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(135deg, #ecfccb 0%, #a3e635 35%, #22d3ee 70%, #06b6d4 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0;
+  pointer-events: none;
+}
+
 .wordart-obsidian-gold {
   font-weight: 900;
   font-family: 'Playfair Display', sans-serif;
-  background: linear-gradient(155deg, #52525b 0%, #18181b 35%, #f4f4f5 47%, #09090b 51%, #27272a 85%, #71717a 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #f59e0b;
+  -webkit-text-fill-color: #f59e0b;
   -webkit-text-stroke: 0.042em #f59e0b;
   paint-order: stroke fill;
+  position: relative;
+  z-index: 0;
   filter:
     drop-shadow(0.5px 1.1px 0px #b45309)
     drop-shadow(0.5px 1.1px 0px #8f4007)
@@ -395,14 +426,29 @@
     drop-shadow(0px 6px 12px rgba(0, 0, 0, 0.5));
 }
 
+.wordart-obsidian-gold::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(155deg, #52525b 0%, #18181b 35%, #f4f4f5 47%, #09090b 51%, #27272a 85%, #71717a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0;
+  pointer-events: none;
+}
+
 .wordart-candy-gloss {
   font-weight: 900;
   font-family: 'Lilita One', sans-serif;
-  background: linear-gradient(180deg, #ffffff 0%, #fda4af 14%, #f43f5e 50%, #e11d48 85%, #9f1239 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
   -webkit-text-stroke: 0.056em #ffffff;
   paint-order: stroke fill;
+  position: relative;
+  z-index: 0;
   filter:
     drop-shadow(0px 1.4px 0px #881337)
     drop-shadow(0px 1.4px 0px #791030)
@@ -412,62 +458,137 @@
     drop-shadow(0px 8px 12px rgba(76, 5, 25, 0.4));
 }
 
+.wordart-candy-gloss::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, #ffffff 0%, #fda4af 14%, #f43f5e 50%, #e11d48 85%, #9f1239 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0;
+  pointer-events: none;
+}
+
 .wordart-sticker-royal {
   font-weight: 900;
   font-family: 'Lilita One', sans-serif;
-  background: linear-gradient(180deg, #38bdf8 0%, #2563eb 45%, #1e3a8a 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
   -webkit-text-stroke: 0.167em #ffffff;
   paint-order: stroke fill;
+  position: relative;
+  z-index: 0;
   filter:
     drop-shadow(0px 4px 10px rgba(15, 23, 42, 0.28));
+}
+
+.wordart-sticker-royal::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, #38bdf8 0%, #2563eb 45%, #1e3a8a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0;
+  pointer-events: none;
 }
 
 .wordart-sticker-forest {
   font-weight: 900;
   font-family: 'Kaushan Script', cursive;
-  background: linear-gradient(180deg, #4ade80 0%, #16a34a 50%, #14532d 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
   -webkit-text-stroke: 0.194em #ffffff;
   paint-order: stroke fill;
+  position: relative;
+  z-index: 0;
   filter:
     drop-shadow(0px 5px 12px rgba(20, 83, 45, 0.28));
+}
+
+.wordart-sticker-forest::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, #4ade80 0%, #16a34a 50%, #14532d 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0;
+  pointer-events: none;
 }
 
 .wordart-sticker-coral {
   font-weight: 900;
   font-family: 'Kaushan Script', cursive;
-  background: linear-gradient(180deg, #fbbf24 0%, #f97316 42%, #dc2626 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
   -webkit-text-stroke: 0.194em #ffffff;
   paint-order: stroke fill;
+  position: relative;
+  z-index: 0;
   filter:
     drop-shadow(0px 5px 12px rgba(153, 27, 27, 0.28));
+}
+
+.wordart-sticker-coral::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, #fbbf24 0%, #f97316 42%, #dc2626 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0;
+  pointer-events: none;
 }
 
 .wordart-sticker-teal {
   font-weight: 900;
   font-family: 'Fredoka', sans-serif;
-  background: linear-gradient(180deg, #2dd4bf 0%, #0f766e 55%, #134e4a 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
   -webkit-text-stroke: 0.167em #ffffff;
   paint-order: stroke fill;
+  position: relative;
+  z-index: 0;
   filter:
     drop-shadow(0px 4px 10px rgba(19, 78, 74, 0.25));
+}
+
+.wordart-sticker-teal::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, #2dd4bf 0%, #0f766e 55%, #134e4a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0;
+  pointer-events: none;
 }
 
 .wordart-cartoon-bubble-blue {
   font-weight: 900;
   font-family: 'Lilita One', sans-serif;
-  background: linear-gradient(180deg, #7dd3fc 0%, #38bdf8 18%, #0284c7 55%, #1d4ed8 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
   -webkit-text-stroke: 0.167em #ffffff;
   paint-order: stroke fill;
+  position: relative;
+  z-index: 0;
   filter:
     drop-shadow(0.049em 0em 0 #18181b)
     drop-shadow(0.034em 0.034em 0 #18181b)
@@ -482,14 +603,29 @@
     drop-shadow(0px 5px 8px rgba(15, 23, 42, 0.35));
 }
 
+.wordart-cartoon-bubble-blue::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, #7dd3fc 0%, #38bdf8 18%, #0284c7 55%, #1d4ed8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0;
+  pointer-events: none;
+}
+
 .wordart-cartoon-bubble-pink {
   font-weight: 900;
   font-family: 'Lilita One', sans-serif;
-  background: linear-gradient(180deg, #fbcfe8 0%, #f472b6 18%, #ec4899 55%, #be185d 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
   -webkit-text-stroke: 0.167em #ffffff;
   paint-order: stroke fill;
+  position: relative;
+  z-index: 0;
   filter:
     drop-shadow(0.049em 0em 0 #18181b)
     drop-shadow(0.034em 0.034em 0 #18181b)
@@ -502,6 +638,20 @@
     drop-shadow(0px 1.5px 0px #18181b)
     drop-shadow(0px 1.5px 0px #18181b)
     drop-shadow(0px 5px 8px rgba(15, 23, 42, 0.35));
+}
+
+.wordart-cartoon-bubble-pink::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, #fbcfe8 0%, #f472b6 18%, #ec4899 55%, #be185d 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0;
+  pointer-events: none;
 }
 
 .wordart-brush-sunshine {
@@ -532,11 +682,12 @@
 .wordart-eco-champion {
   font-weight: 900;
   font-family: 'Lilita One', sans-serif;
-  background: linear-gradient(180deg, #fef08a 0%, #facc15 45%, #eab308 85%, #ca8a04 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #14532d;
+  -webkit-text-fill-color: #14532d;
   -webkit-text-stroke: 0.167em #14532d;
   paint-order: stroke fill;
+  position: relative;
+  z-index: 0;
   filter:
     drop-shadow(0px 1.5px 0px #14532d)
     drop-shadow(0px 1.5px 0px #0f4725)
@@ -545,16 +696,45 @@
     drop-shadow(0px 6px 10px rgba(5, 46, 22, 0.35));
 }
 
+.wordart-eco-champion::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, #fef08a 0%, #facc15 45%, #eab308 85%, #ca8a04 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0;
+  pointer-events: none;
+}
+
 .wordart-eco-leaf {
   font-weight: 900;
   font-family: 'Lilita One', sans-serif;
-  background: linear-gradient(180deg, #22c55e 0%, #15803d 55%, #14532d 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
   -webkit-text-stroke: 0.056em #ffffff;
   paint-order: stroke fill;
+  position: relative;
+  z-index: 0;
   filter:
     drop-shadow(0px 4px 8px rgba(20, 83, 45, 0.25));
+}
+
+.wordart-eco-leaf::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, #22c55e 0%, #15803d 55%, #14532d 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0;
+  pointer-events: none;
 }
 
 .wordart-wood-plank-action {
@@ -581,13 +761,28 @@
 .wordart-forest-script-sticker {
   font-weight: 900;
   font-family: 'Pacifico', cursive;
-  background: linear-gradient(180deg, #166534 0%, #052e16 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
   -webkit-text-stroke: 0.167em #ffffff;
   paint-order: stroke fill;
+  position: relative;
+  z-index: 0;
   filter:
     drop-shadow(0px 3px 8px rgba(0, 0, 0, 0.28));
+}
+
+.wordart-forest-script-sticker::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, #166534 0%, #052e16 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0;
+  pointer-events: none;
 }
 
 .wordart-trophy-gold {
@@ -611,13 +806,28 @@
 .wordart-fiesta-mosaic {
   font-weight: 900;
   font-family: 'Lilita One', sans-serif;
-  background: linear-gradient(90deg, #dc2626 0%, #eab308 22%, #ea580c 42%, #16a34a 62%, #0d9488 80%, #78350f 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
   -webkit-text-stroke: 0.194em #ffffff;
   paint-order: stroke fill;
+  position: relative;
+  z-index: 0;
   filter:
     drop-shadow(0px 5px 12px rgba(0, 0, 0, 0.4));
+}
+
+.wordart-fiesta-mosaic::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(90deg, #dc2626 0%, #eab308 22%, #ea580c 42%, #16a34a 62%, #0d9488 80%, #78350f 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0;
+  pointer-events: none;
 }
 
 .wordart-parchment-script {
@@ -632,30 +842,60 @@
 .wordart-folklore-wood {
   font-weight: 900;
   font-family: 'Bungee', sans-serif;
-  background: linear-gradient(180deg, #fffbeb 0%, #fde68a 65%, #f59e0b 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #291002;
+  -webkit-text-fill-color: #291002;
   -webkit-text-stroke: 0.049em #291002;
   paint-order: stroke fill;
+  position: relative;
+  z-index: 0;
   --wordart-backdrop: #78350f;
   filter:
     drop-shadow(0px 4px 6px rgba(0, 0, 0, 0.7));
 }
 
+.wordart-folklore-wood::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, #fffbeb 0%, #fde68a 65%, #f59e0b 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0;
+  pointer-events: none;
+}
+
 .wordart-storybook-crayon {
   font-weight: 900;
   font-family: 'Baloo 2', sans-serif;
-  background: linear-gradient(180deg, #fde047 0%, #fb923c 50%, #f43f5e 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
   -webkit-text-stroke: 0.111em #ffffff;
   paint-order: stroke fill;
+  position: relative;
+  z-index: 0;
   filter:
     drop-shadow(0px 1.5px 0px #1d4ed8)
     drop-shadow(0px 1.5px 0px #1d47be)
     drop-shadow(0px 1.5px 0px #1e41a4)
     drop-shadow(0px 1.5px 0px #1e3a8a)
     drop-shadow(0px 6px 10px rgba(30, 58, 138, 0.3));
+}
+
+.wordart-storybook-crayon::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, #fde047 0%, #fb923c 50%, #f43f5e 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0;
+  pointer-events: none;
 }
 
 .wordart-fairytale-sparkle {
@@ -674,13 +914,28 @@
 .wordart-reading-nook-sage {
   font-weight: 900;
   font-family: 'Fredoka', sans-serif;
-  background: linear-gradient(180deg, #34d399 0%, #059669 55%, #065f46 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #fffbeb;
+  -webkit-text-fill-color: #fffbeb;
   -webkit-text-stroke: 0.167em #fffbeb;
   paint-order: stroke fill;
+  position: relative;
+  z-index: 0;
   filter:
     drop-shadow(0px 4px 10px rgba(6, 78, 59, 0.38));
+}
+
+.wordart-reading-nook-sage::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, #34d399 0%, #059669 55%, #065f46 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0;
+  pointer-events: none;
 }
 
 .wordart-storytime-banner {
@@ -697,25 +952,55 @@
 .wordart-champs-basa-blue {
   font-weight: 900;
   font-family: 'Fredoka', sans-serif;
-  background: linear-gradient(180deg, #60a5fa 0%, #2563eb 50%, #1e3a8a 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #eff6ff;
+  -webkit-text-fill-color: #eff6ff;
   -webkit-text-stroke: 0.111em #eff6ff;
   paint-order: stroke fill;
+  position: relative;
+  z-index: 0;
   filter:
     drop-shadow(0px 3px 6px rgba(30, 58, 138, 0.3));
+}
+
+.wordart-champs-basa-blue::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, #60a5fa 0%, #2563eb 50%, #1e3a8a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0;
+  pointer-events: none;
 }
 
 .wordart-champs-kasadya-coral {
   font-weight: 900;
   font-family: 'Fredoka', sans-serif;
-  background: linear-gradient(180deg, #fb7185 0%, #e11d48 55%, #9f1239 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #fff1f2;
+  -webkit-text-fill-color: #fff1f2;
   -webkit-text-stroke: 0.083em #fff1f2;
   paint-order: stroke fill;
+  position: relative;
+  z-index: 0;
   filter:
     drop-shadow(0px 2px 5px rgba(159, 18, 57, 0.26));
+}
+
+.wordart-champs-kasadya-coral::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, #fb7185 0%, #e11d48 55%, #9f1239 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0;
+  pointer-events: none;
 }
 
 .wordart-champs-gold-ribbon {
@@ -756,23 +1041,53 @@
 .wordart-underwater-bubble {
   font-weight: 900;
   font-family: 'Baloo 2', sans-serif;
-  background: linear-gradient(180deg, #a5f3fc 0%, #38bdf8 45%, #0369a1 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #ecfeff;
+  -webkit-text-fill-color: #ecfeff;
   -webkit-text-stroke: 0.111em #ecfeff;
   paint-order: stroke fill;
+  position: relative;
+  z-index: 0;
   filter:
     drop-shadow(0px 3px 8px rgba(3, 105, 161, 0.35));
+}
+
+.wordart-underwater-bubble::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, #a5f3fc 0%, #38bdf8 45%, #0369a1 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0;
+  pointer-events: none;
 }
 
 .wordart-cultural-hablon {
   font-weight: 900;
   font-family: 'Lilita One', sans-serif;
-  background: linear-gradient(180deg, #fcd34d 0%, #b45309 50%, #7f1d1d 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #fffbeb;
+  -webkit-text-fill-color: #fffbeb;
   -webkit-text-stroke: 0.083em #fffbeb;
   paint-order: stroke fill;
+  position: relative;
+  z-index: 0;
+}
+
+.wordart-cultural-hablon::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, #fcd34d 0%, #b45309 50%, #7f1d1d 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0;
+  pointer-events: none;
 }
 
 .wordart-portfolio-editorial {

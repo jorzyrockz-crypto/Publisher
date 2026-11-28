@@ -591,7 +591,11 @@ Three things the DOM has to get right that the canvas gets right by construction
 |---|---|
 | the drop-shadow chain | one `filter` over **both** the keyline silhouette and the face. A `drop-shadow` paints behind the element it is applied to, so a filter on the face alone puts the cast shadow and the extrusion copies *over* the dark keyline drawn underneath — the sign loses its outer line wherever the shadow crosses it. |
 | the keyline stroke | `wordArtOutlineStrokeCss(style)`, never `strokeWidth + outline.width`. That was the half-rim arithmetic, and a full rim simply covers it. |
+| the fat rim | a stroke on `-webkit-background-clip: text` is painted *over* the gradient in Chromium and WebKit, and `paint-order: stroke fill` does not apply to a clipped background — so a 0.167em rim erases the face. When `rimNeedsOwnLayer(paint)` (a `heavyStroke` style, or a rim ≥ 3, over a gradient) the rim becomes the element's own silhouette — stroke plus a fill in the rim colour — and the gradient moves up to an `::after` copy of the same letters at `z-index: 1`, so it covers the rim's inner half and nothing else. A `::before` at `z-index: -1` cannot do the job: an element's background paints *before* its negative-z-index children. `wordArtCss(style).rimStroke` gives the renderer the same split as a third layer between keyline and face, and every preview span that uses a style therefore needs `data-text` — `Aa` in the panel, `WordArt` in the gallery. |
 | clipping | `overflow: visible` on the glyph container **and** on each run span when the element is WordArt. A run's box is one line tall and a fat rim is taller than that; the sign was being sliced at the frame on exactly the styles that need the room. Plain text still clips, so nothing bleeds onto the page. |
 
-`npm run check:wordart-parity` asserts the first two structurally (it reads the renderer's source,
+The rim layer goes between the keyline and the face: keyline first, then the rim silhouette, then
+the gradient — back to front, the same order the canvas painter uses.
+
+`npm run check:wordart-parity` asserts the first three structurally (it reads the renderer's source,
 because there is no DOM in the check environment) and both overflow opt-outs.

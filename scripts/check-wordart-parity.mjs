@@ -14,6 +14,7 @@ import {
   WORD_ART_STYLES,
   buildWordArtCssRule,
   outlineStrokeCss,
+  rimNeedsOwnLayer,
   strokeCss,
   wordArtCss,
   wordArtPaint,
@@ -51,6 +52,9 @@ for (const style of WORD_ART_STYLES) {
     check(`${style.id} has no stroke and no stroke declaration`, !/text-stroke:/.test(rule));
     continue;
   }
+  const layered = rimNeedsOwnLayer(paint);
+  // The rim is declared on the element itself either way — as the only stroke when the letters
+  // carry the gradient directly, and as the die-cut silhouette when the face moves up to `::after`.
   const declared = /-webkit-text-stroke:\s*([^;]+);/.exec(rule)?.[1]?.trim();
   check(`${style.id} declares the rim in em`, /^-?[\d.]+em /.test(declared ?? ''), declared);
   check(`${style.id} rim matches the spec`, declared === strokeCss(paint), `${declared} vs ${strokeCss(paint)}`);
@@ -59,17 +63,48 @@ for (const style of WORD_ART_STYLES) {
     declared?.startsWith(em(wordArtRimWidth(paint))),
     `${declared} vs ${em(wordArtRimWidth(paint))}`
   );
+
+  // The whole point of the layer: a fat stroke on a background-clipped gradient is painted over the
+  // gradient and erases it. Such a rim is the element's own silhouette, and the gradient lives on a
+  // `::after` face that paints above it — a `z-index: -1` pseudo-element would not do, because an
+  // element's background paints before its negative-z-index children.
+  const afterStart = css.indexOf(`.${style.className}::after {`);
+  const after = afterStart === -1 ? '' : css.slice(afterStart, css.indexOf('}', afterStart));
+  if (layered) {
+    check(`${style.id} keeps the gradient off the rim element`, !/background:\s*linear-gradient/.test(rule), 'the rim element still paints the gradient');
+    check(`${style.id} paints the face on an ::after`, after.includes('content: attr(data-text)'));
+    check(`${style.id} puts the face above the rim`, /z-index:\s*1/.test(after) && /z-index:\s*0/.test(rule));
+    check(`${style.id} carries the gradient on the face`, /background:\s*linear-gradient/.test(after));
+    check(`${style.id} clips the gradient to the letters`, after.includes('-webkit-background-clip: text'));
+    check(`${style.id} resets the inherited rim on the face`, /-webkit-text-stroke:\s*0/.test(after), after.split('\n').find((l) => l.includes('text-stroke')));
+    check(`${style.id} fills the rim silhouette in the rim colour`, rule.includes(`-webkit-text-fill-color: ${paint.stroke.color}`));
+  } else {
+    check(`${style.id} has no orphan ::after`, afterStart === -1);
+    if (paint.gradient) check(`${style.id} clips its own gradient`, rule.includes('-webkit-background-clip: text'));
+  }
 }
 
-// 2. The DOM's inline paint is the same value as the stylesheet's.
+// 2. The DOM's inline paint is the same value as the stylesheet's — and a layered rim is handed to
+//    the renderer as a layer, not as a stroke on the gradient it would cover.
 for (const style of WORD_ART_STYLES) {
   const paint = wordArtPaint(style.id);
   if (!paint?.stroke) continue;
-  check(
-    `${style.id} DOM stroke matches the sheet`,
-    wordArtCss(style.id).webkitTextStroke === strokeCss(paint),
-    `${wordArtCss(style.id).webkitTextStroke} vs ${strokeCss(paint)}`
-  );
+  const cssSpec = wordArtCss(style.id);
+  if (rimNeedsOwnLayer(paint)) {
+    check(
+      `${style.id} DOM asks for a rim layer`,
+      cssSpec.rimStroke?.css === strokeCss(paint) && cssSpec.rimStroke?.color === paint.stroke.color,
+      JSON.stringify(cssSpec.rimStroke)
+    );
+    check(`${style.id} DOM face carries no stroke`, cssSpec.webkitTextStroke === undefined, cssSpec.webkitTextStroke);
+  } else {
+    check(
+      `${style.id} DOM stroke matches the sheet`,
+      cssSpec.webkitTextStroke === strokeCss(paint),
+      `${cssSpec.webkitTextStroke} vs ${strokeCss(paint)}`
+    );
+    check(`${style.id} has no rim layer`, cssSpec.rimStroke === undefined);
+  }
 }
 
 // 3. The keyline ring is listed before any blurred shadow — a blurred filter listed first would
@@ -306,10 +341,12 @@ check('the bubble sign carries its own arc', (bubble.arc ?? 0) > 0, String(bubbl
 //    invisible in a unit test that does not build a tree.
 const renderer = readFileSync('src/components/canvas/ElementRenderer.tsx', 'utf8');
 const filterAt = renderer.indexOf('...(waFilter ? { filter: waFilter } : {})');
-const outlineAt = renderer.indexOf("renderGlyphs(waCss.outline.color, 'outline', true, true)");
+const outlineAt = renderer.indexOf("renderGlyphs(waCss.outline.color, 'outline', true, 'outline')");
+const rimLayerAt = renderer.indexOf("renderGlyphs(waCss.rimStroke.color, 'rim', true, 'rim')");
 const baseAt = renderer.indexOf("renderGlyphs(baseColor, 'base', true)");
 check('the DOM filter wrapper opens before the keyline layer', filterAt !== -1 && filterAt < outlineAt, `${filterAt} vs ${outlineAt}`);
 check('the keyline is painted under the face', outlineAt !== -1 && outlineAt < baseAt, `${outlineAt} vs ${baseAt}`);
+check('the rim layer sits between the keyline and the face', rimLayerAt !== -1 && outlineAt < rimLayerAt && rimLayerAt < baseAt, `${outlineAt} < ${rimLayerAt} < ${baseAt}`);
 check(
   'word art is not clipped by its own box',
   (renderer.match(/overflow: element\.isWordArt \? 'visible' : 'hidden'/g) ?? []).length >= 2,

@@ -1480,7 +1480,34 @@ export function buildWordArtCssRule(style: WordArtStyle, className = `wordart-${
   const lines: string[] = [`  font-weight: ${paint.weight};`];
   if (paint.fontFamily) lines.push(`  font-family: ${fontStack(paint.fontFamily)};`);
   if (paint.italic) lines.push('  font-style: italic;');
-  if (paint.gradient) {
+
+  /*
+   * A fat rim cannot be a stroke on gradient text.
+   *
+   * `-webkit-text-stroke` is painted over the glyph *fill*, and a `background-clip: text` gradient
+   * is a background, not a fill — Chromium and WebKit both ignore `paint-order` there, so a 0.167em
+   * rim swallows the face and the word reads as a white blob. Nor can the rim be a `z-index: -1`
+   * pseudo-element: an element's own background paints *before* its negative-z-index children, so
+   * the silhouette would still land on top of the gradient.
+   *
+   * So the split is: the element's own text is the rim (stroke plus a fill in the same colour — a
+   * solid die-cut silhouette), and the gradient moves up onto an `::after` copy of the same letters
+   * at a positive z-index, where it covers the rim's inner half and nothing else. Same three layers
+   * the canvas painter stacks, in the same order: keyline (the drop-shadow ring), rim, face.
+   */
+  const rimLayer = rimNeedsOwnLayer(paint);
+  if (rimLayer) {
+    const rimColor = paint.stroke?.color ?? '#ffffff';
+    lines.push(
+      `  color: ${rimColor};`,
+      `  -webkit-text-fill-color: ${rimColor};`,
+      `  -webkit-text-stroke: ${strokeCss(paint)};`,
+      '  paint-order: stroke fill;',
+      // The stacking context the `::after` face is positioned in, and the base the filters apply to.
+      '  position: relative;',
+      '  z-index: 0;'
+    );
+  } else if (paint.gradient) {
     const stops = [...paint.gradient.stops]
       .sort((a, b) => a.offset - b.offset)
       .map((s) => `${s.color} ${Math.round(s.offset * 100)}%`)
@@ -1490,10 +1517,11 @@ export function buildWordArtCssRule(style: WordArtStyle, className = `wordart-${
       '  -webkit-background-clip: text;',
       '  -webkit-text-fill-color: transparent;'
     );
-  } else if (paint.fill) {
-    lines.push(`  color: ${paint.fill};`);
   }
-  if (paint.stroke) {
+  // A rim layer already set its own fill, but a rim over a flat colour still needs the colour.
+  if (!rimLayer && !paint.gradient && paint.fill) lines.push(`  color: ${paint.fill};`);
+
+  if (paint.stroke && !rimLayer) {
     lines.push(`  -webkit-text-stroke: ${strokeCss(paint)};`);
     // Canvas paints the outline behind the fill; without this the DOM paints it
     // on top and the two renderers disagree about how thick the letters look.
@@ -1510,16 +1538,12 @@ export function buildWordArtCssRule(style: WordArtStyle, className = `wordart-${
   // list means the ring hugs the glyphs and the blur is added outside it.
   const filters: string[] = [];
   if (paint.outline) {
-    // One `-webkit-text-stroke` per element, and the rim already has it. A ring of hairline
-    // drop-shadows is the preview's stand-in for the second keyline; the canvas paints the real
+    // One `webkit-text-stroke` per element, and the rim already has it. A ring of hairline
+    // `drop-shadow`s is the preview's stand-in for the second keyline; the canvas paints the real
     // thing (ElementRenderer adds a silhouette layer, wordArtCanvas a pass).
     //
-    // In em, like the rim it clears: the filter runs on the *painted* glyphs, so the ring is offset
-    // from the white rim's outer edge. A 2 px offset around an 0.25 em rim is a 2 px keyline on a
+    // In em, like the rim it clears — a 2 px offset around an 0.25 em rim is a 2 px keyline on a
     // 72 px letter and a hairline on a 138 px one; `drop-shadow()` takes any length, em included.
-    // Offset from the painted output, which already includes the white rim — so the offset that
-    // shows `ring` of dark beyond it *is* `ring`. Half of it, as it was, drew a keyline half the
-    // width the other two painters draw.
     const ringEm = Math.max(0.5, paint.outline.width) / 72;
     const asEm = (value: number) => `${Math.round(value * 1000) / 1000}em`;
     for (const [dx, dy] of RING_OFFSETS) {
@@ -1528,7 +1552,34 @@ export function buildWordArtCssRule(style: WordArtStyle, className = `wordart-${
   }
   for (const shadow of wordArtShadowChain(paint)) filters.push(`drop-shadow(${shadowCss(shadow)})`);
   if (filters.length) lines.push(`  filter:\n${filters.map((f) => `    ${f}`).join('\n')};`);
-  return `.${className} {\n${lines.join('\n')}\n}`;
+
+  const rule = `.${className} {\n${lines.join('\n')}\n}`;
+  if (!rimLayer || !paint.gradient) return rule;
+
+  const stops = [...paint.gradient.stops]
+    .sort((a, b) => a.offset - b.offset)
+    .map((s) => `${s.color} ${Math.round(s.offset * 100)}%`)
+    .join(', ');
+  // `data-text` is the tile's own text ("Aa" in the picker, "WordArt" in the gallery), so the face is
+  // the same letters by construction rather than a second guess at them. `-webkit-text-stroke: 0` is
+  // load-bearing: the property inherits, and without the reset this copy would eat the gradient too.
+  // Pinned at the top-left rather than stretched: the box then shrinks to the text, so the face sits
+  // on the rim even if the tile centres or truncates its label.
+  return `${rule}
+
+.${className}::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(${paint.gradient.angle}deg, ${stops});
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0;
+  pointer-events: none;
+}`;
 }
 
 /** Families that need a cursive fallback rather than a sans one when they fail to load. */
@@ -1814,6 +1865,11 @@ function shadowCss(s: WordArtShadow): string {
  * never on the element box (it would swallow the box fill).
  */
 export interface WordArtCss {
+  /**
+   * The rim, when it has to be painted as its own silhouette layer instead of as a stroke on the
+   * letters. `css` is the `-webkit-text-stroke` value (in em), `color` the fill for the layer.
+   */
+  rimStroke?: { css: string; color: string };
   /** The second keyline, if the style has one — the renderer paints it as a silhouette layer. */
   outline?: { width: number; color: string };
   fontWeight?: '800' | '900';
@@ -1829,6 +1885,23 @@ export interface WordArtCss {
   fontStyle?: 'italic';
   /** Canvas paints the outline behind the fill; so must the DOM. */
   paintOrder?: 'stroke fill';
+}
+
+/**
+ * True when the rim must be its own layer rather than a stroke on the glyphs.
+ *
+ * `-webkit-text-stroke` is centred on the glyph outline, and Chromium paints it over the *text fill*
+ * — which, for `-webkit-background-clip: text` + `-webkit-text-fill-color: transparent`, is nothing:
+ * the gradient is a background behind it. `paint-order: stroke fill` orders stroke against fill, and
+ * a background-clipped gradient is not a fill, so a thick rim simply covers the letters. A stroke
+ * thin enough to read as an outline can stay where it is; anything fat enough to be a die-cut has to
+ * be a silhouette *under* the face, which is what the canvas painter and the DOM already do.
+ */
+export function rimNeedsOwnLayer(paint?: WordArtPaint): boolean {
+  if (!paint?.stroke) return false;
+  const rim = wordArtRimWidth(paint);
+  const fat = Boolean(paint.heavyStroke) || rim >= 3;
+  return fat && Boolean(paint.gradient);
 }
 
 export function wordArtCss(style?: WordArtStyle): WordArtCss {
@@ -1849,8 +1922,13 @@ export function wordArtCss(style?: WordArtStyle): WordArtCss {
     // `wordArtRimWidth`, not `stroke.width`: a heavy border is painted at twice the authored width,
     // and the editor was rendering half of what the stylesheet asks for — which is why a bubble sign
     // looked thinner on the page than in the tile you picked it from.
-    css.webkitTextStroke = strokeCss(paint);
-    css.paintOrder = 'stroke fill';
+    if (rimNeedsOwnLayer(paint)) {
+      // Not on the face. The renderer paints this as a silhouette under the gradient glyphs.
+      css.rimStroke = { css: strokeCss(paint), color: paint.stroke.color };
+    } else {
+      css.webkitTextStroke = strokeCss(paint);
+      css.paintOrder = 'stroke fill';
+    }
   }
   if (paint.outline) css.outline = paint.outline;
   // `text-shadow` bleeds through a background-clipped fill and muddies the

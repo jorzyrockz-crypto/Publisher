@@ -628,7 +628,8 @@ export const DesignerToolRail: React.FC = () => {
                               title={style.label}
                             >
                               <span
-                                className={`text-lg font-extrabold leading-tight ${style.className}`}
+                                className={`text-lg font-extrabold leading-tight overflow-visible ${style.className}`}
+                                data-text="WordArt"
                               >
                                 WordArt
                               </span>

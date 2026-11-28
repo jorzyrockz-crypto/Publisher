@@ -347,11 +347,30 @@ const TextRenderer: React.FC<{
       }
     : {};
 
-  const strokeStyle: React.CSSProperties = waCss.webkitTextStroke
-    ? { WebkitTextStroke: waCss.webkitTextStroke, paintOrder: waCss.paintOrder }
-    : paint.strokeWidth
-      ? { WebkitTextStroke: `${paint.strokeWidth}px ${paint.strokeColor}` }
-      : {};
+  /**
+   * The rim when it is too fat to sit on the letters.
+   *
+   * Chromium and WebKit paint `-webkit-text-stroke` over the text *fill* — and a
+   * `-webkit-background-clip: text` gradient is a background, not a fill, so `paint-order` cannot
+   * rescue it: a 6 px rim swallows the gradient face entirely and the word reads as a white blob.
+   * The rim is painted instead as a silhouette copy of the glyphs, under the face, which is where
+   * the canvas painter has always put it.
+   */
+  const rimStyle: React.CSSProperties = waCss.rimStroke
+    ? {
+        WebkitTextStroke: waCss.rimStroke.css,
+        paintOrder: 'stroke fill',
+        color: waCss.rimStroke.color,
+      }
+    : {};
+
+  const strokeStyle: React.CSSProperties = waCss.rimStroke
+    ? {}
+    : waCss.webkitTextStroke
+      ? { WebkitTextStroke: waCss.webkitTextStroke, paintOrder: waCss.paintOrder }
+      : paint.strokeWidth
+        ? { WebkitTextStroke: `${paint.strokeWidth}px ${paint.strokeColor}` }
+        : {};
 
   // First entry in a text-shadow list sits on top — effects were painted above
   // the WordArt stack in the exporter, so they come first here too.
@@ -394,12 +413,18 @@ const TextRenderer: React.FC<{
         }
       : {};
 
+  /**
+   * `layer` decides what a glyph copy is *for*: the face carries the gradient and the shadow, and
+   * the two silhouettes carry nothing but their own stroke and fill.
+   */
   const renderGlyphs = (
     color: string,
     prefix: string,
     withEffects: boolean,
-    silhouette = false
+    layer: 'face' | 'outline' | 'rim' = 'face'
   ) => {
+    const isFace = layer === 'face';
+    const layerStyle = layer === 'outline' ? outlineStyle : layer === 'rim' ? rimStyle : strokeStyle;
     if (layout.curve) {
       return layout.curve.chars.map((char, index) =>
         char.text.trim() ? (
@@ -414,9 +439,9 @@ const TextRenderer: React.FC<{
               lineHeight: 1,
               whiteSpace: 'pre',
               color,
-              ...(withEffects && !silhouette ? gradientStyle(char.x, offset + char.y, boxes[0]) : {}),
-              ...(withEffects ? (silhouette ? outlineStyle : strokeStyle) : {}),
-              textShadow: withEffects && !silhouette ? glyphShadow : undefined,
+              ...(withEffects && isFace ? gradientStyle(char.x, offset + char.y, boxes[0]) : {}),
+              ...(withEffects ? layerStyle : {}),
+              textShadow: withEffects && isFace ? glyphShadow : undefined,
             }}
           >
             {char.text}
@@ -447,11 +472,11 @@ const TextRenderer: React.FC<{
               lineHeight: 1,
               letterSpacing: element.letterSpacing ? `${element.letterSpacing}px` : undefined,
               color: isSpace ? 'transparent' : color,
-              ...(withEffects && !isSpace && !silhouette
+              ...(withEffects && isFace && !isSpace
                 ? gradientStyle(run.x, offset + line.textTop, boxes[lineIndex] ?? boxes[0])
                 : {}),
-              ...(withEffects ? (silhouette ? outlineStyle : strokeStyle) : {}),
-              textShadow: withEffects && !silhouette ? glyphShadow : undefined,
+              ...(withEffects ? layerStyle : {}),
+              textShadow: withEffects && isFace ? glyphShadow : undefined,
               backgroundColor: highlight,
               textDecoration: element.textDecoration,
               width: isSpace ? run.width : undefined,
@@ -618,7 +643,13 @@ const TextRenderer: React.FC<{
             only a ring shows once the rim and the face are painted over the top. */}
         {waCss.outline && (
           <div style={{ position: 'absolute', inset: 0 }}>
-            {renderGlyphs(waCss.outline.color, 'outline', true, true)}
+            {renderGlyphs(waCss.outline.color, 'outline', true, 'outline')}
+          </div>
+        )}
+        {/* The rim, when it is a layer rather than a stroke: solid silhouette under the face. */}
+        {waCss.rimStroke && (
+          <div style={{ position: 'absolute', inset: 0 }}>
+            {renderGlyphs(waCss.rimStroke.color, 'rim', true, 'rim')}
           </div>
         )}
         <div style={{ position: 'absolute', inset: 0, color: baseColor }}>

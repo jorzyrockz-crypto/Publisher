@@ -2424,7 +2424,9 @@ export const PropertiesPanel: React.FC = () => {
                                   activeOpt.dark ? 'bg-slate-900' : 'bg-white border border-slate-200/80'
                                 }`}
                               >
-                                <span className={activeOpt.cssClass}>Aa</span>
+                                <span className={activeOpt.cssClass} data-text="Aa">
+                                  Aa
+                                </span>
                               </span>
                               <span className="truncate">{activeOpt.label}</span>
                             </div>
@@ -2509,7 +2511,9 @@ export const PropertiesPanel: React.FC = () => {
                                         opt.dark ? 'bg-slate-900' : 'bg-slate-50 border border-slate-100'
                                       }`}
                                     >
-                                      <span className={opt.cssClass}>Aa</span>
+                                      <span className={opt.cssClass} data-text="Aa">
+                                        Aa
+                                      </span>
                                       {opt.isNew && (
                                         <span className="absolute left-1 top-1 rounded-[3px] bg-[#6e56cf] px-1 text-[7px] font-bold uppercase tracking-wide text-white">
                                           New
