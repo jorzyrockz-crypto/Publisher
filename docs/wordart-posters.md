@@ -143,21 +143,37 @@ are white, so nothing that already existed changes behaviour; the library score 
 
 ## The reading corner poster
 
-`poster-reading-corner` (816×1056, **96 / A**, zero warnings) is the page those six styles were
-drawn for: the nook photograph full bleed under a light 26% veil, **Reading Corner** arched in sage
-with its cream die-cut rim, *Storytime at 4:00* on the terracotta ribbon, and one tall cream card
-holding this week's shelf, the schedule and the footer.
+`poster-reading-corner` (816×1056, **97 / A**, zero warnings) is the page those six styles were
+drawn for, and it is painted rather than photographed: a cartoon nook full bleed — sage wall, a
+trailing plant, a sunlit window, a low bookcase and a child deep in an armchair — with **Reading
+Corner** arched in sage over its cream die-cut rim, *Storytime at 4:00* on the terracotta ribbon, and
+this week's shelf on a cream bookmark card over the bookcase.
+
+The picture is the reason the layout changed. Two attempts before it:
+
+- **A tall cream card across the bottom half** — the honest ground for the schedule — hid the child,
+  who is the entire point of the drawing. A card that covers the subject is not a layout.
+- **An illustration panel over a type panel** (art in the top 560px, words on paper below) read
+  cleanly but scored **85**: a 640-wide panel is not a page background, so the layout model counted
+  it as one very large object and `whitespace` collapsed to 0.17. The model was right about the
+  consequence and wrong about the cause — a picture that stops at a hard edge does crowd the page.
+
+What works: the art runs full bleed, and the shelf list becomes a **400px bookmark** over the
+bookcase on the left. The card has a real fill, so every line on it is verifiable; the child stays
+clear on the right; and the page keeps a page-shaped ground. Sizes were then cut to fit the narrower
+card — the three titles at 24px Georgia, the schedule at 20px, the footer at 14px — and every box
+moved onto the 8px module, which is what took `rhythm` from 0.55 to 1.0.
 
 Three things the drafts taught, again:
 
 - **An arched headline needs a smaller size than a flat one.** At 92px with `arc: 0.12` the arc ran
   past both margins and the R and r were clipped. 76px in a 168px box fits inside the margin with
   room for the smile.
-- **Body copy does not go on a photograph.** Cream on the bright rug washed out; deep green on the
-  dark rug was worse. Both are guesses about a picture. Moving the schedule and footer onto the card
-  made the ground a fact instead of a hope — and it read better.
-- **A 34px line wrapped inside a 600px box in the export** (`The Nook` fell to a second line and was
-  clipped by the box). 28px, and the line is one line in both renderers.
+- **Type over a picture is a guess.** Cream on the bright rug washed out; deep green on the dark rug
+  was worse. Both are guesses about a photograph. A painted ground is a fact.
+- **A line that fits the box in one renderer can wrap in the other.** 34px `The Nook` fell to a
+  second line in the export and was clipped by its box; 28px fixed it, and the narrower bookmark
+  card needed smaller again.
 
 ### Two contrast-model fixes this poster forced
 
@@ -173,8 +189,66 @@ photograph behind the ribbon, not against the ribbon the style paints. Two corre
    it legible — and the design pass already knows that, via `wordArtCarriesContrast`. The two now
    agree, so a style cannot be "safe to keep" and "illegible" at the same time.
 
-Library-wide: 76 pages, 89.2 avg / 90 median / A 61 / B 15, no C or D — every page that moved,
-moved up, because the change only stops the model from mis-judging painted grounds.
+## Art direction: cartoon rooms, clay grounds, painted light
+
+The four posters used to be photographed. They are now illustrated, in three registers kept
+deliberately apart — a cartoon for a room with people in it, clay for a soft day, paint for weather
+and light.
+
+| register | files | used by | why this picture |
+|---|---|---|---|
+| cartoon | `cartoon-reading-nook.jpg` | reading corner | a child reading is a character, not a stock interior |
+| cartoon | `cartoon-fiesta-dancers.jpg` | fiesta awards | dancers drawn as dancers, outlines that survive a scrim |
+| cartoon | `cartoon-seedling-hands.jpg` | eco, the print | the hands are the message; paint flattens them kindly |
+| clay | `clay-meadow.jpg` | wellness week | pastel matte shapes give four sticker words something soft |
+| cinematic paint | `paint-forest-light.jpg` | eco champions | a shaft of light where the page needed drama, not detail |
+
+They are ordinary image elements, referenced by path, croppable and deletable, like the photographs
+before them. The photographs (`reading-nook-hero.jpg`, `fiesta-dancers-hero.jpg`,
+`eco-planting-hero.jpg`, `eco-seedling-card.jpg`) are still in `public/templates/` — the pages no
+longer use them, but nothing was thrown away either.
+
+### The clay asset set
+
+Six pieces now sit in the stock rail under a new **Clay** category (`Clay Sun`, `Clay Cloud`,
+`Clay Leaf Sprig`, `Clay Star`, `Clay Heart`, `Clay Pebbles`). They are hand-built SVG, not images,
+because an asset that can be recoloured and dropped on any page is worth more than a picture of a
+clay sun.
+
+Puffy, without filters:
+
+- **bulk** is a radial gradient from a near-white highlight at 35% / 25% to a saturated middle to a
+  darker rim — light from the upper left, the way every clay render is lit;
+- **a second highlight** is an ellipse of white at 0.45-0.75 opacity sitting high on the form;
+- **a flattened shadow** is an ellipse of the bulk colour at 0.2 opacity beneath it;
+- **no `feGaussianBlur`, no `filter` at all.** The browser would render it and the canvas export
+  would ignore it, and the same asset would look different in the PDF. Both renderers agree on
+  gradients, so the pieces are built only from gradients.
+
+### Grounds, not guesses
+
+Illustrating the pages forced the same question twice, and both answers are now rules:
+
+- **Where type sits over artwork, give it something painted.** The fiesta's date, gates and footer
+  had no ground once the photograph became a drawing with ochre skirts behind them; the scrim could
+  hide the art or save the type, not both. A **programme plate** — 600×144, aligned to the award
+  card, deep brown at 0.92 with a gold edge — carries all three lines and costs 8% coverage. The
+  card, the plate and the plank are the three grounds the page needs, and each one scores as a fill.
+- **Keep the subject.** The reading corner's card moved left and narrowed so the child stays visible;
+  the eco print stayed where the script line could straddle it.
+
+### The 8px module is the whole of `rhythm`
+
+Wellness Week read **90** with an "uneven spacing" warning and its boxes at 128/250/370/566/700/880.
+Every gap was plausible on its own; the metric measures *every pair* of boxes, and a 6px gap next to
+a 30px gap cannot average out. Putting every `x`, `y`, `width` and `height` on 8 — 128/256/384/560/
+672/856, with a 120-tall sticker box instead of 116 — took `rhythm` to 1.0 and the page to **100**.
+The same pass fixed the fiesta plate and the reading bookmark. It is not a trick to please a number:
+8px spacing is the claim the design system already makes, and the scorer is how a page finds out it
+was not keeping it.
+
+Library-wide after all of it: 76 pages, 89.3 avg / 90 median / A 61 / B 15, no C or D. The four
+posters: **100 / 97 / 93 / 91**, every one of them zero warnings.
 
 ## Children's books, reading corners and portfolios
 
@@ -258,8 +332,8 @@ depends on the border test, not this one. Library-wide the change is neutral to 
 
 ## The fiesta poster template
 
-`poster-fiesta-awards` (816×1056, **97 / A**, zero warnings) puts them on a page: the full-bleed
-street-dance photograph under a warm 34% scrim, BALETE sweeping six colours across the top, the
+`poster-fiesta-awards` (816×1056, **93 / A**, zero warnings) puts them on a page: the full-bleed
+street-dance illustration under a warm 24% scrim, BALETE sweeping six colours across the top, the
 competition in parchment script, **6th Best** in trophy gold on a parchment card (gold needs paper —
 a medal needs a sash), the troupe name on the plank, then date, time and footer at body scale.
 
@@ -272,12 +346,12 @@ Nothing was made smaller to please the metric; one element moved, the ground cha
 ## The eco poster template
 
 `poster-eco-champions` (816×1056, scores **91 / A**) puts the five styles on the page they were drawn
-for: a full-bleed planting photograph under a pine scrim, then CHAMPIONS in gold signwork, ECO in
+for: a full-bleed painted forest under a pine scrim, then CHAMPIONS in gold signwork, ECO in
 emerald, IN ACTION on the plank, the date on a notched ribbon, and the script line straddling the top
 edge of the seedling print — the "readable over the photos" case the white rim exists for.
 
-Two photographs are ours (`public/templates/eco-planting-hero.jpg`,
-`eco-seedling-card.jpg`) and are ordinary image elements: swappable, croppable, deletable.
+Both pictures are ours (`public/templates/paint-forest-light.jpg`,
+`cartoon-seedling-hands.jpg`) and are ordinary image elements: swappable, croppable, deletable.
 
 Things the first draft got wrong, kept here because they are the scoring model working:
 

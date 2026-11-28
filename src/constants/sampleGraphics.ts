@@ -1,4 +1,5 @@
 export type StockCategory =
+  | 'Clay'
   | 'Nature'
   | 'Abstract'
   | 'Business'
@@ -876,6 +877,170 @@ export const SAMPLE_GRAPHICS: SampleGraphic[] = [
         <circle cx="250" cy="250" r="145" fill="#b91c1c"/>
         <circle cx="250" cy="250" r="110" fill="#dc2626" stroke="#fca5a5" stroke-width="8"/>
         <polygon points="250,175 270,225 325,225 280,255 298,308 250,275 202,308 220,255 175,225 230,225" fill="#fde047"/>
+      </svg>
+    `),
+  },
+  // ── Clay ────────────────────────────────────────────────────────────────────────────────
+  // Puffy 3D "plasticine" pieces: a light-to-mid gradient for the bulk, a soft radial highlight
+  // sitting high on the form, and a flattened shadow beneath. No SVG filters — a filter that a
+  // browser renders and a canvas export ignores would make the same asset look different in the
+  // PDF, so every piece is built from gradients that both renderers agree on.
+  {
+    id: 'clay-sun',
+    name: 'Clay Sun',
+    category: 'Clay',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800">
+        <defs>
+          <radialGradient id="claySunDisc" cx="36%" cy="28%" r="78%">
+            <stop offset="0%" stop-color="#fff8dc"/>
+            <stop offset="52%" stop-color="#fde68a"/>
+            <stop offset="100%" stop-color="#eeb02f"/>
+          </radialGradient>
+          <radialGradient id="claySunRay" cx="42%" cy="22%" r="85%">
+            <stop offset="0%" stop-color="#ffeaa8"/>
+            <stop offset="100%" stop-color="#e7a029"/>
+          </radialGradient>
+        </defs>
+        <g fill="url(#claySunRay)">
+          <g transform="rotate(0 400 400)"><ellipse cx="400" cy="132" rx="40" ry="84"/></g>
+          <g transform="rotate(45 400 400)"><ellipse cx="400" cy="132" rx="40" ry="84"/></g>
+          <g transform="rotate(90 400 400)"><ellipse cx="400" cy="132" rx="40" ry="84"/></g>
+          <g transform="rotate(135 400 400)"><ellipse cx="400" cy="132" rx="40" ry="84"/></g>
+          <g transform="rotate(180 400 400)"><ellipse cx="400" cy="132" rx="40" ry="84"/></g>
+          <g transform="rotate(225 400 400)"><ellipse cx="400" cy="132" rx="40" ry="84"/></g>
+          <g transform="rotate(270 400 400)"><ellipse cx="400" cy="132" rx="40" ry="84"/></g>
+          <g transform="rotate(315 400 400)"><ellipse cx="400" cy="132" rx="40" ry="84"/></g>
+        </g>
+        <ellipse cx="400" cy="700" rx="196" ry="30" fill="#c98a1e" opacity="0.22"/>
+        <circle cx="400" cy="400" r="196" fill="url(#claySunDisc)"/>
+        <ellipse cx="326" cy="318" rx="86" ry="58" fill="#fffdf2" opacity="0.6"/>
+        <circle cx="318" cy="452" r="16" fill="#c2711a" opacity="0.55"/>
+        <circle cx="482" cy="452" r="16" fill="#c2711a" opacity="0.55"/>
+      </svg>
+    `),
+  },
+  {
+    id: 'clay-cloud',
+    name: 'Clay Cloud',
+    category: 'Clay',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520">
+        <defs>
+          <radialGradient id="clayCloudBulk" cx="38%" cy="22%" r="82%">
+            <stop offset="0%" stop-color="#ffffff"/>
+            <stop offset="58%" stop-color="#eef2ff"/>
+            <stop offset="100%" stop-color="#c7d2fe"/>
+          </radialGradient>
+        </defs>
+        <ellipse cx="400" cy="470" rx="270" ry="26" fill="#8b9bd6" opacity="0.22"/>
+        <g fill="url(#clayCloudBulk)">
+          <circle cx="268" cy="300" r="104"/>
+          <circle cx="404" cy="248" r="132"/>
+          <circle cx="548" cy="308" r="96"/>
+          <rect x="188" y="286" width="424" height="128" rx="64"/>
+        </g>
+        <ellipse cx="352" cy="208" rx="74" ry="42" fill="#ffffff" opacity="0.75"/>
+      </svg>
+    `),
+  },
+  {
+    id: 'clay-leaf',
+    name: 'Clay Leaf Sprig',
+    category: 'Clay',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 800">
+        <defs>
+          <radialGradient id="clayLeafBulk" cx="34%" cy="24%" r="86%">
+            <stop offset="0%" stop-color="#e7f5e2"/>
+            <stop offset="55%" stop-color="#a7d3a0"/>
+            <stop offset="100%" stop-color="#6f9f6b"/>
+          </radialGradient>
+          <linearGradient id="clayLeafStem" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#8fbf87"/>
+            <stop offset="100%" stop-color="#5d8558"/>
+          </linearGradient>
+        </defs>
+        <ellipse cx="330" cy="740" rx="170" ry="24" fill="#4f7a4b" opacity="0.24"/>
+        <path d="M330 720 C300 560 300 420 330 300" stroke="url(#clayLeafStem)" stroke-width="30" stroke-linecap="round" fill="none"/>
+        <g fill="url(#clayLeafBulk)">
+          <path d="M330 300 C214 244 150 150 176 66 C286 74 372 150 396 236 Z"/>
+          <path d="M356 430 C470 388 552 320 566 236 C456 226 362 286 332 372 Z"/>
+          <path d="M310 542 C206 512 136 448 124 376 C222 362 312 412 344 486 Z"/>
+        </g>
+        <path d="M336 288 C296 208 262 152 216 108" stroke="#eaf7e6" stroke-width="12" stroke-linecap="round" opacity="0.7" fill="none"/>
+      </svg>
+    `),
+  },
+  {
+    id: 'clay-star',
+    name: 'Clay Star',
+    category: 'Clay',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 760">
+        <defs>
+          <radialGradient id="clayStarBulk" cx="34%" cy="26%" r="84%">
+            <stop offset="0%" stop-color="#fffbe6"/>
+            <stop offset="55%" stop-color="#ffe08a"/>
+            <stop offset="100%" stop-color="#e9b23a"/>
+          </radialGradient>
+        </defs>
+        <ellipse cx="380" cy="690" rx="180" ry="26" fill="#b98a1f" opacity="0.22"/>
+        <g transform="translate(380 372) scale(0.84) translate(-380 -372)">
+          <polygon points="380,110 470,320 700,340 522,486 574,706 380,586 186,706 238,486 60,340 290,320"
+                   fill="url(#clayStarBulk)" stroke="url(#clayStarBulk)" stroke-width="54" stroke-linejoin="round"/>
+        </g>
+        <ellipse cx="316" cy="300" rx="64" ry="42" fill="#fffdf4" opacity="0.7"/>
+      </svg>
+    `),
+  },
+  {
+    id: 'clay-heart',
+    name: 'Clay Heart',
+    category: 'Clay',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 720">
+        <defs>
+          <radialGradient id="clayHeartBulk" cx="34%" cy="24%" r="86%">
+            <stop offset="0%" stop-color="#ffe6e0"/>
+            <stop offset="52%" stop-color="#f9a8b4"/>
+            <stop offset="100%" stop-color="#dd7089"/>
+          </radialGradient>
+        </defs>
+        <ellipse cx="380" cy="660" rx="176" ry="24" fill="#b95a75" opacity="0.22"/>
+        <path d="M380 636 C236 512 130 424 130 300 C130 200 208 140 288 140 C334 140 364 162 380 192 C396 162 426 140 472 140 C552 140 630 200 630 300 C630 424 524 512 380 636 Z"
+              fill="url(#clayHeartBulk)" stroke="url(#clayHeartBulk)" stroke-width="38" stroke-linejoin="round"/>
+        <ellipse cx="288" cy="240" rx="62" ry="40" fill="#fff5f6" opacity="0.72"/>
+      </svg>
+    `),
+  },
+  {
+    id: 'clay-pebbles',
+    name: 'Clay Pebbles',
+    category: 'Clay',
+    src: encodeSvg(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520">
+        <defs>
+          <radialGradient id="pebMint" cx="34%" cy="24%" r="84%">
+            <stop offset="0%" stop-color="#e9f7ee"/><stop offset="100%" stop-color="#8fc4a4"/>
+          </radialGradient>
+          <radialGradient id="pebPeach" cx="34%" cy="24%" r="84%">
+            <stop offset="0%" stop-color="#ffeee4"/><stop offset="100%" stop-color="#eea681"/>
+          </radialGradient>
+          <radialGradient id="pebSand" cx="34%" cy="24%" r="84%">
+            <stop offset="0%" stop-color="#fdf6e3"/><stop offset="100%" stop-color="#d8bd88"/>
+          </radialGradient>
+          <radialGradient id="pebCream" cx="34%" cy="24%" r="84%">
+            <stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#cfd8dc"/>
+          </radialGradient>
+        </defs>
+        <ellipse cx="400" cy="470" rx="286" ry="26" fill="#7c8f86" opacity="0.2"/>
+        <ellipse cx="236" cy="330" rx="132" ry="104" fill="url(#pebMint)"/>
+        <ellipse cx="470" cy="286" rx="150" ry="118" fill="url(#pebPeach)"/>
+        <ellipse cx="620" cy="378" rx="104" ry="80" fill="url(#pebSand)"/>
+        <ellipse cx="120" cy="410" rx="76" ry="58" fill="url(#pebCream)"/>
+        <ellipse cx="318" cy="292" rx="52" ry="32" fill="#ffffff" opacity="0.45"/>
+        <ellipse cx="536" cy="238" rx="58" ry="34" fill="#ffffff" opacity="0.4"/>
       </svg>
     `),
   },
