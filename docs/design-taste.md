@@ -42,6 +42,31 @@ read identically.
 "Your page, tightened" candidate (the user's own layout snapped to margins and edges when it is
 within 24px), scores every candidate, and sorts.
 
+### The recipe shelf
+
+`generateDesignRecommendations(page, advice)` builds seven full layouts from the page's own
+elements, plus two conditional ones:
+
+| recipe | the idea | built from |
+|---|---|---|
+| Wave Banner Hero | a gradient wave across the top, headline riding inside it | `waveEdge` shape + WordArt |
+| Bento Card Studio | a 3×2 grid of elevated cards: type, photo, details strip | rounded cards |
+| Editorial Split L/R | picture one side, a 4-step type hierarchy the other | column blocks |
+| Prestige Framed | ivory, double border, gold rule — the certificate grammar | frames + line |
+| Playful Classroom | cream, chunky rounded type, photos pinned at ±3° | polaroid frames |
+| Midnight Executive | slate, accent rail, optional neon WordArt | gradient wash |
+| Full-Bleed Hero *(needs a picture)* | edge-to-edge photo under a contrast card | scrim card |
+| Custom *(needs advice)* | the advice's layout wearing the advice's palette | any of the above |
+
+Two rules hold every recipe together:
+
+- **Nothing is dropped.** QR codes take a footer corner, tables get a padded column, stickers sit in
+  a headline or footer corner, rules stay where they read. Builders reserve those slots as they
+  lay out; a final pass anchors anything a builder did not place.
+- **The text never crosses the furniture.** Display sizes are capped by a conservative wrap
+  estimate (`fitDisplay`), because a headline that reflows after the webfont loads is the usual way
+  a layout breaks, and the browser's own measurement cannot see that coming.
+
 Learning is per **family**, not per class: dismissing *Editorial Split Left* makes that layout
 less likely, not every blueprint. Each family keeps an accept/dismiss count in
 `studiopress_design_feedback_v1`, smoothed as `(accepted + 1) / (total + 2)`, which maps to
@@ -83,6 +108,9 @@ separation    +54 points between a tidy and a messy page
 
 "Yours"      present on a messy page: 46 vs the page's own 37 (improves it)
 ranking      sorted by rank, 8 candidates, learnKey per family
+recipes      7 layouts, +1 when the page has a picture, +1 when advice arrives
+preserved    11/11 elements kept across a poster with QR, table, 2 seals and a rule
+             no text over a table, seal or button; no QR under a shape
 learning     dismiss swiss-minimal x5 → position 0 → 3; keep gradient-pop → stays ahead
 critic       parses / clamps 0-100 / caps fixes at 3 / null on bad json, empty, 429, throw
              no key → fetch never called

@@ -142,45 +142,34 @@ export function rankDesignCandidates(
 
   const recommendations = generateDesignRecommendations(page, advice);
 
-  // The AI advice and the user's own tidy-up enter the same ranking as the blueprints: a
-  // suggestion is a suggestion, and the score decides.
-  const extra: DesignRecommendation[] = [];
-  if (advice) {
-    const advicePage = recommendations.find((r) => r.id === advice.preferredLayout);
-    if (advicePage) {
-      extra.push({
-        ...advicePage,
-        id: `advice-${advicePage.id}`,
-        title: `${advice.vibeTitle} — ${advicePage.title}`,
-        subtitle: `Built from your prompt · ${advice.headingFont} / ${advice.bodyFont}`,
-      });
-    }
-  }
+  // The advice and the user's own tidy-up enter the same ranking as the blueprints: a suggestion
+  // is a suggestion, and the score decides. The advice already arrives as its own recipe (`ai-custom-vibe`), built from the prompt's
+  // layout and palette, so it needs no second card here — a duplicate would eat a shelf slot.
+  const candidates: DesignCandidate[] = recommendations.map((rec) => {
+    const isAdvice = rec.id === 'ai-custom-vibe';
+    const labelled =
+      isAdvice && advice ? { ...rec, title: `${advice.vibeTitle} · custom` } : rec;
+    return toCandidate(labelled, isAdvice ? 'advice' : 'blueprint', feedback, false);
+  });
+
   const tidy = documentVariant(page);
   if (tidy) {
-    extra.push({
-      id: 'document-tidy',
-      title: 'Your page, tightened',
-      subtitle: 'Your own layout, snapped to the margins',
-      category: 'layouts',
-      badge: 'Yours',
-      previewPage: tidy,
-    });
-  }
-
-  const candidates: DesignCandidate[] = [
-    ...recommendations.map((rec) =>
-      toCandidate(rec, rec.id.startsWith('advice') ? 'advice' : 'blueprint', feedback, false)
-    ),
-    ...extra.map((rec) =>
+    candidates.push(
       toCandidate(
-        rec,
-        rec.id === 'document-tidy' ? 'document' : 'advice',
+        {
+          id: 'document-tidy',
+          title: 'Your page, tightened',
+          subtitle: 'Your own layout, snapped to the margins',
+          category: 'layouts',
+          badge: 'Yours',
+          previewPage: tidy,
+        },
+        'document',
         feedback,
         false
       )
-    ),
-  ];
+    );
+  }
 
   // Keep exploring, but only once there is something learned to explore away from: nudge the
   // best candidate whose family has never been judged. Early on everything is new, and a badge
