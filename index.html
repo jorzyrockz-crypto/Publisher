@@ -4,6 +4,18 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="manifest" href="./manifest.webmanifest" />
+    <!--
+      The WordArt faces, loaded up front rather than when a document happens to use one: the
+      gallery tiles are set in each style's own typeface (see `buildWordArtCssRule`), and a tile
+      that renders in the fallback font until you scroll past it is a tile that lies about the
+      style. Weights are the ones the paint specs name, nothing more.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Bangers&family=Bungee&family=Chewy&family=Fredoka:wght@600;700&family=Kaushan+Script&family=Lilita+One&family=Montserrat:ital,wght@0,800;0,900;1,900&family=Nunito:wght@700;900&family=Pacifico&family=Patrick+Hand&family=Playfair+Display:wght@700;800;900&family=Plus+Jakarta+Sans:wght@700;800&display=swap"
+    />
     <meta name="theme-color" content="#6e56cf" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />

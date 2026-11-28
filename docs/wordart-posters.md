@@ -494,19 +494,39 @@ Poster category. `src/constants/posterWordArtTemplates.ts` holds it.
 A style paints letters; it does not choose the typeface. That gap is why a green ramp in Plus Jakarta
 Sans reads as "a gradient" rather than "a sticker": the letterform is half the look.
 
-`src/constants/wordArtFonts.ts` carries the other half — `WORDART_FONT_MAP`, style id → family,
-weight and italic. Picking a style in the Text panel, the Designer rail or the WordArt gallery brings
-its face with it (`wordArtFacePatch`). Nothing happens on load, so a document keeps the fonts it was
-designed with, and the table is deliberately partial: material styles (Gold 3D, Chrome, Fire, Varsity)
-are happy in whatever font the page already uses, and 18 of the 52 styles say nothing at all.
+The family now lives on the paint spec (`WordArtPaint.fontFamily`) — all **52** styles have one — and
+`wordArtDefaultFont(style)` reads it. Three things use it:
 
-Two rules, and `npm run check:wordart` enforces both:
+- the generated rule (`font-family: 'Lilita One', sans-serif`), so a gallery tile is set in the face
+  the style was drawn for instead of whatever the page uses;
+- the export, through `WordArtSpec.fontFamily`;
+- the picker in the Text panel, the Designer rail, the WordArt gallery and the ribbon's WordArt
+  badge, which write it onto the element as `wordArtFacePatch(style)` — family, weight and slant —
+  **at the moment of choosing and never on load**, so a document keeps the fonts it was designed with
+  and a later manual change is not undone.
 
-- **every id must exist** — a typo means the face is silently never applied;
-- **every family must be in `src/constants/fonts.ts`** — this one already bit us. `Lilita One` and
-  `Bangers` were being asked for by sticker and comic styles while the catalogue had never offered
-  them, so the browser fell back to a system face and the styles looked broken rather than
-  misconfigured. Both are catalogued now.
+| family | styles | why |
+|---|---|---|
+| Lilita One | 8 — bubble signs, stickers, eco, fiesta, candy, hablon | chunky rounded display: a sign, not a sentence |
+| Montserrat | 13 — chrome, neon, AI metal, outline, retro, fire, rainbow | a geometric grotesque holds a hard gradient |
+| Playfair Display | 5 — gold, cinematic, rose gold, obsidian, editorial | high-contrast serif for foil and film |
+| Kaushan Script | 5 — brush and parchment | a brush stroke with a real tail |
+| Baloo 2 | 5 — crayon, underwater, champs levels | soft and bouncy, small counters |
+| Fredoka | 4 — Reading Corner, sage nook, teal sticker | friendly rounded book face |
+| Bangers | 3 — comic, varsity, wood plank | comic caption lettering |
+| Nunito | 3 — ribbons and banners | a humanist sans that reads as printed tape |
+| Bungee | 2 — trophy, folklore wood | signage caps |
+| Plus Jakarta Sans | 2 — portfolio, pill highlight | modern editorial sans |
+| Pacifico | 1 — pine script | a rounded brush script |
+| Chewy | 1 — fairytale | a storybook face |
+
+`index.html` preloads exactly these families and weights, because a tile that renders in the fallback
+font until you scroll past it is a tile that lies about the style.
+
+`npm run check:wordart` holds it together: every style has a face, every face is in
+`src/constants/fonts.ts`, and every generated rule and spec carries it. That last check already earned
+its keep — `Lilita One` and `Bangers` were once asked for by styles the catalogue could not offer, so
+the browser fell back to a system face and the styles looked broken rather than misconfigured.
 
 ## Checks
 

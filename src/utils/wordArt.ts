@@ -241,6 +241,13 @@ export interface WordArtPaint {
    * the declared width — the rim covers the inner half, exactly like `heavyStroke`.
    */
   outline?: { width: number; color: string };
+  /**
+   * The typeface this style was drawn for. A style paints letters; it does not choose them, and a
+   * gradient in the wrong font is half a look. Picking a style applies this (see `wordArtFacePatch`)
+   * — once, at the moment of choosing — so a document keeps whatever font it was designed with and
+   * a manual change afterwards is not undone.
+   */
+  fontFamily?: string;
   /** Marching 3D block, painted behind everything. */
   extrusion?: WordArtExtrusion;
   /** Soft light spills (painted furthest back). */
@@ -559,6 +566,7 @@ export function wordArtHasBackdrop(style?: WordArtStyle): boolean {
 
 const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   rainbow: {
+    fontFamily: 'Montserrat',
     weight: '900',
     gradient: {
       angle: 135,
@@ -573,6 +581,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [{ dx: 0, dy: 2, blur: 4, color: 'rgba(0,0,0,0.15)' }],
   },
   gold3d: {
+    fontFamily: 'Playfair Display',
     weight: '800',
     gradient: {
       angle: 180,
@@ -590,12 +599,14 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     ],
   },
   outline: {
+    fontFamily: 'Montserrat',
     weight: '900',
     fill: '#ffffff',
     stroke: { width: 2, color: '#0f766e' },
     shadows: [{ dx: 2, dy: 3, blur: 0, color: 'rgba(15,118,110,0.3)' }],
   },
   retro: {
+    fontFamily: 'Montserrat',
     weight: '800',
     fill: '#ec4899',
     shadows: [
@@ -604,6 +615,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     ],
   },
   'neon-glow': {
+    fontFamily: 'Montserrat',
     weight: '900',
     fill: '#e0f2fe',
     shadows: [
@@ -613,6 +625,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     ],
   },
   chrome: {
+    fontFamily: 'Montserrat',
     weight: '900',
     gradient: {
       angle: 180,
@@ -631,6 +644,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [{ dx: 0, dy: 2, blur: 3, color: 'rgba(15,23,42,0.45)' }],
   },
   fire: {
+    fontFamily: 'Montserrat',
     weight: '900',
     gradient: {
       angle: 180,
@@ -643,12 +657,14 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [{ dx: 0, dy: 3, blur: 8, color: 'rgba(239,68,68,0.55)' }],
   },
   'comic-pop': {
+    fontFamily: 'Bangers',
     weight: '900',
     fill: '#facc15',
     stroke: { width: 2, color: '#0f172a' },
     shadows: [{ dx: 4, dy: 4, blur: 0, color: '#0f172a' }],
   },
   'emerald-3d': {
+    fontFamily: 'Montserrat',
     weight: '900',
     fill: '#10b981',
     shadows: [
@@ -659,6 +675,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     ],
   },
   'sunset-gradient': {
+    fontFamily: 'Montserrat',
     weight: '900',
     gradient: {
       angle: 135,
@@ -671,6 +688,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [{ dx: 0, dy: 2, blur: 4, color: 'rgba(236,72,153,0.3)' }],
   },
   'gradient-blue': {
+    fontFamily: 'Montserrat',
     weight: '900',
     gradient: {
       angle: 180,
@@ -685,6 +703,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   // Film-title gold: warm rim light, a deep ink edge so it survives a pale
   // backdrop, and a long soft cast shadow for depth.
   cinematic: {
+    fontFamily: 'Playfair Display',
     weight: '900',
     gradient: {
       angle: 178,
@@ -704,6 +723,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   // Iridescent foil — the "AI render" look: violet to cyan to pink, lifted by
   // a cool bloom and held together with a near-black edge.
   holographic: {
+    fontFamily: 'Montserrat',
     weight: '900',
     gradient: {
       angle: 135,
@@ -725,6 +745,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   },
   // College block letters: crisp white edge, hard offset shadow, no gradient.
   varsity: {
+    fontFamily: 'Bangers',
     weight: '900',
     fill: '#dc2626',
     stroke: { width: 4, color: '#ffffff' },
@@ -733,6 +754,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   // Horizon-break metal: gold sky, a hard snap into indigo water, cyan bounce
   // under it, a six-step ember block and a violet bloom — the "AI render" look.
   'synth-chrome': {
+    fontFamily: 'Montserrat',
     weight: '900',
     italic: true,
     glints: true,
@@ -755,6 +777,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'liquid-glass': {
+    fontFamily: 'Montserrat',
     weight: '900',
     glints: true,
     gradient: {
@@ -776,6 +799,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'rose-gold': {
+    fontFamily: 'Playfair Display',
     weight: '900',
     glints: true,
     gradient: {
@@ -797,6 +821,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'cyber-acid': {
+    fontFamily: 'Montserrat',
     weight: '900',
     italic: true,
     gradient: {
@@ -817,6 +842,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   // Self-contained on light or dark: a glossy charcoal face with a hard
   // diagonal sheen and a gold foil edge.
   'obsidian-gold': {
+    fontFamily: 'Playfair Display',
     weight: '900',
     gradient: {
       angle: 155,
@@ -835,6 +861,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'candy-gloss': {
+    fontFamily: 'Lilita One',
     weight: '900',
     gradient: {
       angle: 180,
@@ -855,6 +882,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   // Three bright stops on a vertical ramp, a fat white border and a soft paper-lift shadow.
   // No horizon break and no chrome: these are meant to be read from across a school yard.
   'sticker-royal': {
+    fontFamily: 'Lilita One',
     weight: '900',
     gradient: {
       angle: 180,
@@ -870,6 +898,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'sticker-forest': {
+    fontFamily: 'Kaushan Script',
     weight: '900',
     gradient: {
       angle: 180,
@@ -885,6 +914,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'sticker-coral': {
+    fontFamily: 'Kaushan Script',
     weight: '900',
     gradient: {
       angle: 180,
@@ -900,6 +930,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'cartoon-bubble-blue': {
+    fontFamily: 'Lilita One',
     weight: '900',
     // Sky to royal: a bright top edge and a deep foot, the way a printed sign is lit from above.
     gradient: {
@@ -927,6 +958,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'cartoon-bubble-pink': {
+    fontFamily: 'Lilita One',
     weight: '900',
     // Candy to magenta, lit the same way as the blue so a pair of signs reads as a pair.
     gradient: {
@@ -947,6 +979,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'sticker-teal': {
+    fontFamily: 'Fredoka',
     weight: '900',
     gradient: {
       angle: 180,
@@ -963,6 +996,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   },
   // Navy ink on a sunshine swipe: the highlight does the shouting, the type stays calm.
   'brush-sunshine': {
+    fontFamily: 'Kaushan Script',
     weight: '900',
     gradient: {
       angle: 180,
@@ -976,6 +1010,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   },
   // The softer sibling, for teacher-wellness and quote cards.
   'brush-blush': {
+    fontFamily: 'Kaushan Script',
     weight: '900',
     gradient: {
       angle: 180,
@@ -992,6 +1027,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   },
   // Indigo ink on a pastel pill: the same idea, tidier, for agendas.
   'pill-highlight': {
+    fontFamily: 'Plus Jakarta Sans',
     weight: '900',
     fill: '#1e1b4b',
     backdrop: { type: 'pastel-pill', color: '#e0e7ff', paddingX: 22, paddingY: 10 },
@@ -1001,6 +1037,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   // Plant-a-tree posters: pine and gold, wood and ribbon. Same grammar as the stickers — a heavy
   // authored rim doing the contrast work — but the palette is forest rather than candy.
   'eco-champion': {
+    fontFamily: 'Lilita One',
     weight: '900',
     gradient: {
       angle: 180,
@@ -1019,6 +1056,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'eco-leaf': {
+    fontFamily: 'Lilita One',
     weight: '900',
     gradient: {
       angle: 180,
@@ -1033,6 +1071,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'wood-plank-action': {
+    fontFamily: 'Bangers',
     weight: '900',
     italic: true,
     gradient: {
@@ -1048,6 +1087,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'eco-ribbon': {
+    fontFamily: 'Nunito',
     weight: '900',
     gradient: {
       angle: 180,
@@ -1060,6 +1100,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'forest-script-sticker': {
+    fontFamily: 'Pacifico',
     weight: '900',
     gradient: {
       angle: 180,
@@ -1077,6 +1118,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   // Trophy gold is the one place a horizon break is not "AI chrome": an award seal has a hard
   // bronze reflection band, and the whole point is that the top half is lit.
   'trophy-gold': {
+    fontFamily: 'Bungee',
     weight: '900',
     glints: true,
     gradient: {
@@ -1100,6 +1142,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   // A horizontal sweep, not a vertical one: every letter gets its own fiesta hue, which is the
   // only way a one-word headline can carry six colours without looking striped.
   'fiesta-mosaic': {
+    fontFamily: 'Lilita One',
     weight: '900',
     gradient: {
       angle: 90,
@@ -1118,6 +1161,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'parchment-script': {
+    fontFamily: 'Kaushan Script',
     weight: '900',
     gradient: {
       angle: 180,
@@ -1130,6 +1174,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'folklore-wood': {
+    fontFamily: 'Bungee',
     weight: '900',
     gradient: {
       angle: 180,
@@ -1147,6 +1192,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   // ---- children's books & reading corners ------------------------------------------------
   // Crayon-bright, die-cut, and unafraid: these are read by a five-year-old across a classroom.
   'storybook-crayon': {
+    fontFamily: 'Baloo 2',
     weight: '900',
     gradient: {
       angle: 180,
@@ -1163,6 +1209,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'fairytale-sparkle': {
+    fontFamily: 'Chewy',
     weight: '900',
     glints: true,
     gradient: {
@@ -1180,6 +1227,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'reading-nook-sage': {
+    fontFamily: 'Fredoka',
     weight: '900',
     gradient: {
       angle: 180,
@@ -1200,6 +1248,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'storytime-banner': {
+    fontFamily: 'Nunito',
     weight: '900',
     gradient: {
       angle: 180,
@@ -1216,6 +1265,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   // Printed at A4 on a school photocopier: three colours, a cream die-cut so the words survive a
   // grey machine, and no bloom that a mono print would turn into mud.
   'champs-basa-blue': {
+    fontFamily: 'Fredoka',
     weight: '900',
     gradient: {
       angle: 180,
@@ -1231,6 +1281,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'champs-kasadya-coral': {
+    fontFamily: 'Fredoka',
     weight: '900',
     gradient: {
       angle: 180,
@@ -1246,6 +1297,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'champs-gold-ribbon': {
+    fontFamily: 'Nunito',
     weight: '900',
     gradient: {
       angle: 180,
@@ -1264,16 +1316,19 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   // eats the letterform. A two-tone cream keeps the band's colour family without hurting a
   // five-metre read or a mono photocopy.
   'champs-level-emergent': {
+    fontFamily: 'Baloo 2',
     weight: '900',
     gradient: { angle: 180, stops: [{ offset: 0, color: '#ffffff' }, { offset: 1, color: '#dcfce7' }] },
     shadows: [],
   },
   'champs-level-beginning': {
+    fontFamily: 'Baloo 2',
     weight: '900',
     gradient: { angle: 180, stops: [{ offset: 0, color: '#ffffff' }, { offset: 1, color: '#dbeafe' }] },
     shadows: [],
   },
   'champs-level-transitional': {
+    fontFamily: 'Baloo 2',
     weight: '900',
     gradient: { angle: 180, stops: [{ offset: 0, color: '#ffffff' }, { offset: 1, color: '#fef3c7' }] },
     shadows: [],
@@ -1282,6 +1337,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   // The reef theme's title and the cultural theme's title, so the tarpapel theme swap can name a
   // word art per theme instead of a colour per theme.
   'underwater-bubble': {
+    fontFamily: 'Baloo 2',
     weight: '900',
     gradient: {
       angle: 180,
@@ -1297,6 +1353,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'cultural-hablon': {
+    fontFamily: 'Lilita One',
     weight: '900',
     gradient: {
       angle: 180,
@@ -1315,6 +1372,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
   // Refined, not shouted: a hairline trim and a soft lift. 800 rather than 900 so a serif or a
   // geometric sans keeps its shapes — the two styles that look wrong at poster weight.
   'portfolio-editorial': {
+    fontFamily: 'Playfair Display',
     weight: '800',
     gradient: {
       angle: 165,
@@ -1329,6 +1387,7 @@ const PAINT: Partial<Record<WordArtStyle, WordArtPaint>> = {
     shadows: [],
   },
   'portfolio-indigo': {
+    fontFamily: 'Plus Jakarta Sans',
     weight: '800',
     gradient: {
       angle: 135,
@@ -1380,6 +1439,8 @@ export interface WordArtSpec {
    * always wins — see `wordArtCurve`.
    */
   arc?: number;
+  /** The face the style was drawn for — see `wordArtDefaultFont`. */
+  fontFamily?: string;
 }
 
 export function wordArtSpec(style?: WordArtStyle): WordArtSpec | undefined {
@@ -1403,6 +1464,7 @@ export function wordArtSpec(style?: WordArtStyle): WordArtSpec | undefined {
     outline: paint.outline,
     backdrop: paint.backdrop,
     arc: paint.arc,
+    fontFamily: paint.fontFamily,
   };
 }
 
@@ -1416,6 +1478,7 @@ export function buildWordArtCssRule(style: WordArtStyle, className = `wordart-${
   const paint = wordArtPaint(style);
   if (!paint) return '';
   const lines: string[] = [`  font-weight: ${paint.weight};`];
+  if (paint.fontFamily) lines.push(`  font-family: ${fontStack(paint.fontFamily)};`);
   if (paint.italic) lines.push('  font-style: italic;');
   if (paint.gradient) {
     const stops = [...paint.gradient.stops]
@@ -1466,6 +1529,28 @@ export function buildWordArtCssRule(style: WordArtStyle, className = `wordart-${
   for (const shadow of wordArtShadowChain(paint)) filters.push(`drop-shadow(${shadowCss(shadow)})`);
   if (filters.length) lines.push(`  filter:\n${filters.map((f) => `    ${f}`).join('\n')};`);
   return `.${className} {\n${lines.join('\n')}\n}`;
+}
+
+/** Families that need a cursive fallback rather than a sans one when they fail to load. */
+const SCRIPT_FAMILIES: ReadonlySet<string> = new Set(['Kaushan Script', 'Pacifico', 'Chewy', 'Patrick Hand']);
+
+/**
+ * A CSS `font-family` value for one of the style faces, with a fallback that does not turn a brush
+ * script into Helvetica the moment the webfont is slow.
+ */
+export function fontStack(family: string): string {
+  const generic = SCRIPT_FAMILIES.has(family) ? 'cursive' : 'sans-serif';
+  return `'${family}', ${generic}`;
+}
+
+/**
+ * The typeface this style was drawn for, if it has one.
+ *
+ * Every style does now, but the signature stays optional: a future style that is a *material* rather
+ * than a letterform can decline, and the picker then leaves the document's font alone.
+ */
+export function wordArtDefaultFont(style?: WordArtStyle): string | undefined {
+  return wordArtPaint(style)?.fontFamily;
 }
 
 /** Every rule, in catalogue order — the body of the WordArt block in index.css. */

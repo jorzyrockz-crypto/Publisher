@@ -156,6 +156,7 @@
    Do not edit by hand: run `npm run wordart:css`. */
 .wordart-gold3d {
   font-weight: 800;
+  font-family: 'Playfair Display', sans-serif;
   background: linear-gradient(180deg, #fde68a 0%, #f59e0b 45%, #b45309 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -168,6 +169,7 @@
 
 .wordart-rainbow {
   font-weight: 900;
+  font-family: 'Montserrat', sans-serif;
   background: linear-gradient(135deg, #f43f5e 0%, #fb923c 25%, #facc15 50%, #10b981 75%, #3b82f6 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -177,6 +179,7 @@
 
 .wordart-outline {
   font-weight: 900;
+  font-family: 'Montserrat', sans-serif;
   color: #ffffff;
   -webkit-text-stroke: 0.028em #0f766e;
   paint-order: stroke fill;
@@ -186,6 +189,7 @@
 
 .wordart-retro {
   font-weight: 800;
+  font-family: 'Montserrat', sans-serif;
   color: #ec4899;
   filter:
     drop-shadow(3px 3px 0px #06b6d4)
@@ -194,6 +198,7 @@
 
 .wordart-neon-glow {
   font-weight: 900;
+  font-family: 'Montserrat', sans-serif;
   color: #e0f2fe;
   filter:
     drop-shadow(0px 0px 6px #38bdf8)
@@ -203,6 +208,7 @@
 
 .wordart-chrome {
   font-weight: 900;
+  font-family: 'Montserrat', sans-serif;
   background: linear-gradient(180deg, #ffffff 0%, #dbe3ec 32%, #93a4b8 49%, #38455c 50%, #7c8ba1 62%, #c3cedd 80%, #f2f6fa 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -214,6 +220,7 @@
 
 .wordart-fire {
   font-weight: 900;
+  font-family: 'Montserrat', sans-serif;
   background: linear-gradient(180deg, #fef08a 0%, #f97316 55%, #dc2626 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -223,6 +230,7 @@
 
 .wordart-comic-pop {
   font-weight: 900;
+  font-family: 'Bangers', sans-serif;
   color: #facc15;
   -webkit-text-stroke: 0.028em #0f172a;
   paint-order: stroke fill;
@@ -232,6 +240,7 @@
 
 .wordart-emerald-3d {
   font-weight: 900;
+  font-family: 'Montserrat', sans-serif;
   color: #10b981;
   filter:
     drop-shadow(1px 1px 0px #065f46)
@@ -242,6 +251,7 @@
 
 .wordart-sunset-gradient {
   font-weight: 900;
+  font-family: 'Montserrat', sans-serif;
   background: linear-gradient(135deg, #ec4899 0%, #f97316 55%, #facc15 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -251,6 +261,7 @@
 
 .wordart-gradient-blue {
   font-weight: 900;
+  font-family: 'Montserrat', sans-serif;
   background: linear-gradient(180deg, #93c5fd 0%, #3b82f6 48%, #1d4ed8 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -260,6 +271,7 @@
 
 .wordart-cinematic {
   font-weight: 900;
+  font-family: 'Playfair Display', sans-serif;
   background: linear-gradient(178deg, #fff4d6 0%, #f0b45a 34%, #c8842e 62%, #f7e2b2 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -272,6 +284,7 @@
 
 .wordart-holographic {
   font-weight: 900;
+  font-family: 'Montserrat', sans-serif;
   background: linear-gradient(135deg, #a78bfa 0%, #22d3ee 20%, #f8fafc 44%, #f472b6 46%, #fde68a 70%, #c4b5fd 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -284,6 +297,7 @@
 
 .wordart-varsity {
   font-weight: 900;
+  font-family: 'Bangers', sans-serif;
   color: #dc2626;
   -webkit-text-stroke: 0.056em #ffffff;
   paint-order: stroke fill;
@@ -293,6 +307,7 @@
 
 .wordart-synth-chrome {
   font-weight: 900;
+  font-family: 'Montserrat', sans-serif;
   font-style: italic;
   background: linear-gradient(180deg, #fff9c4 0%, #ffca3a 24%, #ff6ec7 48%, #1e1b4b 50%, #2563eb 72%, #38bdf8 90%, #e0f2fe 100%);
   -webkit-background-clip: text;
@@ -312,6 +327,7 @@
 
 .wordart-liquid-glass {
   font-weight: 900;
+  font-family: 'Montserrat', sans-serif;
   background: linear-gradient(175deg, #ffffff 0%, #e0f2fe 28%, #94a3b8 47%, #1e293b 50%, #cbd5e1 68%, #f8fafc 86%, #c4b5fd 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -328,6 +344,7 @@
 
 .wordart-rose-gold {
   font-weight: 900;
+  font-family: 'Playfair Display', sans-serif;
   background: linear-gradient(165deg, #fff7ed 0%, #fed7aa 25%, #f472b6 44%, #831843 48%, #fb7185 65%, #fda4af 85%, #fff1f2 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -345,6 +362,7 @@
 
 .wordart-cyber-acid {
   font-weight: 900;
+  font-family: 'Montserrat', sans-serif;
   font-style: italic;
   background: linear-gradient(135deg, #ecfccb 0%, #a3e635 35%, #22d3ee 70%, #06b6d4 100%);
   -webkit-background-clip: text;
@@ -363,6 +381,7 @@
 
 .wordart-obsidian-gold {
   font-weight: 900;
+  font-family: 'Playfair Display', sans-serif;
   background: linear-gradient(155deg, #52525b 0%, #18181b 35%, #f4f4f5 47%, #09090b 51%, #27272a 85%, #71717a 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -378,6 +397,7 @@
 
 .wordart-candy-gloss {
   font-weight: 900;
+  font-family: 'Lilita One', sans-serif;
   background: linear-gradient(180deg, #ffffff 0%, #fda4af 14%, #f43f5e 50%, #e11d48 85%, #9f1239 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -394,6 +414,7 @@
 
 .wordart-sticker-royal {
   font-weight: 900;
+  font-family: 'Lilita One', sans-serif;
   background: linear-gradient(180deg, #38bdf8 0%, #2563eb 45%, #1e3a8a 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -405,6 +426,7 @@
 
 .wordart-sticker-forest {
   font-weight: 900;
+  font-family: 'Kaushan Script', cursive;
   background: linear-gradient(180deg, #4ade80 0%, #16a34a 50%, #14532d 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -416,6 +438,7 @@
 
 .wordart-sticker-coral {
   font-weight: 900;
+  font-family: 'Kaushan Script', cursive;
   background: linear-gradient(180deg, #fbbf24 0%, #f97316 42%, #dc2626 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -427,6 +450,7 @@
 
 .wordart-sticker-teal {
   font-weight: 900;
+  font-family: 'Fredoka', sans-serif;
   background: linear-gradient(180deg, #2dd4bf 0%, #0f766e 55%, #134e4a 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -438,6 +462,7 @@
 
 .wordart-cartoon-bubble-blue {
   font-weight: 900;
+  font-family: 'Lilita One', sans-serif;
   background: linear-gradient(180deg, #7dd3fc 0%, #38bdf8 18%, #0284c7 55%, #1d4ed8 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -459,6 +484,7 @@
 
 .wordart-cartoon-bubble-pink {
   font-weight: 900;
+  font-family: 'Lilita One', sans-serif;
   background: linear-gradient(180deg, #fbcfe8 0%, #f472b6 18%, #ec4899 55%, #be185d 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -480,6 +506,7 @@
 
 .wordart-brush-sunshine {
   font-weight: 900;
+  font-family: 'Kaushan Script', cursive;
   background: linear-gradient(180deg, #1e3a8a 0%, #0f172a 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -488,6 +515,7 @@
 
 .wordart-brush-blush {
   font-weight: 900;
+  font-family: 'Kaushan Script', cursive;
   background: linear-gradient(180deg, #be123c 0%, #881337 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -496,12 +524,14 @@
 
 .wordart-pill-highlight {
   font-weight: 900;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   color: #1e1b4b;
   --wordart-backdrop: #e0e7ff;
 }
 
 .wordart-eco-champion {
   font-weight: 900;
+  font-family: 'Lilita One', sans-serif;
   background: linear-gradient(180deg, #fef08a 0%, #facc15 45%, #eab308 85%, #ca8a04 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -517,6 +547,7 @@
 
 .wordart-eco-leaf {
   font-weight: 900;
+  font-family: 'Lilita One', sans-serif;
   background: linear-gradient(180deg, #22c55e 0%, #15803d 55%, #14532d 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -528,6 +559,7 @@
 
 .wordart-wood-plank-action {
   font-weight: 900;
+  font-family: 'Bangers', sans-serif;
   font-style: italic;
   background: linear-gradient(180deg, #ffffff 0%, #fef3c7 70%, #fde68a 100%);
   -webkit-background-clip: text;
@@ -539,6 +571,7 @@
 
 .wordart-eco-ribbon {
   font-weight: 900;
+  font-family: 'Nunito', sans-serif;
   background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -547,6 +580,7 @@
 
 .wordart-forest-script-sticker {
   font-weight: 900;
+  font-family: 'Pacifico', cursive;
   background: linear-gradient(180deg, #166534 0%, #052e16 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -558,6 +592,7 @@
 
 .wordart-trophy-gold {
   font-weight: 900;
+  font-family: 'Bungee', sans-serif;
   background: linear-gradient(180deg, #fffbeb 0%, #fde047 28%, #eab308 48%, #92400e 51%, #f59e0b 72%, #fef08a 90%, #ca8a04 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -575,6 +610,7 @@
 
 .wordart-fiesta-mosaic {
   font-weight: 900;
+  font-family: 'Lilita One', sans-serif;
   background: linear-gradient(90deg, #dc2626 0%, #eab308 22%, #ea580c 42%, #16a34a 62%, #0d9488 80%, #78350f 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -586,6 +622,7 @@
 
 .wordart-parchment-script {
   font-weight: 900;
+  font-family: 'Kaushan Script', cursive;
   background: linear-gradient(180deg, #18181b 0%, #09090b 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -594,6 +631,7 @@
 
 .wordart-folklore-wood {
   font-weight: 900;
+  font-family: 'Bungee', sans-serif;
   background: linear-gradient(180deg, #fffbeb 0%, #fde68a 65%, #f59e0b 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -606,6 +644,7 @@
 
 .wordart-storybook-crayon {
   font-weight: 900;
+  font-family: 'Baloo 2', sans-serif;
   background: linear-gradient(180deg, #fde047 0%, #fb923c 50%, #f43f5e 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -621,6 +660,7 @@
 
 .wordart-fairytale-sparkle {
   font-weight: 900;
+  font-family: 'Chewy', cursive;
   background: linear-gradient(160deg, #fdf4ff 0%, #e879f9 35%, #818cf8 70%, #38bdf8 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -633,6 +673,7 @@
 
 .wordart-reading-nook-sage {
   font-weight: 900;
+  font-family: 'Fredoka', sans-serif;
   background: linear-gradient(180deg, #34d399 0%, #059669 55%, #065f46 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -644,6 +685,7 @@
 
 .wordart-storytime-banner {
   font-weight: 900;
+  font-family: 'Nunito', sans-serif;
   background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -654,6 +696,7 @@
 
 .wordart-champs-basa-blue {
   font-weight: 900;
+  font-family: 'Fredoka', sans-serif;
   background: linear-gradient(180deg, #60a5fa 0%, #2563eb 50%, #1e3a8a 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -665,6 +708,7 @@
 
 .wordart-champs-kasadya-coral {
   font-weight: 900;
+  font-family: 'Fredoka', sans-serif;
   background: linear-gradient(180deg, #fb7185 0%, #e11d48 55%, #9f1239 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -676,6 +720,7 @@
 
 .wordart-champs-gold-ribbon {
   font-weight: 900;
+  font-family: 'Nunito', sans-serif;
   background: linear-gradient(180deg, #fef3c7 0%, #fbbf24 50%, #b45309 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -686,6 +731,7 @@
 
 .wordart-champs-level-emergent {
   font-weight: 900;
+  font-family: 'Baloo 2', sans-serif;
   background: linear-gradient(180deg, #ffffff 0%, #dcfce7 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -693,6 +739,7 @@
 
 .wordart-champs-level-beginning {
   font-weight: 900;
+  font-family: 'Baloo 2', sans-serif;
   background: linear-gradient(180deg, #ffffff 0%, #dbeafe 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -700,6 +747,7 @@
 
 .wordart-champs-level-transitional {
   font-weight: 900;
+  font-family: 'Baloo 2', sans-serif;
   background: linear-gradient(180deg, #ffffff 0%, #fef3c7 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -707,6 +755,7 @@
 
 .wordart-underwater-bubble {
   font-weight: 900;
+  font-family: 'Baloo 2', sans-serif;
   background: linear-gradient(180deg, #a5f3fc 0%, #38bdf8 45%, #0369a1 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -718,6 +767,7 @@
 
 .wordart-cultural-hablon {
   font-weight: 900;
+  font-family: 'Lilita One', sans-serif;
   background: linear-gradient(180deg, #fcd34d 0%, #b45309 50%, #7f1d1d 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -727,6 +777,7 @@
 
 .wordart-portfolio-editorial {
   font-weight: 800;
+  font-family: 'Playfair Display', sans-serif;
   background: linear-gradient(165deg, #475569 0%, #1e293b 45%, #0f172a 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -738,6 +789,7 @@
 
 .wordart-portfolio-indigo {
   font-weight: 800;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   background: linear-gradient(135deg, #4f46e5 0%, #2563eb 55%, #0d9488 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
