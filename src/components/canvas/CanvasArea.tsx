@@ -759,7 +759,7 @@ export const CanvasArea: React.FC = () => {
                   ? 'bg-white text-[#5c4bb8] shadow-2xs'
                   : 'text-slate-500 hover:text-slate-800'
               }`}
-              title="Freeform Artboards (Move papers & mix sizes)"
+              title="Freeform — every paper on one pasteboard, move them anywhere"
             >
               <LayoutDashboard size={12} />
             </button>

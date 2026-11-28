@@ -50,6 +50,9 @@ import {
   computeTarpapelMetrics,
 } from '../utils/printUtils';
 
+/** The four ways the canvas can present a document. */
+export type ViewMode = 'artboard' | 'single' | 'continuous' | 'spread';
+
 interface PublisherContextType {
   project: DocumentProject;
   activePage: Page;
@@ -99,7 +102,7 @@ interface PublisherContextType {
   canRedo: boolean;
   isEditingMaster: boolean;
   hasClipboard: boolean;
-  viewMode: 'artboard' | 'single' | 'continuous' | 'spread';
+  viewMode: ViewMode;
   toolMode: 'select' | 'pan';
   isLeftPanelOpen: boolean;
   isRightPanelOpen: boolean;
@@ -579,11 +582,27 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [selectedElementIds, setSelectedElementIds] = useState<string[]>([]);
   const [copiedElements, setCopiedElements] = useState<PublisherElement[]>([]);
   const [isEditingMaster, setIsEditingMasterState] = useState<boolean>(false);
-  // Single page is the default view: one page, fully fitted, is what people open a
-  // document to look at. Spread/artboard are deliberate choices from the view control.
-  const [viewMode, setViewMode] = useState<'artboard' | 'single' | 'continuous' | 'spread'>(
-    'single'
+  // A one-pager opens as one fitted page. A document with more papers than that opens in Freeform,
+  // because Single view would hide everything but the page you are on — see the effect below.
+  const [viewMode, setViewModeState] = useState<ViewMode>('single');
+  /** View choices the person made themselves, per document. Those are never overridden. */
+  const viewModeChosenRef = useRef<Record<string, ViewMode>>({});
+  const setViewMode = useCallback(
+    (mode: ViewMode) => {
+      viewModeChosenRef.current[project.id] = mode;
+      setViewModeState(mode);
+    },
+    [project.id]
   );
+
+  // The default view follows the papers, not a hard-coded preference: one paper is a page to read,
+  // several papers are a layout to arrange, and Single view would show only one of them. An explicit
+  // choice from the view control sticks for that document.
+  useEffect(() => {
+    const chosen = viewModeChosenRef.current[project.id];
+    const preferred: ViewMode = chosen ?? (project.pages.length > 1 ? 'artboard' : 'single');
+    setViewModeState((current) => (current === preferred ? current : preferred));
+  }, [project.id, project.pages.length]);
   const [toolMode, setToolMode] = useState<'select' | 'pan'>('select');
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);

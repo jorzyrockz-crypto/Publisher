@@ -439,7 +439,7 @@ export const DesignerToolRail: React.FC = () => {
                               type="button"
                               onClick={() => setViewMode('artboard')}
                               className={pillToggle(viewMode === 'artboard')}
-                              title="Artboard View"
+                              title="Freeform — every paper on one pasteboard"
                             >
                               <LayoutDashboard size={12} />
                             </button>

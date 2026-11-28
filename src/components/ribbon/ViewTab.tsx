@@ -130,10 +130,10 @@ export const ViewTab: React.FC = () => {
                 ? 'bg-[#efeafd] text-[#5c4bb8]'
                 : 'text-[#4a5661] hover:text-[#161a22] hover:bg-white/60'
             }`}
-            title="Freeform Artboards (Move papers & mix sizes)"
+            title="Freeform — every paper on one pasteboard, move them anywhere"
           >
             <LayoutDashboard size={13} />
-            <span>Artboard</span>
+            <span>Freeform</span>
           </button>
 
           <button

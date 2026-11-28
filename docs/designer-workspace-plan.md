@@ -233,3 +233,13 @@ accounted for:
 * **The handle said too much.** At 20% a paper is a postage stamp and the pill above it — page
   number, page name and a size badge — is bigger than the paper. Below 45% it collapses to a grip
   and a number; at any zoom only the **active** paper shows its name, size and menu.
+
+## Which view a document opens in
+
+The default view follows the papers. One paper opens as a fitted single page — that is what people
+open a document to look at. Two or more papers open **Freeform**, because Single view shows one paper
+and quietly hides the others, which reads as "the canvas only has one page".
+
+An explicit choice from the view control wins, per document: pick Single and it stays Single, even
+when you add pages. Choices are remembered per document, so switching tabs restores each one's view.
+The mode is labelled *Freeform* everywhere now, not "Artboard" — the papers are the canvas.
