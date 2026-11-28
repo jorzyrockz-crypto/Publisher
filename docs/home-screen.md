@@ -95,46 +95,62 @@ gallery's own pill row is for.
 
 ---
 
-## 4. The three feature cards
+## 4. The six ways to start
 
-`HomeFeatureCards` (markup) reads `HOME_FEATURES` from `homeFeatures.ts` (data). The row sits between
-the hero and Recent Designs and answers "what am I making?" in colour before the gallery makes anyone
-read a heading:
+`HomeShortcuts` (markup) reads `HOME_SHORTCUTS` from `shortcutCatalog.ts` (data) and renders one row
+of mini cards inside the hero, on the line where the pills used to be:
 
-| card | opens | why that |
+| card | opens | built or from the library |
 |---|---|---|
-| Collage Maker | the first `Collages` layout (currently *Birthday Celebration Collage*) | a blank grid is not a collage; the point of the card is the grid already drawn |
-| Tarpaulin Printer | a tarpapel canvas with the 3 × 2 grid set | the card says "on A4 sheets", so the print setup has to come with the page |
-| Story Kit | the Story Kits destination | the kits are a shelf, not a document: picking a pack first is the honest order |
+| Tarpapel (3×2) | a tarpapel canvas with its 3 × 2 grid already set | built |
+| Reading Corner | the first `Champs Reading` sign | library |
+| A4 Poster | the first A4 portrait poster | library |
+| Photo Collage | the first collage layout | library |
+| Social Media | a 1080 × 1080 square post | built |
+| Blank Canvas | a blank A4 | built |
 
-The list is data rather than three copies of the same JSX because `check:home` loads it too — it
-asserts each card's destination still exists (the collage group still has templates in it, the
-tarpapel builder still builds a landscape sheet, the section is one of the four), that its artwork is
-in `public/home/` and under 120 kB, and that its subtitle still fits one line at 11px on a
-two-column tablet card.
+A pill labels a thing; a card shows it. The row keeps the pills' behaviour exactly — every card
+**starts a document**, and where a format has a design worth starting from it opens that design, so
+the next screen is always the editor. What changed is that the row now speaks the same language as
+the rest of Home: tinted ground, hairline, a bold colour-matched title, one line of hint under it,
+and a clay object on the right.
+
+The list is data rather than six copies of the same JSX because `check:home` loads it: it asserts
+each card's destination still exists (the group still has templates in it, the search still finds a
+result, the blank size is one the builder knows, the tarpapel builder still makes a landscape
+sheet), that the artwork is in `public/home/` and under 40 kB, that no two cards wear the same
+pastel, and that a subtitle still fits one line on a 200 px card.
+
+There is one row of cards on Home, not two. A big three-card row under the hero and a second row of
+mini cards inside it read as the same idea twice, and pushed the gallery below the fold on a laptop.
 
 ### Colour
 
-A card carries four variables — `--sp-feature-glow`, `--sp-feature-ink`, `--sp-feature-sub` and
-`--sp-feature-line` — and the tints are mixed from the glow into `--sp-surface`. That is why dark
-mode is a small block of the same four rather than a second set of rules, and why the border, the
-hover shadow and the lift all follow the tone without being restated. Title and subtitle clear WCAG
-AA on the card's own ground: 6.5 / 4.7 (violet), 5.4 / 5.2 (amber), 5.8 / 5.6 (teal), and 8.3 / 6.7,
-9.0 / 6.6, 9.1 / 7.6 on dark.
+A card carries four variables — `--sp-tone-glow`, `--sp-tone-ink`, `--sp-tone-sub` and
+`--sp-tone-line` — and both tints are mixed from the glow into `--sp-surface`. That is why dark mode
+is a small block of the same four rather than a second set of rules, and why the border, the hover
+shadow and the lift all follow the tone without being restated. Six tones: violet, amber, teal, rose,
+sky, slate. Title and subtitle clear WCAG AA on the card's own ground in both themes — 6.6 / 4.8,
+5.7 / 5.4, 5.8 / 5.6, 6.7 / 5.5, 6.5 / 4.9, 7.9 / 4.9 on light; 7.6 / 6.1, 7.8 / 5.7, 8.2 / 7.0,
+7.3 / 5.9, 7.7 / 6.7, 7.8 / 6.1 on dark.
 
-The row is `1 → 2 → 3` across `sm / xl`, and the third card spans both columns in the two-column
-layout so it does not sit alone next to a gap.
+The row scrolls sideways with faded ends rather than wrapping: a second line of cards under the
+search box is the one thing that would push the gallery out of the first screenful.
 
 ### Artwork
 
-Three clay renders in `public/home/`, 640 px wide WebP with alpha (16 kB, 51 kB, 56 kB). They were
-matted off a white background with a **border-plane cutout**: fit a plane through the frame's edge
-pixels per channel, take the per-pixel distance from it as the matte, then flood the background in
-from the border and *fill every hole* the flood cannot reach. That last step is the whole reason it
-works — a plain white key eats the paper inside the printer and the pages inside the chest. The
-matte is eroded a pixel and feathered so no white fringe survives on a tinted card, and the image is
-trimmed to its content. `.home-feature-art` adds a drop shadow that follows the cut-out silhouette,
-which is what keeps the cream printer from dissolving into the cream card.
+Six clay renders in `public/home/mini-*.webp`, 300 px wide with alpha, 6.6–27.6 kB each, on the same
+pastel ground as the UI so the cut-out sits *on* the tint instead of in a white box.
+
+They are matted off a white background with a **border-plane cutout**: fit a plane through the
+frame's edge pixels per channel, take each pixel's distance from it as the matte, then flood the
+background in from the border and *fill every hole the flood cannot reach*. That last step is the
+whole reason it works — a plain white key eats the tape strips holding the tarpapel together and the
+sign face in the reading corner. The matte is eroded a pixel and feathered so no white fringe
+survives on a tinted card, the image is trimmed to its content, and the **baked drop shadow is faded
+rather than cut**: grey, unsaturated and darker than the paper gets reduced alpha, so the object
+keeps its contact with the ground without dragging a grey slab onto the card. `.home-shortcut-art`
+then adds a drop shadow that follows the cut-out silhouette.
 
 ---
 
@@ -230,7 +246,7 @@ seam gets cut and doubled.
 
 ## 9. Checks
 
-`npm run check:home` (456 assertions over the pure parts, through Vite's module graph):
+`npm run check:home` (488 assertions over the pure parts, through Vite's module graph):
 
 - every template belongs to exactly one group, and the group counts add up to the catalogue;
 - every card can name its sheet and its subtitle;
@@ -241,13 +257,14 @@ seam gets cut and doubled.
 - a 3 × 2 tarpapel canvas is the *assembled poster's* ratio (~2.2:1) and its margin clears a glue
   strip;
 - custom sizes clamp to 200–4000 px and round;
-- each feature card opens something that exists, ships artwork under 120 kB, and keeps its subtitle
-  to one line.
+- each of the six shortcut cards opens something that exists, ships artwork under 40 kB, wears a
+  tone the stylesheet defines, and keeps its subtitle to one line on a 200 px card.
 
 Navigation and rendering were walked end to end in a jsdom harness during development: landing on
 Home, live filtering, the Templates destination, template → editor, chip → editor, Resume Editing,
-the Create popover's four formats, My Projects and Story Kits — plus the three feature cards, two of
-which must land in the editor on the document they name and one in the kits. That harness needs jsdom, which this
+the Create popover's four formats, My Projects and Story Kits — plus the six shortcut cards, four of
+which must land in the editor on the document they name (a tarpapel, a square post, a collage, a
+blank A4). That harness needs jsdom, which this
 repo does not depend on, so it is not committed; `check:home` covers everything below it.
 
 ## 10. Known limits

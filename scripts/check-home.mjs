@@ -27,7 +27,7 @@ const [catalog, blanks, recents, printing, catalogue, featuresModule] = await Pr
   server.ssrLoadModule('/src/utils/recentDesigns.ts'),
   server.ssrLoadModule('/src/utils/printUtils.ts'),
   server.ssrLoadModule('/src/constants/templates.ts'),
-  server.ssrLoadModule('/src/components/home/homeFeatures.ts'),
+  server.ssrLoadModule('/src/components/home/shortcutCatalog.ts'),
 ]);
 await server.close();
 
@@ -56,7 +56,7 @@ const {
   SQUARE_POST,
 } = blanks;
 
-const { HOME_FEATURES } = featuresModule;
+const { HOME_SHORTCUTS } = featuresModule;
 const { formatEditedAgo } = recents;
 const { computeTarpapelMetrics, DEFAULT_PRINT_SETTINGS } = printing;
 
@@ -210,47 +210,52 @@ const ok = (cond, msg, extra = '') => {
   ok(!/NaN|Invalid/.test(formatEditedAgo(0, now)), 'an old timestamp produced Invalid Date');
 }
 
-/* 10. the three feature cards promise a destination that exists */
+/* 10. the six hero cards promise a destination that exists */
 {
-  ok(HOME_FEATURES.length === 3, 'Home does not show three feature cards', String(HOME_FEATURES.length));
-  ok(new Set(HOME_FEATURES.map((f) => f.id)).size === HOME_FEATURES.length, 'two feature cards share an id');
-  ok(new Set(HOME_FEATURES.map((f) => f.tone)).size === HOME_FEATURES.length, 'two feature cards share a pastel');
+  ok(HOME_SHORTCUTS.length === 6, 'the hero does not show six shortcuts', String(HOME_SHORTCUTS.length));
+  ok(new Set(HOME_SHORTCUTS.map((s) => s.id)).size === HOME_SHORTCUTS.length, 'two shortcuts share an id');
   ok(
-    HOME_FEATURES.every((f) => ['violet', 'amber', 'teal'].includes(f.tone)),
-    'a feature card wears a tone the stylesheet does not define'
+    new Set(HOME_SHORTCUTS.map((s) => s.tone)).size === HOME_SHORTCUTS.length,
+    'two shortcuts share a pastel, so the row repeats a colour'
   );
 
-  for (const feature of HOME_FEATURES) {
-    const where = feature.id;
+  const tones = ['violet', 'amber', 'teal', 'rose', 'sky', 'slate'];
+  for (const shortcut of HOME_SHORTCUTS) {
+    const where = shortcut.id;
 
-    ok(feature.title.trim().length > 0, `${where}: the card has no title`);
-    ok(!/[.,;:]$/.test(feature.title), `${where}: the title ends in punctuation`, feature.title);
+    ok(tones.includes(shortcut.tone), `${where}: wears a tone the stylesheet does not define`, shortcut.tone);
+    ok(shortcut.title.trim().length > 0, `${where}: the card has no title`);
+    ok(!/[.,;:]$/.test(shortcut.title), `${where}: the title ends in punctuation`, shortcut.title);
 
-    // One line on a two-column tablet card is about 30 characters at 11px; past
-    // that the subtitle wraps and the row of cards stops lining up.
-    ok(feature.subtitle.length <= 30, `${where}: the subtitle will wrap on a tablet`, feature.subtitle);
+    // Two lines of 11px and 10px in a 200px card, beside a 48px object: past
+    // ~22 characters the subtitle truncates and the row stops reading as a set.
+    ok(shortcut.subtitle.length <= 22, `${where}: the subtitle will truncate`, shortcut.subtitle);
 
-    ok(/^\/home\/[a-z-]+\.webp$/.test(feature.art), `${where}: the artwork is not a /home webp`, feature.art);
-    const file = `public${feature.art}`;
+    ok(/^\/home\/mini-[a-z-]+\.webp$/.test(shortcut.art), `${where}: the artwork is not a /home webp`, shortcut.art);
+    const file = `public${shortcut.art}`;
     ok(existsSync(file), `${where}: the artwork is missing from public/`, file);
     if (existsSync(file)) {
       const kb = statSync(file).size / 1024;
       ok(kb > 2, `${where}: the artwork looks empty`, `${kb.toFixed(1)} kB`);
-      ok(kb < 120, `${where}: the artwork is too heavy for a card`, `${kb.toFixed(1)} kB`);
+      ok(kb < 40, `${where}: the artwork is too heavy for a 44px icon`, `${kb.toFixed(1)} kB`);
     }
-    ok(feature.width > 0 && feature.height > 0, `${where}: the artwork has no intrinsic size`);
+    ok(shortcut.width > 0 && shortcut.height > 0, `${where}: the artwork has no intrinsic size`);
 
-    const { target } = feature;
-    if (target.kind === 'template-group') {
-      const found = filterTemplates({ group: target.group, format: 'all', query: '' });
-      ok(found.length > 0, `${where}: the card opens a group with no templates in it`, target.group);
-    } else if (target.kind === 'tarpapel') {
+    const { action } = shortcut;
+    if (action.kind === 'template') {
+      const found = filterTemplates({
+        group: action.group,
+        format: action.format ?? 'all',
+        query: action.query ?? '',
+      });
+      ok(found.length > 0, `${where}: opens a search that finds nothing`, `${action.group} / ${action.query ?? ''}`);
+    } else if (action.kind === 'tarpapel') {
       const doc = buildBlankProject(buildTarpapelProject(DEFAULT_PRINT_SETTINGS));
-      ok(doc.pages[0].width > doc.pages[0].height, `${where}: the tarpapel card does not open a tarpapel`);
-    } else if (target.kind === 'section') {
-      ok(['home', 'templates', 'projects', 'kits'].includes(target.section), `${where}: unknown section`, target.section);
+      ok(doc.pages[0].width > doc.pages[0].height, `${where}: does not open a tarpapel`);
+    } else if (action.kind === 'blank') {
+      ok(['a4', 'square'].includes(action.spec), `${where}: unknown blank size`, action.spec);
     } else {
-      ok(false, `${where}: the card has no target`);
+      ok(false, `${where}: the card has no action`);
     }
   }
 }

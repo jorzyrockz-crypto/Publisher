@@ -1863,29 +1863,36 @@ html.dark .home-paper-shadow {
 }
 
 /* ----------------------------------------------------------------------------
-   Home feature cards — the three pastel tiles under the hero.
+   Home shortcut cards — the six mini tiles inside the hero.
 
-   Each card owns four colours and derives everything else from them:
-   `--sp-feature-ink` (the title), `--sp-feature-sub`, `--sp-feature-line` and
-   `--sp-feature-glow`. The tints are mixed from the glow rather than listed
-   twice, so a tone is defined once for light and once for dark and the
-   gradient, border, hover shadow and lift all follow.
+   These were pills with a lucide icon. A pill labels a thing; a card promises
+   it, in the same language as the rest of Home: tinted ground, hairline, a bold
+   colour-matched title, one line of hint, and the clay object on the right.
 
-   Contrast (title / subtitle on the card's own ground, WCAG AA at 11px):
-   violet 6.5 / 4.7, amber 5.4 / 5.2, teal 5.8 / 5.6 — and on dark 8.3 / 6.7,
-   9.0 / 6.6, 9.1 / 7.6.
+   A card owns four colours and derives the rest, so a tone is defined once for
+   light and once for dark:
+
+     --sp-tone-glow   the pastel everything else is mixed from
+     --sp-tone-ink    the title
+     --sp-tone-sub    the subtitle
+     --sp-tone-line   the hairline, and its hover
+
+   Contrast, title / subtitle on the card's own ground, both themes:
+   violet 6.6 / 4.8 · amber 5.7 / 5.4 · teal 5.8 / 5.6
+   rose   6.7 / 5.5 · sky   6.5 / 4.9 · slate 7.9 / 4.9
+   dark:  7.6 / 6.1 · 7.8 / 5.7 · 8.2 / 7.0 · 7.3 / 5.9 · 7.7 / 6.7 · 7.8 / 6.1
    ---------------------------------------------------------------------------- */
-.home-feature {
-  --sp-feature-glow: #8a6ff0;
-  --sp-feature-ink: #5a3fb0;
-  --sp-feature-sub: #6f6193;
-  --sp-feature-line: #e4d9fb;
-  --sp-feature-line-hover: #d3c2f6;
-  --sp-feature-tint-a: color-mix(in srgb, var(--sp-feature-glow) 5%, var(--sp-surface));
-  --sp-feature-tint-b: color-mix(in srgb, var(--sp-feature-glow) 12%, var(--sp-surface));
+.home-shortcut {
+  --sp-tone-glow: #8a6ff0;
+  --sp-tone-ink: #5a3fb0;
+  --sp-tone-sub: #6f6193;
+  --sp-tone-line: #e4d9fb;
+  --sp-tone-line-hover: #d3c2f6;
+  --sp-tone-tint-a: color-mix(in srgb, var(--sp-tone-glow) 5%, var(--sp-surface));
+  --sp-tone-tint-b: color-mix(in srgb, var(--sp-tone-glow) 12%, var(--sp-surface));
 
-  border: 1px solid var(--sp-feature-line);
-  background-image: linear-gradient(150deg, var(--sp-feature-tint-a), var(--sp-feature-tint-b));
+  border: 1px solid var(--sp-tone-line);
+  background-image: linear-gradient(150deg, var(--sp-tone-tint-a), var(--sp-tone-tint-b));
   box-shadow: inset 0 1px 0 #ffffffb3;
   transition:
     transform 160ms ease,
@@ -1893,102 +1900,142 @@ html.dark .home-paper-shadow {
     border-color 160ms ease;
 }
 
-.home-feature[data-tone='violet'] {
-  --sp-feature-glow: #8a6ff0;
-  --sp-feature-ink: #5a3fb0;
-  --sp-feature-sub: #6f6193;
-  --sp-feature-line: #e4d9fb;
-  --sp-feature-line-hover: #d3c2f6;
+.home-shortcut[data-tone='violet'] {
+  --sp-tone-glow: #8a6ff0;
+  --sp-tone-ink: #5a3fb0;
+  --sp-tone-sub: #6f6193;
+  --sp-tone-line: #e4d9fb;
+  --sp-tone-line-hover: #d3c2f6;
 }
 
-.home-feature[data-tone='amber'] {
-  --sp-feature-glow: #e0a33a;
-  --sp-feature-ink: #8a5512;
-  --sp-feature-sub: #75613c;
-  --sp-feature-line: #f0e2c2;
-  --sp-feature-line-hover: #e6d09a;
+.home-shortcut[data-tone='amber'] {
+  --sp-tone-glow: #e0a33a;
+  --sp-tone-ink: #8a5512;
+  --sp-tone-sub: #75613c;
+  --sp-tone-line: #f0e2c2;
+  --sp-tone-line-hover: #e6d09a;
 }
 
-.home-feature[data-tone='teal'] {
-  --sp-feature-glow: #34a68c;
-  --sp-feature-ink: #0d6a58;
-  --sp-feature-sub: #44665e;
-  --sp-feature-line: #cfeade;
-  --sp-feature-line-hover: #b3ddcd;
+.home-shortcut[data-tone='teal'] {
+  --sp-tone-glow: #34a68c;
+  --sp-tone-ink: #0d6a58;
+  --sp-tone-sub: #44665e;
+  --sp-tone-line: #cfeade;
+  --sp-tone-line-hover: #b3ddcd;
 }
 
-/* Dark: the same four per tone, mixed *into* the dark surface so the card is a
-   lit object on the page rather than a lamp. */
-html.dark .home-feature {
-  --sp-feature-tint-a: color-mix(in srgb, var(--sp-feature-glow) 10%, var(--sp-surface));
-  --sp-feature-tint-b: color-mix(in srgb, var(--sp-feature-glow) 18%, var(--sp-surface));
-  --sp-feature-line: color-mix(in srgb, var(--sp-feature-glow) 26%, transparent);
-  --sp-feature-line-hover: color-mix(in srgb, var(--sp-feature-glow) 42%, transparent);
+.home-shortcut[data-tone='rose'] {
+  --sp-tone-glow: #e2618f;
+  --sp-tone-ink: #9c2350;
+  --sp-tone-sub: #7c5566;
+  --sp-tone-line: #f7d9e3;
+  --sp-tone-line-hover: #efbccd;
+}
+
+.home-shortcut[data-tone='sky'] {
+  --sp-tone-glow: #3d8bd8;
+  --sp-tone-ink: #1a5793;
+  --sp-tone-sub: #4c6b86;
+  --sp-tone-line: #d6e6f7;
+  --sp-tone-line-hover: #b6d3ef;
+}
+
+.home-shortcut[data-tone='slate'] {
+  --sp-tone-glow: #64748b;
+  --sp-tone-ink: #38495c;
+  --sp-tone-sub: #5a6879;
+  --sp-tone-line: #dde4ec;
+  --sp-tone-line-hover: #c5d0dd;
+}
+
+/* Dark: the same four per tone, mixed *into* the dark surface so a card is a lit
+   object on the page rather than a lamp. */
+html.dark .home-shortcut {
+  --sp-tone-tint-a: color-mix(in srgb, var(--sp-tone-glow) 10%, var(--sp-surface));
+  --sp-tone-tint-b: color-mix(in srgb, var(--sp-tone-glow) 18%, var(--sp-surface));
+  --sp-tone-line: color-mix(in srgb, var(--sp-tone-glow) 26%, transparent);
+  --sp-tone-line-hover: color-mix(in srgb, var(--sp-tone-glow) 42%, transparent);
   box-shadow: inset 0 1px 0 #ffffff14;
 }
 
-html.dark .home-feature[data-tone='violet'] {
-  --sp-feature-ink: #cbbcff;
-  --sp-feature-sub: #b6abd6;
+html.dark .home-shortcut[data-tone='violet'] {
+  --sp-tone-ink: #cbbcff;
+  --sp-tone-sub: #b6abd6;
 }
 
-html.dark .home-feature[data-tone='amber'] {
-  --sp-feature-ink: #f2cd8f;
-  --sp-feature-sub: #c9b18a;
+html.dark .home-shortcut[data-tone='amber'] {
+  --sp-tone-ink: #f2cd8f;
+  --sp-tone-sub: #c9b18a;
 }
 
-html.dark .home-feature[data-tone='teal'] {
-  --sp-feature-ink: #93e0ca;
-  --sp-feature-sub: #a6c8bd;
+html.dark .home-shortcut[data-tone='teal'] {
+  --sp-tone-ink: #93e0ca;
+  --sp-tone-sub: #a6c8bd;
 }
 
-.home-feature-title {
-  color: var(--sp-feature-ink);
+html.dark .home-shortcut[data-tone='rose'] {
+  --sp-tone-ink: #f7adc4;
+  --sp-tone-sub: #d0a3b0;
 }
 
-.home-feature-subtitle {
-  color: var(--sp-feature-sub);
+html.dark .home-shortcut[data-tone='sky'] {
+  --sp-tone-ink: #a5cbf0;
+  --sp-tone-sub: #a8bdd2;
+}
+
+html.dark .home-shortcut[data-tone='slate'] {
+  --sp-tone-glow: #8593a8;
+  --sp-tone-ink: #c2cedb;
+  --sp-tone-sub: #a9b6c4;
+}
+
+.home-shortcut-title {
+  color: var(--sp-tone-ink);
+}
+
+.home-shortcut-sub {
+  color: var(--sp-tone-sub);
 }
 
 /* The artwork is a cut-out, so the shadow follows the object rather than its
-   box — which is what stops the cream printer from dissolving into the cream
-   card behind it. */
-.home-feature-art {
-  filter: drop-shadow(0 6px 8px #161a221a);
-  transition: transform 220ms cubic-bezier(0.2, 0.8, 0.3, 1);
+   box — which is what stops the cream printer from dissolving into a cream card
+   behind it. */
+.home-shortcut-art {
+  filter: drop-shadow(0 4px 6px #161a221a);
+  transition: transform 200ms cubic-bezier(0.2, 0.8, 0.3, 1);
 }
 
-.home-feature:hover {
+.home-shortcut:hover {
   transform: translateY(-1px);
-  border-color: var(--sp-feature-line-hover);
+  border-color: var(--sp-tone-line-hover);
   box-shadow:
-    0 10px 24px color-mix(in srgb, var(--sp-feature-glow) 20%, transparent),
+    0 8px 18px color-mix(in srgb, var(--sp-tone-glow) 20%, transparent),
     inset 0 1px 0 #ffffffb3;
 }
 
-.home-feature:hover .home-feature-art {
+.home-shortcut:hover .home-shortcut-art {
   transform: translateY(-2px) rotate(-1.5deg);
 }
 
-html.dark .home-feature:hover {
+html.dark .home-shortcut:hover {
   box-shadow:
-    0 10px 26px #00000059,
+    0 8px 20px #00000059,
     inset 0 1px 0 #ffffff14;
 }
 
-html.dark .home-feature-art {
-  filter: drop-shadow(0 8px 12px #00000066);
+html.dark .home-shortcut-art {
+  filter: drop-shadow(0 6px 10px #00000066);
 }
 
 /* A lift is motion. People who asked for less of it still get the border and
    the shadow, which is the part that says "this is a button". */
 @media (prefers-reduced-motion: reduce) {
-  .home-feature,
-  .home-feature-art {
+  .home-shortcut,
+  .home-shortcut-art {
     transition: none;
   }
-  .home-feature:hover,
-  .home-feature:hover .home-feature-art {
+  .home-shortcut:hover,
+  .home-shortcut:hover .home-shortcut-art {
     transform: none;
   }
 }
@@ -1997,9 +2044,9 @@ html.dark .home-feature-art {
 
    `bg-canvas` is a cool grey, which is right for the pasteboard around a
    document and slightly clinical for a landing screen. Two very low-alpha
-   washes (the hero's violet and the amber of the printer card) warm the top of
-   the page without tinting anything you have to read; the gradient resolves to
-   the canvas token by the first gallery row. */
+   washes (violet from the left, apricot from the right) warm the top of the
+   page without tinting anything you have to read; the gradient resolves to the
+   canvas token by the first gallery row. */
 .home-ground {
   background:
     radial-gradient(
