@@ -9,6 +9,14 @@ import { DesignerBrandPanel } from './DesignerBrandPanel';
 import { DesignerViewPanel } from './DesignerViewPanel';
 import { DesignerSettingsPanel } from './DesignerSettingsPanel';
 import { DesignerVisualsPanel } from './DesignerVisualsPanel';
+import { DesignerMediaPanel } from './DesignerMediaPanel';
+import {
+  clearUploads,
+  deleteUpload,
+  listUploads,
+  saveUpload,
+  type MediaUpload,
+} from '../../utils/mediaLibrary';
 // The collage drawer carries the layout catalogue (~20 kB); load it on first open
 // rather than in the editor shell.
 const DesignerCollagePanel = React.lazy(() =>
@@ -25,7 +33,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Image as ImageIcon,
+  Images,
   Sparkles,
   LayoutGrid,
   RotateCw,
@@ -42,6 +50,7 @@ type DesignerDrawerTab =
   | 'edit'
   | 'text'
   | 'media'
+  | 'stock'
   | 'visuals'
   | 'collage'
   | 'brand'
@@ -80,6 +89,10 @@ export const DesignerToolRail: React.FC = () => {
   } = usePublisher();
 
   const [activeDrawer, setActiveDrawer] = useState<DesignerDrawerTab>('text');
+  // Uploads live on the rail, which stays mounted, so switching drawers no longer throws
+  // the library away — and they are stored on the device, so a reload does not either.
+  const [uploads, setUploads] = useState<MediaUpload[]>([]);
+  const [uploadNotice, setUploadNotice] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState<boolean>(() =>
     typeof window !== 'undefined' ? window.innerWidth >= 1024 : true
   );
@@ -98,18 +111,55 @@ export const DesignerToolRail: React.FC = () => {
     setDrawerOpen(true);
   };
 
-  const handleUploadImage = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        addImage(reader.result);
-        setToolMode('select');
-      }
+  // Load the saved library once. Async, so nothing is set synchronously inside the effect.
+  useEffect(() => {
+    let alive = true;
+    listUploads()
+      .then((rows) => {
+        if (alive) setUploads(rows);
+      })
+      .catch(() => {
+        if (alive) setUploads([]);
+      });
+    return () => {
+      alive = false;
     };
-    reader.readAsDataURL(file);
-    e.target.value = '';
+  }, []);
+
+  const handlePlaceUpload = (src: string) => {
+    addImage(src);
+    setToolMode('select');
+  };
+
+  /** Saves every file to the device library and places the first one, so an upload still
+   *  lands on the page immediately — the rest wait as thumbnails. */
+  const handleUploadFiles = (files: FileList | null) => {
+    const list = Array.from(files ?? []);
+    if (list.length === 0) return;
+    setUploadNotice(null);
+
+    list.forEach((file, index) => {
+      saveUpload(file)
+        .then((upload) => {
+          setUploads((current) => [upload, ...current.filter((item) => item.id !== upload.id)]);
+          if (index === 0) handlePlaceUpload(upload.dataUrl);
+        })
+        .catch((error: unknown) => {
+          setUploadNotice(
+            error instanceof Error ? error.message : 'That file could not be saved.'
+          );
+        });
+    });
+  };
+
+  const handleDeleteUpload = (id: string) => {
+    setUploads((current) => current.filter((item) => item.id !== id));
+    void deleteUpload(id);
+  };
+
+  const handleClearUploads = () => {
+    setUploads([]);
+    void clearUploads();
   };
 
   const selectedTextElement =
@@ -127,6 +177,7 @@ export const DesignerToolRail: React.FC = () => {
     { id: 'edit', label: 'Edit', icon: <Wand2 size={18} /> },
     { id: 'text', label: 'Text', icon: <Type size={18} /> },
     { id: 'media', label: 'My media', icon: <Upload size={18} /> },
+    { id: 'stock', label: 'Stock', icon: <Images size={18} /> },
     { id: 'visuals', label: 'Visuals', icon: <Shapes size={18} /> },
     { id: 'collage', label: 'Collage', icon: <LayoutGrid size={18} /> },
     { id: 'brand', label: 'Brand', icon: <Palette size={18} /> },
@@ -145,7 +196,8 @@ export const DesignerToolRail: React.FC = () => {
     activeDrawer === 'media' ||
     activeDrawer === 'brand' ||
     activeDrawer === 'visuals' ||
-    activeDrawer === 'collage'
+    activeDrawer === 'collage' ||
+    activeDrawer === 'stock'
       ? 'w-[296px]'
       : 'w-[268px]';
 
@@ -160,6 +212,8 @@ export const DesignerToolRail: React.FC = () => {
       ? 'Add visuals'
       : activeDrawer === 'collage'
       ? 'Collage'
+      : activeDrawer === 'stock'
+      ? 'Stock art'
       : activeDrawer === 'brand'
       ? 'Brand Studio'
       : activeDrawer === 'view'
@@ -173,7 +227,7 @@ export const DesignerToolRail: React.FC = () => {
         className="w-[70px] h-full bg-white border-r border-[#e5e9ee] flex flex-col items-center justify-between py-2.5 flex-shrink-0"
         aria-label="Designer Studio Rail"
       >
-        <div className="flex flex-col items-center gap-1.5">
+        <div className="flex w-full min-h-0 flex-1 flex-col items-center gap-1.5 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {mainRailItems.map((item) => {
             const isActive = drawerOpen && activeDrawer === item.id;
             return (
@@ -196,7 +250,7 @@ export const DesignerToolRail: React.FC = () => {
         </div>
 
         {/* Bottom-pinned Settings */}
-        <div className="pt-2 border-t border-[#e5e9ee] flex flex-col items-center">
+        <div className="pt-2 border-t border-[#e5e9ee] flex flex-col items-center flex-shrink-0">
           <button
             type="button"
             onClick={() => handleSelectRailTab('settings')}
@@ -224,9 +278,11 @@ export const DesignerToolRail: React.FC = () => {
             <div
               className={`${drawerWidthClass} h-full bg-white border-r border-[#e5e9ee] flex flex-col overflow-hidden`}
             >
-              <div className="px-3.5 py-3 border-b border-[#e5e9ee] flex items-center justify-between flex-shrink-0">
-                <h2 className="text-xs font-semibold text-[#161a22]">{drawerTitle}</h2>
-              </div>
+              {activeDrawer !== 'stock' && (
+                <div className="px-3.5 py-3 border-b border-[#e5e9ee] flex items-center justify-between flex-shrink-0">
+                  <h2 className="text-xs font-semibold text-[#161a22]">{drawerTitle}</h2>
+                </div>
+              )}
 
               {activeDrawer === 'brand' ? (
                 <DesignerBrandPanel />
@@ -242,44 +298,23 @@ export const DesignerToolRail: React.FC = () => {
                 >
                   <DesignerCollagePanel />
                 </React.Suspense>
+              ) : activeDrawer === 'stock' ? (
+                /* All sources, filters, key bar, paging and credits, untouched. The rail
+                   hides its own drawer header here: the panel brings an inspector-style
+                   one, and two stacked titles is noise. */
+                <StockArtPanel embedded />
               ) : activeDrawer === 'media' ? (
-                <div className="flex flex-col flex-1 min-h-0">
-                  {/* Compact Upload / AI / Collage Actions at Top of My Media */}
-                  <div className="p-2.5 border-b border-[#e5e9ee] space-y-1.5 flex-shrink-0">
-                    <label className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-[9px] bg-[#6e56cf] hover:bg-[#5c4bb8] text-white text-xs font-semibold transition cursor-pointer">
-                      <Upload size={14} />
-                      <span>Upload from device</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleUploadImage}
-                        className="hidden"
-                      />
-                    </label>
-                    <div className="grid grid-cols-2 gap-1">
-                      <button
-                        type="button"
-                        onClick={() => addPicturePlaceholder()}
-                        className="flex flex-col items-center gap-0.5 py-1.5 px-1 rounded-[8px] border border-[#e5e9ee] bg-[#f8fafb] hover:bg-[#f4f2ff] text-[10px] font-medium text-[#4a5661] hover:text-[#5c4bb8] transition cursor-pointer"
-                        title="Add Picture Frame"
-                      >
-                        <ImageIcon size={13} className="text-[#6e56cf]" />
-                        <span>Frame</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setIsAIImageModalOpen(true)}
-                        className="flex flex-col items-center gap-0.5 py-1.5 px-1 rounded-[8px] border border-[#e5e9ee] bg-[#f8fafb] hover:bg-[#f4f2ff] text-[10px] font-medium text-[#4a5661] hover:text-[#5c4bb8] transition cursor-pointer"
-                        title="Generate AI Image"
-                      >
-                        <Wand2 size={13} className="text-[#6e56cf]" />
-                        <span>AI Image</span>
-                      </button>
-                    </div>
-                  </div>
-                  {/* Embedded Stock Photos, Clipart & Icons */}
-                  <StockArtPanel embedded />
-                </div>
+                <DesignerMediaPanel
+                  uploads={uploads}
+                  onFiles={handleUploadFiles}
+                  onPlace={handlePlaceUpload}
+                  onDelete={handleDeleteUpload}
+                  onClear={handleClearUploads}
+                  onAddPlaceholder={() => addPicturePlaceholder()}
+                  onOpenAI={() => setIsAIImageModalOpen(true)}
+                  onOpenStock={() => setActiveDrawer('stock')}
+                  notice={uploadNotice}
+                />
               ) : (
                 <div className="flex-1 overflow-y-auto p-3 space-y-4">
                   {activeDrawer === 'edit' && (
