@@ -456,6 +456,11 @@ export function wordArtBackdropLayers(
 }
 
 /** Whether a style paints a highlight at all — used by the composition pass and the DOM. */
+/** The colour a style paints behind its letters, if it paints one at all. */
+export function wordArtBackdropColor(style?: WordArtStyle): string | undefined {
+  return wordArtPaint(style)?.backdrop?.color;
+}
+
 export function wordArtHasBackdrop(style?: WordArtStyle): boolean {
   return Boolean(wordArtPaint(style)?.backdrop);
 }

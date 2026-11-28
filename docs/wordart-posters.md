@@ -141,6 +141,41 @@ loaded. The rule now also accepts a declared `heavyStroke` of 5px or more. The f
 are white, so nothing that already existed changes behaviour; the library score is identical
 (89.0 avg / 90 median / A 58 / B 15 / no C or D).
 
+## The reading corner poster
+
+`poster-reading-corner` (816×1056, **96 / A**, zero warnings) is the page those six styles were
+drawn for: the nook photograph full bleed under a light 26% veil, **Reading Corner** arched in sage
+with its cream die-cut rim, *Storytime at 4:00* on the terracotta ribbon, and one tall cream card
+holding this week's shelf, the schedule and the footer.
+
+Three things the drafts taught, again:
+
+- **An arched headline needs a smaller size than a flat one.** At 92px with `arc: 0.12` the arc ran
+  past both margins and the R and r were clipped. 76px in a 168px box fits inside the margin with
+  room for the smile.
+- **Body copy does not go on a photograph.** Cream on the bright rug washed out; deep green on the
+  dark rug was worse. Both are guesses about a picture. Moving the schedule and footer onto the card
+  made the ground a fact instead of a hope — and it read better.
+- **A 34px line wrapped inside a 600px box in the export** (`The Nook` fell to a second line and was
+  clipped by the box). 28px, and the line is one line in both renderers.
+
+### Two contrast-model fixes this poster forced
+
+The scorer called *Storytime at 4:00* illegible at 1.0:1 — it was comparing cream type against the
+photograph behind the ribbon, not against the ribbon the style paints. Two corrections, both in
+`layoutScore`:
+
+1. **A backdrop style is judged against its own ground.** `wordArtBackdropColor` supplies the
+   ribbon/plank/swipe colour, so a cream ribbon with cream type is scored against the terracotta,
+   which is what a reader's eye does.
+2. **A style that carries its own contrast is not judged against the page.** The arched sage header
+   has a 6px cream rim; scoring `#059669` against the wood behind it ignores the border that makes
+   it legible — and the design pass already knows that, via `wordArtCarriesContrast`. The two now
+   agree, so a style cannot be "safe to keep" and "illegible" at the same time.
+
+Library-wide: 76 pages, 89.2 avg / 90 median / A 61 / B 15, no C or D — every page that moved,
+moved up, because the change only stops the model from mis-judging painted grounds.
+
 ## Children's books, reading corners and portfolios
 
 Six themed styles, three moods, one spec.
