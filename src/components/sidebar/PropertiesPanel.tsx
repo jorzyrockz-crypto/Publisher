@@ -51,6 +51,7 @@ import { getBackdropColorUnder } from '../../utils/brandRebrand';
 import { countWords, layoutText } from '../../utils/textLayout';
 import { TEXT_CURVE_PRESETS, TEXT_EFFECTS, buildTextEffectPainter } from '../../utils/textEffects';
 import { DesignIdeasPanel } from './DesignIdeasPanel';
+import { CollageControlsPanel } from '../canvas/CollageControlsPanel';
 import { InspectorCard } from './InspectorCard';
 import { useResizablePanel, useWindowWidth } from '../../hooks/useResizablePanel';
 import {
@@ -369,6 +370,8 @@ export const PropertiesPanel: React.FC = () => {
         <DesignIdeasPanel />
       ) : (
       <div className="p-3.5 space-y-4">
+        {/* Nested collage controls from the canvas bar (vibe packs today). */}
+        <CollageControlsPanel />
         {/* Multi-Selection: Group, Align, Merge Shapes & Diagram Auto-Connect */}
         {selectedElementIds.length >= 2 && (
           <div className="space-y-4">

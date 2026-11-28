@@ -72,7 +72,10 @@ export const DesignerCollagePanel: React.FC = () => {
           (el): el is ImageElement =>
             el.type === 'image' &&
             Boolean(el.src) &&
-            !el.groupId?.startsWith('grp-collage-')
+            // Anything carrying collageMeta already belongs to a collage, whether or not it
+            // is still grouped — a released collage would otherwise offer its own photos
+            // back as loose material.
+            !el.collageMeta
         )
         .map((el) => el.src),
     [activePage.elements]

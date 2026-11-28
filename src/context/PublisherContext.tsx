@@ -20,6 +20,9 @@ import {
   ShapeType,
   BackstageSection,
 } from '../types/publisher';
+import { buildCollageElements } from '../utils/collageBuild';
+import { adoptCollageIds, freshCollageIds } from '../utils/collageIdentity';
+import type { CollageControlSection } from '../constants/collageControls';
 import { buildMergedPartFromShape } from '../utils/shapePaths';
 import { mergeShapeGeometry } from '../utils/shapeBoolean';
 import { pageRingsToLocal, ringsToPath, shapeOutlineRings } from '../utils/shapeClip';
@@ -139,6 +142,25 @@ interface PublisherContextType {
     groupId?: string,
     elementId?: string
   ) => void;
+  /**
+   * Applies a changed `CollageMeta` to a collage already on the page, leaving its position
+   * alone. This is what lets the canvas toolbar change a collage without opening the
+   * builder — the modal and the toolbar write elements through the same builder.
+   */
+  patchCollageMeta: (
+    groupId: string,
+    nextMeta: import('../utils/borderArtStyles').CollageMeta,
+    /** The collage's elements. Passed explicitly so an ungrouped collage still patches. */
+    memberIds?: string[]
+  ) => void;
+
+  /**
+   * Nested collage controls (experimental). The canvas bar has direct buttons for one-click
+   * changes; anything that needs a value picked sends the user here instead.
+   */
+  collageControlSection: CollageControlSection | null;
+  openCollageControl: (section: CollageControlSection) => void;
+  closeCollageControl: () => void;
   setIsBrandBoardModalOpen: (open: boolean) => void;
   setIsBrandKitModalOpen: (open: boolean) => void;
   saveBrandKit: (kit: BrandKit) => void;
@@ -281,6 +303,21 @@ interface BootWorkspace {
   savedAt: number;
 }
 
+/**
+ * Collages saved before they were stamped with an id adopt one here, so a document that
+ * predates the change behaves exactly like one inserted today.
+ */
+function withAdoptedCollages(tabs: WorkspaceTab[]): WorkspaceTab[] {
+  let changed = false;
+  const next = tabs.map((tab) => {
+    const pages = adoptCollageIds(tab.project.pages);
+    if (pages === tab.project.pages) return tab;
+    changed = true;
+    return { ...tab, project: { ...tab.project, pages } };
+  });
+  return changed ? next : tabs;
+}
+
 function defaultWorkspace(): WorkspaceTab[] {
   return [
     {
@@ -313,8 +350,10 @@ function loadInitialWorkspace(): BootWorkspace {
     }
     const cached = readBootCache();
     if (cached.workspace && cached.workspace.tabs.length > 0) {
-      const tabs = cached.workspace.tabs.filter(
-        (tab) => tab?.id && tab?.project && Array.isArray(tab.project.pages) && tab.project.pages.length > 0
+      const tabs = withAdoptedCollages(
+        cached.workspace.tabs.filter(
+          (tab) => tab?.id && tab?.project && Array.isArray(tab.project.pages) && tab.project.pages.length > 0
+        )
       );
       if (tabs.length > 0) {
         const activeExists = tabs.some((tab) => tab.id === cached.workspace!.activeTabId);
@@ -490,8 +529,10 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       .then((stored: StoredWorkspace | null) => {
         if (cancelled || restoreAbandonedRef.current) return;
         if (!stored || stored.savedAt <= bootSavedAt) return;
-        const validTabs = stored.tabs.filter(
-          (tab) => tab?.id && tab?.project && Array.isArray(tab.project.pages) && tab.project.pages.length > 0
+        const validTabs = withAdoptedCollages(
+          stored.tabs.filter(
+            (tab) => tab?.id && tab?.project && Array.isArray(tab.project.pages) && tab.project.pages.length > 0
+          )
         );
         if (validTabs.length === 0) return;
         const activeExists = validTabs.some((tab) => tab.id === stored.activeTabId);
@@ -600,6 +641,9 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [isAIImageModalOpen, setIsAIImageModalOpen] = useState(false);
   const [isStockArtPanelOpen, setIsStockArtPanelOpen] = useState(false);
   const [isCollageModalOpen, setIsCollageModalOpenState] = useState(false);
+  const [collageControlSection, setCollageControlSection] = useState<CollageControlSection | null>(
+    null
+  );
   const [editingCollageState, setEditingCollageState] = useState<{
     meta: import('../utils/borderArtStyles').CollageMeta;
     groupId?: string;
@@ -624,6 +668,14 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     },
     []
   );
+  const openCollageControl = useCallback((section: CollageControlSection) => {
+    setCollageControlSection(section);
+    // One destination in both modes: the inspector renders for Publisher and Designer.
+    setIsRightPanelOpen(true);
+    setRightPanelTab('inspector');
+  }, []);
+  const closeCollageControl = useCallback(() => setCollageControlSection(null), []);
+
   const [isBrandBoardModalOpen, setIsBrandBoardModalOpen] = useState(false);
   const [isBrandKitModalOpen, setIsBrandKitModalOpen] = useState(false);
 
@@ -1690,6 +1742,64 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     [currentElements, commitCurrentElements]
   );
 
+  const patchCollageMeta = useCallback(
+    (
+      groupId: string,
+      nextMeta: import('../utils/borderArtStyles').CollageMeta,
+      memberIds?: string[]
+    ) => {
+      const memberIdSet = memberIds?.length ? new Set(memberIds) : null;
+      const members = memberIdSet
+        ? currentElements.filter((el) => memberIdSet.has(el.id))
+        : currentElements.filter((el) => el.groupId === groupId);
+      if (members.length === 0) return;
+
+      // The collage's own top-left, never the page centre: a restyle must not move it.
+      const originX = Math.min(...members.map((el) => el.x));
+      const originY = Math.min(...members.map((el) => el.y));
+      const baseZ = Math.min(...members.map((el) => el.zIndex));
+
+      const { elements, pageBackdrop } = buildCollageElements({
+        meta: nextMeta,
+        originX,
+        originY,
+        pageWidth: activePage.width,
+        pageHeight: activePage.height,
+        margins: activePage.margins,
+        groupId: groupId || undefined,
+        groupSlots: true,
+      });
+
+      // Reuse the ids and z-order of the elements being replaced. The builder mints new
+      // ids, and a new id is a broken reference: undo restores the previous elements, the
+      // selection still points at the new ones, and the toolbar silently empties. Keeping
+      // the z values also stops the collage creeping up the stack one patch at a time.
+      const pool = new Map<string, PublisherElement[]>();
+      members.forEach((member) => {
+        const key = member.name ?? '';
+        const list = pool.get(key) ?? [];
+        list.push(member);
+        pool.set(key, list);
+      });
+      const rebuilt = elements.map((el) => {
+        const previous = pool.get(el.name ?? '')?.shift();
+        return {
+          ...el,
+          id: previous?.id ?? el.id,
+          zIndex: previous?.zIndex ?? baseZ + el.zIndex,
+        };
+      });
+      const replaced = new Set(members.map((el) => el.id));
+      const remaining = currentElements.filter((el) => !replaced.has(el.id));
+
+      if (pageBackdrop) applyPageBackdrop(pageBackdrop);
+      commitCurrentElements([...remaining, ...rebuilt]);
+      // Reselect the rebuilt group, so the toolbar survives its own click.
+      setSelectedElementIds(rebuilt.map((el) => el.id));
+    },
+    [currentElements, activePage, commitCurrentElements, applyPageBackdrop]
+  );
+
   const updateElement = useCallback(
     (id: string, updates: Partial<PublisherElement>, options?: { transient?: boolean }) => {
       if (isEditingMaster) {
@@ -1870,7 +1980,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
     });
 
-    commitCurrentElements([...currentElements, ...duplicated]);
+    commitCurrentElements([...currentElements, ...freshCollageIds(duplicated)]);
     setSelectedElementIds(newIds);
   }, [currentElements, selectedElementIds, commitCurrentElements]);
 
@@ -1898,7 +2008,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       });
     });
 
-    commitCurrentElements([...currentElements, ...pasted]);
+    commitCurrentElements([...currentElements, ...freshCollageIds(pasted)]);
     setSelectedElementIds(newIds);
   }, [copiedElements, currentElements, commitCurrentElements]);
 
@@ -2895,6 +3005,10 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setIsCollageModalOpen,
         openCollageEditor,
         replaceCollageGroup,
+        patchCollageMeta,
+        collageControlSection,
+        openCollageControl,
+        closeCollageControl,
         setIsBrandBoardModalOpen,
         setIsBrandKitModalOpen,
         saveBrandKit,

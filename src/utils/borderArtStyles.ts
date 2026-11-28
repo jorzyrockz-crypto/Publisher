@@ -143,6 +143,12 @@ export interface CustomCollageLayoutConfig {
 }
 
 export interface CollageMeta {
+  /**
+   * Stable identity, minted when the collage is inserted. Group ids are rewritten by
+   * Group/Ungroup and can be cleared entirely, so they cannot identify a collage; this can.
+   * Optional because collages made before this existed adopt one on their first edit.
+   */
+  collageId?: string;
   layoutId: string;
   customLayout?: CustomCollageLayoutConfig;
   aspectRatio: '1:1' | '4:3' | '3:4' | '16:9' | '9:16' | 'page-margin' | 'full-paper';

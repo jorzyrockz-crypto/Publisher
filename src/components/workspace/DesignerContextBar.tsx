@@ -1,5 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { usePublisher } from '../../context/PublisherContext';
+import { CollageActionBar } from '../canvas/CollageActionBar';
+import { useCollageSelection } from '../../hooks/useCollageSelection';
 import { ColorInput } from '../common/ColorInput';
 import { removeImageBackground } from '../../utils/bgRemoval';
 import type { ImageElement, ShapeElement, TextElement } from '../../types/publisher';
@@ -68,7 +70,12 @@ export const DesignerContextBar: React.FC = () => {
   const selectedElements = activePage.elements.filter((el) =>
     selectedElementIds.includes(el.id)
   );
+  const collageSelection = useCollageSelection();
+
   if (selectedElements.length === 0) return null;
+
+  // One collage, one bar — the same component Publisher mode uses.
+  if (collageSelection) return <CollageActionBar />;
 
   const primary = selectedElements[0];
   const isSingleText = selectedElements.length === 1 && primary?.type === 'text';

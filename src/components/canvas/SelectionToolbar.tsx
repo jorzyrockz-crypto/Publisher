@@ -1,5 +1,7 @@
 import React from 'react';
 import { usePublisher } from '../../context/PublisherContext';
+import { CollageActionBar } from './CollageActionBar';
+import { useCollageSelection } from '../../hooks/useCollageSelection';
 import {
   AlignHorizontalJustifyStart,
   AlignHorizontalJustifyCenter,
@@ -70,8 +72,13 @@ export const SelectionToolbar: React.FC = () => {
     setElementsLocked,
   } = usePublisher();
 
+  const collageSelection = useCollageSelection();
   const count = selectedElementIds.length;
   if (count === 0) return null;
+
+  // A selected collage gets its own bar: its controls are about the collage, and align /
+  // group on something you framed as one object is noise.
+  if (collageSelection) return <CollageActionBar />;
 
   const selected = activePage.elements.filter((el) => selectedElementIds.includes(el.id));
   const allLocked = selected.length > 0 && selected.every((el) => el.locked);
