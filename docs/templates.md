@@ -145,11 +145,11 @@ both halves of that gap:
 - **`tarpapelToProject`**, which turns that into the document the app already knows how to print:
   **one page per sheet**, each A4, each showing its own window of the canvas.
 
-Two templates ship from it:
+Three templates ship from it:
 
 | template | tiling | assembled | what it is |
 |---|---|---|---|
-| `champs-tarpapel-3x2` — Champs Reading Corner Banner | 3 × 2 A4 landscape | 871 × 410 mm | DepEd header strip, three lapped garlands, THE CHAMPS / READING CORNER word art, gold Basa Kasadya ribbon, both side badges in their own column |
+| `champs-tarpapel-3x2` — Champs Reading Corner Banner | 3 × 2 A4 landscape | one 871 × 410 mm page | a wooden signboard hung in a bright sky: a fan of sun beams behind it, chunky `READING` / `CORNER` lettering on the board — one line above the middle seam, one below — a cartoon boy and girl reading on the ends of the board, the DepEd line on a cream plaque, a Grade & Section hem |
 | `champs-tarpapel-tree` — Tree of Knowledge Tarpapel | 2 × 2 A4 portrait | one 410 × 584 mm page | one big cut-out tree with nine blank fruit to write words or names on; the headline is split `TREE OF` / `KNOWLEDGE` so the seam falls in the gap between the words; four editable subject tags, instruction strips and footer also split two-and-two. Hung alone |
 | `champs-wordwall-2x2` — Word Wall | 2 × 2 A4 portrait | one 410 × 584 mm page | twenty-four blank cards, 83 × 53 mm on paper, in four 2 × 3 blocks with both glue seams landing in the wide central gutters. `WORD` / `WALL` headline, subject line and instruction footer split at the seam |
 
@@ -165,12 +165,16 @@ tree get the whole canvas.
 
 Four things the code knows that a hand-typed page would get wrong:
 
-- **A seam is not a cut.** Neighbouring sheets print identical pixels along their overlap, because
-  both show the same window of the same canvas. That is why a letter may cross a seam: sheet 2 covers
-  x ≤ 1123 mm-px and sheet 3 covers 1085–2208, and the 38 px they share is duplicated artwork.
-- **A4 art cannot hold 871 mm.** A 1024 px backdrop stretched across 3293 px prints at ~30 dpi, so the
-  banner's background is a **vector wash** (a two-stop gradient shape) and its weight is carried by
-  pieces at native size: the garland is repeated three times at ~1100 px, not stretched to 3293.
+- **A seam is not a cut, but it is a strip.** Neighbouring sheets print identical pixels along their
+  overlap — sheet 2 covers x ≤ 1123 and sheet 3 covers 1085–2208, and the 38 px they share is
+  duplicated artwork — so a *picture* may cross a seam and join cleanly. Type may not: a ±2 mm shift
+  shows as a doubled letter. Every template, the banner included, keeps its text inside a column
+  and off the horizontal strip, and `npm run check:tarpapel` fails if one does not.
+- **A4 art cannot hold 871 mm.** A 1024 px backdrop stretched across 3293 px prints at ~30 dpi, so
+  the banner's sky is a **vector wash**, its beams and clouds are vector shapes, and its board is
+  vector joinery — gradient, keyline, grain. The only bitmaps on it are the two readers, cut-outs
+  set at 150 mm tall, which is ~130 dpi: the honest limit of a 450 px drawing, and a size you can
+  reach without turning a cartoon into a smudge.
 - **White type needs a bar.** The footer line is white, so it gets a teal bar; the navy header gets a
   cream pill so it can sit over leaves.
 - **The glue strip is the margin.** Seam hairlines and the `SHEET n OF 6 · GLUE 10 MM OVERLAP` label

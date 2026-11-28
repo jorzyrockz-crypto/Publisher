@@ -72,6 +72,10 @@ crashes, and the copying buys nothing.
 
 ### 6. Nothing in the layout knows where the seams are
 
+> *Since fixed:* `npm run check:tarpapel` walks every text box against every glue band and fails the
+> build if one touches; the banner was redesigned around it (title stacked inside the centre column),
+> and all three templates now report **0 text hits**. The audit below is kept as the reason.
+
 `READING CORNER` at 108 pt spans x 0.10–0.90 and crosses both vertical seams. That is *fine* —
 neighbouring sheets print identical pixels, so it joins — but a ±2 mm glue shift shows on the `E`
 and the `N`, and no tool says so. The word wall's 16 mm gap between the card strips is safe by

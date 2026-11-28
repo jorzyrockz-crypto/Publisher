@@ -138,6 +138,21 @@ const STORYBOOK_ASSETS = [
     cutout: true,
   },
   {
+    // Flat-cartoon mascots, drawn in the vivid sticker style the banner redesign asked for.
+    id: 'sticker-cartoon-boy-reading',
+    label: 'Boy Reading on a Book Stack',
+    layer: 'sticker',
+    tags: ['kids', 'reading', 'books', 'cartoon', 'mascot'],
+    cutout: true,
+  },
+  {
+    id: 'sticker-cartoon-girl-reading',
+    label: 'Girl Reading on a Book Stack',
+    layer: 'sticker',
+    tags: ['kids', 'reading', 'books', 'cartoon', 'mascot'],
+    cutout: true,
+  },
+  {
     id: 'sticker-reading-owl',
     label: 'Reading Owl on Books',
     layer: 'sticker',

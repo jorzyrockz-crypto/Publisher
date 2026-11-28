@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
+    "check:tarpapel": "node --experimental-strip-types --no-warnings scripts/check-tarpapel.mjs",
     "wordart:css": "node --experimental-strip-types --no-warnings scripts/wordart-css.ts",
     "preview": "vite preview",
     "pack:storybook": "node scripts/build-asset-pack.mjs storybook-reading-v1",

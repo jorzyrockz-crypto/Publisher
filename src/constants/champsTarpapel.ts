@@ -70,6 +70,9 @@ const ASSET_ALIASES: Record<string, { pack: keyof typeof PACK_BASES; id: string 
   'frame-corner-vines': { pack: 'storybook', id: 'frame-corner-vines' },
   'sticker-champs-trophy': { pack: 'storybook', id: 'badge-star-medal' },
   'sticker-inclusive-readers': { pack: 'storybook', id: 'sticker-reading-kids' },
+  // Flat-cartoon readers drawn for the banner: bright sticker art, unlike the painted kit.
+  'sticker-cartoon-boy': { pack: 'storybook', id: 'sticker-cartoon-boy-reading' },
+  'sticker-cartoon-girl': { pack: 'storybook', id: 'sticker-cartoon-girl-reading' },
   'sticker-reading-kids': { pack: 'storybook', id: 'sticker-reading-kids' },
   'sticker-reading-passport': { pack: 'storybook', id: 'sticker-reading-passport' },
   'sticker-gold-laurel': { pack: 'storybook', id: 'sticker-gold-laurel' },
@@ -144,6 +147,15 @@ export interface TarpapelShapeLayer extends LayerBase {
   fill: string;
   fillColor2?: string;
   gradientAngle?: number;
+  /**
+   * What is drawn in the box. A rectangle with `radius` is the default because it is what a banner is
+   * made of; circles make clouds and a sun, and triangles make the rays of the sunburst behind the
+   * sign. Anything else (stars, ribbons, speech bubbles) would be an asset, not a shape.
+   */
+  shapeType?: 'rectangle' | 'rounded-rect' | 'circle' | 'triangle';
+  /** Degrees clockwise about the shape's centre — how a fan of rays is aimed. */
+  rotation?: number;
+  stroke?: { color: string; width: number };
   radius?: number;
   opacity?: number;
   locked?: boolean;
@@ -196,27 +208,106 @@ export interface TarpapelTemplate {
 /* ------------------------------------------------------------------ *
  * 3 × 2 A4 landscape — the main wall banner (871 × 410 mm)
  * ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------ *
+ * 3 × 2 A4 landscape — the main wall banner (871 × 410 mm)
+ * ------------------------------------------------------------------ */
+
+/**
+ * The banner is drawn the way the poster it replaces was not: as a picture, not a form.
+ *
+ * A wall banner read from a metre away is a sign, so the design is a wooden board hung in a bright
+ * sky — a sunburst behind it, clouds beside it, two of the school's readers perched on the ends of
+ * the board — and the title works as the sign's lettering. Everything that carries the look is
+ * vector: the sky, the fan of rays, the clouds, the board, its grain. Only the two children are
+ * bitmaps, and they are set at ~130 dpi, which is what a 450 px cut-out can honestly hold at
+ * 150 mm tall.
+ *
+ * The seams still rule the type. In a 3 × 2 A4 grid the glue strips fall at x = 0.330–0.341 and
+ * 0.658–0.670, and across the middle at y = 0.488–0.512. So every word lives inside the centre
+ * column — 0.35 to 0.65 of the canvas, 260 mm of paper — and the title stacks on two lines to fit
+ * it: READING above the horizontal strip, CORNER below. The board, the rays and the clouds cross
+ * the seams as freely as they like: they are artwork, and artwork may cross.
+ */
+
+const BANNER_W = mm(871);
+const BANNER_H = mm(410);
+
+/**
+ * One beam of the sunburst: a bar laid along a radius from the middle of the board. A bar, not a
+ * triangle — a triangle tapers to nothing at the centre, which at 3000 px across reads as a
+ * scribble of needles; a bar keeps its weight all the way out, which is what light behind a sign
+ * looks like. The near end is hidden behind the board, so the beam appears to start at the sign.
+ */
+const sunBeam = (
+  id: string,
+  angleDeg: number,
+  length: number,
+  width: number,
+  fill: string,
+  opacity: number
+): TarpapelShapeLayer => {
+  const pivotX = BANNER_W * 0.5;
+  const pivotY = BANNER_H * 0.3;
+  const rad = (angleDeg * Math.PI) / 180;
+  const cx = pivotX + Math.sin(rad) * (length / 2);
+  const cy = pivotY - Math.cos(rad) * (length / 2);
+  return {
+    id,
+    type: 'shape',
+    shapeType: 'rectangle',
+    fill,
+    opacity,
+    rotation: angleDeg,
+    x: (cx - width / 2) / BANNER_W,
+    y: (cy - length / 2) / BANNER_H,
+    w: width / BANNER_W,
+    h: length / BANNER_H,
+  };
+};
+
+/** A cloud is four white circles and a puff — cheaper and crisper than a bitmap of a cloud. */
+const cloud = (id: string, cx: number, cy: number, size: number): TarpapelShapeLayer[] =>
+  [
+    { dx: -0.95, dy: 0.12, r: 0.6 },
+    { dx: -0.1, dy: -0.25, r: 0.85 },
+    { dx: 0.8, dy: 0.06, r: 0.62 },
+    { dx: 0.3, dy: 0.28, r: 0.5 },
+  ].map((puff, i) => {
+    const r = size * puff.r;
+    const x = cx + size * puff.dx - r;
+    const y = cy + size * puff.dy - r;
+    return {
+      id: `${id}-${i + 1}`,
+      type: 'shape' as const,
+      shapeType: 'circle' as const,
+      fill: '#ffffff',
+      opacity: 1,
+      x: x / BANNER_W,
+      y: y / BANNER_H,
+      w: (r * 2) / BANNER_W,
+      h: (r * 2) / BANNER_H,
+    };
+  });
 
 export const CHAMPS_TARPAPEL_BANNER: TarpapelTemplate = {
   id: 'champs-tarpapel-3x2',
   name: 'Champs Reading Corner Banner (3×2 Tarpapel)',
   description:
-    'Six A4 landscape sheets, glued with a 10 mm overlap into an 871 × 410 mm wall banner: DepEd header strip on a cream pill, three garlands of hanging vines at native size, the arched THE CHAMPS / READING CORNER word art, the gold Basa Kasadya ribbon, both side badges kept inside their own column, and the readers group on the centre seam.',
+    'An 871 × 410 mm wall banner on one page, printed as six A4 landscape sheets and glued: a wooden signboard hung in a bright sky with a fan of sun rays behind it, chunky READING / CORNER lettering on the board — one line above the middle seam, one below — a boy and a girl reading on the ends of the board, the DepEd line on a cream plaque and a Grade & Section hem. Every word keeps clear of the glue strips; the artwork runs straight across them.',
   category: 'Champs Reading',
   packId: 'champs-reading-v1',
-  thumbnailColor: '#1e3a8a',
-  thumbnailGradient: 'linear-gradient(135deg, #1e3a8a 0%, #0d9488 50%, #e11d48 100%)',
+  thumbnailColor: '#1d4ed8',
+  thumbnailGradient: 'linear-gradient(135deg, #1d4ed8 0%, #0ea5e9 45%, #f59e0b 100%)',
   tiling: { paper: 'A4', orientation: 'landscape', cols: 3, rows: 2, overlapMm: 10, cropMarks: true },
   canvas: { widthMm: 871, heightMm: 410 },
   background: '#fdfaf2',
   layers: [
-    // A painted wash, not a photograph: cream at the foot, sea-mist at the head. Vector, so it is
-    // sharp at 871 mm where a 1024px backdrop would print at 30 dpi.
+    // The sky: deeper at the head of the banner, almost white where it meets the foot.
     {
       id: 'bg-wash',
       type: 'shape',
-      fill: '#e9f6f0',
-      fillColor2: '#fdfaf2',
+      fill: '#a9d9f7',
+      fillColor2: '#eef9ff',
       gradientAngle: 90,
       x: 0,
       y: 0,
@@ -224,30 +315,60 @@ export const CHAMPS_TARPAPEL_BANNER: TarpapelTemplate = {
       h: 1,
       locked: true,
     },
-    // Three garlands, one per column, each at roughly its own pixel size.
+    // A fan of nine rays, alternating wide and narrow, so the burst reads as light and not a wheel.
+    ...[0, 1, 2, 3, 4, 5, 6, 7].map((i) =>
+      sunBeam(
+        `sun-beam-${i + 1}`,
+        -68 + i * 19.4,
+        BANNER_H * 0.78,
+        i % 2 === 0 ? 165 : 110,
+        i % 2 === 0 ? '#ffd77a' : '#ffe7b4',
+        0.9
+      )
+    ),
+    ...cloud('cloud-left', BANNER_W * 0.1, BANNER_H * 0.16, 116),
+    ...cloud('cloud-right', BANNER_W * 0.9, BANNER_H * 0.21, 92),
+    // The board: a shadow under it, the board, a sheen along its top edge, and grain.
+    { id: 'board-shadow', type: 'shape', fill: '#7c3f10', radius: 34, opacity: 0.45, x: 0.216, y: 0.222, w: 0.568, h: 0.62 },
     {
-      id: 'frame-top',
-      type: 'asset',
-      assetId: 'frame-hanging-vines',
-      layerRole: 'frame',
-      // Trimmed slightly wider than the canvas so each garland laps its neighbour: three copies with
-      // the drawing's own margins left showing would read as three separate posters.
-      x: -0.02,
-      y: 0,
-      w: 1.04,
-      h: 0.24,
-      repeatX: 3,
+      id: 'board',
+      type: 'shape',
+      fill: '#f4a75c',
+      fillColor2: '#d97f2e',
+      gradientAngle: 90,
+      radius: 34,
+      stroke: { color: '#6d3410', width: 14 },
+      x: 0.222,
+      y: 0.202,
+      w: 0.556,
+      h: 0.622,
     },
+    // A keyline inside the edge: the one line that makes a painted rectangle read as carpentry.
+    { id: 'board-keyline', type: 'shape', fill: 'transparent', radius: 24, stroke: { color: '#8a4a15', width: 5 }, x: 0.238, y: 0.218, w: 0.524, h: 0.59 },
+    { id: 'board-sheen', type: 'shape', fill: '#ffd0a0', radius: 28, opacity: 0.3, x: 0.236, y: 0.212, w: 0.528, h: 0.045 },
+    ...[0.3, 0.395, 0.49, 0.585, 0.68, 0.775].map((y, i) => ({
+      id: `board-grain-${i + 1}`,
+      type: 'shape' as const,
+      fill: '#7c3f10',
+      opacity: 0.18,
+      // The lines stop short of the edges by different amounts: a plank, not ruled paper.
+      x: 0.238 + (i % 3) * 0.012,
+      y,
+      w: 0.524 - (i % 2) * 0.03,
+      h: 0.006,
+    })),
+    // Header plaque: the school line, cream on the sky, inside the centre column.
     {
-      id: 'header-pill',
+      id: 'header-plaque',
       type: 'shape',
       fill: '#fdfaf2',
-      radius: 26,
-      opacity: 0.94,
-      x: 0.12,
-      y: 0.035,
-      w: 0.76,
-      h: 0.075,
+      radius: 30,
+      opacity: 0.96,
+      stroke: { color: '#1e3a8a', width: 3 },
+      x: 0.3,
+      y: 0.014,
+      w: 0.4,
+      h: 0.064,
     },
     {
       id: 'header-school',
@@ -255,110 +376,93 @@ export const CHAMPS_TARPAPEL_BANNER: TarpapelTemplate = {
       text: 'DEPED REGION VI • SCHOOLS DIVISION OF AKLAN • [SCHOOL NAME]',
       fontFamily: 'Plus Jakarta Sans',
       fontWeight: '800',
-      fontSizePt: 22,
+      fontSizePt: 15,
       color: '#1e3a8a',
       align: 'center',
-      x: 0.13,
-      y: 0.035,
-      w: 0.74,
-      h: 0.075,
-      letterSpacing: 1.2,
+      x: 0.35,
+      y: 0.014,
+      w: 0.3,
+      h: 0.064,
+      letterSpacing: 1.1,
+      editable: true,
+    },
+    // Three lines of type on the board — kicker, READING, CORNER — all inside the centre column.
+    {
+      id: 'title-kicker',
+      type: 'wordart',
+      text: 'THE CHAMPS',
+      wordArtId: 'champs-gold-ribbon',
+      fontFamily: 'Fredoka',
+      fontSizePt: 42,
+      align: 'center',
+      x: 0.352,
+      y: 0.243,
+      w: 0.296,
+      h: 0.076,
       editable: true,
     },
     {
       id: 'title-champs',
       type: 'wordart',
-      text: 'THE CHAMPS',
+      text: 'READING',
       wordArtId: 'champs-basa-blue',
       fontFamily: 'Fredoka',
-      fontSizePt: 92,
+      fontSizePt: 146,
       align: 'center',
-      x: 0.16,
-      y: 0.14,
-      w: 0.68,
-      h: 0.2,
-      arc: 0.08,
+      x: 0.35,
+      y: 0.335,
+      w: 0.3,
+      h: 0.15,
       editable: true,
     },
     {
       id: 'title-reading-corner',
       type: 'wordart',
-      text: 'READING CORNER',
+      text: 'CORNER',
       wordArtId: 'champs-kasadya-coral',
       fontFamily: 'Fredoka',
-      fontSizePt: 108,
+      fontSizePt: 146,
       align: 'center',
-      x: 0.1,
-      y: 0.33,
-      w: 0.8,
-      h: 0.22,
+      x: 0.352,
+      y: 0.548,
+      w: 0.296,
+      h: 0.15,
       editable: true,
     },
     {
-      id: 'ribbon-tagline',
-      type: 'wordart',
-      text: 'Champs Read, Learn, and Excel • Basa Kasadya Year 5',
-      wordArtId: 'champs-gold-ribbon',
-      fontFamily: 'Nunito',
-      fontSizePt: 34,
+      id: 'tagline',
+      type: 'text',
+      text: 'Basa Kasadya • Champs Read, Learn, and Excel',
+      fontFamily: 'Plus Jakarta Sans',
+      fontWeight: '800',
+      fontSizePt: 19,
+      color: '#6d3410',
       align: 'center',
-      x: 0.235,
-      y: 0.555,
-      w: 0.53,
-      h: 0.115,
+      x: 0.35,
+      y: 0.722,
+      w: 0.3,
+      h: 0.048,
+      letterSpacing: 1.2,
       editable: true,
     },
-    // Left column: badge above its pill, both inside column 1 so no seam crosses them.
-    { id: 'sticker-trophy', type: 'asset', assetId: 'sticker-champs-trophy', layerRole: 'sticker', x: 0.045, y: 0.36, w: 0.075, h: 0.21 },
-    // The level word art is cream — built for a colour band — so each pill gets its band.
-    { id: 'pill-read-learn-bg', type: 'shape', fill: '#16a34a', radius: 78, x: 0.012, y: 0.598, w: 0.136, h: 0.104 },
-    {
-      id: 'pill-read-learn',
-      type: 'wordart',
-      text: 'Read, Learn, Grow',
-      wordArtId: 'champs-level-emergent',
-      fontFamily: 'Fredoka',
-      fontSizePt: 26,
-      align: 'center',
-      x: 0.015,
-      y: 0.6,
-      w: 0.13,
-      h: 0.1,
-      editable: true,
-    },
-    { id: 'sticker-passport', type: 'asset', assetId: 'sticker-reading-passport', layerRole: 'sticker', x: 0.875, y: 0.35, w: 0.1, h: 0.22 },
-    { id: 'pill-every-story-bg', type: 'shape', fill: '#2563eb', radius: 78, x: 0.852, y: 0.598, w: 0.136, h: 0.104 },
-    {
-      id: 'pill-every-story',
-      type: 'wordart',
-      text: 'Every Story Matters',
-      wordArtId: 'champs-level-beginning',
-      fontFamily: 'Fredoka',
-      fontSizePt: 26,
-      align: 'center',
-      x: 0.855,
-      y: 0.6,
-      w: 0.13,
-      h: 0.1,
-      editable: true,
-    },
-    // The readers group is centred on the middle column, so the centre seam runs behind them.
-    { id: 'sticker-readers', type: 'asset', assetId: 'sticker-inclusive-readers', layerRole: 'sticker', x: 0.35, y: 0.67, w: 0.3, h: 0.24 },
-    // White type needs something to sit on: a teal bar, full width, at the foot.
-    { id: 'footer-bar', type: 'shape', fill: '#0f766e', x: 0, y: 0.915, w: 1, h: 0.075 },
+    // The readers, perched on the ends of the board, drawn at their own pixels.
+    { id: 'sticker-boy', type: 'asset', assetId: 'sticker-cartoon-boy', layerRole: 'sticker', x: 0.172, y: 0.53, w: 0.108, h: 0.378 },
+    { id: 'sticker-girl', type: 'asset', assetId: 'sticker-cartoon-girl', layerRole: 'sticker', x: 0.72, y: 0.53, w: 0.108, h: 0.378 },
+    // A hem at the foot of the banner, carrying the two blanks a school actually fills in.
+    { id: 'footer-bar', type: 'shape', fill: '#0f766e', x: 0, y: 0.936, w: 1, h: 0.064 },
     {
       id: 'footer-section',
       type: 'text',
       text: 'Grade & Section: [Grade 1 - Section]  |  Adviser: [Teacher Name]',
       fontFamily: 'Plus Jakarta Sans',
       fontWeight: 'bold',
-      fontSizePt: 18,
+      fontSizePt: 15,
       color: '#ffffff',
       align: 'center',
-      x: 0.22,
-      y: 0.915,
-      w: 0.56,
-      h: 0.075,
+      x: 0.35,
+      y: 0.936,
+      w: 0.3,
+      h: 0.064,
       editable: true,
     },
   ],
@@ -948,19 +1052,19 @@ export function tarpapelCanvasElements(spec: TarpapelTemplate): PublisherElement
         id: `tp-${layer.id}`,
         type: 'shape',
         name: layer.id,
-        shapeType: layer.radius ? 'rounded-rect' : 'rectangle',
+        shapeType: layer.shapeType ?? (layer.radius ? 'rounded-rect' : 'rectangle'),
         x,
         y,
         width,
         height,
-        rotation: 0,
+        rotation: layer.rotation ?? 0,
         zIndex,
         fillColor: layer.fill,
         fillType: layer.fillColor2 ? 'linear-gradient' : 'solid',
         gradientColor2: layer.fillColor2,
         gradientAngle: layer.gradientAngle,
-        strokeColor: 'transparent',
-        strokeWidth: 0,
+        strokeColor: layer.stroke?.color ?? 'transparent',
+        strokeWidth: layer.stroke?.width ?? 0,
         cornerRadius: layer.radius,
         opacity: layer.opacity,
         locked: layer.locked,
