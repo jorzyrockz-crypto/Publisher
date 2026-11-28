@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { usePublisher } from '../context/PublisherContext';
 import type { CollageMeta } from '../utils/borderArtStyles';
+import { resolveCollageLayout } from '../utils/collageLayouts';
 import type { PublisherElement } from '../types/publisher';
 
 /** A collage on the page, seen through the current selection. */
@@ -42,11 +43,11 @@ export function useCollageSelection(): CollageSelection | null {
     if (!carrier || !carrier.collageMeta) return null;
 
     const meta = carrier.collageMeta;
-    // Count the slots actually drawn, not the slot states the meta happens to carry: a
-    // 4-grid preset stores nine states, and "0/9" for a four-photo collage is a lie.
-    const slotMembers = members.filter(
-      (el) => el.type === 'image' && (el as { effectPreset?: string }).effectPreset !== 'sticker'
-    );
+    // Count the slots the layout draws, not the slot states the meta carries: a 4-grid
+    // stores nine states, and counting images cannot work either — a vibe pack can give
+    // photo slots the same sticker effect its stickers have.
+    const layout = resolveCollageLayout(meta, [], 1);
+    const slotCount = Math.max(1, Math.min(layout.slotCount, meta.slots.length));
     return {
       groupId,
       meta,
@@ -55,8 +56,8 @@ export function useCollageSelection(): CollageSelection | null {
         x: Math.min(...members.map((el) => el.x)),
         y: Math.min(...members.map((el) => el.y)),
       },
-      filledSlots: slotMembers.filter((el) => Boolean((el as { src?: string }).src)).length,
-      slotCount: slotMembers.length || meta.slots.length,
+      filledSlots: meta.slots.slice(0, slotCount).filter((slot) => Boolean(slot.imageUrl)).length,
+      slotCount,
     };
   }, [activePage.elements, selectedElementIds]);
 }

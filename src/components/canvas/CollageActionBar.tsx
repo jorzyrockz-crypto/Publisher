@@ -1,7 +1,8 @@
 import React from 'react';
-import { LayoutGrid, Minus, Pencil, Plus } from 'lucide-react';
+import { LayoutGrid, Minus, Pencil, Plus, Sparkles } from 'lucide-react';
 import { usePublisher } from '../../context/PublisherContext';
 import { useCollageSelection } from '../../hooks/useCollageSelection';
+import { COLLAGE_PANEL_SECTIONS_ENABLED } from '../../constants/collageControls';
 
 const GAP_STEP = 2;
 const GAP_MIN = 0;
@@ -18,7 +19,7 @@ const GAP_MAX = 40;
  * two modes cannot drift apart.
  */
 export const CollageActionBar: React.FC = () => {
-  const { patchCollageMeta, openCollageEditor } = usePublisher();
+  const { patchCollageMeta, openCollageEditor, openCollageControl } = usePublisher();
   const collage = useCollageSelection();
 
   if (!collage) return null;
@@ -78,6 +79,26 @@ export const CollageActionBar: React.FC = () => {
           className={buttonClass}
         >
           <Plus size={13} />
+        </button>
+
+        <div className="w-[1px] h-4 bg-[#e9edf2] mx-0.5" />
+
+        {/* Nested control: a pack is a choice between looks, so it opens the panel rather
+            than acting on a guess. Falls back to the builder if the experiment is off. */}
+        <button
+          type="button"
+          onClick={() => {
+            if (COLLAGE_PANEL_SECTIONS_ENABLED) {
+              openCollageControl('vibes');
+            } else {
+              openCollageEditor({ meta, groupId, originX: origin.x, originY: origin.y });
+            }
+          }}
+          title="Vibe packs — pick a look for this collage"
+          className="flex items-center gap-1 px-2 py-1 rounded-[8px] text-[10.5px] font-semibold text-[#5b6673] hover:bg-[#f4f2ff] hover:text-[#5c4bb8] transition"
+        >
+          <Sparkles size={11} />
+          Vibe
         </button>
 
         <div className="w-[1px] h-4 bg-[#e9edf2] mx-0.5" />

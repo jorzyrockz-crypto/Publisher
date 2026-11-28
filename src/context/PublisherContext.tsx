@@ -21,6 +21,7 @@ import {
   BackstageSection,
 } from '../types/publisher';
 import { buildCollageElements } from '../utils/collageBuild';
+import type { CollageControlSection } from '../constants/collageControls';
 import { buildMergedPartFromShape } from '../utils/shapePaths';
 import { mergeShapeGeometry } from '../utils/shapeBoolean';
 import { pageRingsToLocal, ringsToPath, shapeOutlineRings } from '../utils/shapeClip';
@@ -146,6 +147,14 @@ interface PublisherContextType {
    * builder — the modal and the toolbar write elements through the same builder.
    */
   patchCollageMeta: (groupId: string, nextMeta: import('../utils/borderArtStyles').CollageMeta) => void;
+
+  /**
+   * Nested collage controls (experimental). The canvas bar has direct buttons for one-click
+   * changes; anything that needs a value picked sends the user here instead.
+   */
+  collageControlSection: CollageControlSection | null;
+  openCollageControl: (section: CollageControlSection) => void;
+  closeCollageControl: () => void;
   setIsBrandBoardModalOpen: (open: boolean) => void;
   setIsBrandKitModalOpen: (open: boolean) => void;
   saveBrandKit: (kit: BrandKit) => void;
@@ -607,6 +616,9 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [isAIImageModalOpen, setIsAIImageModalOpen] = useState(false);
   const [isStockArtPanelOpen, setIsStockArtPanelOpen] = useState(false);
   const [isCollageModalOpen, setIsCollageModalOpenState] = useState(false);
+  const [collageControlSection, setCollageControlSection] = useState<CollageControlSection | null>(
+    null
+  );
   const [editingCollageState, setEditingCollageState] = useState<{
     meta: import('../utils/borderArtStyles').CollageMeta;
     groupId?: string;
@@ -631,6 +643,14 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     },
     []
   );
+  const openCollageControl = useCallback((section: CollageControlSection) => {
+    setCollageControlSection(section);
+    // One destination in both modes: the inspector renders for Publisher and Designer.
+    setIsRightPanelOpen(true);
+    setRightPanelTab('inspector');
+  }, []);
+  const closeCollageControl = useCallback(() => setCollageControlSection(null), []);
+
   const [isBrandBoardModalOpen, setIsBrandBoardModalOpen] = useState(false);
   const [isBrandKitModalOpen, setIsBrandKitModalOpen] = useState(false);
 
@@ -2953,6 +2973,9 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         openCollageEditor,
         replaceCollageGroup,
         patchCollageMeta,
+        collageControlSection,
+        openCollageControl,
+        closeCollageControl,
         setIsBrandBoardModalOpen,
         setIsBrandKitModalOpen,
         saveBrandKit,

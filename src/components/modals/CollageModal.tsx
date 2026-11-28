@@ -16,7 +16,6 @@ import {
   CollageBackdropConfig,
   CollageBackdropType,
   CollageMeta,
-  CollagePlacedSticker,
   CollageSlotState,
   CollageStyleConfig,
   DynamicLayoutMode,
@@ -27,6 +26,7 @@ import {
   getMaskClipPath,
 } from '../../utils/borderArtStyles';
 import { GRADIENT_SWATCHES, buildLinearGradientCss } from '../../constants/gradientSwatches';
+import { applyVibePack } from '../../utils/collageVibes';
 import {
   buildCollageElements,
   createEmptySlot,
@@ -590,40 +590,9 @@ export const CollageModal: React.FC<CollageModalProps> = ({ initialMeta }) => {
     });
   };
 
-  const buildStickersFromIds = (ids: string[] = []): CollagePlacedSticker[] => {
-    const anchors = [
-      { x: 0.03, y: 0.03, rotation: -10 },
-      { x: 0.85, y: 0.84, rotation: 8 },
-      { x: 0.84, y: 0.04, rotation: 12 },
-      { x: 0.04, y: 0.84, rotation: -8 },
-    ];
-    return ids.slice(0, 4).map((stickerId, i) => ({
-      id: `col-stk-${Date.now()}-${i}`,
-      stickerId,
-      x: anchors[i % anchors.length].x,
-      y: anchors[i % anchors.length].y,
-      size: 56,
-      rotation: anchors[i % anchors.length].rotation,
-    }));
-  };
-
   const handleApplyVibePack = (packId: string) => {
-    const pack = COLLAGE_VIBE_PACKS.find((p) => p.id === packId);
-    if (!pack) return;
-    commitMeta((prev) => ({
-      ...prev,
-      vibePackId: pack.id,
-      globalStyle: { ...prev.globalStyle, ...pack.style },
-      backdrop: { ...pack.backdrop },
-      stickers:
-        includeVibeStickers && pack.stickerIds?.length
-          ? buildStickersFromIds(pack.stickerIds)
-          : [],
-      slots: prev.slots.map((s, idx) => ({
-        ...s,
-        caption: pack.enableCaptions && !s.caption ? `Memory #${idx + 1}` : s.caption,
-      })),
-    }));
+    // Same transformation the canvas panel uses, so a pack means one thing everywhere.
+    commitMeta((prev) => applyVibePack(prev, packId, { includeStickers: includeVibeStickers }));
   };
 
   const selectedSlot = meta.slots[selectedSlotIdx] || createEmptySlot();
