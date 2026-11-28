@@ -47,10 +47,47 @@ export const AppContent: React.FC = () => {
     setIsLeftPanelOpen,
     setIsRightPanelOpen,
     setIsStockArtPanelOpen,
+    selectedElementIds,
+    closeCollageControl,
   } = usePublisher();
   const windowWidth = useWindowWidth();
   const prevWidthRef = useRef(windowWidth);
   const didMountCollapseRef = useRef(false);
+  const hadSelectionRef = useRef(selectedElementIds.length > 0);
+  const inspectorClosedForDeselectRef = useRef(false);
+
+  /**
+   * The Inspector edits what is selected, so it closes with the selection. Deselecting used
+   * to leave it standing there on the page settings while the object it was opened for was
+   * gone; now an empty selection closes it, and selecting something again brings it back.
+   *
+   * Only a change of selection does this. An Inspector someone opened by hand while nothing
+   * is selected stays open, and so does one that was already open on an empty canvas at boot.
+   */
+  useEffect(() => {
+    const hasSelection = selectedElementIds.length > 0;
+    if (hasSelection === hadSelectionRef.current) return;
+    hadSelectionRef.current = hasSelection;
+
+    if (hasSelection) {
+      if (inspectorClosedForDeselectRef.current) {
+        inspectorClosedForDeselectRef.current = false;
+        setIsRightPanelOpen(true);
+      }
+      return;
+    }
+
+    closeCollageControl();
+    if (isRightPanelOpen) {
+      inspectorClosedForDeselectRef.current = true;
+      setIsRightPanelOpen(false);
+    }
+  }, [
+    selectedElementIds.length,
+    isRightPanelOpen,
+    setIsRightPanelOpen,
+    closeCollageControl,
+  ]);
 
   // On tablet/narrow initial mount (< 1024px), start with sidebars collapsed so the canvas is immediately visible
   useEffect(() => {
