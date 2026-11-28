@@ -1,5 +1,5 @@
 ﻿import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
-import { TEXT_EFFECT_KEYS, fitTextBoxToEffects } from '../utils/textEffectsFit';
+import { projectTextGeometry } from '../utils/textBoxGrowth';
 import {
   DocumentProject,
   Page,
@@ -1742,22 +1742,12 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const commitCurrentElements = useCallback(
     (nextElements: PublisherElement[]) => {
-      // Applying a text style grows the box to hold its paint (see utils/textEffectsFit), so a
-      // shadow, glow or extrusion is not clipped by the box that carries it. Running this at
-      // the one place element writes land means it covers the ribbon, the panels, the WordArt
-      // gallery and the stroke controls alike.
-      const projected = nextElements.map((el) => {
-        if (el.type !== 'text') return el;
-        const before = currentElements.find((prev) => prev.id === el.id) as TextElement | undefined;
-        if (!before) return el;
-        const record = el as unknown as Record<string, unknown>;
-        const previous = before as unknown as Record<string, unknown>;
-        const effectsChanged = TEXT_EFFECT_KEYS.some((key) => record[key] !== previous[key]);
-        if (!effectsChanged) return el;
-        const fit = fitTextBoxToEffects(el);
-        return fit ? ({ ...el, ...fit } as PublisherElement) : el;
-      });
-      nextElements = projected;
+      // Text frames grow to hold their paint and their words — a shadow or a WordArt extrusion is
+      // not clipped by the box that carries it, and a box never cuts off the last line typed into
+      // it. Running at the one place element writes land means the rule covers the ribbon, the
+      // panels, the WordArt gallery, the stroke controls and the caret alike.
+      // See utils/textBoxGrowth.
+      nextElements = projectTextGeometry(nextElements, currentElements);
 
       if (isEditingMaster) {
         const nextMasters = masterPages.map((m) =>
@@ -2415,8 +2405,8 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         columnGap: 12,
         lineHeight: 1.4,
         padding: 8,
-        // Text behaves like type: no clipped words, ever.
-        autoFit: 'shrink',
+        // Text behaves like type: no clipped words, ever. The box grows to hold what is typed
+        // (utils/textBoxGrowth) rather than shrinking the words to fit a frame nobody sized.
         autoSizeText: true,
         ...options,
       };

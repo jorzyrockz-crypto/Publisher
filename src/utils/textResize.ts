@@ -1,5 +1,5 @@
 import type { TextElement } from '../types/publisher';
-import { layoutText } from './textLayout';
+import { textBoxContentHeight } from './textBoxGrowth';
 
 /** Drag context handed over by the selection box (structurally typed). */
 export interface TextResizeMeta {
@@ -42,10 +42,13 @@ export function resizeTextBox(
 
   // Side handles change the measure only: rewrap, then let the frame grow if
   // the new measure needs more lines. It never collapses a deliberately tall
-  // box, so vertical centring and fixed layouts survive.
+  // box, so vertical centring and fixed layouts survive. The height is the same
+  // one `utils/textBoxGrowth` uses, so dragging a handle and typing into the box
+  // cannot disagree about how tall the words are.
   if (handle === '' || handle === 'e' || handle === 'w') {
-    const measured = layoutText({ ...el, width, height: 100000, autoFit: 'none' });
-    const needed = Math.ceil(measured.contentHeight + measured.padding * 2);
+    // Height is handed over as a large number so the *measure* decides the wrap; only the
+    // width is being dragged.
+    const needed = textBoxContentHeight({ ...el, width, height: 100000 });
     return { x, y, width, height: Math.max(height, needed), autoFit: 'shrink' };
   }
 

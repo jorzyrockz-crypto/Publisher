@@ -9,6 +9,7 @@
     "lint": "oxlint",
     "check:tarpapel": "node --experimental-strip-types --no-warnings scripts/check-tarpapel.mjs",
     "check:wordart": "node --experimental-strip-types --no-warnings scripts/check-wordart-fonts.mjs",
+    "check:textbox": "node --experimental-strip-types --no-warnings --import ./scripts/ts-resolve.mjs scripts/check-textbox-growth.mjs",
     "wordart:css": "node --experimental-strip-types --no-warnings scripts/wordart-css.ts",
     "preview": "vite preview",
     "pack:storybook": "node scripts/build-asset-pack.mjs storybook-reading-v1",

@@ -51,7 +51,7 @@ import {
   type SmartRecolorMode,
 } from '../../utils/svgRecolor';
 import { getBackdropColorUnder } from '../../utils/brandRebrand';
-import { countWords, layoutText } from '../../utils/textLayout';
+import { countWords } from '../../utils/textLayout';
 import { TEXT_CURVE_PRESETS, TEXT_EFFECTS, buildTextEffectPainter } from '../../utils/textEffects';
 import { DesignIdeasPanel } from './DesignIdeasPanel';
 import { CollageControlsPanel } from '../canvas/CollageControlsPanel';
@@ -99,6 +99,7 @@ import {
   Eraser,
   Unlink,
 } from 'lucide-react';
+import { textBoxContentHeight } from '../../utils/textBoxGrowth';
 
 /**
  * Pan X / Pan Y for a cropped picture. A picture can only slide on an axis
@@ -2177,17 +2178,16 @@ export const PropertiesPanel: React.FC = () => {
                             : 'bg-slate-50 border-slate-200 text-slate-600'
                         }`}
                       >
-                        Shrink to fit
+                        Shrink type
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
-                          const measured = layoutText({ ...textEl, autoFit: 'none' });
+                        onClick={() =>
                           updateElement(textEl.id, {
-                            height: Math.max(24, Math.ceil(measured.contentHeight + textEl.padding * 2)),
+                            height: textBoxContentHeight(textEl),
                             autoFit: 'none',
-                          });
-                        }}
+                          })
+                        }
                         className="py-1 rounded-lg text-[10px] font-semibold bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100"
                       >
                         Fit box to text
@@ -2207,7 +2207,9 @@ export const PropertiesPanel: React.FC = () => {
                       />
                     </label>
                     <p className="text-[9.5px] text-slate-400 leading-tight -mt-0.5">
-                      Corner handles scale the type, side handles rewrap it and grow the box.
+                      The box grows to hold whatever you type; “Shrink type” scales the letters
+                      down to the frame instead. Corner handles scale the type, side handles
+                      rewrap it and grow the box.
                     </p>
                     <label className="flex items-center justify-between pt-1 cursor-pointer">
                       <span className="text-[10.5px] text-slate-600 font-medium">
