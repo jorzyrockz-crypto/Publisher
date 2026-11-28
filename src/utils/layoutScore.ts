@@ -64,11 +64,12 @@ const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
 const EDGE_TOLERANCE = 2;
 
 /**
- * A shape that covers (nearly) the whole page is a background, not content: it should not count
- * as ink, it should not be dragged to the margins, and it must not decide where the weight sits.
+ * Something that covers (nearly) the whole page is a background, not content: it should not
+ * count as ink, it should not be dragged to the margins, and it must not decide where the weight
+ * sits. That is true of a full-bleed shape and of a full-bleed photograph alike.
  */
 function isPageBackground(el: PublisherElement, pageW: number, pageH: number): boolean {
-  if (el.type !== 'shape') return false;
+  if (el.type !== 'shape' && el.type !== 'image') return false;
   return el.width * el.height >= pageW * pageH * 0.85 && el.width >= pageW * 0.9;
 }
 
@@ -160,7 +161,7 @@ function scoreWhitespace(elements: PublisherElement[], pageW: number, pageH: num
  * A headline in white over a dark shape is legible; the same headline over the page would not be.
  * Pictures are photographed content, so their colour is unknown and the check stands down.
  */
-function backdropFor(
+export function textBackdrop(
   el: TextElement,
   elements: PublisherElement[],
   pageBackground: string
@@ -199,7 +200,7 @@ function scoreContrast(
   textElements.forEach((el) => {
     const behind = el.highlightColor && el.highlightColor !== 'transparent'
       ? el.highlightColor
-      : backdropFor(el, elements, background);
+      : textBackdrop(el, elements, background);
     if (!behind) {
       ratios.push(1); // cannot be judged from the model — do not punish it
       return;
@@ -240,7 +241,10 @@ function scoreCollisions(
   let offPage = 0;
   let outOfMargins = 0;
   visible.forEach((el) => {
-    if (el.x < -2 || el.y < -2 || el.x + el.width > pageW + 2 || el.y + el.height > pageH + 2) {
+    // A shape running a little past the trim is a bleed, which is what print wants. Text and
+    // pictures overhanging is a mistake, and so is anything overhanging by a lot.
+    const bleed = el.type === 'shape' ? 24 : 2;
+    if (el.x < -bleed || el.y < -bleed || el.x + el.width > pageW + bleed || el.y + el.height > pageH + bleed) {
       offPage += 1;
       return;
     }

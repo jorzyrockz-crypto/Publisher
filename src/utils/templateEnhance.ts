@@ -554,15 +554,30 @@ export function balancePage(page: Page, stats: EnhanceStats): void {
       // only spread when the room is real; never compress what is already tight
       if (gap > currentGap + 6 && gap > 0) {
         const capped = Math.min(gap, Math.max(120, currentGap * 2.2));
+        // Work the moves out first: a run that would push its last block past the bottom
+        // margin is not spread at all, because overflowing the page is worse than uneven space.
+        const deltas: number[] = [];
         let cursor = bandTop;
         run.forEach((block, i) => {
-          const dy = Math.round(cursor - areas[i].y);
-          if (dy !== 0) {
-            for (const el of block) el.y += dy;
-            moved = true;
-          }
+          // Only ever push down. Pulling a block up to fill a band is how a subtitle ends up
+          // sitting above the headline it belongs to: the band top is the previous block's
+          // bottom, and a generous gap reads as "room to fill" rather than as deliberate space.
+          const dy = Math.max(0, Math.round(cursor - areas[i].y));
+          deltas.push(dy);
           cursor = areas[i].y + dy + areas[i].height + capped;
         });
+
+        const fits = run.every(
+          (block, i) => areas[i].bottom + deltas[i] <= bottomLimit + 1,
+        );
+        if (fits) {
+          run.forEach((block, i) => {
+            if (deltas[i] !== 0) {
+              for (const el of block) el.y += deltas[i];
+              moved = true;
+            }
+          });
+        }
       }
     }
     index = end + 1;
