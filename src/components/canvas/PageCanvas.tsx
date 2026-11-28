@@ -1052,10 +1052,16 @@ export const PageCanvas: React.FC<PageCanvasProps> = React.memo(({
               }
               if (editingPhotoId) setEditingPhotoId(null);
               // If already selected text box or in text edit mode, allow native I-beam caret & text selection!
+              // A finger is not a cursor: touching a selected box drags it, because a tablet
+              // has no other way to move one. Double tap still opens it for editing.
+              const fromTouch = Boolean(
+                (e.nativeEvent as MouseEvent & { __spTouch?: boolean }).__spTouch
+              );
               if (
                 element.type === 'text' &&
                 !element.locked &&
-                (editingTextId === element.id || (isSelected && isActivePage && e.button === 0))
+                (editingTextId === element.id ||
+                  (!fromTouch && isSelected && isActivePage && e.button === 0))
               ) {
                 setEditingTextId(element.id);
                 e.stopPropagation();

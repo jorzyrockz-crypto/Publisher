@@ -20,6 +20,7 @@ import {
   ShapeType,
   BackstageSection,
 } from '../types/publisher';
+import type { TextControlSection } from '../constants/textControls';
 import { buildCollageElements } from '../utils/collageBuild';
 import { adoptCollageIds, freshCollageIds } from '../utils/collageIdentity';
 import type { CollageControlSection } from '../constants/collageControls';
@@ -161,6 +162,13 @@ interface PublisherContextType {
   collageControlSection: CollageControlSection | null;
   openCollageControl: (section: CollageControlSection) => void;
   closeCollageControl: () => void;
+  /**
+   * The same idea for text: the bar's font and colour chips open their section here rather
+   * than rendering a picker inside a floating pill.
+   */
+  textControlSection: TextControlSection | null;
+  openTextControl: (section: TextControlSection) => void;
+  closeTextControl: () => void;
   setIsBrandBoardModalOpen: (open: boolean) => void;
   setIsBrandKitModalOpen: (open: boolean) => void;
   saveBrandKit: (kit: BrandKit) => void;
@@ -644,6 +652,7 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [collageControlSection, setCollageControlSection] = useState<CollageControlSection | null>(
     null
   );
+  const [textControlSection, setTextControlSection] = useState<TextControlSection | null>(null);
   const [editingCollageState, setEditingCollageState] = useState<{
     meta: import('../utils/borderArtStyles').CollageMeta;
     groupId?: string;
@@ -668,12 +677,33 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     },
     []
   );
-  const openCollageControl = useCallback((section: CollageControlSection) => {
-    setCollageControlSection(section);
-    // One destination in both modes: the inspector renders for Publisher and Designer.
-    setIsRightPanelOpen(true);
-    setRightPanelTab('inspector');
-  }, []);
+  const openCollageControl = useCallback(
+    (section: CollageControlSection) => {
+      setCollageControlSection(section);
+      setTextControlSection(null);
+      // Same destination rule as text: the drawer beside the bar in Designer, the inspector
+      // in Publisher, which has no drawer.
+      if (workspaceMode !== 'designer') {
+        setIsRightPanelOpen(true);
+        setRightPanelTab('inspector');
+      }
+    },
+    [workspaceMode]
+  );
+  const openTextControl = useCallback(
+    (section: TextControlSection) => {
+      setTextControlSection(section);
+      setCollageControlSection(null);
+      // Designer has an edit sidebar beside the toolbar, and that is where a font list
+      // belongs; Publisher has no drawer, so there the inspector is the destination.
+      if (workspaceMode !== 'designer') {
+        setIsRightPanelOpen(true);
+        setRightPanelTab('inspector');
+      }
+    },
+    [workspaceMode]
+  );
+  const closeTextControl = useCallback(() => setTextControlSection(null), []);
   const closeCollageControl = useCallback(() => setCollageControlSection(null), []);
 
   const [isBrandBoardModalOpen, setIsBrandBoardModalOpen] = useState(false);
@@ -3009,6 +3039,9 @@ export const PublisherProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         collageControlSection,
         openCollageControl,
         closeCollageControl,
+        textControlSection,
+        openTextControl,
+        closeTextControl,
         setIsBrandBoardModalOpen,
         setIsBrandKitModalOpen,
         saveBrandKit,

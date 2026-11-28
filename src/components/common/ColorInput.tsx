@@ -1,16 +1,15 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Sparkles, X, Check, Pipette, ChevronDown } from 'lucide-react';
+import { X, Pipette, ChevronDown } from 'lucide-react';
 import { usePublisher } from '../../context/PublisherContext';
 import {
   ColorTarget,
-  Swatch,
   analyzeDocument,
-  buildSmartPalettes,
   contrastRatio,
   formatRatio,
   normalizeHex,
 } from '../../utils/documentPalette';
+import { SmartPalette } from './SmartPalette';
 
 interface ColorInputProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'value' | 'onChange'> {
@@ -58,17 +57,7 @@ export const ColorInput: React.FC<ColorInputProps> = ({
   const normalizedValue = HEX_RE.test(value || '') ? value : '#ffffff';
 
   const palette = useMemo(() => analyzeDocument(project, activePage), [project, activePage]);
-
   const resolvedSurface = surface || palette.background;
-
-  const groups = useMemo(
-    () =>
-      buildSmartPalettes(palette, {
-        target,
-        surface: target === 'background' ? palette.textColor : resolvedSurface,
-      }),
-    [palette, target, resolvedSurface]
-  );
 
   const positionPopover = useCallback(() => {
     const trigger = triggerRef.current;
@@ -219,26 +208,15 @@ export const ColorInput: React.FC<ColorInputProps> = ({
             style={{ top: coords.top, left: coords.left, width: 268 }}
             className="fixed z-[200] bg-white rounded-[12px] border border-[#e5e9ee] shadow-[0_12px_36px_rgba(22,26,34,0.18)] p-2.5 text-[11px] text-[#3d4854] animate-in fade-in duration-100"
           >
-            <div className="flex items-start justify-between gap-2 pb-1.5 mb-1.5 border-b border-[#e5e9ee]">
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5 font-bold text-[#161a22] text-[11.5px]">
-                  <Sparkles size={11} className="text-[#6e56cf]" />
-                  Smart colours
-                </div>
-                <div className="flex items-center gap-1 mt-0.5 text-[9.5px] text-[#5b6673]">
-                  <span
-                    className="inline-block w-2 h-2 rounded-full border border-black/10 flex-shrink-0"
-                    style={{ backgroundColor: palette.anchor }}
-                  />
-                  <span className="truncate">
-                    Harmony of {palette.anchor.toUpperCase()} ·{' '}
-                    {target === 'background'
-                      ? 'keeps text readable'
-                      : target === 'text'
-                        ? `AA on ${resolvedSurface.toUpperCase()}`
-                        : `on ${resolvedSurface.toUpperCase()}`}
-                  </span>
-                </div>
+            <div className="flex items-center justify-between gap-2 pb-1.5 mb-1.5 border-b border-[#e5e9ee]">
+              <div className="min-w-0 flex-1">
+                <SmartPalette
+                  value={normalizedValue}
+                  target={target}
+                  surface={surface}
+                  onSelect={applySwatch}
+                  maxHeightClass="max-h-[236px]"
+                />
               </div>
               <button
                 type="button"
@@ -248,32 +226,6 @@ export const ColorInput: React.FC<ColorInputProps> = ({
               >
                 <X size={12} />
               </button>
-            </div>
-
-            <div className="max-h-[236px] overflow-y-auto space-y-2 pr-0.5">
-              {groups.map((group) => (
-                <div key={group.id}>
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-[9px] font-bold uppercase tracking-[0.07em] text-[#5b6673]">
-                      {group.label}
-                    </span>
-                    {group.hint && (
-                      <span className="text-[8.5px] text-[#8d99a5] truncate">{group.hint}</span>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {group.swatches.map((swatch) => (
-                      <SwatchButton
-                        key={`${group.id}-${swatch.hex}`}
-                        swatch={swatch}
-                        active={swatch.hex.toLowerCase() === normalizedValue.toLowerCase()}
-                        target={target}
-                        onSelect={applySwatch}
-                      />
-                    ))}
-                  </div>
-                </div>
-              ))}
             </div>
 
             {/* Current value + native wheel escape hatch */}
@@ -324,44 +276,5 @@ export const ColorInput: React.FC<ColorInputProps> = ({
           document.body
         )}
     </>
-  );
-};
-
-const SwatchButton: React.FC<{
-  swatch: Swatch;
-  active: boolean;
-  target: ColorTarget;
-  onSelect: (hex: string) => void;
-}> = ({ swatch, active, target, onSelect }) => {
-  const tooltip = [
-    swatch.hex.toUpperCase(),
-    swatch.ratio ? `${formatRatio(swatch.ratio)} contrast` : null,
-    swatch.adjusted ? (target === 'text' ? 'adjusted for AA' : 'adjusted') : null,
-  ]
-    .filter(Boolean)
-    .join(' · ');
-
-  return (
-    <button
-      type="button"
-      onClick={() => onSelect(swatch.hex)}
-      title={tooltip}
-      aria-label={tooltip}
-      className={`relative w-6 h-6 rounded-[7px] border transition-transform hover:scale-110 cursor-pointer ${
-        active ? 'border-[#5c4bb8] ring-2 ring-[#d3c9f9]' : 'border-black/10'
-      }`}
-      style={{ backgroundColor: swatch.hex }}
-    >
-      {active && (
-        <Check
-          size={11}
-          strokeWidth={3}
-          className="absolute inset-0 m-auto text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)]"
-        />
-      )}
-      {swatch.adjusted && !active && (
-        <span className="absolute -top-1 -right-1 w-[7px] h-[7px] rounded-full bg-white ring-1 ring-[#6e56cf]" />
-      )}
-    </button>
   );
 };

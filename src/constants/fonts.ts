@@ -79,8 +79,21 @@ export function saveDownloadedGoogleFonts(fonts: string[]): void {
   }
 }
 
+function stylesheetId(family: string): string {
+  return `gfont-${family.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+}
+
+/** True when this family's stylesheet is already on the page (or downloading). */
+export function hasFontStylesheet(family: string): boolean {
+  try {
+    return Boolean(document.getElementById(stylesheetId(family)));
+  } catch {
+    return false;
+  }
+}
+
 export function loadGoogleFontStylesheet(family: string): Promise<void> {
-  const safeId = `gfont-${family.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+  const safeId = stylesheetId(family);
   if (document.getElementById(safeId)) {
     return Promise.resolve();
   }

@@ -52,6 +52,7 @@ import { countWords, layoutText } from '../../utils/textLayout';
 import { TEXT_CURVE_PRESETS, TEXT_EFFECTS, buildTextEffectPainter } from '../../utils/textEffects';
 import { DesignIdeasPanel } from './DesignIdeasPanel';
 import { CollageControlsPanel } from '../canvas/CollageControlsPanel';
+import { TextControlsPanel } from '../canvas/TextControlsPanel';
 import { InspectorCard } from './InspectorCard';
 import { useResizablePanel, useWindowWidth } from '../../hooks/useResizablePanel';
 import {
@@ -206,6 +207,7 @@ export const PropertiesPanel: React.FC = () => {
     activeBrandKit,
     applyBrandKit,
     detachImageFromPlaceholder,
+    workspaceMode,
   } = usePublisher();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -370,8 +372,13 @@ export const PropertiesPanel: React.FC = () => {
         <DesignIdeasPanel />
       ) : (
       <div className="p-3.5 space-y-4">
-        {/* Nested collage controls from the canvas bar (vibe packs today). */}
-        <CollageControlsPanel />
+        {/* Nested collage controls from the canvas bar. In Designer these live in the left
+            drawer beside the bar; the inspector is the Publisher-mode destination. */}
+        {workspaceMode !== 'designer' && <CollageControlsPanel />}
+        {/* Nested text controls from the same bar (font, text colour). In Designer this
+            panel lives in the left drawer beside the toolbar; the inspector is the
+            Publisher-mode destination, since that mode has no drawer. */}
+        {workspaceMode !== 'designer' && <TextControlsPanel />}
         {/* Multi-Selection: Group, Align, Merge Shapes & Diagram Auto-Connect */}
         {selectedElementIds.length >= 2 && (
           <div className="space-y-4">
