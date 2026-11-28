@@ -32,8 +32,10 @@ stickers that go over both — plus one `manifest.json` that lists them. Two pac
   only read when a piece is placed.
 - **`layer`** is the organising idea: `backdrop` fills a page and goes to the back, `frame` spans the
   width at an edge, `sticker` and `badge` arrive as small objects in the middle.
-- **`slot`** (`top` | `bottom` | `corner`) is an addition to the published schema: a hint for where a
-  frame piece wants to land. Unknown `slot` values are dropped rather than fatal.
+- **`slot`** (`top` | `bottom` | `left` | `right` | `corner`) is an addition to the published schema: a
+  hint for where a frame piece wants to land. Unknown `slot` values are dropped rather than fatal.
+  The vertical pair is real, not decoration: a `left`/`right` frame scales to the page *height* and
+  pins to that edge, so a side border stays a border on a portrait poster.
 - Paths are relative to the pack root and may not leave it — `../x.webp` is refused by name.
 
 `parseManifest` is the only way in, and its errors name the offending asset: a pack author gets
@@ -82,56 +84,80 @@ Two doors, one panel, because both apps own the same space:
 
 The panel groups by layer with counts, searches label and tags, and shows transparent art on a
 checkerboard so a cutout reads as a cutout. Placing obeys the layer: a backdrop is inserted page-sized
-at `zIndex: 0` and locked; a frame spans the page width at its slot edge; a sticker arrives at 260px
-centred. Import is a `.zip` picker; the footer says what a pack is, because a file input with no
+at `zIndex: 0` and locked; a frame spans the page width at its slot edge (or the page height, at a
+side slot); a sticker arrives at 260px centred. Import is a `.zip` picker; the footer says what a pack is, because a file input with no
 explanation is a puzzle.
 
 ## The shipped kit
 
-`public/asset-packs/storybook-reading-v1/` — 1.74 MB, ten pieces so far, built by
+`public/asset-packs/storybook-reading-v1/` — **v1.1.0, 19 pieces, 2.69 MB**, built by
 **`npm run pack:storybook`** from art in `.pack-src/` (generated, gitignored):
 
-| piece | layer | size |
-|---|---|---|
-| Enchanted Forest Clearing | backdrop | 896×1200 |
-| Cozy Reading Nook | backdrop | 896×1200 |
-| Sunny Hilltop Meadow | backdrop | 896×1200 |
-| Hanging Canopy Leaves | frame, top | 1024×408 |
-| Grass & Wildflower Strip | frame, bottom | 1024×306 |
-| Corner Vines & Blossoms | frame, corner | 1024×561 |
-| Kids Reading Together | sticker | 904×643 |
-| Reading Owl on Books | sticker | 614×667 |
-| Playful Monkey | sticker | 712×573 |
-| Open Magic Book | sticker | 1024×514 |
+| piece | layer | slot | size |
+|---|---|---|---|
+| Enchanted Forest Clearing | backdrop | — | 896×1200 |
+| Cozy Reading Nook | backdrop | — | 896×1200 |
+| Starlit Night Sky | backdrop | — | 896×1200 |
+| Underwater Light | backdrop | — | 896×1200 |
+| Snowy Village Evening | backdrop | — | 896×1200 |
+| Sunny Hilltop Meadow | backdrop | — | 896×1200 |
+| Hanging Canopy Leaves | frame | top | 1024×408 |
+| Grass & Wildflower Strip | frame | bottom | 1024×306 |
+| Corner Vines & Blossoms | frame | corner | 1024×561 |
+| Ivy Side Border | frame | left | 244×1024 |
+| Bunting & Star Garland | frame | top | 1024×252 |
+| Kids Reading Together | sticker | — | 904×643 |
+| Reading Owl on Books | sticker | — | 614×667 |
+| Playful Monkey | sticker | — | 712×573 |
+| Open Magic Book | sticker | — | 1024×514 |
+| Smiling Sun & Cloud | sticker | — | 894×596 |
+| Reading Corner Sign | sticker | — | 559×696 |
+| Rosette Award | badge | — | 520×697 |
+| Star Medal | badge | — | 313×632 |
 
-`Smiling Sun & Cloud` and `Reading Corner Sign` are in the builder's table but not yet generated —
-the script prints what is missing at the end of a run rather than writing a manifest that lies.
+Every piece in the builder's table is generated, so the run ends with a count and no "still to
+generate" line. The script prints anything missing rather than writing a manifest that lies.
+
+`PACK_ONLY=frame-side-ivy,sticker-wooden-sign npm run pack:storybook` re-cuts just those pieces and
+rewrites the whole manifest from what is already on disk — worth knowing, because a scanned piece
+takes a few seconds and a full rebuild of every cutout is closer to half a minute.
 
 ### Cutting the white out
 
-Frames and stickers are drawn on white and must become transparent. The recipe is a **flood fill from
-every corner** with 12% fuzz, then a trim to the ink:
+Frames and stickers are drawn on white and must become transparent. The recipe has grown in three
+steps, each one answering a way the previous step failed:
 
-```
-convert art.png -alpha set -fuzz 12% -fill none -floodfill +0+0 white … -trim +repage out.webp
-```
+1. **Corner flood**, 12% fuzz, then trim to the ink.
+2. **Corners again, plus the whole perimeter** (0.125/0.375/0.625/0.875 along each edge). A leaf that
+   crosses an edge cuts the background into pockets and *none of them contains a corner* — which is
+   why the canopy first shipped with white slivers between its leaves.
+3. **Pockets no seed list anticipated**, by `clearSeeds` (fractions of the trimmed image) or
+   `scanPockets: { cell, min }`, which bins paper-white pixels into a grid and floods one seed per
+   occupied cell, then re-scans — clearing a channel can merge two others into a block that is
+   finally worth opening. Seeds land on a white pixel the cell actually contains, not on its centre,
+   because the centre of a cell in a narrow channel is usually a leaf.
 
-Connected-only is the whole point. `-transparent white` would punch holes in exactly the details a
-children's illustration is made of — the owl's glasses, the pages of the open book, the whites of two
-children's eyes. The builder repeats the flood on the trimmed corners, because a cutout whose ink
-touches the edge can still be white in the middle of an edge.
+Connected-only is still the whole point. `-transparent white` at the end would punch holes in exactly
+the details a children's illustration is made of — the owl's glasses, the pages of the open book, the
+whites of two children's eyes — so it appears only as an opt-in `knockout: <fuzz>` on pieces with no
+white in the art at all: the jungle canopy, where hundreds of slivers are each too small to scan and a
+soft 8% knock-out is the only finish that does not look ragged.
+
+Sizes are capped at 1024px on the long edge, the ink gets a 4px transparent border so it never sits
+flush against the page edge, and each piece is encoded to WebP at quality 86 with a 160px thumb beside
+it — thumb and full are separate files so the picker never decodes a 1024px image to draw a chip.
 
 ## Verification
 
 Store, zip and picker logic are exercised in Node with `fake-indexeddb`:
 
-- a real DEFLATE zip of three pieces imports, lists, resolves a cached blob URL (same URL on the
-  second call), and yields a `data:image/webp;base64,…` with bytes;
-- the built-in kit resolves over HTTP — thumb `200 image/webp`, full size as a data URL;
+- the full kit — 19 pieces — is zipped (DEFLATE, 2.7 MB), imported through `importAssetPackZip`,
+  installed, listed, and read back: a badge thumb resolves as a blob URL, the entry's full size
+  arrives as a `data:image/webp;base64,…` with bytes, and uninstalling leaves zero packs behind;
 - `filterAssets`: `owl` → 1, `frame` + `leaves` → 1;
-- uninstalling drops the manifest *and* the blobs (`getAssetBlob` → `null`);
 - four authoring mistakes are refused by name.
 
-And a composed page — backdrop + canopy + grass + vines + two stickers, every piece inserted through
-`getAssetDataUrl` and rendered by the app's own canvas renderer — proves the kit layers as intended
-with no white boxes around the cutouts.
+And a composed page — starlit sky, bunting at `top`, the ivy border at `left` (scaled to the page
+height rather than its width), a rosette badge, a sticker or two — is inserted through
+`getAssetDataUrl` and rendered by the app's own canvas renderer, which is what proves the framing
+slots and the cut-outs work together and not just in a table.

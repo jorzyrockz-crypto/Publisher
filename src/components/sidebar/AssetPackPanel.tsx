@@ -130,13 +130,15 @@ export const AssetPackPanel: React.FC<{ embedded?: boolean }> = ({ embedded = fa
         }
 
         if (asset.layer === 'frame') {
-          const width = pageW;
-          const height = Math.round(width / ratio);
-          const y =
-            asset.slot === 'top' ? 0 : asset.slot === 'bottom' ? Math.max(0, pageH - height) : 0;
+          // A side border is drawn tall and thin, so it spans the height instead of the width.
+          const vertical = asset.slot === 'left' || asset.slot === 'right';
+          const width = vertical ? Math.round(pageH * ratio) : pageW;
+          const height = vertical ? pageH : Math.round(pageW / ratio);
+          const x = asset.slot === 'right' ? Math.max(0, pageW - width) : 0;
+          const y = asset.slot === 'bottom' ? Math.max(0, pageH - height) : 0;
           addImage(src, {
             name: asset.label,
-            x: 0,
+            x,
             y,
             width,
             height,

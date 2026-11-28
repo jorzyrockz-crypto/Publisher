@@ -16,7 +16,7 @@
 export type AssetLayer = 'backdrop' | 'frame' | 'sticker' | 'badge';
 
 /** Where a frame piece wants to land on a page. Optional: an addition to the published schema. */
-export type FrameSlot = 'top' | 'bottom' | 'corner';
+export type FrameSlot = 'top' | 'bottom' | 'left' | 'right' | 'corner';
 
 export interface AssetEntry {
   id: string;
@@ -60,7 +60,7 @@ const BLOBS = 'blobs';
 export const BUILTIN_PACK_BASE = './asset-packs/storybook-reading-v1/';
 
 const LAYERS: AssetLayer[] = ['backdrop', 'frame', 'sticker', 'badge'];
-const SLOTS: FrameSlot[] = ['top', 'bottom', 'corner'];
+const SLOTS: FrameSlot[] = ['top', 'bottom', 'left', 'right', 'corner'];
 
 const urlCache = new Map<string, string>();
 

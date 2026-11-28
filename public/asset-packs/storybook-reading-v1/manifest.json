@@ -1,7 +1,7 @@
 {
   "packId": "storybook-reading-v1",
   "name": "Storybook & Reading Corner",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "assets": [
     {
       "id": "bg-enchanted-forest",
@@ -30,6 +30,52 @@
       ],
       "thumb": "thumbs/bg-cozy-reading-nook.webp",
       "full": "full/bg-cozy-reading-nook.webp",
+      "width": 896,
+      "height": 1200
+    },
+    {
+      "id": "bg-starlit-night",
+      "label": "Starlit Storybook Night",
+      "layer": "backdrop",
+      "tags": [
+        "night",
+        "moon",
+        "stars",
+        "bedtime"
+      ],
+      "thumb": "thumbs/bg-starlit-night.webp",
+      "full": "full/bg-starlit-night.webp",
+      "width": 896,
+      "height": 1200
+    },
+    {
+      "id": "bg-underwater",
+      "label": "Under the Sea",
+      "layer": "backdrop",
+      "tags": [
+        "sea",
+        "ocean",
+        "water",
+        "fish",
+        "coral"
+      ],
+      "thumb": "thumbs/bg-underwater.webp",
+      "full": "full/bg-underwater.webp",
+      "width": 896,
+      "height": 1200
+    },
+    {
+      "id": "bg-snowy-village",
+      "label": "Snowy Village",
+      "layer": "backdrop",
+      "tags": [
+        "winter",
+        "snow",
+        "holiday",
+        "december"
+      ],
+      "thumb": "thumbs/bg-snowy-village.webp",
+      "full": "full/bg-snowy-village.webp",
       "width": 896,
       "height": 1200
     },
@@ -97,6 +143,39 @@
       "height": 561
     },
     {
+      "id": "frame-side-ivy",
+      "label": "Side Ivy Border",
+      "layer": "frame",
+      "tags": [
+        "ivy",
+        "side",
+        "border",
+        "frame"
+      ],
+      "slot": "left",
+      "thumb": "thumbs/frame-side-ivy.webp",
+      "full": "full/frame-side-ivy.webp",
+      "width": 244,
+      "height": 1024
+    },
+    {
+      "id": "frame-bunting-stars",
+      "label": "Bunting & Star Garland",
+      "layer": "frame",
+      "tags": [
+        "bunting",
+        "flags",
+        "stars",
+        "top",
+        "party"
+      ],
+      "slot": "top",
+      "thumb": "thumbs/frame-bunting-stars.webp",
+      "full": "full/frame-bunting-stars.webp",
+      "width": 1024,
+      "height": 252
+    },
+    {
       "id": "sticker-reading-kids",
       "label": "Kids Reading Together",
       "layer": "sticker",
@@ -155,6 +234,67 @@
       "full": "full/sticker-magic-book.webp",
       "width": 1024,
       "height": 514
+    },
+    {
+      "id": "sticker-sun-cloud",
+      "label": "Smiling Sun & Cloud",
+      "layer": "sticker",
+      "tags": [
+        "sun",
+        "cloud",
+        "weather",
+        "happy"
+      ],
+      "thumb": "thumbs/sticker-sun-cloud.webp",
+      "full": "full/sticker-sun-cloud.webp",
+      "width": 894,
+      "height": 596
+    },
+    {
+      "id": "sticker-wooden-sign",
+      "label": "Reading Corner Sign",
+      "layer": "sticker",
+      "tags": [
+        "sign",
+        "wood",
+        "label",
+        "blank"
+      ],
+      "thumb": "thumbs/sticker-wooden-sign.webp",
+      "full": "full/sticker-wooden-sign.webp",
+      "width": 559,
+      "height": 696
+    },
+    {
+      "id": "badge-rosette",
+      "label": "Rosette Award",
+      "layer": "badge",
+      "tags": [
+        "award",
+        "rosette",
+        "ribbon",
+        "prize",
+        "blank"
+      ],
+      "thumb": "thumbs/badge-rosette.webp",
+      "full": "full/badge-rosette.webp",
+      "width": 520,
+      "height": 697
+    },
+    {
+      "id": "badge-star-medal",
+      "label": "Star Medal",
+      "layer": "badge",
+      "tags": [
+        "medal",
+        "star",
+        "ribbon",
+        "award"
+      ],
+      "thumb": "thumbs/badge-star-medal.webp",
+      "full": "full/badge-star-medal.webp",
+      "width": 313,
+      "height": 632
     }
   ]
 }
