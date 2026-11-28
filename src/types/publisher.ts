@@ -131,6 +131,11 @@ export interface TextElement extends BaseElement {
   columnGap: number;
   lineHeight: number;
   padding: number;
+  /**
+   * How much of `padding` was added to make room for the text effect's paint (shadows, glows,
+   * extrusions). Kept separately so the box can shrink back when the effect is removed.
+   */
+  effectInset?: number;
   isWordArt?: boolean;
   wordArtStyle?: WordArtStyle;
   dropCap?: boolean;
