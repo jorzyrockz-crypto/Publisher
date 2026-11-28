@@ -1,0 +1,153 @@
+{
+  "packId": "champs-cultural-v1",
+  "name": "Local Cultural Motifs",
+  "version": "1.0.0",
+  "assets": [
+    {
+      "id": "bg-cultural-nook",
+      "label": "Sunlit Bahay Kubo Nook",
+      "layer": "backdrop",
+      "tags": [
+        "bahay kubo",
+        "veranda",
+        "banig",
+        "filipino",
+        "cover"
+      ],
+      "thumb": "thumbs/bg-cultural-nook.webp",
+      "full": "full/bg-cultural-nook.webp",
+      "width": 896,
+      "height": 1200
+    },
+    {
+      "id": "bg-heritage-tree",
+      "label": "Heritage Tree of Knowledge",
+      "layer": "backdrop",
+      "tags": [
+        "narra",
+        "tree",
+        "barrio",
+        "word wall",
+        "outdoor"
+      ],
+      "thumb": "thumbs/bg-heritage-tree.webp",
+      "full": "full/bg-heritage-tree.webp",
+      "width": 896,
+      "height": 1200
+    },
+    {
+      "id": "frame-hablon-border",
+      "label": "Woven Hablon Border",
+      "layer": "frame",
+      "tags": [
+        "hablon",
+        "piña",
+        "weave",
+        "border",
+        "frame",
+        "cultural"
+      ],
+      "slot": "corner",
+      "fit": "page",
+      "thumb": "thumbs/frame-hablon-border.webp",
+      "full": "full/frame-hablon-border.webp",
+      "width": 751,
+      "height": 1024
+    },
+    {
+      "id": "frame-bamboo-top",
+      "label": "Bamboo & Sampaguita Arch",
+      "layer": "frame",
+      "tags": [
+        "bamboo",
+        "sampaguita",
+        "arch",
+        "top",
+        "frame"
+      ],
+      "slot": "top",
+      "thumb": "thumbs/frame-bamboo-top.webp",
+      "full": "full/frame-bamboo-top.webp",
+      "width": 1024,
+      "height": 518
+    },
+    {
+      "id": "sticker-banig-readers",
+      "label": "Kids Reading on a Banig",
+      "layer": "sticker",
+      "tags": [
+        "children",
+        "banig",
+        "big book",
+        "filipino",
+        "reading"
+      ],
+      "thumb": "thumbs/sticker-banig-readers.webp",
+      "full": "full/sticker-banig-readers.webp",
+      "width": 1024,
+      "height": 508
+    },
+    {
+      "id": "sticker-reading-carabao",
+      "label": "Storytelling Carabao",
+      "layer": "sticker",
+      "tags": [
+        "carabao",
+        "salakot",
+        "books",
+        "filipino"
+      ],
+      "thumb": "thumbs/sticker-reading-carabao.webp",
+      "full": "full/sticker-reading-carabao.webp",
+      "width": 1024,
+      "height": 435
+    },
+    {
+      "id": "sticker-cultural-audio",
+      "label": "Cultural Audio Station",
+      "layer": "sticker",
+      "tags": [
+        "audio",
+        "headphones",
+        "filipino",
+        "listening"
+      ],
+      "thumb": "thumbs/sticker-cultural-audio.webp",
+      "full": "full/sticker-cultural-audio.webp",
+      "width": 652,
+      "height": 717
+    },
+    {
+      "id": "sticker-kubo-shelf",
+      "label": "Bahay Kubo Mini-Library",
+      "layer": "sticker",
+      "tags": [
+        "bahay kubo",
+        "shelf",
+        "books",
+        "library",
+        "filipino"
+      ],
+      "thumb": "thumbs/sticker-kubo-shelf.webp",
+      "full": "full/sticker-kubo-shelf.webp",
+      "width": 714,
+      "height": 681
+    },
+    {
+      "id": "frame-cultural-cards",
+      "label": "Abaca Fan & Leaf Word Cards",
+      "layer": "sticker",
+      "tags": [
+        "word card",
+        "abaca",
+        "banana leaf",
+        "vocabulary",
+        "blank"
+      ],
+      "thumb": "thumbs/frame-cultural-cards.webp",
+      "full": "full/frame-cultural-cards.webp",
+      "width": 1024,
+      "height": 394
+    }
+  ]
+}

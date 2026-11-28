@@ -221,6 +221,35 @@ Two deliberate cuts in that table:
 - **The kelp arch is a frame with `slot: 'top'`**, so "apply to page" hangs it across the header
   instead of stretching it edge to edge like a backdrop.
 
+### The third built-in kit: Local Cultural Motifs
+
+`public/asset-packs/champs-cultural-v1/` — **Local Cultural Motifs, v1.0.0, 9 pieces, 1.5 MB**, built by
+**`npm run pack:cultural`**:
+
+| piece | layer | slot | size |
+|---|---|---|---|
+| Sunlit Bahay Kubo Nook | backdrop | — | 896×1200 |
+| Heritage Tree of Knowledge | backdrop | — | 896×1200 |
+| Woven Hablon Border | frame | corner, page | 751×1024 |
+| Bamboo & Sampaguita Arch | frame | top | 1024×518 |
+| Kids Reading on a Banig | sticker | — | 1024×508 |
+| Storytelling Carabao | sticker | — | 1024×435 |
+| Cultural Audio Station | sticker | — | 652×717 |
+| Bahay Kubo Mini-Library | sticker | — | 714×681 |
+| Abaca Fan & Leaf Word Cards | sticker | — | 1024×394 |
+
+The materials are the point: hablon and piña weave, abaca and banana leaf, banig, salakot, narra —
+Western Visayas rather than generic tropical clip art, because a reading corner in Region VI should
+look like Region VI.
+
+**One cutout lesson, encoded in the table.** The hablon border closes a ring of weave around its
+centre, so the perimeter flood — the one that clears the paper outside a frame — never reaches the
+white panel inside it. `clearSeeds: [[0.5, 0.5]]` drops a single seed in the middle. Without it the
+frame ships with an opaque white centre, and applying it to a page would paint over the backdrop
+instead of framing it. The storybook border did not need the seed because its panel was cream and the
+12% fuzz walked through the gap; a pure white panel needs the seed, and the difference is invisible
+until you composite it over a dark page.
+
 ### The sample pack, and the zip it ships in
 
 `public/asset-packs/eco-fiesta-v1.zip` — **Eco-Campaign & Fiesta Awards, v1.0.0, 10 pieces,

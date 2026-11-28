@@ -73,6 +73,7 @@ const BLOBS = 'blobs';
 export const BUILTIN_PACKS: { packId: string; baseUrl: string }[] = [
   { packId: 'storybook-reading-v1', baseUrl: './asset-packs/storybook-reading-v1/' },
   { packId: 'champs-underwater-v1', baseUrl: './asset-packs/champs-underwater-v1/' },
+  { packId: 'champs-cultural-v1', baseUrl: './asset-packs/champs-cultural-v1/' },
 ];
 
 /** The starter kit — the one every other read path falls back to. */

@@ -20,6 +20,7 @@
  *
  *   npm run pack:storybook      # built-in kit → public/asset-packs/storybook-reading-v1/
  *   npm run pack:underwater     # reef kit → public/asset-packs/champs-underwater-v1/
+ *   npm run pack:cultural       # cultural kit → public/asset-packs/champs-cultural-v1/
  *   npm run pack:eco            # eco kit → .pack-dist/ + public/asset-packs/eco-fiesta-v1.zip
  *   npm run pack:all            # all three
  */
@@ -464,6 +465,88 @@ const CHAMPS_UNDERWATER_ASSETS = [
   },
 ];
 
+/**
+ * Local Cultural Motifs (`champs-cultural-v1`) — the third kit. Western Visayas materials (hablon,
+ * piña, abaca, banig, salakot) rather than generic tropical clip art, because a reading corner in
+ * Region VI should look like Region VI.
+ */
+const CHAMPS_CULTURAL_ASSETS = [
+  {
+    id: 'bg-cultural-nook',
+    label: 'Sunlit Bahay Kubo Nook',
+    layer: 'backdrop',
+    tags: ['bahay kubo', 'veranda', 'banig', 'filipino', 'cover'],
+    cutout: false,
+  },
+  {
+    id: 'bg-heritage-tree',
+    label: 'Heritage Tree of Knowledge',
+    layer: 'backdrop',
+    tags: ['narra', 'tree', 'barrio', 'word wall', 'outdoor'],
+    cutout: false,
+  },
+  {
+    id: 'frame-hablon-border',
+    label: 'Woven Hablon Border',
+    layer: 'frame',
+    tags: ['hablon', 'piña', 'weave', 'border', 'frame', 'cultural'],
+    cutout: true,
+    slot: 'corner',
+    fit: 'page',
+    // The weave closes a ring around the centre, so the perimeter flood cannot reach it: one seed in
+    // the middle clears the writing panel and the page shows through instead of being painted white.
+    clearSeeds: [[0.5, 0.5]],
+  },
+  {
+    id: 'frame-bamboo-top',
+    label: 'Bamboo & Sampaguita Arch',
+    layer: 'frame',
+    tags: ['bamboo', 'sampaguita', 'arch', 'top', 'frame'],
+    cutout: true,
+    slot: 'top',
+  },
+  {
+    id: 'sticker-banig-readers',
+    label: 'Kids Reading on a Banig',
+    layer: 'sticker',
+    tags: ['children', 'banig', 'big book', 'filipino', 'reading'],
+    cutout: true,
+    scanPockets: { cell: 16, min: 80 },
+  },
+  {
+    id: 'sticker-reading-carabao',
+    label: 'Storytelling Carabao',
+    layer: 'sticker',
+    tags: ['carabao', 'salakot', 'books', 'filipino'],
+    cutout: true,
+    scanPockets: { cell: 16, min: 80 },
+  },
+  {
+    id: 'sticker-cultural-audio',
+    label: 'Cultural Audio Station',
+    layer: 'sticker',
+    tags: ['audio', 'headphones', 'filipino', 'listening'],
+    cutout: true,
+    scanPockets: { cell: 16, min: 80 },
+  },
+  {
+    id: 'sticker-kubo-shelf',
+    label: 'Bahay Kubo Mini-Library',
+    layer: 'sticker',
+    tags: ['bahay kubo', 'shelf', 'books', 'library', 'filipino'],
+    cutout: true,
+    scanPockets: { cell: 16, min: 80 },
+  },
+  {
+    // Word cards again: cream centres are the writing area, so no pockets are cleared.
+    id: 'frame-cultural-cards',
+    label: 'Abaca Fan & Leaf Word Cards',
+    layer: 'sticker',
+    tags: ['word card', 'abaca', 'banana leaf', 'vocabulary', 'blank'],
+    cutout: true,
+  },
+];
+
 const PACKS = [
   {
     packId: 'storybook-reading-v1',
@@ -487,6 +570,15 @@ const PACKS = [
     out: 'public/asset-packs/champs-underwater-v1',
     zip: null,
     assets: CHAMPS_UNDERWATER_ASSETS,
+  },
+  {
+    packId: 'champs-cultural-v1',
+    name: 'Local Cultural Motifs',
+    version: '1.0.0',
+    src: '.pack-src',
+    out: 'public/asset-packs/champs-cultural-v1',
+    zip: null,
+    assets: CHAMPS_CULTURAL_ASSETS,
   },
   {
     packId: 'eco-fiesta-v1',

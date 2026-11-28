@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "pack:storybook": "node scripts/build-asset-pack.mjs storybook-reading-v1",
     "pack:underwater": "node scripts/build-asset-pack.mjs champs-underwater-v1",
+    "pack:cultural": "node scripts/build-asset-pack.mjs champs-cultural-v1",
     "pack:eco": "node scripts/build-asset-pack.mjs eco-fiesta-v1",
     "pack:all": "node scripts/build-asset-pack.mjs"
   },
